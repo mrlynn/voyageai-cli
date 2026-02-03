@@ -34,7 +34,7 @@ const MODEL_CATALOG = [
   { name: 'voyage-multimodal-3.5', type: 'embedding', context: '32K', dimensions: '1024 (default), 256, 512, 2048', price: '$0.12/M + $0.60/B px', bestFor: 'Text + images + video', shortFor: 'Multimodal' },
   { name: 'rerank-2.5', type: 'reranking', context: '32K', dimensions: '—', price: '$0.05/1M tokens', bestFor: 'Best quality reranking', shortFor: 'Best reranker' },
   { name: 'rerank-2.5-lite', type: 'reranking', context: '32K', dimensions: '—', price: '$0.02/1M tokens', bestFor: 'Fast reranking', shortFor: 'Fast reranker' },
-  { name: 'voyage-4-nano', type: 'embedding', context: '32K', dimensions: '512 (default), 128, 256', price: 'Open-weight', bestFor: 'Open-weight / edge', shortFor: 'Open / edge' },
+  { name: 'voyage-4-nano', type: 'embedding', context: '32K', dimensions: '512 (default), 128, 256', price: 'Open-weight', bestFor: 'Open-weight / edge', shortFor: 'Open / edge', local: true },
   // Legacy models
   { name: 'voyage-3-large', type: 'embedding', context: '32K', dimensions: '1024 (default), 256, 512, 2048', price: '$0.18/1M tokens', bestFor: 'Previous gen quality', shortFor: 'Previous gen quality', legacy: true },
   { name: 'voyage-3.5', type: 'embedding', context: '32K', dimensions: '1024 (default), 256, 512, 2048', price: '$0.06/1M tokens', bestFor: 'Previous gen balanced', shortFor: 'Previous gen balanced', legacy: true },
