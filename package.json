@@ -1,0 +1,37 @@
+{
+  "name": "voyageai-cli",
+  "version": "1.0.0",
+  "description": "CLI for Voyage AI embeddings, reranking, and MongoDB Atlas Vector Search",
+  "bin": {
+    "vai": "./src/cli.js"
+  },
+  "keywords": [
+    "voyage-ai",
+    "voyageai",
+    "embeddings",
+    "vector-search",
+    "reranking",
+    "mongodb",
+    "atlas",
+    "semantic-search",
+    "rag",
+    "cli"
+  ],
+  "author": "Michael Lynn",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mrlynn/voyageai-cli"
+  },
+  "homepage": "https://github.com/mrlynn/voyageai-cli#readme",
+  "bugs": {
+    "url": "https://github.com/mrlynn/voyageai-cli/issues"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "commander": "^12.0.0",
+    "mongodb": "^6.0.0"
+  }
+}

@@ -1,0 +1,193 @@
+# voyageai-cli
+
+CLI for [Voyage AI](https://www.mongodb.com/docs/voyageai/) embeddings, reranking, and [MongoDB Atlas Vector Search](https://www.mongodb.com/docs/atlas/atlas-vector-search/). Pure Node.js — no Python required.
+
+Generate embeddings, rerank search results, store vectors in Atlas, and run semantic search — all from the command line.
+
+## Install
+
+```bash
+npm install -g voyageai-cli
+```
+
+## Quick Start
+
+```bash
+# Set your API key (get one from MongoDB Atlas → AI Models)
+export VOYAGE_API_KEY="your-key"
+
+# Generate an embedding
+vai embed "What is MongoDB?"
+
+# List available models
+vai models
+```
+
+## Commands
+
+### `vai embed` — Generate embeddings
+
+```bash
+# Single text
+vai embed "Hello, world"
+
+# With options
+vai embed "search query" --model voyage-4-large --input-type query --dimensions 512
+
+# From a file
+vai embed --file document.txt --input-type document
+
+# Bulk from stdin (newline-delimited)
+cat texts.txt | vai embed
+
+# Raw array output
+vai embed "hello" --output-format array
+```
+
+### `vai rerank` — Rerank documents by relevance
+
+```bash
+# Inline documents
+vai rerank --query "database performance" \
+  --documents "MongoDB is fast" "Redis is cached" "SQL is relational"
+
+# From a file (JSON array or newline-delimited)
+vai rerank --query "best database" --documents-file candidates.json --top-k 3
+
+# Different model
+vai rerank --query "query" --documents "doc1" "doc2" --model rerank-2.5-lite
+```
+
+### `vai store` — Embed and insert into MongoDB Atlas
+
+Requires `MONGODB_URI` environment variable.
+
+```bash
+# Single document with metadata
+vai store --db myapp --collection docs --field embedding \
+  --text "MongoDB Atlas is a cloud database" \
+  --metadata '{"source": "docs", "category": "product"}'
+
+# From a file
+vai store --db myapp --collection docs --field embedding \
+  --file article.txt
+
+# Batch from JSONL (one {"text": "...", "metadata": {...}} per line)
+vai store --db myapp --collection docs --field embedding \
+  --file documents.jsonl
+```
+
+### `vai search` — Vector similarity search
+
+Requires `MONGODB_URI` environment variable.
+
+```bash
+# Basic search
+vai search --query "cloud database" \
+  --db myapp --collection docs \
+  --index vector_index --field embedding
+
+# With pre-filter and limit
+vai search --query "performance tuning" \
+  --db myapp --collection docs \
+  --index vector_index --field embedding \
+  --filter '{"category": "guides"}' --limit 5
+```
+
+### `vai index` — Manage Atlas Vector Search indexes
+
+Requires `MONGODB_URI` environment variable.
+
+```bash
+# Create an index
+vai index create --db myapp --collection docs --field embedding \
+  --dimensions 1024 --similarity cosine --index-name my_index
+
+# List indexes
+vai index list --db myapp --collection docs
+
+# Delete an index
+vai index delete --db myapp --collection docs --index-name my_index
+```
+
+### `vai models` — List available models
+
+```bash
+# All models
+vai models
+
+# Filter by type
+vai models --type embedding
+vai models --type reranking
+```
+
+## Full Pipeline Example
+
+```bash
+export VOYAGE_API_KEY="your-key"
+export MONGODB_URI="mongodb+srv://user:pass@cluster.mongodb.net/"
+
+# 1. Store documents with embeddings
+vai store --db myapp --collection articles --field embedding \
+  --text "MongoDB Atlas provides a fully managed cloud database" \
+  --metadata '{"title": "Atlas Overview"}'
+
+vai store --db myapp --collection articles --field embedding \
+  --text "Vector search enables semantic similarity matching" \
+  --metadata '{"title": "Vector Search Guide"}'
+
+# 2. Create a vector search index
+vai index create --db myapp --collection articles --field embedding \
+  --dimensions 1024 --similarity cosine --index-name article_search
+
+# 3. Search (wait ~60s for index to build on small collections)
+vai search --query "how does cloud database work" \
+  --db myapp --collection articles --index article_search --field embedding
+
+# 4. Rerank for precision
+vai rerank --query "how does cloud database work" \
+  --documents "MongoDB Atlas provides a fully managed cloud database" \
+    "Vector search enables semantic similarity matching"
+```
+
+## Environment Variables
+
+| Variable | Required For | Description |
+|----------|-------------|-------------|
+| `VOYAGE_API_KEY` | embed, rerank, store, search | [Model API key](https://www.mongodb.com/docs/voyageai/management/api-keys/) from MongoDB Atlas |
+| `MONGODB_URI` | store, search, index | MongoDB Atlas connection string |
+
+## Global Flags
+
+All commands support:
+
+| Flag | Description |
+|------|-------------|
+| `--json` | Machine-readable JSON output |
+| `--quiet` | Suppress non-essential output |
+
+## Models
+
+| Model | Type | Dimensions | Price/1M tokens | Best For |
+|-------|------|-----------|----------------|----------|
+| voyage-4-large | embedding | 1024 (default), 256-2048 | $0.12 | Best quality |
+| voyage-4 | embedding | 1024 (default), 256-2048 | $0.06 | Balanced |
+| voyage-4-lite | embedding | 1024 (default), 256-2048 | $0.02 | Lowest cost |
+| voyage-code-3 | embedding | 1024 (default), 256-2048 | $0.18 | Code |
+| voyage-finance-2 | embedding | 1024 | $0.12 | Finance |
+| voyage-law-2 | embedding | 1024 | $0.12 | Legal |
+| voyage-multimodal-3.5 | embedding | 1024 (default), 256-2048 | $0.12 + pixels | Text + images |
+| rerank-2.5 | reranking | — | $0.05 | Best reranking |
+| rerank-2.5-lite | reranking | — | $0.02 | Fast reranking |
+
+Free tier: 200M tokens for most models. All Voyage 4 series models share the same embedding space.
+
+## Requirements
+
+- Node.js 18+
+- A [MongoDB Atlas](https://www.mongodb.com/atlas) account (free tier works)
+- A [Voyage AI model API key](https://www.mongodb.com/docs/voyageai/management/api-keys/) (created in Atlas)
+
+## License
+
+MIT
