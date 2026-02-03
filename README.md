@@ -98,6 +98,29 @@ vai store --db myapp --collection docs --field embedding \
   --file documents.jsonl
 ```
 
+### `vai ingest` — Bulk import with progress
+
+```bash
+# JSONL (one JSON object per line with a "text" field)
+vai ingest --file corpus.jsonl --db myapp --collection docs --field embedding
+
+# JSON array
+vai ingest --file documents.json --db myapp --collection docs --field embedding
+
+# CSV (specify text column)
+vai ingest --file data.csv --db myapp --collection docs --field embedding --text-column content
+
+# Plain text (one document per line)
+vai ingest --file lines.txt --db myapp --collection docs --field embedding
+
+# Options
+vai ingest --file corpus.jsonl --db myapp --collection docs --field embedding \
+  --model voyage-4 --batch-size 100 --input-type document
+
+# Preview without embedding
+vai ingest --file corpus.jsonl --db myapp --collection docs --field embedding --dry-run
+```
+
 ### `vai search` — Vector similarity search
 
 Requires `MONGODB_URI` environment variable.

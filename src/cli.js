@@ -16,6 +16,7 @@ const { registerConfig } = require('./commands/config');
 const { registerDemo } = require('./commands/demo');
 const { registerExplain } = require('./commands/explain');
 const { registerSimilarity } = require('./commands/similarity');
+const { registerIngest } = require('./commands/ingest');
 const { showBanner, showQuickStart, getVersion } = require('./lib/banner');
 
 const version = getVersion();
@@ -36,6 +37,7 @@ registerConfig(program);
 registerDemo(program);
 registerExplain(program);
 registerSimilarity(program);
+registerIngest(program);
 
 // Append disclaimer to all help output
 program.addHelpText('after', `

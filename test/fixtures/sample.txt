@@ -1,0 +1,5 @@
+MongoDB is a document database designed for ease of development and scaling.
+Atlas Vector Search enables semantic search over your data using embeddings.
+Voyage AI provides state-of-the-art embedding models for retrieval.
+RAG combines retrieval with generation for more accurate AI responses.
+Node.js is a JavaScript runtime built on Chrome's V8 engine.

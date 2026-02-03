@@ -7,6 +7,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/).
 ## [Unreleased]
 
 ### Added
+- `vai ingest` — Bulk import from JSONL/JSON/CSV/text with batching, progress bar, and dry-run
 - `vai similarity` — Compute cosine similarity between texts without MongoDB
 - `vai demo` — Interactive guided walkthrough of all features
 - ASCII banner when running `vai` with no arguments
