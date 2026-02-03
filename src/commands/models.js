@@ -84,20 +84,20 @@ function registerModels(program) {
       const displayLegacy = models.filter(m => m.legacy);
 
       const formatWideRow = (m) => {
-        const name = ui.cyan(m.name);
+        const label = m.unreleased ? ui.cyan(m.name) + ' ' + ui.dim('(unreleased)') : ui.cyan(m.name);
         const type = m.type.startsWith('embedding') ? ui.green(m.type) : ui.yellow(m.type);
         const price = ui.dim(m.price);
         const arch = m.architecture ? (m.architecture === 'moe' ? ui.cyan('MoE') : m.architecture) : '—';
         const space = m.sharedSpace ? ui.green('✓ ' + m.sharedSpace) : '—';
-        return [name, type, m.context, m.dimensions, arch, space, price, m.bestFor];
+        return [label, type, m.context, m.dimensions, arch, space, price, m.bestFor];
       };
 
       const formatCompactRow = (m) => {
-        const name = ui.cyan(m.name);
+        const label = m.unreleased ? ui.cyan(m.name) + ' ' + ui.dim('(soon)') : ui.cyan(m.name);
         const type = m.type.startsWith('embedding') ? ui.green(m.multimodal ? 'multi' : 'embed') : ui.yellow('rerank');
         const dims = compactDimensions(m.dimensions);
         const price = ui.dim(compactPrice(m.price));
-        return [name, type, dims, price, m.shortFor || m.bestFor];
+        return [label, type, dims, price, m.shortFor || m.bestFor];
       };
 
       if (opts.wide) {
