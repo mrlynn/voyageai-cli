@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🧭 Voyage AI Playground</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #1a1a2e;
+  --bg-surface: #16213e;
+  --bg-card: #1e2a47;
+  --bg-input: #0f1629;
+  --accent: #00d4aa;
+  --accent-dim: #00a88a;
+  --accent-glow: rgba(0, 212, 170, 0.15);
+  --text: #e0e0e0;
+  --text-dim: #8892a4;
+  --text-muted: #5a6478;
+  --border: #2a3550;
+  --error: #ff6b6b;
+  --warning: #ffd93d;
+  --success: #00d4aa;
+  --red: #ff6b6b;
+  --yellow: #ffd93d;
+  --green: #00d4aa;
+  --radius: 8px;
+  --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+  --mono: 'SF Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+}
+
+html, body { height: 100%; }
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+/* Nav */
+.nav {
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.nav-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+.nav-spacer { flex: 1; }
+
+.status-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  transition: background 0.3s;
+}
+.status-dot.connected { background: var(--success); box-shadow: 0 0 8px var(--accent-glow); }
+.status-dot.error { background: var(--error); }
+
+.status-label {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.nav-model-select {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 6px 12px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-family: var(--mono);
+  cursor: pointer;
+}
+
+/* Tabs */
+.tab-bar {
+  display: flex;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  gap: 0;
+}
+
+.tab-btn {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  padding: 12px 20px;
+  font-size: 14px;
+  font-family: var(--font);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.tab-btn:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+.tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* Main */
+.main { padding: 24px; max-width: 1200px; margin: 0 auto; }
+
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* Shared Components */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.card-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+textarea, input[type="text"], input[type="number"] {
+  width: 100%;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  font-family: var(--mono);
+  font-size: 13px;
+  resize: vertical;
+  transition: border-color 0.2s;
+}
+textarea:focus, input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-glow);
+}
+
+select {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 8px 12px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-family: var(--font);
+  cursor: pointer;
+}
+select:focus { outline: none; border-color: var(--accent); }
+
+.btn {
+  background: var(--accent);
+  color: #0a0a1a;
+  border: none;
+  padding: 10px 24px;
+  border-radius: var(--radius);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: var(--font);
+  cursor: pointer;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.btn:hover { background: #00eabb; transform: translateY(-1px); }
+.btn:active { transform: translateY(0); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+.btn-secondary {
+  background: var(--bg-input);
+  color: var(--accent);
+  border: 1px solid var(--accent-dim);
+}
+.btn-secondary:hover { background: var(--accent-glow); }
+
+.btn-small {
+  padding: 6px 14px;
+  font-size: 12px;
+}
+
+.options-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 12px 0;
+}
+
+.option-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.option-label {
+  font-size: 11px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.error-msg {
+  background: rgba(255, 107, 107, 0.1);
+  border: 1px solid rgba(255, 107, 107, 0.3);
+  color: var(--error);
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  margin-top: 12px;
+  display: none;
+}
+.error-msg.visible { display: block; }
+
+.spinner {
+  display: inline-block;
+  width: 16px; height: 16px;
+  border: 2px solid transparent;
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.result-section {
+  margin-top: 16px;
+  display: none;
+}
+.result-section.visible { display: block; }
+
+.stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-input);
+  padding: 6px 12px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  margin-right: 8px;
+  margin-bottom: 8px;
+}
+.stat-label { color: var(--text-dim); }
+.stat-value { color: var(--accent); font-weight: 600; font-family: var(--mono); }
+
+.vector-preview {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text-dim);
+  background: var(--bg-input);
+  padding: 12px;
+  border-radius: var(--radius);
+  overflow-x: auto;
+  white-space: nowrap;
+  margin-top: 8px;
+}
+
+.heatmap {
+  height: 24px;
+  border-radius: 4px;
+  margin-top: 8px;
+  overflow: hidden;
+  display: flex;
+}
+.heatmap-bar {
+  flex: 1;
+  min-width: 1px;
+}
+
+/* Compare tab */
+.compare-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.similarity-display {
+  text-align: center;
+  padding: 32px 0;
+}
+.similarity-score {
+  font-size: 72px;
+  font-weight: 800;
+  font-family: var(--mono);
+  line-height: 1;
+}
+.similarity-label {
+  font-size: 14px;
+  color: var(--text-dim);
+  margin-top: 8px;
+}
+.similarity-bar-outer {
+  width: 100%;
+  max-width: 400px;
+  height: 8px;
+  background: var(--bg-input);
+  border-radius: 4px;
+  margin: 16px auto 0;
+  overflow: hidden;
+}
+.similarity-bar-inner {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.6s ease, background 0.6s ease;
+}
+
+/* Search tab */
+.search-results {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.search-results.single-col {
+  grid-template-columns: 1fr;
+}
+
+.result-item {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  background: var(--bg-input);
+  border-radius: var(--radius);
+  margin-bottom: 8px;
+  border-left: 3px solid var(--border);
+  transition: border-color 0.3s;
+}
+.result-item.moved-up { border-left-color: var(--green); }
+.result-item.moved-down { border-left-color: var(--red); }
+
+.result-rank {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--accent);
+  font-family: var(--mono);
+  min-width: 30px;
+}
+.result-body { flex: 1; min-width: 0; }
+.result-text {
+  font-size: 13px;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.result-score-bar {
+  height: 4px;
+  background: var(--bg-surface);
+  border-radius: 2px;
+  margin-top: 6px;
+  overflow: hidden;
+}
+.result-score-fill {
+  height: 100%;
+  border-radius: 2px;
+  background: var(--accent);
+}
+.result-score-text {
+  font-size: 11px;
+  font-family: var(--mono);
+  color: var(--text-dim);
+  margin-top: 4px;
+}
+.result-movement {
+  font-size: 11px;
+  font-family: var(--mono);
+  margin-top: 2px;
+}
+
+/* Explore tab */
+.explore-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 16px;
+}
+
+.explore-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.explore-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(0, 212, 170, 0.1);
+}
+.explore-card.expanded {
+  grid-column: 1 / -1;
+  cursor: default;
+}
+
+.explore-card-icon {
+  font-size: 28px;
+  margin-bottom: 8px;
+}
+.explore-card-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.explore-card-summary {
+  font-size: 13px;
+  color: var(--text-dim);
+}
+.explore-card-content {
+  display: none;
+  margin-top: 16px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--text);
+  white-space: pre-wrap;
+}
+.explore-card.expanded .explore-card-content { display: block; }
+
+.explore-card-actions {
+  display: none;
+  margin-top: 16px;
+  gap: 8px;
+}
+.explore-card.expanded .explore-card-actions { display: flex; }
+
+@media (max-width: 768px) {
+  .compare-grid, .search-results { grid-template-columns: 1fr; }
+  .nav { padding: 0 12px; }
+  .main { padding: 16px; }
+  .tab-btn { padding: 10px 14px; font-size: 13px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav class="nav">
+  <div class="nav-title">🧭 Voyage AI Playground</div>
+  <div class="nav-spacer"></div>
+  <div class="option-group">
+    <span class="option-label">Default Model</span>
+    <select id="globalModel" class="nav-model-select"></select>
+  </div>
+  <div style="display:flex;align-items:center;gap:6px;">
+    <div class="status-dot" id="statusDot"></div>
+    <span class="status-label" id="statusLabel">Checking...</span>
+  </div>
+</nav>
+
+<!-- Tabs -->
+<div class="tab-bar">
+  <button class="tab-btn active" data-tab="embed">⚡ Embed</button>
+  <button class="tab-btn" data-tab="compare">⚖️ Compare</button>
+  <button class="tab-btn" data-tab="search">🔍 Search</button>
+  <button class="tab-btn" data-tab="explore">📚 Explore</button>
+</div>
+
+<div class="main">
+
+<!-- ========== EMBED TAB ========== -->
+<div class="tab-panel active" id="tab-embed">
+  <div class="card">
+    <div class="card-title">Input Text</div>
+    <textarea id="embedInput" rows="5" placeholder="Enter text to embed...">MongoDB Atlas provides powerful vector search capabilities for AI applications.</textarea>
+  </div>
+
+  <div class="options-row">
+    <div class="option-group">
+      <span class="option-label">Model</span>
+      <select id="embedModel"></select>
+    </div>
+    <div class="option-group">
+      <span class="option-label">Input Type</span>
+      <select id="embedInputType">
+        <option value="">None</option>
+        <option value="query">Query</option>
+        <option value="document">Document</option>
+      </select>
+    </div>
+    <div class="option-group">
+      <span class="option-label">Dimensions</span>
+      <select id="embedDimensions">
+        <option value="">Default</option>
+        <option value="256">256</option>
+        <option value="512">512</option>
+        <option value="1024">1024</option>
+        <option value="2048">2048</option>
+      </select>
+    </div>
+    <button class="btn" id="embedBtn" onclick="doEmbed()">⚡ Embed</button>
+  </div>
+
+  <div class="error-msg" id="embedError"></div>
+
+  <div class="result-section" id="embedResult">
+    <div class="card">
+      <div class="card-title">Result</div>
+      <div id="embedStats"></div>
+      <div class="vector-preview" id="embedVector"></div>
+      <div style="margin-top:8px;">
+        <button class="btn btn-secondary btn-small" onclick="copyVector()">📋 Copy Full Vector</button>
+      </div>
+      <div class="card-title" style="margin-top:16px;">Vector Heatmap</div>
+      <div class="heatmap" id="embedHeatmap"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== COMPARE TAB ========== -->
+<div class="tab-panel" id="tab-compare">
+  <div class="compare-grid">
+    <div class="card">
+      <div class="card-title">Text A</div>
+      <textarea id="compareA" rows="5" placeholder="Enter first text...">MongoDB is a popular NoSQL database</textarea>
+    </div>
+    <div class="card">
+      <div class="card-title">Text B</div>
+      <textarea id="compareB" rows="5" placeholder="Enter second text...">Document databases store data as JSON-like objects</textarea>
+    </div>
+  </div>
+
+  <div class="options-row">
+    <div class="option-group">
+      <span class="option-label">Model</span>
+      <select id="compareModel"></select>
+    </div>
+    <div class="option-group">
+      <span class="option-label">Dimensions</span>
+      <select id="compareDimensions">
+        <option value="">Default</option>
+        <option value="256">256</option>
+        <option value="512">512</option>
+        <option value="1024">1024</option>
+        <option value="2048">2048</option>
+      </select>
+    </div>
+    <button class="btn" id="compareBtn" onclick="doCompare()">⚖️ Compare</button>
+  </div>
+
+  <div class="error-msg" id="compareError"></div>
+
+  <div class="result-section" id="compareResult">
+    <div class="card">
+      <div class="similarity-display">
+        <div class="similarity-score" id="simScore">—</div>
+        <div class="similarity-label">Cosine Similarity</div>
+        <div class="similarity-bar-outer">
+          <div class="similarity-bar-inner" id="simBar" style="width:0%"></div>
+        </div>
+      </div>
+      <div id="compareStats" style="text-align:center;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== SEARCH TAB ========== -->
+<div class="tab-panel" id="tab-search">
+  <div class="card">
+    <div class="card-title">Query</div>
+    <input type="text" id="searchQuery" placeholder="Enter your search query..." value="How do I build AI-powered search?">
+  </div>
+
+  <div class="card">
+    <div class="card-title">Documents (one per line)</div>
+    <textarea id="searchDocs" rows="8" placeholder="Enter documents, one per line...">MongoDB Atlas provides vector search capabilities
+The recipe calls for two cups of flour and three eggs
+Voyage AI embeddings power semantic retrieval for modern applications
+Python is a popular programming language for data science
+Atlas Search combines full-text and vector search in one platform
+Machine learning models can be deployed at the edge
+Semantic search understands meaning beyond keyword matching</textarea>
+  </div>
+
+  <div class="options-row">
+    <div class="option-group">
+      <span class="option-label">Embedding Model</span>
+      <select id="searchEmbedModel"></select>
+    </div>
+    <div class="option-group">
+      <span class="option-label">Rerank Model</span>
+      <select id="searchRerankModel"></select>
+    </div>
+    <div class="option-group">
+      <span class="option-label">Top K</span>
+      <select id="searchTopK">
+        <option value="3">3</option>
+        <option value="5" selected>5</option>
+        <option value="10">10</option>
+      </select>
+    </div>
+    <button class="btn" id="searchBtn" onclick="doSearch(false)">🔍 Search</button>
+    <button class="btn btn-secondary" id="searchRerankBtn" onclick="doSearch(true)">🔍+ Rerank</button>
+  </div>
+
+  <div class="error-msg" id="searchError"></div>
+
+  <div class="result-section" id="searchResult">
+    <div class="search-results" id="searchResultGrid"></div>
+  </div>
+</div>
+
+<!-- ========== EXPLORE TAB ========== -->
+<div class="tab-panel" id="tab-explore">
+  <div class="explore-grid" id="exploreGrid"></div>
+</div>
+
+</div><!-- .main -->
+
+<script>
+(function() {
+'use strict';
+
+// ── State ──
+let allModels = [];
+let embedModels = [];
+let rerankModels = [];
+let lastEmbedding = null;
+
+// ── Init ──
+async function init() {
+  setupTabs();
+  await loadConfig();
+  await loadModels();
+  populateModelSelects();
+  buildExploreCards();
+}
+
+// ── Tabs ──
+function setupTabs() {
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    });
+  });
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.tab === tab);
+  });
+  document.querySelectorAll('.tab-panel').forEach(p => {
+    p.classList.toggle('active', p.id === 'tab-' + tab);
+  });
+}
+
+// ── Config ──
+async function loadConfig() {
+  try {
+    const res = await fetch('/api/config');
+    const data = await res.json();
+    const dot = document.getElementById('statusDot');
+    const label = document.getElementById('statusLabel');
+    if (data.hasKey) {
+      dot.className = 'status-dot connected';
+      label.textContent = 'Connected';
+    } else {
+      dot.className = 'status-dot error';
+      label.textContent = 'No API Key';
+    }
+  } catch {
+    document.getElementById('statusDot').className = 'status-dot error';
+    document.getElementById('statusLabel').textContent = 'Error';
+  }
+}
+
+// ── Models ──
+async function loadModels() {
+  try {
+    const res = await fetch('/api/models');
+    const data = await res.json();
+    allModels = data.models || [];
+    embedModels = allModels.filter(m => m.type === 'embedding');
+    rerankModels = allModels.filter(m => m.type === 'reranking');
+  } catch {
+    console.error('Failed to load models');
+  }
+}
+
+function populateModelSelects() {
+  const saved = localStorage.getItem('vai-playground-model');
+  const embedSelects = ['globalModel', 'embedModel', 'compareModel', 'searchEmbedModel'];
+  embedSelects.forEach(id => {
+    const sel = document.getElementById(id);
+    sel.innerHTML = '';
+    embedModels.forEach(m => {
+      const opt = document.createElement('option');
+      opt.value = m.name;
+      opt.textContent = m.name + ' — ' + m.shortFor;
+      sel.appendChild(opt);
+    });
+    if (saved) sel.value = saved;
+  });
+
+  const rerankSel = document.getElementById('searchRerankModel');
+  rerankSel.innerHTML = '';
+  rerankModels.forEach(m => {
+    const opt = document.createElement('option');
+    opt.value = m.name;
+    opt.textContent = m.name + ' — ' + m.shortFor;
+    rerankSel.appendChild(opt);
+  });
+
+  // Sync global model to others
+  document.getElementById('globalModel').addEventListener('change', function() {
+    const v = this.value;
+    localStorage.setItem('vai-playground-model', v);
+    ['embedModel', 'compareModel', 'searchEmbedModel'].forEach(id => {
+      document.getElementById(id).value = v;
+    });
+  });
+}
+
+// ── API Helpers ──
+async function apiPost(url, body) {
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || data.detail || 'API error');
+  return data;
+}
+
+function showError(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = '⚠ ' + msg;
+  el.classList.add('visible');
+}
+
+function hideError(id) {
+  document.getElementById(id).classList.remove('visible');
+}
+
+function setLoading(btnId, loading) {
+  const btn = document.getElementById(btnId);
+  if (loading) {
+    btn.disabled = true;
+    btn._origHTML = btn.innerHTML;
+    btn.innerHTML = '<span class="spinner"></span> Working...';
+  } else {
+    btn.disabled = false;
+    btn.innerHTML = btn._origHTML || btn.innerHTML;
+  }
+}
+
+// ── Embed ──
+window.doEmbed = async function() {
+  hideError('embedError');
+  const text = document.getElementById('embedInput').value.trim();
+  if (!text) { showError('embedError', 'Enter some text to embed'); return; }
+
+  setLoading('embedBtn', true);
+  try {
+    const model = document.getElementById('embedModel').value;
+    const inputType = document.getElementById('embedInputType').value || undefined;
+    const dims = document.getElementById('embedDimensions').value;
+    const dimensions = dims ? parseInt(dims, 10) : undefined;
+
+    const data = await apiPost('/api/embed', { texts: [text], model, inputType, dimensions });
+    const emb = data.data[0].embedding;
+    lastEmbedding = emb;
+
+    // Stats
+    const statsEl = document.getElementById('embedStats');
+    statsEl.innerHTML = `
+      <span class="stat"><span class="stat-label">Model</span><span class="stat-value">${data.model}</span></span>
+      <span class="stat"><span class="stat-label">Dimensions</span><span class="stat-value">${emb.length}</span></span>
+      <span class="stat"><span class="stat-label">Tokens</span><span class="stat-value">${data.usage?.total_tokens || '—'}</span></span>
+    `;
+
+    // Vector preview
+    const preview = emb.slice(0, 20).map(v => v.toFixed(6)).join(', ');
+    document.getElementById('embedVector').textContent = `[${preview}, ... ] (${emb.length} values)`;
+
+    // Heatmap
+    buildHeatmap(emb, document.getElementById('embedHeatmap'));
+
+    document.getElementById('embedResult').classList.add('visible');
+  } catch (err) {
+    showError('embedError', err.message);
+  } finally {
+    setLoading('embedBtn', false);
+  }
+};
+
+window.copyVector = function() {
+  if (!lastEmbedding) return;
+  navigator.clipboard.writeText(JSON.stringify(lastEmbedding)).then(() => {
+    const btn = document.querySelector('[onclick="copyVector()"]');
+    const orig = btn.textContent;
+    btn.textContent = '✅ Copied!';
+    setTimeout(() => btn.textContent = orig, 1500);
+  });
+};
+
+function buildHeatmap(vec, container) {
+  container.innerHTML = '';
+  // Sample down to ~200 bars for visual
+  const step = Math.max(1, Math.floor(vec.length / 200));
+  const sampled = [];
+  for (let i = 0; i < vec.length; i += step) sampled.push(vec[i]);
+
+  const min = Math.min(...sampled);
+  const max = Math.max(...sampled);
+  const range = max - min || 1;
+
+  sampled.forEach(v => {
+    const bar = document.createElement('div');
+    bar.className = 'heatmap-bar';
+    const norm = (v - min) / range; // 0-1
+    const h = Math.round(norm * 160); // hue: 0=red, 80=yellow-green, 160=cyan/teal
+    bar.style.background = `hsl(${h}, 80%, 50%)`;
+    container.appendChild(bar);
+  });
+}
+
+// ── Compare ──
+window.doCompare = async function() {
+  hideError('compareError');
+  const a = document.getElementById('compareA').value.trim();
+  const b = document.getElementById('compareB').value.trim();
+  if (!a || !b) { showError('compareError', 'Enter text in both fields'); return; }
+
+  setLoading('compareBtn', true);
+  try {
+    const model = document.getElementById('compareModel').value;
+    const dims = document.getElementById('compareDimensions').value;
+    const dimensions = dims ? parseInt(dims, 10) : undefined;
+
+    const data = await apiPost('/api/similarity', { texts: [a, b], model, dimensions });
+    const sim = data.matrix[0][1];
+    const pct = Math.max(0, sim * 100);
+
+    // Color
+    let color;
+    if (sim > 0.7) color = 'var(--green)';
+    else if (sim > 0.4) color = 'var(--yellow)';
+    else color = 'var(--red)';
+
+    const scoreEl = document.getElementById('simScore');
+    scoreEl.textContent = sim.toFixed(4);
+    scoreEl.style.color = color;
+
+    const barEl = document.getElementById('simBar');
+    barEl.style.width = pct + '%';
+    barEl.style.background = color;
+
+    // Stats
+    const statsEl = document.getElementById('compareStats');
+    statsEl.innerHTML = `
+      <span class="stat"><span class="stat-label">Model</span><span class="stat-value">${data.model}</span></span>
+      <span class="stat"><span class="stat-label">Tokens</span><span class="stat-value">${data.usage?.total_tokens || '—'}</span></span>
+    `;
+
+    document.getElementById('compareResult').classList.add('visible');
+  } catch (err) {
+    showError('compareError', err.message);
+  } finally {
+    setLoading('compareBtn', false);
+  }
+};
+
+// ── Search ──
+window.doSearch = async function(withRerank) {
+  hideError('searchError');
+  const query = document.getElementById('searchQuery').value.trim();
+  const docsText = document.getElementById('searchDocs').value.trim();
+  if (!query || !docsText) { showError('searchError', 'Enter a query and documents'); return; }
+
+  const documents = docsText.split('\n').map(d => d.trim()).filter(d => d);
+  if (documents.length < 2) { showError('searchError', 'Enter at least 2 documents'); return; }
+
+  const btnId = withRerank ? 'searchRerankBtn' : 'searchBtn';
+  setLoading('searchBtn', true);
+  setLoading('searchRerankBtn', true);
+
+  try {
+    const embedModel = document.getElementById('searchEmbedModel').value;
+    const topK = parseInt(document.getElementById('searchTopK').value, 10);
+
+    // Embed query + docs
+    const allTexts = [query, ...documents];
+    const embedData = await apiPost('/api/embed', { texts: allTexts, model: embedModel });
+    const vecs = embedData.data.map(d => d.embedding);
+    const queryVec = vecs[0];
+    const docVecs = vecs.slice(1);
+
+    // Compute similarity
+    const scores = docVecs.map((dv, i) => ({
+      index: i,
+      text: documents[i],
+      score: cosineSim(queryVec, dv),
+    }));
+    scores.sort((a, b) => b.score - a.score);
+    const embeddingResults = scores.slice(0, topK);
+
+    let rerankResults = null;
+    if (withRerank) {
+      const rerankModel = document.getElementById('searchRerankModel').value;
+      const rerankData = await apiPost('/api/rerank', { query, documents, model: rerankModel, topK });
+      rerankResults = rerankData.data.map(r => ({
+        index: r.index,
+        text: documents[r.index],
+        score: r.relevance_score,
+      }));
+    }
+
+    renderSearchResults(embeddingResults, rerankResults);
+    document.getElementById('searchResult').classList.add('visible');
+  } catch (err) {
+    showError('searchError', err.message);
+  } finally {
+    setLoading('searchBtn', false);
+    setLoading('searchRerankBtn', false);
+  }
+};
+
+function cosineSim(a, b) {
+  let dot = 0, normA = 0, normB = 0;
+  for (let i = 0; i < a.length; i++) {
+    dot += a[i] * b[i];
+    normA += a[i] * a[i];
+    normB += b[i] * b[i];
+  }
+  return dot / (Math.sqrt(normA) * Math.sqrt(normB));
+}
+
+function renderSearchResults(embResults, rerankResults) {
+  const grid = document.getElementById('searchResultGrid');
+  grid.innerHTML = '';
+  grid.className = rerankResults ? 'search-results' : 'search-results single-col';
+
+  const maxEmbScore = Math.max(...embResults.map(r => r.score));
+
+  // Embedding column
+  const embCol = document.createElement('div');
+  embCol.innerHTML = '<div class="card-title">Embedding Search</div>';
+  embResults.forEach((r, i) => {
+    embCol.appendChild(createResultItem(i + 1, r, maxEmbScore));
+  });
+  grid.appendChild(embCol);
+
+  // Rerank column
+  if (rerankResults) {
+    const maxRerankScore = Math.max(...rerankResults.map(r => r.score));
+    const embRankMap = {};
+    embResults.forEach((r, i) => { embRankMap[r.index] = i + 1; });
+
+    const rerankCol = document.createElement('div');
+    rerankCol.innerHTML = '<div class="card-title">After Reranking</div>';
+    rerankResults.forEach((r, i) => {
+      const newRank = i + 1;
+      const oldRank = embRankMap[r.index];
+      const movement = oldRank !== undefined ? oldRank - newRank : 0;
+      rerankCol.appendChild(createResultItem(newRank, r, maxRerankScore, movement));
+    });
+    grid.appendChild(rerankCol);
+  }
+}
+
+function createResultItem(rank, result, maxScore, movement) {
+  const item = document.createElement('div');
+  let moveClass = '';
+  if (movement > 0) moveClass = ' moved-up';
+  else if (movement < 0) moveClass = ' moved-down';
+
+  const pct = maxScore > 0 ? (result.score / maxScore * 100) : 0;
+  const truncText = result.text.length > 80 ? result.text.slice(0, 77) + '...' : result.text;
+  let moveHTML = '';
+  if (movement !== undefined && movement !== 0) {
+    const arrow = movement > 0 ? '↑' : '↓';
+    const color = movement > 0 ? 'var(--green)' : 'var(--red)';
+    moveHTML = `<div class="result-movement" style="color:${color}">${arrow}${Math.abs(movement)}</div>`;
+  }
+
+  item.className = 'result-item' + moveClass;
+  item.innerHTML = `
+    <div class="result-rank">#${rank}</div>
+    <div class="result-body">
+      <div class="result-text" title="${result.text.replace(/"/g, '&quot;')}">${truncText}</div>
+      <div class="result-score-bar"><div class="result-score-fill" style="width:${pct}%"></div></div>
+      <div class="result-score-text">${result.score.toFixed(4)}</div>
+      ${moveHTML}
+    </div>
+  `;
+  return item;
+}
+
+// ── Explore ──
+const exploreTopics = [
+  {
+    key: 'embeddings', icon: '🧮', title: 'Embeddings',
+    summary: 'Numerical representations that capture meaning',
+    content: 'Vector embeddings are arrays of floating-point numbers (typically 256–2048 dimensions) that capture the semantic meaning of text. When you embed text, a neural network reads the input and produces a fixed-size vector. Texts with similar meanings end up close together in this high-dimensional space, even if they share no words.\n\nHigher dimensions capture more nuance but cost more to store and search. Voyage 4 models default to 1024 dimensions but support 256–2048 via Matryoshka representation learning — you can truncate embeddings without retraining.',
+    tab: 'embed', prefill: () => { document.getElementById('embedInput').value = 'Artificial intelligence is transforming how we build software applications.'; }
+  },
+  {
+    key: 'reranking', icon: '🏆', title: 'Reranking',
+    summary: 'Second-stage precision with cross-attention',
+    content: 'Reranking re-scores candidate documents against a query using cross-attention — it reads the query and each document together, producing much more accurate relevance scores than embedding similarity alone.\n\nThe two-stage pattern: embedding search retrieves a broad set (high recall), then the reranker re-orders them (high precision). This adds ~50-200ms but dramatically improves result quality.',
+    tab: 'search', prefill: () => {
+      document.getElementById('searchQuery').value = 'How do I implement semantic search?';
+      document.getElementById('searchDocs').value = 'MongoDB Atlas provides vector search capabilities\nThe recipe calls for two cups of flour\nSemantic search uses embeddings to find meaning\nVector databases store high-dimensional data\nThe weather forecast predicts rain tomorrow';
+    }
+  },
+  {
+    key: 'vector-search', icon: '🔎', title: 'Vector Search',
+    summary: 'Finding documents by meaning, not keywords',
+    content: 'Vector search finds documents whose embeddings are closest to a query embedding. Instead of matching keywords, it matches meaning. MongoDB Atlas Vector Search uses $vectorSearch with HNSW (Hierarchical Navigable Small World) graph indexes for fast approximate nearest neighbor search.\n\nSimilarity functions: cosine (direction, ignoring magnitude — best default), dotProduct (magnitude-sensitive), euclidean (straight-line distance).',
+    tab: 'search', prefill: () => {}
+  },
+  {
+    key: 'rag', icon: '🤖', title: 'RAG',
+    summary: 'Retrieval-Augmented Generation',
+    content: 'RAG combines retrieval with LLM generation: instead of relying on the LLM\'s training data alone, you retrieve relevant context from your own data and include it in the prompt.\n\nThe pattern: 1) Embed your corpus and store vectors, 2) Embed the user\'s question and run vector search, 3) Pass retrieved documents + question to an LLM. Adding reranking between steps 2 and 3 dramatically improves answer quality.',
+    tab: 'search', prefill: () => {}
+  },
+  {
+    key: 'cosine', icon: '📐', title: 'Cosine Similarity',
+    summary: 'Measuring the angle between vectors',
+    content: 'Cosine similarity measures the angle between two vectors, ignoring magnitude. Vectors pointing the same direction score 1, perpendicular score 0, opposite score -1.\n\nFor text embeddings (which are typically normalized), cosine similarity and dot product give identical rankings. Cosine is preferred because it\'s intuitive: it measures how similar the direction (meaning) is, regardless of scale.',
+    tab: 'compare', prefill: () => {
+      document.getElementById('compareA').value = 'The database stores information efficiently';
+      document.getElementById('compareB').value = 'Data is saved in an optimized storage system';
+    }
+  },
+  {
+    key: 'two-stage', icon: '🎯', title: 'Two-Stage Retrieval',
+    summary: 'Embed → Search → Rerank for best results',
+    content: 'Two-stage retrieval combines a fast first stage (embedding search for recall) with a precise second stage (reranking for precision).\n\nStage 1: Embed query, run ANN search, retrieve top-100 candidates (fast, milliseconds). Stage 2: Feed query + candidates to a reranker with cross-attention, return top-5-10 (precise, ~100ms extra). This gives you both speed and accuracy.',
+    tab: 'search', prefill: () => {}
+  },
+  {
+    key: 'input-types', icon: '🏷️', title: 'Input Types',
+    summary: 'Query vs document — why it matters',
+    content: 'The input_type parameter tells the model whether text is a search query or a document being indexed. The model internally prepends different prompt prefixes for each, optimizing embeddings for asymmetric retrieval.\n\nAlways use input_type="query" for search queries and input_type="document" for corpus text. Omitting this parameter degrades retrieval accuracy.',
+    tab: 'embed', prefill: () => {
+      document.getElementById('embedInput').value = 'What is vector search and how does it work?';
+      document.getElementById('embedInputType').value = 'query';
+    }
+  },
+  {
+    key: 'models', icon: '🧠', title: 'Models',
+    summary: 'Choosing the right model for your task',
+    content: 'Voyage 4 Series: voyage-4-large (best quality, $0.12/1M tokens), voyage-4 (balanced, $0.06), voyage-4-lite (budget, $0.02). All share the same embedding space — you can mix models.\n\nDomain-specific: voyage-code-3 (code), voyage-finance-2 (financial), voyage-law-2 (legal). Rerankers: rerank-2.5 (best quality), rerank-2.5-lite (faster). Start with voyage-4 for general use.',
+    tab: 'embed', prefill: () => {}
+  },
+];
+
+function buildExploreCards() {
+  const grid = document.getElementById('exploreGrid');
+  grid.innerHTML = '';
+  exploreTopics.forEach(topic => {
+    const card = document.createElement('div');
+    card.className = 'explore-card';
+    card.innerHTML = `
+      <div class="explore-card-icon">${topic.icon}</div>
+      <div class="explore-card-title">${topic.title}</div>
+      <div class="explore-card-summary">${topic.summary}</div>
+      <div class="explore-card-content">${topic.content}</div>
+      <div class="explore-card-actions">
+        <button class="btn btn-small" onclick="tryTopic('${topic.key}')">Try it →</button>
+        <button class="btn btn-secondary btn-small" onclick="collapseTopic(this)">Collapse</button>
+      </div>
+    `;
+    card.addEventListener('click', function(e) {
+      if (e.target.tagName === 'BUTTON') return;
+      if (!this.classList.contains('expanded')) {
+        this.classList.add('expanded');
+      }
+    });
+    grid.appendChild(card);
+  });
+}
+
+window.tryTopic = function(key) {
+  const topic = exploreTopics.find(t => t.key === key);
+  if (!topic) return;
+  if (topic.prefill) topic.prefill();
+  switchTab(topic.tab);
+};
+
+window.collapseTopic = function(btn) {
+  btn.closest('.explore-card').classList.remove('expanded');
+};
+
+// ── Start ──
+init();
+})();
+</script>
+</body>
+</html>
