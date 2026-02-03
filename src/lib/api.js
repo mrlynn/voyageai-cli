@@ -126,6 +126,7 @@ async function apiRequest(endpoint, body) {
  * @param {string} [options.model] - Model name
  * @param {string} [options.inputType] - Input type (query|document)
  * @param {number} [options.dimensions] - Output dimensions
+ * @param {boolean} [options.truncation] - Enable/disable truncation
  * @returns {Promise<object>} API response with embeddings
  */
 async function generateEmbeddings(texts, options = {}) {
@@ -141,6 +142,9 @@ async function generateEmbeddings(texts, options = {}) {
   }
   if (options.dimensions) {
     body.output_dimension = options.dimensions;
+  }
+  if (options.truncation !== undefined) {
+    body.truncation = options.truncation;
   }
 
   return apiRequest('/embeddings', body);

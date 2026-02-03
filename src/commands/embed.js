@@ -17,6 +17,8 @@ function registerEmbed(program) {
     .option('-t, --input-type <type>', 'Input type: query or document')
     .option('-d, --dimensions <n>', 'Output dimensions', (v) => parseInt(v, 10))
     .option('-f, --file <path>', 'Read text from file')
+    .option('--truncation', 'Enable truncation for long inputs')
+    .option('--no-truncation', 'Disable truncation')
     .option('-o, --output-format <format>', 'Output format: json or array', 'json')
     .option('--json', 'Machine-readable JSON output')
     .option('-q, --quiet', 'Suppress non-essential output')
@@ -26,17 +28,29 @@ function registerEmbed(program) {
 
         const useColor = !opts.json;
         const useSpinner = useColor && !opts.quiet;
+
+        // Show hint when --input-type is not provided and output is interactive
+        if (!opts.inputType && !opts.json && !opts.quiet && process.stdout.isTTY) {
+          console.error(ui.dim('ℹ Tip: Use --input-type query or --input-type document for better retrieval accuracy.'));
+        }
+
         let spin;
         if (useSpinner) {
           spin = ui.spinner('Generating embeddings...');
           spin.start();
         }
 
-        const result = await generateEmbeddings(texts, {
+        const embedOpts = {
           model: opts.model,
           inputType: opts.inputType,
           dimensions: opts.dimensions,
-        });
+        };
+        // Only pass truncation when explicitly set via --truncation or --no-truncation
+        if (opts.truncation !== undefined) {
+          embedOpts.truncation = opts.truncation;
+        }
+
+        const result = await generateEmbeddings(texts, embedOpts);
 
         if (spin) spin.stop();
 

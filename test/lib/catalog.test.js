@@ -64,4 +64,36 @@ describe('catalog', () => {
     const rerankCount = MODEL_CATALOG.filter(m => m.type === 'reranking').length;
     assert.ok(embedCount > rerankCount);
   });
+
+  it('contains voyage-4-nano as current model', () => {
+    const nano = MODEL_CATALOG.find(m => m.name === 'voyage-4-nano');
+    assert.ok(nano, 'Should have voyage-4-nano');
+    assert.equal(nano.type, 'embedding');
+    assert.ok(!nano.legacy, 'voyage-4-nano should not be legacy');
+  });
+
+  it('contains legacy models with legacy flag', () => {
+    const legacyModels = MODEL_CATALOG.filter(m => m.legacy);
+    assert.ok(legacyModels.length > 0, 'Should have legacy models');
+
+    const legacyNames = legacyModels.map(m => m.name);
+    assert.ok(legacyNames.includes('voyage-3-large'), 'Should have voyage-3-large');
+    assert.ok(legacyNames.includes('voyage-3.5'), 'Should have voyage-3.5');
+    assert.ok(legacyNames.includes('voyage-3.5-lite'), 'Should have voyage-3.5-lite');
+    assert.ok(legacyNames.includes('voyage-code-2'), 'Should have voyage-code-2');
+    assert.ok(legacyNames.includes('voyage-multimodal-3'), 'Should have voyage-multimodal-3');
+    assert.ok(legacyNames.includes('rerank-2'), 'Should have rerank-2');
+    assert.ok(legacyNames.includes('rerank-2-lite'), 'Should have rerank-2-lite');
+  });
+
+  it('legacy models have required fields', () => {
+    const legacyModels = MODEL_CATALOG.filter(m => m.legacy);
+    for (const model of legacyModels) {
+      assert.ok(model.name, `Legacy model missing name`);
+      assert.ok(model.type, `Legacy model ${model.name} missing type`);
+      assert.ok(model.context, `Legacy model ${model.name} missing context`);
+      assert.ok(model.price, `Legacy model ${model.name} missing price`);
+      assert.ok(model.bestFor, `Legacy model ${model.name} missing bestFor`);
+    }
+  });
 });

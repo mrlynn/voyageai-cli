@@ -40,14 +40,24 @@ function registerModels(program) {
     .command('models')
     .description('List available Voyage AI models')
     .option('-t, --type <type>', 'Filter by type: embedding, reranking, or all', 'all')
+    .option('-a, --all', 'Show all models including legacy')
     .option('-w, --wide', 'Wide output (show all columns untruncated)')
     .option('--json', 'Machine-readable JSON output')
     .option('-q, --quiet', 'Suppress non-essential output')
     .action((opts) => {
       let models = MODEL_CATALOG;
 
+      // Separate current and legacy models
+      const showLegacy = opts.all;
+      const currentModels = models.filter(m => !m.legacy);
+      const legacyModels = models.filter(m => m.legacy);
+
       if (opts.type !== 'all') {
         models = models.filter(m => m.type === opts.type);
+      }
+
+      if (!showLegacy) {
+        models = models.filter(m => !m.legacy);
       }
 
       if (opts.json) {
@@ -68,29 +78,49 @@ function registerModels(program) {
         console.log('');
       }
 
+      // Split models for display
+      const displayCurrent = models.filter(m => !m.legacy);
+      const displayLegacy = models.filter(m => m.legacy);
+
+      const formatWideRow = (m) => {
+        const name = ui.cyan(m.name);
+        const type = m.type === 'embedding' ? ui.green(m.type) : ui.yellow(m.type);
+        const price = ui.dim(m.price);
+        return [name, type, m.context, m.dimensions, price, m.bestFor];
+      };
+
+      const formatCompactRow = (m) => {
+        const name = ui.cyan(m.name);
+        const type = m.type === 'embedding' ? ui.green('embed') : ui.yellow('rerank');
+        const dims = compactDimensions(m.dimensions);
+        const price = ui.dim(compactPrice(m.price));
+        return [name, type, dims, price, m.shortFor || m.bestFor];
+      };
+
       if (opts.wide) {
-        // Full table with all details
         const headers = ['Model', 'Type', 'Context', 'Dimensions', 'Price', 'Best For'];
-        const rows = models.map(m => {
-          const name = ui.cyan(m.name);
-          const type = m.type === 'embedding' ? ui.green(m.type) : ui.yellow(m.type);
-          const price = ui.dim(m.price);
-          return [name, type, m.context, m.dimensions, price, m.bestFor];
-        });
         const boldHeaders = headers.map(h => ui.bold(h));
+        const rows = displayCurrent.map(formatWideRow);
         console.log(formatTable(boldHeaders, rows));
+
+        if (showLegacy && displayLegacy.length > 0) {
+          console.log('');
+          console.log(ui.dim('Legacy Models (use latest for better quality)'));
+          const legacyRows = displayLegacy.map(formatWideRow);
+          console.log(formatTable(boldHeaders, legacyRows));
+        }
       } else {
-        // Compact table — fits in 80 cols
         const headers = ['Model', 'Type', 'Dims', 'Price', 'Use Case'];
-        const rows = models.map(m => {
-          const name = ui.cyan(m.name);
-          const type = m.type === 'embedding' ? ui.green('embed') : ui.yellow('rerank');
-          const dims = compactDimensions(m.dimensions);
-          const price = ui.dim(compactPrice(m.price));
-          return [name, type, dims, price, m.shortFor || m.bestFor];
-        });
         const boldHeaders = headers.map(h => ui.bold(h));
+        const rows = displayCurrent.map(formatCompactRow);
         console.log(formatTable(boldHeaders, rows));
+
+        if (showLegacy && displayLegacy.length > 0) {
+          console.log('');
+          console.log(ui.dim('Legacy Models (use latest for better quality)'));
+          const legacyRows = displayLegacy.map(formatCompactRow);
+          console.log(formatTable(boldHeaders, legacyRows));
+        }
       }
 
       if (!opts.quiet) {
