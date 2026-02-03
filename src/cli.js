@@ -23,6 +23,8 @@ const { registerBenchmark } = require('./commands/benchmark');
 const { registerEstimate } = require('./commands/estimate');
 const { registerInit } = require('./commands/init');
 const { registerChunk } = require('./commands/chunk');
+const { registerQuery } = require('./commands/query');
+const { registerPipeline } = require('./commands/pipeline');
 const { registerAbout } = require('./commands/about');
 const { showBanner, showQuickStart, getVersion } = require('./lib/banner');
 
@@ -51,6 +53,8 @@ registerBenchmark(program);
 registerEstimate(program);
 registerInit(program);
 registerChunk(program);
+registerQuery(program);
+registerPipeline(program);
 registerAbout(program);
 
 // Append disclaimer to all help output
