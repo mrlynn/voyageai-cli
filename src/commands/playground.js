@@ -137,17 +137,21 @@ function createPlaygroundServer() {
 
         // API: Embed
         if (req.url === '/api/embed') {
-          const { texts, model, inputType, dimensions } = parsed;
+          const { texts, model, inputType, dimensions, output_dtype } = parsed;
           if (!texts || !Array.isArray(texts) || texts.length === 0) {
             res.writeHead(400, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ error: 'texts must be a non-empty array' }));
             return;
           }
-          const result = await generateEmbeddings(texts, {
+          const embedOpts = {
             model: model || undefined,
             inputType: inputType || undefined,
             dimensions: dimensions || undefined,
-          });
+          };
+          if (output_dtype && output_dtype !== 'float') {
+            embedOpts.outputDtype = output_dtype;
+          }
+          const result = await generateEmbeddings(texts, embedOpts);
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify(result));
           return;

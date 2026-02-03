@@ -129,6 +129,7 @@ async function apiRequest(endpoint, body) {
  * @param {string} [options.inputType] - Input type (query|document)
  * @param {number} [options.dimensions] - Output dimensions
  * @param {boolean} [options.truncation] - Enable/disable truncation
+ * @param {string} [options.outputDtype] - Output data type: float, int8, uint8, binary, ubinary
  * @returns {Promise<object>} API response with embeddings
  */
 async function generateEmbeddings(texts, options = {}) {
@@ -147,6 +148,9 @@ async function generateEmbeddings(texts, options = {}) {
   }
   if (options.truncation !== undefined) {
     body.truncation = options.truncation;
+  }
+  if (options.outputDtype && options.outputDtype !== 'float') {
+    body.output_dtype = options.outputDtype;
   }
 
   return apiRequest('/embeddings', body);

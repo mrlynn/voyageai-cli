@@ -719,6 +719,393 @@ async function benchmarkBatch(opts) {
   console.log('');
 }
 
+/**
+ * benchmark asymmetric — Test Voyage 4's asymmetric retrieval
+ * (embed docs with one model, query with another).
+ */
+async function benchmarkAsymmetric(opts) {
+  const docModel = opts.docModel || 'voyage-4-large';
+  const queryModels = opts.queryModels
+    ? parseModels(opts.queryModels)
+    : ['voyage-4-large', 'voyage-4', 'voyage-4-lite'];
+  const query = opts.query || SAMPLE_QUERY;
+  const showK = opts.topK ? parseInt(opts.topK, 10) : 5;
+
+  let corpus;
+  if (opts.file) {
+    corpus = loadTexts(opts.file);
+  } else {
+    corpus = SAMPLE_RERANK_DOCS;
+  }
+
+  if (!opts.json && !opts.quiet) {
+    console.log('');
+    console.log(ui.bold('  Asymmetric Retrieval Benchmark'));
+    console.log(ui.dim(`  Documents embedded with: ${docModel}`));
+    console.log(ui.dim(`  Query models: ${queryModels.join(', ')}`));
+    console.log(ui.dim(`  Query: "${query.substring(0, 60)}${query.length > 60 ? '...' : ''}"`));
+    console.log(ui.dim(`  ${corpus.length} documents`));
+    console.log('');
+  }
+
+  // Step 1: Embed documents with the doc model
+  const spin1 = (!opts.json && !opts.quiet) ? ui.spinner(`  Embedding ${corpus.length} docs with ${docModel}...`) : null;
+  if (spin1) spin1.start();
+
+  let docEmbeddings;
+  try {
+    const docResult = await generateEmbeddings(corpus, { model: docModel, inputType: 'document' });
+    docEmbeddings = docResult.data.map(d => d.embedding);
+    if (spin1) spin1.stop();
+  } catch (err) {
+    if (spin1) spin1.stop();
+    console.error(ui.error(`Failed to embed documents with ${docModel}: ${err.message}`));
+    process.exit(1);
+  }
+
+  // Step 2: For each query model, embed the query and rank
+  const allResults = [];
+
+  for (const qModel of queryModels) {
+    const spin = (!opts.json && !opts.quiet) ? ui.spinner(`  Querying with ${qModel}...`) : null;
+    if (spin) spin.start();
+
+    try {
+      const start = performance.now();
+      const qResult = await generateEmbeddings([query], { model: qModel, inputType: 'query' });
+      const elapsed = performance.now() - start;
+      const queryEmbed = qResult.data[0].embedding;
+
+      const ranked = corpus.map((text, i) => ({
+        index: i,
+        text,
+        similarity: cosineSimilarity(queryEmbed, docEmbeddings[i]),
+      })).sort((a, b) => b.similarity - a.similarity);
+
+      allResults.push({
+        queryModel: qModel,
+        docModel,
+        latency: elapsed,
+        tokens: qResult.usage?.total_tokens || 0,
+        ranked,
+      });
+
+      if (spin) spin.stop();
+    } catch (err) {
+      if (spin) spin.stop();
+      console.error(ui.warn(`  ${qModel}: ${err.message} — skipping`));
+    }
+  }
+
+  if (opts.json) {
+    console.log(JSON.stringify({ benchmark: 'asymmetric', docModel, query, corpus: corpus.length, results: allResults }, null, 2));
+    return;
+  }
+
+  if (allResults.length === 0) {
+    console.error(ui.error('No query models completed successfully.'));
+    process.exit(1);
+  }
+
+  // Show latency comparison
+  if (!opts.quiet) {
+    console.log(ui.dim(`  ${rpad('Query Model', 22)} ${lpad('Latency', 8)} ${lpad('Tokens', 7)}`));
+    console.log(ui.dim('  ' + '─'.repeat(40)));
+    const minLat = Math.min(...allResults.map(r => r.latency));
+    for (const r of allResults) {
+      const badge = r.latency === minLat ? ui.green(' ⚡') : '   ';
+      console.log(`  ${rpad(r.queryModel, 22)} ${lpad(fmtMs(r.latency), 8)} ${lpad(String(r.tokens), 7)}${badge}`);
+    }
+    console.log('');
+  }
+
+  // Show ranking comparison
+  console.log(ui.bold(`  Top ${showK} results (docs embedded with ${ui.cyan(docModel)})`));
+  console.log('');
+
+  // Use the full-model result as baseline
+  const baseline = allResults[0];
+
+  for (let rank = 0; rank < showK && rank < corpus.length; rank++) {
+    console.log(ui.dim(`  #${rank + 1}`));
+    for (const r of allResults) {
+      const item = r.ranked[rank];
+      const preview = item.text.substring(0, 50) + (item.text.length > 50 ? '...' : '');
+      const match = baseline.ranked[rank].index === item.index ? ui.green('=') : ui.yellow('≠');
+      console.log(`    ${match} ${ui.cyan(rpad(r.queryModel, 20))} ${ui.score(item.similarity)}  [${item.index}] ${ui.dim(preview)}`);
+    }
+  }
+
+  console.log('');
+
+  // Agreement analysis
+  const baseOrder = baseline.ranked.slice(0, showK).map(x => x.index);
+  for (const r of allResults.slice(1)) {
+    const rOrder = r.ranked.slice(0, showK).map(x => x.index);
+    const overlap = baseOrder.filter(idx => rOrder.includes(idx)).length;
+    const exactMatch = baseOrder.filter((idx, i) => rOrder[i] === idx).length;
+    const overlapPct = ((overlap / showK) * 100).toFixed(0);
+    const exactPct = ((exactMatch / showK) * 100).toFixed(0);
+
+    const price = getPrice(r.queryModel);
+    const basePrice = getPrice(baseline.queryModel);
+    const savings = (price && basePrice && price < basePrice)
+      ? ` (${((1 - price / basePrice) * 100).toFixed(0)}% cheaper)`
+      : '';
+
+    if (exactMatch === showK) {
+      console.log(ui.success(`${r.queryModel}: Identical ranking to ${docModel}${savings} — asymmetric retrieval works perfectly.`));
+    } else if (overlap === showK) {
+      console.log(ui.info(`${r.queryModel}: Same ${showK} docs, ${exactPct}% exact order match${savings}.`));
+    } else {
+      console.log(ui.warn(`${r.queryModel}: ${overlapPct}% overlap in top-${showK}${savings}.`));
+    }
+  }
+  console.log('');
+}
+
+/**
+ * benchmark quantization — Compare output dtypes for quality vs storage tradeoff.
+ */
+async function benchmarkQuantization(opts) {
+  const model = opts.model || getDefaultModel();
+  const dtypes = opts.dtypes
+    ? opts.dtypes.split(',').map(d => d.trim())
+    : ['float', 'int8', 'ubinary'];
+  const query = opts.query || SAMPLE_QUERY;
+  const dimensions = opts.dimensions ? parseInt(opts.dimensions, 10) : undefined;
+  const showK = opts.topK ? parseInt(opts.topK, 10) : 5;
+
+  let corpus;
+  if (opts.file) {
+    corpus = loadTexts(opts.file);
+  } else {
+    corpus = SAMPLE_RERANK_DOCS;
+  }
+
+  if (!opts.json && !opts.quiet) {
+    console.log('');
+    console.log(ui.bold('  Quantization Benchmark'));
+    console.log(ui.dim(`  Model: ${model}`));
+    console.log(ui.dim(`  Data types: ${dtypes.join(', ')}`));
+    console.log(ui.dim(`  ${corpus.length} documents, top-${showK} comparison`));
+    if (dimensions) console.log(ui.dim(`  Dimensions: ${dimensions}`));
+    console.log('');
+  }
+
+  // Step 1: Get float baseline embeddings (query + corpus)
+  const allTexts = [query, ...corpus];
+  const resultsByDtype = {};
+
+  for (const dtype of dtypes) {
+    const spin = (!opts.json && !opts.quiet) ? ui.spinner(`  Embedding with ${dtype}...`) : null;
+    if (spin) spin.start();
+
+    try {
+      const embedOpts = { model, inputType: 'document' };
+      if (dimensions) embedOpts.dimensions = dimensions;
+      if (dtype !== 'float') embedOpts.outputDtype = dtype;
+
+      const start = performance.now();
+      const result = await generateEmbeddings(allTexts, embedOpts);
+      const elapsed = performance.now() - start;
+
+      if (spin) spin.stop();
+
+      const embeddings = result.data.map(d => d.embedding);
+      const queryEmbed = embeddings[0];
+      const dims = embeddings[0].length;
+
+      // For binary/ubinary, we can't directly cosine-similarity the packed ints
+      // against float embeddings meaningfully. Instead we compare the ranking
+      // each dtype produces independently.
+      const ranked = corpus.map((text, i) => {
+        const docEmbed = embeddings[i + 1];
+        let sim;
+        if (dtype === 'binary' || dtype === 'ubinary') {
+          // Hamming-style: compute dot product of packed int arrays
+          // (higher = more bits agree = more similar)
+          sim = hammingSimilarity(queryEmbed, docEmbed);
+        } else {
+          sim = cosineSimilarity(queryEmbed, docEmbed);
+        }
+        return { index: i, text, similarity: sim };
+      }).sort((a, b) => b.similarity - a.similarity);
+
+      // Calculate storage per vector
+      let bytesPerVec;
+      const actualDims = (dtype === 'binary' || dtype === 'ubinary') ? dims * 8 : dims;
+      if (dtype === 'float') {
+        bytesPerVec = dims * 4;
+      } else if (dtype === 'int8' || dtype === 'uint8') {
+        bytesPerVec = dims * 1;
+      } else {
+        // binary/ubinary: dims is already 1/8th of actual dimensions
+        bytesPerVec = dims;
+      }
+
+      resultsByDtype[dtype] = {
+        dtype,
+        latency: elapsed,
+        dims,
+        actualDims,
+        bytesPerVec,
+        tokens: result.usage?.total_tokens || 0,
+        ranked,
+      };
+    } catch (err) {
+      if (spin) spin.stop();
+      console.error(ui.warn(`  ${dtype}: ${err.message} — skipping`));
+    }
+  }
+
+  const completed = Object.values(resultsByDtype);
+
+  if (opts.json) {
+    const jsonResults = completed.map(r => ({
+      dtype: r.dtype,
+      latency: r.latency,
+      dimensions: r.actualDims,
+      bytesPerVector: r.bytesPerVec,
+      ranking: r.ranked.slice(0, showK).map(x => ({ index: x.index, similarity: x.similarity })),
+    }));
+    console.log(JSON.stringify({ benchmark: 'quantization', model, results: jsonResults }, null, 2));
+    return;
+  }
+
+  if (completed.length === 0) {
+    console.error(ui.error('No data types completed successfully.'));
+    process.exit(1);
+  }
+
+  // Storage comparison table
+  console.log(ui.bold('  Storage Comparison'));
+  console.log('');
+
+  const sHeader = `  ${rpad('dtype', 10)} ${lpad('Dims', 8)} ${lpad('Bytes/vec', 12)} ${lpad('1M docs', 10)} ${lpad('Savings', 10)} ${lpad('Latency', 10)}`;
+  console.log(ui.dim(sHeader));
+  console.log(ui.dim('  ' + '─'.repeat(stripAnsi(sHeader).length - 2)));
+
+  const baseline = completed.find(r => r.dtype === 'float') || completed[0];
+  const baselineBytes = baseline.bytesPerVec;
+
+  for (const r of completed) {
+    const savings = r.bytesPerVec < baselineBytes
+      ? ui.green(`${(baselineBytes / r.bytesPerVec).toFixed(0)}×`)
+      : ui.dim('baseline');
+
+    const totalMB = (r.bytesPerVec * 1_000_000) / (1024 * 1024);
+    let sizeStr;
+    if (totalMB >= 1024) sizeStr = `${(totalMB / 1024).toFixed(1)} GB`;
+    else sizeStr = `${totalMB.toFixed(0)} MB`;
+
+    console.log(
+      `  ${rpad(r.dtype, 10)} ${lpad(String(r.actualDims), 8)} ${lpad(formatBytes(r.bytesPerVec), 12)} ${lpad(sizeStr, 10)} ${lpad(savings, 10)} ${lpad(fmtMs(r.latency), 10)}`
+    );
+  }
+
+  console.log('');
+
+  // Ranking comparison
+  console.log(ui.bold(`  Ranking Comparison (top ${showK})`));
+  console.log('');
+
+  const baselineRanked = baseline.ranked;
+  const baselineOrder = baselineRanked.slice(0, showK).map(x => x.index);
+
+  for (let rank = 0; rank < showK && rank < corpus.length; rank++) {
+    console.log(ui.dim(`  #${rank + 1}`));
+    for (const r of completed) {
+      const item = r.ranked[rank];
+      const preview = item.text.substring(0, 45) + (item.text.length > 45 ? '...' : '');
+      const matchesBaseline = (r === baseline) ? ' ' :
+        (item.index === baselineRanked[rank].index ? ui.green('=') : ui.yellow('≠'));
+      const simStr = (r.dtype === 'binary' || r.dtype === 'ubinary')
+        ? `${(item.similarity * 100).toFixed(1)}%`
+        : item.similarity.toFixed(4);
+      console.log(`    ${matchesBaseline} ${ui.cyan(rpad(r.dtype, 10))} ${lpad(simStr, 8)}  [${item.index}] ${ui.dim(preview)}`);
+    }
+  }
+
+  console.log('');
+
+  // Agreement summary
+  if (completed.length > 1) {
+    for (const r of completed) {
+      if (r === baseline) continue;
+      const rOrder = r.ranked.slice(0, showK).map(x => x.index);
+      const overlap = baselineOrder.filter(idx => rOrder.includes(idx)).length;
+      const exactMatch = baselineOrder.filter((idx, i) => rOrder[i] === idx).length;
+      const overlapPct = ((overlap / showK) * 100).toFixed(0);
+      const exactPct = ((exactMatch / showK) * 100).toFixed(0);
+      const savingsX = (baselineBytes / r.bytesPerVec).toFixed(0);
+
+      if (exactMatch === showK) {
+        console.log(ui.success(`${r.dtype}: Identical ranking to float — ${savingsX}× storage savings with zero quality loss.`));
+      } else if (overlap === showK) {
+        console.log(ui.info(`${r.dtype}: Same top-${showK} docs, ${exactPct}% exact order — ${savingsX}× smaller.`));
+      } else {
+        console.log(ui.warn(`${r.dtype}: ${overlapPct}% overlap in top-${showK} — ${savingsX}× smaller. Consider using a reranker.`));
+      }
+    }
+    console.log('');
+  }
+
+  // Save results
+  if (opts.save) {
+    const outData = {
+      benchmark: 'quantization',
+      timestamp: new Date().toISOString(),
+      model,
+      results: completed.map(r => ({
+        dtype: r.dtype,
+        latency: r.latency,
+        dimensions: r.actualDims,
+        bytesPerVector: r.bytesPerVec,
+        topRanking: r.ranked.slice(0, showK),
+      })),
+    };
+    const outPath = typeof opts.save === 'string' ? opts.save : `benchmark-quantization-${Date.now()}.json`;
+    fs.writeFileSync(outPath, JSON.stringify(outData, null, 2));
+    console.log(ui.info(`Results saved to ${outPath}`));
+    console.log('');
+  }
+}
+
+/**
+ * Compute Hamming similarity between two packed binary vectors.
+ * Returns a value between 0 and 1 (fraction of bits that agree).
+ */
+function hammingSimilarity(a, b) {
+  const len = Math.min(a.length, b.length);
+  let agreeBits = 0;
+  const totalBits = len * 8;
+  for (let i = 0; i < len; i++) {
+    // XOR to find differing bits, then count matching bits
+    const xor = (a[i] & 0xFF) ^ (b[i] & 0xFF);
+    // popcount via bit tricks
+    agreeBits += 8 - popcount8(xor);
+  }
+  return agreeBits / totalBits;
+}
+
+/**
+ * Count set bits in an 8-bit value.
+ */
+function popcount8(v) {
+  v = v - ((v >> 1) & 0x55);
+  v = (v & 0x33) + ((v >> 2) & 0x33);
+  return (v + (v >> 4)) & 0x0F;
+}
+
+/**
+ * Format bytes into a human-readable string.
+ */
+function formatBytes(bytes) {
+  if (bytes >= 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${bytes} B`;
+}
+
 // ── Registration ──
 
 /**
@@ -796,6 +1183,35 @@ function registerBenchmark(program) {
     .option('--json', 'Machine-readable JSON output')
     .option('-q, --quiet', 'Suppress non-essential output')
     .action(benchmarkBatch);
+
+  // ── benchmark quantization ──
+  bench
+    .command('quantization')
+    .alias('quant')
+    .description('Compare output dtypes (float/int8/binary) for quality vs storage')
+    .option('-m, --model <model>', 'Embedding model to benchmark')
+    .option('--dtypes <types>', 'Comma-separated output dtypes', 'float,int8,ubinary')
+    .option('--query <text>', 'Search query')
+    .option('-f, --file <path>', 'Corpus file (JSON array or newline-delimited)')
+    .option('-k, --top-k <n>', 'Show top K results', '5')
+    .option('-d, --dimensions <n>', 'Output dimensions')
+    .option('--json', 'Machine-readable JSON output')
+    .option('-q, --quiet', 'Suppress non-essential output')
+    .option('-s, --save [path]', 'Save results to JSON file')
+    .action(benchmarkQuantization);
+
+  // ── benchmark asymmetric ──
+  bench
+    .command('asymmetric')
+    .description('Test asymmetric retrieval (docs with large model, queries with smaller)')
+    .option('--doc-model <model>', 'Model to embed documents with', 'voyage-4-large')
+    .option('--query-models <models>', 'Comma-separated query models', 'voyage-4-large,voyage-4,voyage-4-lite')
+    .option('--query <text>', 'Search query')
+    .option('-f, --file <path>', 'Corpus file (JSON array or newline-delimited)')
+    .option('-k, --top-k <n>', 'Show top K results', '5')
+    .option('--json', 'Machine-readable JSON output')
+    .option('-q, --quiet', 'Suppress non-essential output')
+    .action(benchmarkAsymmetric);
 }
 
 module.exports = { registerBenchmark };

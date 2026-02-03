@@ -23,6 +23,7 @@ function registerStore(program) {
     .option('-m, --model <model>', 'Embedding model', getDefaultModel())
     .option('--input-type <type>', 'Input type: query or document', 'document')
     .option('-d, --dimensions <n>', 'Output dimensions', (v) => parseInt(v, 10))
+    .option('--output-dtype <type>', 'Output data type: float, int8, uint8, binary, ubinary', 'float')
     .option('--metadata <json>', 'Additional metadata as JSON')
     .option('--json', 'Machine-readable JSON output')
     .option('-q, --quiet', 'Suppress non-essential output')
@@ -46,11 +47,15 @@ function registerStore(program) {
           spin.start();
         }
 
-        const embedResult = await generateEmbeddings([textContent], {
+        const embedOpts = {
           model: opts.model,
           inputType: opts.inputType,
           dimensions: opts.dimensions,
-        });
+        };
+        if (opts.outputDtype && opts.outputDtype !== 'float') {
+          embedOpts.outputDtype = opts.outputDtype;
+        }
+        const embedResult = await generateEmbeddings([textContent], embedOpts);
 
         const embedding = embedResult.data[0].embedding;
 
@@ -147,11 +152,15 @@ async function handleBatchStore(opts) {
       spin.start();
     }
 
-    const embedResult = await generateEmbeddings(texts, {
+    const batchEmbedOpts = {
       model: opts.model,
       inputType: opts.inputType,
       dimensions: opts.dimensions,
-    });
+    };
+    if (opts.outputDtype && opts.outputDtype !== 'float') {
+      batchEmbedOpts.outputDtype = opts.outputDtype;
+    }
+    const embedResult = await generateEmbeddings(texts, batchEmbedOpts);
 
     const docs = records.map((record, i) => {
       const embedding = embedResult.data[i].embedding;

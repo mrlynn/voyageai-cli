@@ -19,6 +19,7 @@ function registerEmbed(program) {
     .option('-f, --file <path>', 'Read text from file')
     .option('--truncation', 'Enable truncation for long inputs')
     .option('--no-truncation', 'Disable truncation')
+    .option('--output-dtype <type>', 'Output data type: float, int8, uint8, binary, ubinary', 'float')
     .option('-o, --output-format <format>', 'Output format: json or array', 'json')
     .option('--json', 'Machine-readable JSON output')
     .option('-q, --quiet', 'Suppress non-essential output')
@@ -48,6 +49,10 @@ function registerEmbed(program) {
         // Only pass truncation when explicitly set via --truncation or --no-truncation
         if (opts.truncation !== undefined) {
           embedOpts.truncation = opts.truncation;
+        }
+        // Only pass output_dtype when not the default float
+        if (opts.outputDtype && opts.outputDtype !== 'float') {
+          embedOpts.outputDtype = opts.outputDtype;
         }
 
         const result = await generateEmbeddings(texts, embedOpts);
