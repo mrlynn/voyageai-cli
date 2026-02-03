@@ -2,6 +2,7 @@
 
 const { getDefaultDimensions } = require('../lib/catalog');
 const { getMongoCollection } = require('../lib/mongo');
+const ui = require('../lib/ui');
 
 /**
  * Register the index command (with create, list, delete subcommands) on a Commander program.
@@ -27,6 +28,14 @@ function registerIndex(program) {
     .action(async (opts) => {
       let client;
       try {
+        const useColor = !opts.json;
+        const useSpinner = useColor && !opts.quiet;
+        let spin;
+        if (useSpinner) {
+          spin = ui.spinner('Creating vector search index...');
+          spin.start();
+        }
+
         const { client: c, collection } = await getMongoCollection(opts.db, opts.collection);
         client = c;
 
@@ -47,24 +56,26 @@ function registerIndex(program) {
 
         const result = await collection.createSearchIndex(indexDef);
 
+        if (spin) spin.stop();
+
         if (opts.json) {
           console.log(JSON.stringify({ indexName: result, definition: indexDef }, null, 2));
         } else if (!opts.quiet) {
-          console.log(`✓ Vector search index created: "${result}"`);
-          console.log(`  Database:   ${opts.db}`);
-          console.log(`  Collection: ${opts.collection}`);
-          console.log(`  Field:      ${opts.field}`);
-          console.log(`  Dimensions: ${opts.dimensions}`);
-          console.log(`  Similarity: ${opts.similarity}`);
+          console.log(ui.success(`Vector search index created: "${result}"`));
+          console.log(ui.label('Database', opts.db));
+          console.log(ui.label('Collection', opts.collection));
+          console.log(ui.label('Field', opts.field));
+          console.log(ui.label('Dimensions', String(opts.dimensions)));
+          console.log(ui.label('Similarity', opts.similarity));
           console.log('');
-          console.log('Note: Index may take a few minutes to become ready.');
+          console.log(ui.dim('Note: Index may take a few minutes to become ready.'));
         }
       } catch (err) {
         if (err.message && err.message.includes('already exists')) {
-          console.error(`Error: Index "${opts.indexName}" already exists on ${opts.db}.${opts.collection}`);
-          console.error('Use a different --index-name or delete the existing index first.');
+          console.error(ui.error(`Index "${opts.indexName}" already exists on ${opts.db}.${opts.collection}`));
+          console.error(ui.dim('Use a different --index-name or delete the existing index first.'));
         } else {
-          console.error(`Error: ${err.message}`);
+          console.error(ui.error(err.message));
         }
         process.exit(1);
       } finally {
@@ -83,10 +94,20 @@ function registerIndex(program) {
     .action(async (opts) => {
       let client;
       try {
+        const useColor = !opts.json;
+        const useSpinner = useColor && !opts.quiet;
+        let spin;
+        if (useSpinner) {
+          spin = ui.spinner('Listing indexes...');
+          spin.start();
+        }
+
         const { client: c, collection } = await getMongoCollection(opts.db, opts.collection);
         client = c;
 
         const indexes = await collection.listSearchIndexes().toArray();
+
+        if (spin) spin.stop();
 
         if (opts.json) {
           console.log(JSON.stringify(indexes, null, 2));
@@ -99,21 +120,21 @@ function registerIndex(program) {
         }
 
         if (!opts.quiet) {
-          console.log(`Search indexes on ${opts.db}.${opts.collection}:`);
+          console.log(`Search indexes on ${ui.cyan(opts.db + '.' + opts.collection)}:`);
           console.log('');
         }
 
         for (const idx of indexes) {
-          console.log(`  Name:   ${idx.name}`);
-          console.log(`  Type:   ${idx.type || 'N/A'}`);
-          console.log(`  Status: ${idx.status || 'N/A'}`);
+          console.log(ui.label('Name', ui.bold(idx.name)));
+          console.log(ui.label('Type', idx.type || 'N/A'));
+          console.log(ui.label('Status', ui.status(idx.status || 'N/A')));
           if (idx.latestDefinition) {
-            console.log(`  Fields: ${JSON.stringify(idx.latestDefinition.fields || [])}`);
+            console.log(ui.label('Fields', JSON.stringify(idx.latestDefinition.fields || [])));
           }
           console.log('');
         }
       } catch (err) {
-        console.error(`Error: ${err.message}`);
+        console.error(ui.error(err.message));
         process.exit(1);
       } finally {
         if (client) await client.close();
@@ -132,20 +153,30 @@ function registerIndex(program) {
     .action(async (opts) => {
       let client;
       try {
+        const useColor = !opts.json;
+        const useSpinner = useColor && !opts.quiet;
+        let spin;
+        if (useSpinner) {
+          spin = ui.spinner('Deleting index...');
+          spin.start();
+        }
+
         const { client: c, collection } = await getMongoCollection(opts.db, opts.collection);
         client = c;
 
         await collection.dropSearchIndex(opts.indexName);
 
+        if (spin) spin.stop();
+
         if (opts.json) {
           console.log(JSON.stringify({ dropped: opts.indexName }, null, 2));
         } else if (!opts.quiet) {
-          console.log(`✓ Dropped search index: "${opts.indexName}"`);
-          console.log(`  Database:   ${opts.db}`);
-          console.log(`  Collection: ${opts.collection}`);
+          console.log(ui.success(`Dropped search index: "${opts.indexName}"`));
+          console.log(ui.label('Database', opts.db));
+          console.log(ui.label('Collection', opts.collection));
         }
       } catch (err) {
-        console.error(`Error: ${err.message}`);
+        console.error(ui.error(err.message));
         process.exit(1);
       } finally {
         if (client) await client.close();

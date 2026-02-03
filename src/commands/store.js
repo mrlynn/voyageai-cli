@@ -5,6 +5,7 @@ const { getDefaultModel } = require('../lib/catalog');
 const { generateEmbeddings } = require('../lib/api');
 const { resolveTextInput } = require('../lib/input');
 const { getMongoCollection } = require('../lib/mongo');
+const ui = require('../lib/ui');
 
 /**
  * Register the store command on a Commander program.
@@ -37,6 +38,14 @@ function registerStore(program) {
         const texts = await resolveTextInput(opts.text, opts.file);
         const textContent = texts[0];
 
+        const useColor = !opts.json;
+        const useSpinner = useColor && !opts.quiet;
+        let spin;
+        if (useSpinner) {
+          spin = ui.spinner('Embedding and storing...');
+          spin.start();
+        }
+
         const embedResult = await generateEmbeddings([textContent], {
           model: opts.model,
           inputType: opts.inputType,
@@ -58,7 +67,8 @@ function registerStore(program) {
             const meta = JSON.parse(opts.metadata);
             Object.assign(doc, meta);
           } catch (e) {
-            console.error('Error: Invalid metadata JSON. Ensure it is valid JSON.');
+            if (spin) spin.stop();
+            console.error(ui.error('Invalid metadata JSON. Ensure it is valid JSON.'));
             process.exit(1);
           }
         }
@@ -66,6 +76,8 @@ function registerStore(program) {
         const { client: c, collection } = await getMongoCollection(opts.db, opts.collection);
         client = c;
         const result = await collection.insertOne(doc);
+
+        if (spin) spin.stop();
 
         if (opts.json) {
           console.log(JSON.stringify({
@@ -75,18 +87,18 @@ function registerStore(program) {
             tokens: embedResult.usage?.total_tokens,
           }, null, 2));
         } else if (!opts.quiet) {
-          console.log(`✓ Stored document: ${result.insertedId}`);
-          console.log(`  Database:   ${opts.db}`);
-          console.log(`  Collection: ${opts.collection}`);
-          console.log(`  Field:      ${opts.field}`);
-          console.log(`  Dimensions: ${embedding.length}`);
-          console.log(`  Model:      ${doc.model}`);
+          console.log(ui.success('Stored document: ' + ui.cyan(String(result.insertedId))));
+          console.log(ui.label('Database', opts.db));
+          console.log(ui.label('Collection', opts.collection));
+          console.log(ui.label('Field', opts.field));
+          console.log(ui.label('Dimensions', String(embedding.length)));
+          console.log(ui.label('Model', doc.model));
           if (embedResult.usage) {
-            console.log(`  Tokens:     ${embedResult.usage.total_tokens}`);
+            console.log(ui.label('Tokens', String(embedResult.usage.total_tokens)));
           }
         }
       } catch (err) {
-        console.error(`Error: ${err.message}`);
+        console.error(ui.error(err.message));
         process.exit(1);
       } finally {
         if (client) await client.close();
@@ -106,7 +118,7 @@ async function handleBatchStore(opts) {
     const lines = content.split('\n').filter(line => line.trim());
 
     if (lines.length === 0) {
-      console.error('Error: JSONL file is empty.');
+      console.error(ui.error('JSONL file is empty.'));
       process.exit(1);
     }
 
@@ -114,21 +126,25 @@ async function handleBatchStore(opts) {
       try {
         return JSON.parse(line);
       } catch (e) {
-        console.error(`Error: Invalid JSON on line ${i + 1}: ${e.message}`);
+        console.error(ui.error(`Invalid JSON on line ${i + 1}: ${e.message}`));
         process.exit(1);
       }
     });
 
     const texts = records.map(r => {
       if (!r.text) {
-        console.error('Error: Each JSONL line must have a "text" field.');
+        console.error(ui.error('Each JSONL line must have a "text" field.'));
         process.exit(1);
       }
       return r.text;
     });
 
-    if (!opts.quiet) {
-      console.log(`Embedding ${texts.length} documents...`);
+    const useColor = !opts.json;
+    const useSpinner = useColor && !opts.quiet;
+    let spin;
+    if (useSpinner) {
+      spin = ui.spinner(`Embedding and storing ${texts.length} documents...`);
+      spin.start();
     }
 
     const embedResult = await generateEmbeddings(texts, {
@@ -156,6 +172,8 @@ async function handleBatchStore(opts) {
     client = c;
     const result = await collection.insertMany(docs);
 
+    if (spin) spin.stop();
+
     if (opts.json) {
       console.log(JSON.stringify({
         insertedCount: result.insertedCount,
@@ -165,18 +183,18 @@ async function handleBatchStore(opts) {
         tokens: embedResult.usage?.total_tokens,
       }, null, 2));
     } else if (!opts.quiet) {
-      console.log(`✓ Stored ${result.insertedCount} documents`);
-      console.log(`  Database:   ${opts.db}`);
-      console.log(`  Collection: ${opts.collection}`);
-      console.log(`  Field:      ${opts.field}`);
-      console.log(`  Dimensions: ${docs[0]?.dimensions}`);
-      console.log(`  Model:      ${opts.model || getDefaultModel()}`);
+      console.log(ui.success(`Stored ${result.insertedCount} documents`));
+      console.log(ui.label('Database', opts.db));
+      console.log(ui.label('Collection', opts.collection));
+      console.log(ui.label('Field', opts.field));
+      console.log(ui.label('Dimensions', String(docs[0]?.dimensions)));
+      console.log(ui.label('Model', opts.model || getDefaultModel()));
       if (embedResult.usage) {
-        console.log(`  Tokens:     ${embedResult.usage.total_tokens}`);
+        console.log(ui.label('Tokens', String(embedResult.usage.total_tokens)));
       }
     }
   } catch (err) {
-    console.error(`Error: ${err.message}`);
+    console.error(ui.error(err.message));
     process.exit(1);
   } finally {
     if (client) await client.close();

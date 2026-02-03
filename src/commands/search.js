@@ -3,6 +3,7 @@
 const { getDefaultModel } = require('../lib/catalog');
 const { generateEmbeddings } = require('../lib/api');
 const { getMongoCollection } = require('../lib/mongo');
+const ui = require('../lib/ui');
 
 /**
  * Register the search command on a Commander program.
@@ -29,6 +30,14 @@ function registerSearch(program) {
     .action(async (opts) => {
       let client;
       try {
+        const useColor = !opts.json;
+        const useSpinner = useColor && !opts.quiet;
+        let spin;
+        if (useSpinner) {
+          spin = ui.spinner('Searching...');
+          spin.start();
+        }
+
         const embedResult = await generateEmbeddings([opts.query], {
           model: opts.model,
           inputType: opts.inputType,
@@ -54,7 +63,8 @@ function registerSearch(program) {
           try {
             vectorSearchStage.filter = JSON.parse(opts.filter);
           } catch (e) {
-            console.error('Error: Invalid filter JSON. Ensure it is valid JSON.');
+            if (spin) spin.stop();
+            console.error(ui.error('Invalid filter JSON. Ensure it is valid JSON.'));
             process.exit(1);
           }
         }
@@ -66,6 +76,8 @@ function registerSearch(program) {
         ];
 
         const results = await collection.aggregate(pipeline).toArray();
+
+        if (spin) spin.stop();
 
         const cleanResults = results.map(doc => {
           const clean = { ...doc };
@@ -79,28 +91,29 @@ function registerSearch(program) {
         }
 
         if (!opts.quiet) {
-          console.log(`Query: "${opts.query}"`);
-          console.log(`Results: ${cleanResults.length}`);
+          console.log(ui.label('Query', ui.cyan(`"${opts.query}"`)));
+          console.log(ui.label('Results', String(cleanResults.length)));
           console.log('');
         }
 
         if (cleanResults.length === 0) {
-          console.log('No results found.');
+          console.log(ui.yellow('No results found.'));
           return;
         }
 
         for (let i = 0; i < cleanResults.length; i++) {
           const doc = cleanResults[i];
-          const score = doc.score?.toFixed(6) || 'N/A';
-          console.log(`── Result ${i + 1} (score: ${score}) ──`);
+          const scoreVal = doc.score;
+          const scoreStr = scoreVal != null ? ui.score(scoreVal) : 'N/A';
+          console.log(`── ${ui.bold('Result ' + (i + 1))} (score: ${scoreStr}) ──`);
           const textPreview = doc.text ? doc.text.substring(0, 200) : 'No text field';
           const ellipsis = doc.text && doc.text.length > 200 ? '...' : '';
           console.log(`  ${textPreview}${ellipsis}`);
-          console.log(`  _id: ${doc._id}`);
+          console.log(`  ${ui.dim('_id: ' + doc._id)}`);
           console.log('');
         }
       } catch (err) {
-        console.error(`Error: ${err.message}`);
+        console.error(ui.error(err.message));
         process.exit(1);
       } finally {
         if (client) await client.close();

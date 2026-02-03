@@ -12,6 +12,7 @@ const {
   deleteConfigValue,
   maskSecret,
 } = require('../lib/config');
+const ui = require('../lib/ui');
 
 const VALID_KEYS = Object.keys(KEY_MAP);
 
@@ -32,7 +33,7 @@ function registerConfig(program) {
     .action(async (key, value, opts) => {
       const internalKey = KEY_MAP[key];
       if (!internalKey) {
-        console.error(`Error: Unknown config key "${key}".`);
+        console.error(ui.error(`Unknown config key "${ui.cyan(key)}".`));
         console.error(`Valid keys: ${VALID_KEYS.join(', ')}`);
         process.exit(1);
       }
@@ -58,14 +59,14 @@ function registerConfig(program) {
       }
 
       if (!value) {
-        console.error('Error: No value provided.');
+        console.error(ui.error('No value provided.'));
         process.exit(1);
       }
 
       // Parse numeric values for dimensions
       const storedValue = key === 'default-dimensions' ? parseInt(value, 10) : value;
       setConfigValue(internalKey, storedValue);
-      console.log(`✓ Set ${key} = ${SECRET_KEYS.has(internalKey) ? maskSecret(String(storedValue)) : storedValue}`);
+      console.log(ui.success(`Set ${ui.cyan(key)} = ${SECRET_KEYS.has(internalKey) ? ui.dim(maskSecret(String(storedValue))) : storedValue}`));
     });
 
   // ── config get [key] ──
@@ -76,24 +77,24 @@ function registerConfig(program) {
       if (key) {
         const internalKey = KEY_MAP[key];
         if (!internalKey) {
-          console.error(`Error: Unknown config key "${key}".`);
+          console.error(ui.error(`Unknown config key "${ui.cyan(key)}".`));
           console.error(`Valid keys: ${VALID_KEYS.join(', ')}`);
           process.exit(1);
         }
 
         const value = getConfigValue(internalKey);
         if (value === undefined) {
-          console.log(`${key}: (not set)`);
+          console.log(`${ui.cyan(key)}: ${ui.dim('(not set)')}`);
         } else {
-          const display = SECRET_KEYS.has(internalKey) ? maskSecret(String(value)) : value;
-          console.log(`${key}: ${display}`);
+          const display = SECRET_KEYS.has(internalKey) ? ui.dim(maskSecret(String(value))) : value;
+          console.log(`${ui.cyan(key)}: ${display}`);
         }
       } else {
         // Show all config
         const config = loadConfig();
         if (Object.keys(config).length === 0) {
-          console.log('No configuration set.');
-          console.log(`Run: vai config set <key> <value>`);
+          console.log(ui.dim('No configuration set.'));
+          console.log(`Run: ${ui.cyan('vai config set <key> <value>')}`);
           return;
         }
 
@@ -105,8 +106,8 @@ function registerConfig(program) {
 
         for (const [intKey, value] of Object.entries(config)) {
           const cliKey = reverseMap[intKey] || intKey;
-          const display = SECRET_KEYS.has(intKey) ? maskSecret(String(value)) : value;
-          console.log(`${cliKey}: ${display}`);
+          const display = SECRET_KEYS.has(intKey) ? ui.dim(maskSecret(String(value))) : value;
+          console.log(`${ui.cyan(cliKey)}: ${display}`);
         }
       }
     });
@@ -118,13 +119,13 @@ function registerConfig(program) {
     .action((key) => {
       const internalKey = KEY_MAP[key];
       if (!internalKey) {
-        console.error(`Error: Unknown config key "${key}".`);
+        console.error(ui.error(`Unknown config key "${ui.cyan(key)}".`));
         console.error(`Valid keys: ${VALID_KEYS.join(', ')}`);
         process.exit(1);
       }
 
       deleteConfigValue(internalKey);
-      console.log(`✓ Deleted ${key}`);
+      console.log(ui.success(`Deleted ${ui.cyan(key)}`));
     });
 
   // ── config path ──
@@ -142,10 +143,10 @@ function registerConfig(program) {
     .action(() => {
       try {
         fs.unlinkSync(CONFIG_PATH);
-        console.log(`✓ Config file deleted: ${CONFIG_PATH}`);
+        console.log(ui.success(`Config file deleted: ${ui.dim(CONFIG_PATH)}`));
       } catch (err) {
         if (err.code === 'ENOENT') {
-          console.log('No config file found. Nothing to reset.');
+          console.log(ui.dim('No config file found. Nothing to reset.'));
         } else {
           throw err;
         }

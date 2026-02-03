@@ -1,6 +1,7 @@
 'use strict';
 
 const { API_BASE, requireApiKey } = require('../lib/api');
+const ui = require('../lib/ui');
 
 /**
  * Register the ping command on a Commander program.
@@ -24,8 +25,17 @@ function registerPing(program) {
         process.exit(1);
       }
 
+      const useColor = !opts.json;
+      const useSpinner = useColor && !opts.quiet;
+
       const model = 'voyage-4-lite';
       const startTime = Date.now();
+
+      let spin;
+      if (useSpinner) {
+        spin = ui.spinner('Testing Voyage AI connection...');
+        spin.start();
+      }
 
       try {
         const response = await fetch(`${API_BASE}/embeddings`, {
@@ -43,11 +53,12 @@ function registerPing(program) {
         const elapsed = Date.now() - startTime;
 
         if (response.status === 401 || response.status === 403) {
+          if (spin) spin.stop();
           results.voyage = { ok: false, error: 'auth', elapsed };
           if (opts.json) {
             console.log(JSON.stringify({ ok: false, error: 'Authentication failed', elapsed }));
           } else {
-            console.error(`✗ Authentication failed (${response.status})`);
+            console.error(ui.error(`Authentication failed (${response.status})`));
             console.error('');
             console.error('Your API key may be invalid or expired.');
             console.error('Get a new key: MongoDB Atlas → AI Models → Create model API key');
@@ -57,12 +68,13 @@ function registerPing(program) {
         }
 
         if (!response.ok) {
+          if (spin) spin.stop();
           const body = await response.text();
           results.voyage = { ok: false, error: `HTTP ${response.status}`, elapsed };
           if (opts.json) {
             console.log(JSON.stringify({ ok: false, error: `API error (${response.status})`, detail: body, elapsed }));
           } else {
-            console.error(`✗ API error (${response.status}): ${body}`);
+            console.error(ui.error(`API error (${response.status}): ${body}`));
           }
           process.exit(1);
         }
@@ -73,24 +85,27 @@ function registerPing(program) {
 
         results.voyage = { ok: true, elapsed, model, dimensions: dims, tokens, endpoint: API_BASE };
 
+        if (spin) spin.stop();
+
         if (opts.json) {
           // JSON output is emitted at the end after MongoDB check
         } else if (opts.quiet) {
           console.log(`ok ${elapsed}ms`);
         } else {
-          console.log(`✓ Connected to Voyage AI API (${elapsed}ms)`);
-          console.log(`  Endpoint:   ${API_BASE}`);
-          console.log(`  Model:      ${model}`);
-          console.log(`  Dimensions: ${dims}`);
-          console.log(`  Tokens:     ${tokens}`);
+          console.log(ui.success(`Connected to Voyage AI API ${ui.dim('(' + elapsed + 'ms)')}`));
+          console.log(ui.label('Endpoint', API_BASE));
+          console.log(ui.label('Model', model));
+          console.log(ui.label('Dimensions', String(dims)));
+          console.log(ui.label('Tokens', String(tokens)));
         }
       } catch (err) {
+        if (spin) spin.stop();
         const elapsed = Date.now() - startTime;
         results.voyage = { ok: false, error: 'network', elapsed };
         if (opts.json) {
           console.log(JSON.stringify({ ok: false, error: 'Network error', detail: err.message, elapsed }));
         } else {
-          console.error(`✗ Connection failed: ${err.message}`);
+          console.error(ui.error(`Connection failed: ${err.message}`));
           console.error('');
           console.error('Check your internet connection and try again.');
         }
@@ -102,6 +117,12 @@ function registerPing(program) {
       const mongoUri = process.env.MONGODB_URI || getConfigValue('mongodbUri');
       if (mongoUri) {
         const mongoStart = Date.now();
+        let mongoSpin;
+        if (useSpinner) {
+          mongoSpin = ui.spinner('Testing MongoDB connection...');
+          mongoSpin.start();
+        }
+
         try {
           const { MongoClient } = require('mongodb');
           const client = new MongoClient(mongoUri);
@@ -118,19 +139,22 @@ function registerPing(program) {
 
           results.mongodb = { ok: true, elapsed: mongoElapsed, cluster };
 
+          if (mongoSpin) mongoSpin.stop();
+
           if (!opts.json && !opts.quiet) {
             console.log('');
-            console.log(`✓ Connected to MongoDB Atlas (${mongoElapsed}ms)`);
-            console.log(`  Cluster:    ${cluster}`);
+            console.log(ui.success(`Connected to MongoDB Atlas ${ui.dim('(' + mongoElapsed + 'ms)')}`));
+            console.log(ui.label('Cluster', cluster));
           }
 
           await client.close();
         } catch (err) {
+          if (mongoSpin) mongoSpin.stop();
           const mongoElapsed = Date.now() - mongoStart;
           results.mongodb = { ok: false, elapsed: mongoElapsed, error: err.message };
           if (!opts.json && !opts.quiet) {
             console.log('');
-            console.log(`✗ MongoDB connection failed (${mongoElapsed}ms): ${err.message}`);
+            console.log(ui.error(`MongoDB connection failed ${ui.dim('(' + mongoElapsed + 'ms)')}: ${err.message}`));
           }
         }
       }

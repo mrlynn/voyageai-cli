@@ -3,6 +3,7 @@
 const fs = require('fs');
 const { DEFAULT_RERANK_MODEL } = require('../lib/catalog');
 const { apiRequest } = require('../lib/api');
+const ui = require('../lib/ui');
 
 /**
  * Register the rerank command on a Commander program.
@@ -63,7 +64,7 @@ function registerRerank(program) {
         }
 
         if (!documents || documents.length === 0) {
-          console.error('Error: No documents provided. Use --documents, --documents-file, or pipe via stdin.');
+          console.error(ui.error('No documents provided. Use --documents, --documents-file, or pipe via stdin.'));
           process.exit(1);
         }
 
@@ -76,7 +77,17 @@ function registerRerank(program) {
           body.top_k = opts.topK;
         }
 
+        const useColor = !opts.json;
+        const useSpinner = useColor && !opts.quiet;
+        let spin;
+        if (useSpinner) {
+          spin = ui.spinner('Reranking documents...');
+          spin.start();
+        }
+
         const result = await apiRequest('/rerank', body);
+
+        if (spin) spin.stop();
 
         if (opts.json) {
           console.log(JSON.stringify(result, null, 2));
@@ -84,11 +95,11 @@ function registerRerank(program) {
         }
 
         if (!opts.quiet) {
-          console.log(`Model: ${result.model}`);
-          console.log(`Query: "${opts.query}"`);
-          console.log(`Results: ${result.data?.length || 0}`);
+          console.log(ui.label('Model', ui.cyan(result.model)));
+          console.log(ui.label('Query', ui.cyan(`"${opts.query}"`)));
+          console.log(ui.label('Results', String(result.data?.length || 0)));
           if (result.usage) {
-            console.log(`Tokens: ${result.usage.total_tokens}`);
+            console.log(ui.label('Tokens', ui.dim(String(result.usage.total_tokens))));
           }
           console.log('');
         }
@@ -97,11 +108,14 @@ function registerRerank(program) {
           for (const item of result.data) {
             const docPreview = documents[item.index].substring(0, 80);
             const ellipsis = documents[item.index].length > 80 ? '...' : '';
-            console.log(`[${item.index}] Score: ${item.relevance_score.toFixed(6)}  "${docPreview}${ellipsis}"`);
+            console.log(`${ui.dim('[' + item.index + ']')} Score: ${ui.score(item.relevance_score)}  ${ui.dim('"' + docPreview + ellipsis + '"')}`);
           }
         }
+
+        console.log('');
+        console.log(ui.success('Reranking complete'));
       } catch (err) {
-        console.error(`Error: ${err.message}`);
+        console.error(ui.error(err.message));
         process.exit(1);
       }
     });

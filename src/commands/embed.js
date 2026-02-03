@@ -3,6 +3,7 @@
 const { getDefaultModel } = require('../lib/catalog');
 const { generateEmbeddings } = require('../lib/api');
 const { resolveTextInput } = require('../lib/input');
+const ui = require('../lib/ui');
 
 /**
  * Register the embed command on a Commander program.
@@ -23,11 +24,21 @@ function registerEmbed(program) {
       try {
         const texts = await resolveTextInput(text, opts.file);
 
+        const useColor = !opts.json;
+        const useSpinner = useColor && !opts.quiet;
+        let spin;
+        if (useSpinner) {
+          spin = ui.spinner('Generating embeddings...');
+          spin.start();
+        }
+
         const result = await generateEmbeddings(texts, {
           model: opts.model,
           inputType: opts.inputType,
           dimensions: opts.dimensions,
         });
+
+        if (spin) spin.stop();
 
         if (opts.outputFormat === 'array') {
           if (result.data.length === 1) {
@@ -45,21 +56,24 @@ function registerEmbed(program) {
 
         // Friendly output
         if (!opts.quiet) {
-          console.log(`Model: ${result.model}`);
-          console.log(`Texts: ${result.data.length}`);
+          console.log(ui.label('Model', ui.cyan(result.model)));
+          console.log(ui.label('Texts', String(result.data.length)));
           if (result.usage) {
-            console.log(`Tokens: ${result.usage.total_tokens}`);
+            console.log(ui.label('Tokens', ui.dim(String(result.usage.total_tokens))));
           }
-          console.log(`Dimensions: ${result.data[0]?.embedding?.length || 'N/A'}`);
+          console.log(ui.label('Dimensions', ui.bold(String(result.data[0]?.embedding?.length || 'N/A'))));
           console.log('');
         }
 
         for (const item of result.data) {
           const preview = item.embedding.slice(0, 5).map(v => v.toFixed(6)).join(', ');
-          console.log(`[${item.index}] [${preview}, ...] (${item.embedding.length} dims)`);
+          console.log(`${ui.dim('[' + item.index + ']')} [${preview}, ...] (${item.embedding.length} dims)`);
         }
+
+        console.log('');
+        console.log(ui.success('Embeddings generated'));
       } catch (err) {
-        console.error(`Error: ${err.message}`);
+        console.error(ui.error(err.message));
         process.exit(1);
       }
     });
