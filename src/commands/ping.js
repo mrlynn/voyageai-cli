@@ -13,8 +13,12 @@ function registerPing(program) {
     .description('Test connectivity to Voyage AI API (and optionally MongoDB)')
     .option('--json', 'Machine-readable JSON output')
     .option('-q, --quiet', 'Suppress non-essential output')
-    .option('--mask', 'Mask sensitive info (cluster hostnames, endpoints) in output')
+    .option('--mask', 'Mask sensitive info (cluster hostnames, endpoints) in output. Also enabled by VAI_MASK=1 env var.')
     .action(async (opts) => {
+      // Support env var so all recordings are masked without remembering the flag
+      if (process.env.VAI_MASK === '1' || process.env.VAI_MASK === 'true') {
+        opts.mask = true;
+      }
       const results = {};
 
       // ── Voyage AI ping ──
