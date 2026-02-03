@@ -13,6 +13,7 @@ const KEY_MAP = {
   'mongodb-uri': 'mongodbUri',
   'default-model': 'defaultModel',
   'default-dimensions': 'defaultDimensions',
+  'base-url': 'baseUrl',
 };
 
 // Keys whose values should be masked in output

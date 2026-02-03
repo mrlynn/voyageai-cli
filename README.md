@@ -4,6 +4,9 @@
 
 CLI for [Voyage AI](https://www.mongodb.com/docs/voyageai/) embeddings, reranking, and [MongoDB Atlas Vector Search](https://www.mongodb.com/docs/atlas/atlas-vector-search/). Pure Node.js — no Python required.
 
+<!-- TODO: Add demo GIF -->
+<!-- ![vai demo](demo.gif) -->
+
 Generate embeddings, rerank search results, store vectors in Atlas, and run semantic search — all from the command line.
 
 > **⚠️ Disclaimer:** This is an independent, community-built tool. It is **not** an official product of MongoDB, Inc. or Voyage AI. It is not supported, endorsed, or maintained by either company. For official documentation, support, and products, visit:
@@ -247,6 +250,41 @@ vai config get
 - Secrets are always masked in `vai config get` output
 - Use `echo "key" | vai config set api-key --stdin` or `vai config set api-key --stdin < keyfile` to avoid shell history exposure
 - The config file stores credentials in plaintext (similar to `~/.aws/credentials` and `~/.npmrc`) — protect your home directory accordingly
+
+## Shell Completions
+
+`vai` supports tab completion for bash and zsh.
+
+### Bash
+
+```bash
+# Add to ~/.bashrc (or ~/.bash_profile on macOS)
+vai completions bash >> ~/.bashrc
+source ~/.bashrc
+
+# Or install system-wide (Linux)
+vai completions bash > /etc/bash_completion.d/vai
+
+# Or with Homebrew (macOS)
+vai completions bash > $(brew --prefix)/etc/bash_completion.d/vai
+```
+
+### Zsh
+
+```bash
+# Create completions directory
+mkdir -p ~/.zsh/completions
+
+# Add to fpath in ~/.zshrc (if not already there)
+echo 'fpath=(~/.zsh/completions $fpath)' >> ~/.zshrc
+echo 'autoload -Uz compinit && compinit' >> ~/.zshrc
+
+# Generate the completion file
+vai completions zsh > ~/.zsh/completions/_vai
+source ~/.zshrc
+```
+
+Completions cover all 14 commands, subcommands, flags, model names, and explain topics.
 
 ## Global Flags
 

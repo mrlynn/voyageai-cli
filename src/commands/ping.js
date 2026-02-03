@@ -1,6 +1,6 @@
 'use strict';
 
-const { API_BASE, requireApiKey } = require('../lib/api');
+const { getApiBase, requireApiKey } = require('../lib/api');
 const ui = require('../lib/ui');
 
 /**
@@ -28,6 +28,7 @@ function registerPing(program) {
       const useColor = !opts.json;
       const useSpinner = useColor && !opts.quiet;
 
+      const apiBase = getApiBase();
       const model = 'voyage-4-lite';
       const startTime = Date.now();
 
@@ -38,7 +39,7 @@ function registerPing(program) {
       }
 
       try {
-        const response = await fetch(`${API_BASE}/embeddings`, {
+        const response = await fetch(`${apiBase}/embeddings`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -83,7 +84,7 @@ function registerPing(program) {
         const dims = data.data && data.data[0] ? data.data[0].embedding.length : 'unknown';
         const tokens = data.usage ? data.usage.total_tokens : 'unknown';
 
-        results.voyage = { ok: true, elapsed, model, dimensions: dims, tokens, endpoint: API_BASE };
+        results.voyage = { ok: true, elapsed, model, dimensions: dims, tokens, endpoint: apiBase };
 
         if (spin) spin.stop();
 
@@ -93,7 +94,7 @@ function registerPing(program) {
           console.log(`ok ${elapsed}ms`);
         } else {
           console.log(ui.success(`Connected to Voyage AI API ${ui.dim('(' + elapsed + 'ms)')}`));
-          console.log(ui.label('Endpoint', API_BASE));
+          console.log(ui.label('Endpoint', apiBase));
           console.log(ui.label('Model', model));
           console.log(ui.label('Dimensions', String(dims)));
           console.log(ui.label('Tokens', String(tokens)));

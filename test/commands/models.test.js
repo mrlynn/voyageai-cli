@@ -86,4 +86,47 @@ describe('models command', () => {
     assert.ok(parsed[0].name);
     assert.ok(parsed[0].type);
   });
+
+  it('hides legacy models by default', async () => {
+    const program = new Command();
+    program.exitOverride();
+    registerModels(program);
+
+    await program.parseAsync(['node', 'test', 'models', '--quiet']);
+
+    const combined = output.join('\n');
+    assert.ok(combined.includes('voyage-4-large'), 'Should include current models');
+    assert.ok(!combined.includes('voyage-3-large'), 'Should hide legacy voyage-3-large');
+    assert.ok(!combined.includes('rerank-2-lite'), 'Should hide legacy rerank-2-lite');
+    assert.ok(!combined.includes('voyage-code-2'), 'Should hide legacy voyage-code-2');
+  });
+
+  it('shows legacy models when --all is used', async () => {
+    const program = new Command();
+    program.exitOverride();
+    registerModels(program);
+
+    await program.parseAsync(['node', 'test', 'models', '--all', '--quiet']);
+
+    const combined = output.join('\n');
+    assert.ok(combined.includes('voyage-4-large'), 'Should include current models');
+    assert.ok(combined.includes('voyage-3-large'), 'Should include legacy voyage-3-large');
+    assert.ok(combined.includes('rerank-2'), 'Should include legacy rerank-2');
+    assert.ok(combined.includes('Legacy Models'), 'Should show legacy header');
+  });
+
+  it('--all with --json shows legacy models in JSON', async () => {
+    const program = new Command();
+    program.exitOverride();
+    registerModels(program);
+
+    await program.parseAsync(['node', 'test', 'models', '--all', '--json']);
+
+    const combined = output.join('\n');
+    const parsed = JSON.parse(combined);
+    assert.ok(Array.isArray(parsed));
+    const legacyNames = parsed.filter(m => m.legacy).map(m => m.name);
+    assert.ok(legacyNames.includes('voyage-3-large'), 'JSON should include legacy models');
+    assert.ok(legacyNames.includes('rerank-2'), 'JSON should include legacy rerankers');
+  });
 });
