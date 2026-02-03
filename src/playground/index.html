@@ -680,6 +680,57 @@ select:focus { outline: none; border-color: var(--accent); }
   margin-top: 4px;
 }
 
+/* About page */
+.about-container { max-width: 680px; margin: 0 auto; }
+.about-header { display: flex; gap: 24px; align-items: center; margin-bottom: 24px; }
+.about-avatar {
+  width: 120px; height: 120px;
+  border-radius: 50%;
+  border: 3px solid var(--accent);
+  box-shadow: 0 0 20px var(--accent-glow);
+  flex-shrink: 0;
+}
+.about-name { font-size: 24px; font-weight: 700; color: var(--text); }
+.about-role { font-size: 14px; color: var(--accent); margin-top: 4px; }
+.about-links { display: flex; gap: 12px; margin-top: 8px; }
+.about-links a {
+  color: var(--text-dim);
+  font-size: 13px;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.about-links a:hover { color: var(--accent); }
+.about-section { margin-bottom: 24px; }
+.about-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+.about-text { font-size: 14px; line-height: 1.8; color: var(--text); }
+.about-text a { color: var(--accent); text-decoration: none; }
+.about-text a:hover { text-decoration: underline; }
+.about-disclaimer {
+  background: rgba(255, 215, 61, 0.08);
+  border: 1px solid rgba(255, 215, 61, 0.2);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  margin-top: 24px;
+}
+.about-disclaimer-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--warning);
+  margin-bottom: 6px;
+}
+.about-disclaimer-text {
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--text-dim);
+}
+
 @media (max-width: 768px) {
   .compare-grid, .search-results { grid-template-columns: 1fr; }
   .nav { padding: 0 12px; }
@@ -711,6 +762,7 @@ select:focus { outline: none; border-color: var(--accent); }
   <button class="tab-btn" data-tab="search">🔍 Search</button>
   <button class="tab-btn" data-tab="benchmark">⏱ Benchmark</button>
   <button class="tab-btn" data-tab="explore">📚 Explore</button>
+  <button class="tab-btn" data-tab="about">ℹ️ About</button>
 </div>
 
 <div class="main">
@@ -999,6 +1051,73 @@ Reranking models rescore initial search results to improve relevance ordering.</
     </div>
   </div>
 
+</div>
+
+<!-- ========== ABOUT TAB ========== -->
+<div class="tab-panel" id="tab-about">
+  <div class="about-container">
+    <div class="card">
+      <div class="about-header">
+        <img src="https://avatars.githubusercontent.com/u/192552?v=4" alt="Michael Lynn" class="about-avatar">
+        <div>
+          <div class="about-name">Michael Lynn</div>
+          <div class="about-role">Principal Staff Developer Advocate · MongoDB</div>
+          <div class="about-links">
+            <a href="https://github.com/mrlynn" target="_blank" rel="noopener">🔗 GitHub</a>
+            <a href="https://mlynn.org" target="_blank" rel="noopener">🌐 mlynn.org</a>
+            <a href="https://www.npmjs.com/package/voyageai-cli" target="_blank" rel="noopener">📦 npm</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="about-section">
+        <div class="about-section-title">About This Project</div>
+        <div class="about-text">
+          <strong>voyageai-cli</strong> (<code style="color:var(--accent);">vai</code>) is a community-built command-line tool for working with
+          <a href="https://www.mongodb.com/docs/voyageai/" target="_blank">Voyage AI</a> embeddings, reranking, and
+          <a href="https://www.mongodb.com/products/platform/atlas-vector-search" target="_blank">MongoDB Atlas Vector Search</a>.
+          It was created to make it easier for developers to explore, benchmark, and integrate
+          Voyage AI models into their applications — right from the terminal or this playground.
+        </div>
+      </div>
+
+      <div class="about-section">
+        <div class="about-section-title">About Michael</div>
+        <div class="about-text">
+          Michael Lynn is a Principal Staff Developer Advocate at MongoDB with 25+ years in enterprise
+          infrastructure and over a decade at MongoDB. He focuses on strategic developer relations,
+          creating educational content around Vector Search, AI enablement, and developer tooling.
+          He builds tools like this to help developers get hands-on with new technology faster.
+        </div>
+      </div>
+
+      <div class="about-section">
+        <div class="about-section-title">What You Can Do Here</div>
+        <div class="about-text">
+          <strong>⚡ Embed</strong> — Generate vector embeddings for any text<br>
+          <strong>⚖️ Compare</strong> — Measure cosine similarity between texts<br>
+          <strong>🔍 Search</strong> — Semantic search with optional reranking<br>
+          <strong>⏱ Benchmark</strong> — Compare model latency, ranking quality, and costs<br>
+          <strong>📚 Explore</strong> — Learn about embeddings, vector search, RAG, and more
+        </div>
+      </div>
+
+      <div class="about-disclaimer">
+        <div class="about-disclaimer-title">⚠️ Community Tool Disclaimer</div>
+        <div class="about-disclaimer-text">
+          This tool is <strong>not</strong> an official product of MongoDB, Inc. or Voyage AI.
+          It is independently built and maintained by Michael Lynn as a community resource.
+          It is not supported, endorsed, or guaranteed by either company. Use at your own discretion.
+          For official documentation, visit
+          <a href="https://www.mongodb.com/docs/voyageai/" target="_blank" style="color:var(--warning);">mongodb.com/docs/voyageai</a>.
+        </div>
+      </div>
+    </div>
+
+    <div style="text-align:center;margin-top:16px;font-size:12px;color:var(--text-muted);">
+      Made with ☕ and curiosity · <a href="https://github.com/mrlynn/voyageai-cli" target="_blank" style="color:var(--text-dim);">Source on GitHub</a>
+    </div>
+  </div>
 </div>
 
 <!-- ========== EXPLORE TAB ========== -->
