@@ -1,6 +1,6 @@
 'use strict';
 
-const { MODEL_CATALOG } = require('../lib/catalog');
+const { MODEL_CATALOG, BENCHMARK_SCORES } = require('../lib/catalog');
 const { getApiBase } = require('../lib/api');
 const { formatTable } = require('../lib/format');
 const ui = require('../lib/ui');
@@ -42,6 +42,7 @@ function registerModels(program) {
     .option('-t, --type <type>', 'Filter by type: embedding, reranking, or all', 'all')
     .option('-a, --all', 'Show all models including legacy')
     .option('-w, --wide', 'Wide output (show all columns untruncated)')
+    .option('-b, --benchmarks', 'Show RTEB benchmark scores')
     .option('--json', 'Machine-readable JSON output')
     .option('-q, --quiet', 'Suppress non-essential output')
     .action((opts) => {
@@ -86,7 +87,9 @@ function registerModels(program) {
         const name = ui.cyan(m.name);
         const type = m.type.startsWith('embedding') ? ui.green(m.type) : ui.yellow(m.type);
         const price = ui.dim(m.price);
-        return [name, type, m.context, m.dimensions, price, m.bestFor];
+        const arch = m.architecture ? (m.architecture === 'moe' ? ui.cyan('MoE') : m.architecture) : '—';
+        const space = m.sharedSpace ? ui.green('✓ ' + m.sharedSpace) : '—';
+        return [name, type, m.context, m.dimensions, arch, space, price, m.bestFor];
       };
 
       const formatCompactRow = (m) => {
@@ -98,7 +101,7 @@ function registerModels(program) {
       };
 
       if (opts.wide) {
-        const headers = ['Model', 'Type', 'Context', 'Dimensions', 'Price', 'Best For'];
+        const headers = ['Model', 'Type', 'Context', 'Dimensions', 'Arch', 'Space', 'Price', 'Best For'];
         const boldHeaders = headers.map(h => ui.bold(h));
         const rows = displayCurrent.map(formatWideRow);
         console.log(formatTable(boldHeaders, rows));
@@ -123,6 +126,29 @@ function registerModels(program) {
         }
       }
 
+      // Show benchmark scores if requested
+      if (opts.benchmarks) {
+        console.log('');
+        console.log(ui.bold('RTEB Benchmark Scores (NDCG@10, avg 29 datasets)'));
+        console.log(ui.dim('Source: Voyage AI, January 2026'));
+        console.log('');
+
+        const maxScore = Math.max(...BENCHMARK_SCORES.map(b => b.score));
+        const barWidth = 30;
+
+        for (const b of BENCHMARK_SCORES) {
+          const barLen = Math.round((b.score / maxScore) * barWidth);
+          const bar = '█'.repeat(barLen) + '░'.repeat(barWidth - barLen);
+          const isVoyage = b.provider === 'Voyage AI';
+          const name = isVoyage ? ui.cyan(b.model.padEnd(22)) : ui.dim(b.model.padEnd(22));
+          const score = isVoyage ? ui.bold(b.score.toFixed(2)) : b.score.toFixed(2);
+          const colorBar = isVoyage ? ui.cyan(bar) : ui.dim(bar);
+          console.log(`  ${name} ${colorBar} ${score}`);
+        }
+        console.log('');
+        console.log(ui.dim('  Run "vai explain rteb" for details.'));
+      }
+
       if (!opts.quiet) {
         console.log('');
         if (!opts.wide) {
@@ -130,7 +156,9 @@ function registerModels(program) {
         }
         console.log(ui.dim('Free tier: 200M tokens (most models), 50M (domain-specific)'));
         console.log(ui.dim('All 4-series models share the same embedding space.'));
-        if (!opts.wide) {
+        if (!opts.wide && !opts.benchmarks) {
+          console.log(ui.dim('Use --wide for full details, --benchmarks for RTEB scores.'));
+        } else if (!opts.wide) {
           console.log(ui.dim('Use --wide for full details.'));
         }
       }
