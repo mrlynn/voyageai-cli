@@ -926,6 +926,7 @@ Semantic search understands meaning beyond keyword matching</textarea>
   <div class="bench-panels">
     <button class="bench-panel-btn active" data-bench="latency">⚡ Latency</button>
     <button class="bench-panel-btn" data-bench="ranking">🏆 Ranking</button>
+    <button class="bench-panel-btn" data-bench="quantization">⚗️ Quantization</button>
     <button class="bench-panel-btn" data-bench="cost">💰 Cost</button>
     <button class="bench-panel-btn" data-bench="history">📊 History</button>
   </div>
@@ -1014,6 +1015,85 @@ Reranking models rescore initial search results to improve relevance ordering.</
         <div class="card-title">Ranking Comparison</div>
         <div id="benchRankVerdict" style="margin-bottom:12px;font-size:14px;"></div>
         <div class="rank-comparison" id="benchRankGrid"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Quantization Panel ── -->
+  <div class="bench-view" id="bench-quantization">
+    <div class="card">
+      <div class="card-title">Quantization Benchmark</div>
+      <p style="color:var(--text-dim);font-size:13px;margin-bottom:12px;">
+        Compare how different output data types (float, int8, binary) affect storage size and ranking quality.
+        Embeds the same corpus with each dtype and measures the tradeoff.
+      </p>
+      <div class="options-row" style="flex-wrap:wrap;">
+        <div class="option-group">
+          <span class="option-label">Model</span>
+          <select id="quantModel"></select>
+        </div>
+        <div class="option-group">
+          <span class="option-label">Dimensions</span>
+          <select id="quantDimensions">
+            <option value="">Default</option>
+            <option value="256">256</option>
+            <option value="512">512</option>
+            <option value="1024">1024</option>
+            <option value="2048">2048</option>
+          </select>
+        </div>
+        <div class="option-group">
+          <span class="option-label">Data Types</span>
+          <div id="quantDtypeChecks" style="display:flex;gap:8px;flex-wrap:wrap;">
+            <label style="display:flex;align-items:center;gap:4px;font-size:13px;cursor:pointer;color:var(--text);">
+              <input type="checkbox" value="float" checked style="accent-color:var(--accent);">float
+            </label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:13px;cursor:pointer;color:var(--text);">
+              <input type="checkbox" value="int8" checked style="accent-color:var(--accent);">int8
+            </label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:13px;cursor:pointer;color:var(--text);">
+              <input type="checkbox" value="uint8" style="accent-color:var(--accent);">uint8
+            </label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:13px;cursor:pointer;color:var(--text);">
+              <input type="checkbox" value="ubinary" checked style="accent-color:var(--accent);">ubinary
+            </label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:13px;cursor:pointer;color:var(--text);">
+              <input type="checkbox" value="binary" style="accent-color:var(--accent);">binary
+            </label>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:12px;">
+        <span class="option-label">Query</span>
+        <input type="text" id="quantQuery" placeholder="Search query..." value="How do I search for similar documents using embeddings?" style="width:100%;margin-bottom:8px;">
+      </div>
+      <div>
+        <span class="option-label">Corpus (one document per line)</span>
+        <textarea id="quantCorpus" rows="5" placeholder="Documents to embed...">Vector search finds documents by computing similarity between embedding vectors in high-dimensional space.
+MongoDB Atlas Vector Search lets you index and query vector embeddings alongside your operational data.
+Traditional full-text search uses inverted indexes to match keyword terms in documents.
+Cosine similarity measures the angle between two vectors, commonly used for semantic search.
+Database sharding distributes data across multiple servers for horizontal scalability.
+Embedding models convert text into dense numerical vectors that capture meaning.
+Approximate nearest neighbor algorithms like HNSW enable fast similarity search at scale.
+Reranking models rescore initial search results to improve relevance ordering.</textarea>
+      </div>
+      <div style="margin-top:12px;">
+        <button class="btn" id="quantBtn" onclick="doBenchQuantization()">⚗️ Run Quantization Benchmark</button>
+      </div>
+    </div>
+
+    <div class="error-msg" id="quantError"></div>
+
+    <div class="result-section" id="quantResult">
+      <div class="card">
+        <div class="card-title">Storage Comparison</div>
+        <div id="quantStorageTable"></div>
+      </div>
+      <div class="card" style="margin-top:16px;">
+        <div class="card-title">Ranking Quality</div>
+        <div id="quantRankVerdict" style="margin-bottom:12px;font-size:14px;"></div>
+        <div id="quantRankGrid"></div>
       </div>
     </div>
   </div>
@@ -1558,6 +1638,7 @@ const CONCEPT_META = {
   'api-access':        { icon: '🌐', tab: 'embed' },
   'batch-processing':  { icon: '📦', tab: 'embed' },
   benchmarking:        { icon: '⏱', tab: 'benchmark' },
+  quantization:        { icon: '⚗️', tab: 'benchmark' },
 };
 
 let exploreConcepts = {};
@@ -1945,6 +2026,182 @@ function renderRankComparison(modelA, modelB, rankedA, rankedB, topK) {
   }
 }
 
+// ── Benchmark: Quantization ──
+function populateQuantModelSelect() {
+  const sel = document.getElementById('quantModel');
+  sel.innerHTML = '';
+  embedModels.forEach(m => {
+    const opt = document.createElement('option');
+    opt.value = m.name;
+    opt.textContent = m.name;
+    sel.appendChild(opt);
+  });
+  // Default to voyage-4-large if available
+  const preferred = embedModels.find(m => m.name === 'voyage-4-large');
+  if (preferred) sel.value = preferred.name;
+}
+
+function hammingSimUI(a, b) {
+  // For binary/ubinary packed embeddings, compute agreement via dot product
+  let dot = 0;
+  for (let i = 0; i < a.length; i++) dot += a[i] * b[i];
+  return dot;
+}
+
+window.doBenchQuantization = async function() {
+  hideError('quantError');
+  const model = document.getElementById('quantModel').value;
+  const dimsVal = document.getElementById('quantDimensions').value;
+  const dimensions = dimsVal ? parseInt(dimsVal, 10) : undefined;
+  const query = document.getElementById('quantQuery').value.trim();
+  const corpusText = document.getElementById('quantCorpus').value.trim();
+
+  if (!query) { showError('quantError', 'Enter a query'); return; }
+  if (!corpusText) { showError('quantError', 'Enter at least 2 documents'); return; }
+
+  const corpus = corpusText.split('\n').map(d => d.trim()).filter(Boolean);
+  if (corpus.length < 2) { showError('quantError', 'Enter at least 2 documents'); return; }
+
+  const checks = document.querySelectorAll('#quantDtypeChecks input:checked');
+  const dtypes = Array.from(checks).map(c => c.value);
+  if (dtypes.length === 0) { showError('quantError', 'Select at least one data type'); return; }
+
+  setLoading('quantBtn', true);
+
+  try {
+    const allTexts = [query, ...corpus];
+    const resultsByDtype = {};
+
+    for (const dtype of dtypes) {
+      const body = { texts: allTexts, model, inputType: 'document' };
+      if (dimensions) body.dimensions = dimensions;
+      if (dtype !== 'float') body.output_dtype = dtype;
+
+      const start = performance.now();
+      const data = await apiPost('/api/embed', body);
+      const elapsed = performance.now() - start;
+
+      const embeddings = data.data.map(d => d.embedding);
+      const queryEmbed = embeddings[0];
+      const dims = embeddings[0].length;
+      const isBinary = (dtype === 'binary' || dtype === 'ubinary');
+
+      // Rank corpus documents by similarity
+      const ranked = corpus.map((text, i) => {
+        const docEmbed = embeddings[i + 1];
+        let sim;
+        if (isBinary) {
+          sim = hammingSimUI(queryEmbed, docEmbed);
+        } else {
+          sim = cosineSim(queryEmbed, docEmbed);
+        }
+        return { index: i, text, similarity: sim };
+      }).sort((a, b) => b.similarity - a.similarity);
+
+      // Calculate storage
+      const actualDims = isBinary ? dims * 8 : dims;
+      let bytesPerVec;
+      if (dtype === 'float') bytesPerVec = dims * 4;
+      else if (dtype === 'int8' || dtype === 'uint8') bytesPerVec = dims * 1;
+      else bytesPerVec = dims; // binary/ubinary: dims is already 1/8th
+
+      resultsByDtype[dtype] = {
+        dtype, latency: elapsed, dims, actualDims, bytesPerVec,
+        tokens: data.usage?.total_tokens || 0, ranked,
+      };
+    }
+
+    const completed = Object.values(resultsByDtype);
+    if (completed.length === 0) {
+      showError('quantError', 'No data types completed successfully');
+      return;
+    }
+
+    // ── Render Storage Comparison Table ──
+    const baseline = completed.find(r => r.dtype === 'float') || completed[0];
+    let tableHTML = `<table class="cost-table">
+      <thead><tr>
+        <th>Data Type</th><th>Dimensions</th><th>Bytes/Vector</th>
+        <th>1M Docs</th><th>Savings</th><th>Latency</th>
+      </tr></thead><tbody>`;
+
+    for (const r of completed) {
+      const savings = r.bytesPerVec < baseline.bytesPerVec
+        ? `<span style="color:var(--green)">${(baseline.bytesPerVec / r.bytesPerVec).toFixed(0)}×</span>`
+        : '<span style="color:var(--text-dim)">baseline</span>';
+      const totalMB = (r.bytesPerVec * 1_000_000) / (1024 * 1024);
+      const sizeStr = totalMB >= 1024 ? `${(totalMB / 1024).toFixed(1)} GB` : `${totalMB.toFixed(0)} MB`;
+
+      tableHTML += `<tr>
+        <td style="color:var(--accent);font-weight:600">${r.dtype}</td>
+        <td>${r.actualDims}</td>
+        <td>${formatBytesUI(r.bytesPerVec)}</td>
+        <td>${sizeStr}</td>
+        <td>${savings}</td>
+        <td>${r.latency.toFixed(0)}ms</td>
+      </tr>`;
+    }
+    tableHTML += '</tbody></table>';
+    document.getElementById('quantStorageTable').innerHTML = tableHTML;
+
+    // ── Render Ranking Comparison ──
+    const topK = Math.min(5, corpus.length);
+    const verdictEl = document.getElementById('quantRankVerdict');
+    const gridEl = document.getElementById('quantRankGrid');
+    gridEl.innerHTML = '';
+
+    if (completed.length >= 2 && baseline) {
+      const baselineRanking = baseline.ranked.slice(0, topK).map(r => r.index);
+
+      let verdictParts = [];
+      for (const r of completed) {
+        if (r.dtype === baseline.dtype) continue;
+        const otherRanking = r.ranked.slice(0, topK).map(x => x.index);
+        const overlap = baselineRanking.filter(idx => otherRanking.includes(idx)).length;
+        const overlapPct = ((overlap / topK) * 100).toFixed(0);
+        const exactMatch = baselineRanking.every((idx, pos) => otherRanking[pos] === idx);
+
+        if (exactMatch) {
+          verdictParts.push(`<span style="color:var(--green)">✓ ${r.dtype}: identical ranking to ${baseline.dtype}</span>`);
+        } else if (overlap === topK) {
+          verdictParts.push(`<span style="color:var(--yellow)">⚠ ${r.dtype}: same top-${topK} docs, different order</span>`);
+        } else {
+          verdictParts.push(`<span style="color:var(--warning)">⚠ ${r.dtype}: ${overlapPct}% overlap in top-${topK} vs ${baseline.dtype}</span>`);
+        }
+      }
+      verdictEl.innerHTML = verdictParts.join('<br>');
+
+      // Build side-by-side ranking grid
+      let rankHTML = '<div style="display:grid;grid-template-columns:' + 'repeat(' + completed.length + ',1fr)' + ';gap:12px;">';
+      for (const r of completed) {
+        rankHTML += `<div>
+          <div style="font-weight:600;color:var(--accent);font-size:13px;margin-bottom:8px;">${r.dtype}</div>`;
+        r.ranked.slice(0, topK).forEach((item, pos) => {
+          const trunc = item.text.length > 50 ? item.text.slice(0, 47) + '...' : item.text;
+          const isMatch = baseline.ranked[pos] && item.index === baseline.ranked[pos].index;
+          const bg = r === baseline ? 'var(--bg-input)' : (isMatch ? 'rgba(0,212,170,0.08)' : 'rgba(255,107,107,0.08)');
+          rankHTML += `<div style="padding:6px 8px;margin-bottom:4px;border-radius:4px;background:${bg};font-size:12px;" title="${item.text.replace(/"/g, '&quot;')}">
+            <span style="color:var(--text-dim);margin-right:4px;">#${pos + 1}</span>
+            ${trunc}
+            <div style="color:var(--text-muted);font-size:11px;margin-top:2px;">${item.similarity.toFixed(4)} [doc ${item.index}]</div>
+          </div>`;
+        });
+        rankHTML += '</div>';
+      }
+      rankHTML += '</div>';
+      gridEl.innerHTML = rankHTML;
+    } else {
+      verdictEl.innerHTML = '<span style="color:var(--text-dim)">Select multiple data types (including float) to compare rankings.</span>';
+    }
+
+    document.getElementById('quantResult').classList.add('visible');
+  } catch (err) {
+    showError('quantError', err.message);
+  } finally {
+    setLoading('quantBtn', false);
+  }
+};
+
 // ── Benchmark: Cost Calculator ──
 function initCostCalculator() {
   const tokSlider = document.getElementById('costTokens');
@@ -2084,6 +2341,7 @@ init = async function() {
   await _origInit();
   buildModelCheckboxes();
   populateBenchRankSelects();
+  populateQuantModelSelect();
   initCostCalculator();
   renderHistory();
 };
