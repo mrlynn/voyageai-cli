@@ -1212,6 +1212,170 @@ function registerBenchmark(program) {
     .option('--json', 'Machine-readable JSON output')
     .option('-q, --quiet', 'Suppress non-essential output')
     .action(benchmarkAsymmetric);
+
+  // ── benchmark space ──
+  bench
+    .command('space')
+    .description('Validate shared embedding space — embed same text with all Voyage 4 models')
+    .option('--text <text>', 'Text to embed across models')
+    .option('--texts <texts>', 'Comma-separated texts to compare')
+    .option('--models <models>', 'Comma-separated models', 'voyage-4-large,voyage-4,voyage-4-lite')
+    .option('-d, --dimensions <n>', 'Output dimensions (must be supported by all models)')
+    .option('--json', 'Machine-readable JSON output')
+    .option('-q, --quiet', 'Suppress non-essential output')
+    .action(benchmarkSpace);
+}
+
+/**
+ * benchmark space — Validate shared embedding space across Voyage 4 models.
+ * Embeds the same text(s) with multiple models, then computes pairwise cosine
+ * similarities to prove they produce compatible embeddings.
+ */
+async function benchmarkSpace(opts) {
+  const models = opts.models
+    ? parseModels(opts.models)
+    : ['voyage-4-large', 'voyage-4', 'voyage-4-lite'];
+
+  const texts = opts.texts
+    ? opts.texts.split(',').map(t => t.trim())
+    : opts.text
+      ? [opts.text]
+      : [
+        'MongoDB Atlas provides a fully managed cloud database with vector search.',
+        'Machine learning models transform raw data into semantic embeddings.',
+        'The quick brown fox jumps over the lazy dog.',
+      ];
+
+  const dimensions = opts.dimensions ? parseInt(opts.dimensions, 10) : undefined;
+
+  if (!opts.json && !opts.quiet) {
+    console.log('');
+    console.log(ui.bold('  🔮 Shared Embedding Space Validation'));
+    console.log(ui.dim(`  Models: ${models.join(', ')}`));
+    console.log(ui.dim(`  Texts: ${texts.length}${dimensions ? `, dimensions: ${dimensions}` : ''}`));
+    console.log('');
+  }
+
+  // Embed all texts with all models
+  const embeddings = {}; // { model: [[embedding for text 0], [embedding for text 1], ...] }
+
+  for (const model of models) {
+    const spin = (!opts.json && !opts.quiet) ? ui.spinner(`  Embedding with ${model}...`) : null;
+    if (spin) spin.start();
+
+    try {
+      const embedOpts = { model, inputType: 'document' };
+      if (dimensions) embedOpts.dimensions = dimensions;
+      const result = await generateEmbeddings(texts, embedOpts);
+      embeddings[model] = result.data.map(d => d.embedding);
+      if (spin) spin.stop();
+    } catch (err) {
+      if (spin) spin.stop();
+      console.error(ui.warn(`  ${model}: ${err.message} — skipping`));
+    }
+  }
+
+  const validModels = Object.keys(embeddings);
+  if (validModels.length < 2) {
+    console.error(ui.error('Need at least 2 models to compare embedding spaces.'));
+    process.exit(1);
+  }
+
+  // Compute pairwise cross-model similarities for each text
+  const results = [];
+
+  for (let t = 0; t < texts.length; t++) {
+    const textResult = {
+      text: texts[t],
+      pairs: [],
+    };
+
+    for (let i = 0; i < validModels.length; i++) {
+      for (let j = i + 1; j < validModels.length; j++) {
+        const modelA = validModels[i];
+        const modelB = validModels[j];
+        const sim = cosineSimilarity(embeddings[modelA][t], embeddings[modelB][t]);
+        textResult.pairs.push({
+          modelA,
+          modelB,
+          similarity: sim,
+        });
+      }
+    }
+
+    results.push(textResult);
+  }
+
+  // Also compute within-model similarity across different texts (baseline)
+  const withinModelSims = [];
+  if (texts.length >= 2) {
+    for (const model of validModels) {
+      const sim = cosineSimilarity(embeddings[model][0], embeddings[model][1]);
+      withinModelSims.push({ model, text0: texts[0], text1: texts[1], similarity: sim });
+    }
+  }
+
+  if (opts.json) {
+    console.log(JSON.stringify({ benchmark: 'space', models: validModels, texts, results, withinModelSims }, null, 2));
+    return;
+  }
+
+  // Display results
+  console.log(ui.bold('  Cross-Model Similarity (same text, different models):'));
+  console.log(ui.dim('  High similarity (>0.95) = shared embedding space confirmed'));
+  console.log('');
+
+  let allHigh = true;
+  for (const r of results) {
+    const preview = r.text.substring(0, 55) + (r.text.length > 55 ? '...' : '');
+    console.log(`  ${ui.dim('Text:')} "${preview}"`);
+
+    for (const p of r.pairs) {
+      const simStr = p.similarity.toFixed(4);
+      const quality = p.similarity >= 0.98 ? ui.green('●')
+        : p.similarity >= 0.95 ? ui.cyan('●')
+        : p.similarity >= 0.90 ? ui.yellow('●')
+        : ui.red('●');
+      if (p.similarity < 0.95) allHigh = false;
+      console.log(`    ${quality} ${rpad(p.modelA, 18)} ↔ ${rpad(p.modelB, 18)} ${ui.bold(simStr)}`);
+    }
+    console.log('');
+  }
+
+  // Show within-model cross-text similarity for context
+  if (withinModelSims.length > 0) {
+    console.log(ui.bold('  Within-Model Similarity (different texts, same model):'));
+    console.log(ui.dim('  Shows that cross-model same-text similarity is much higher'));
+    console.log('');
+
+    for (const w of withinModelSims) {
+      console.log(`    ${ui.dim(rpad(w.model, 18))} text₀ ↔ text₁  ${ui.dim(w.similarity.toFixed(4))}`);
+    }
+    console.log('');
+  }
+
+  // Summary
+  const avgCrossModel = results.flatMap(r => r.pairs).reduce((sum, p) => sum + p.similarity, 0)
+    / results.flatMap(r => r.pairs).length;
+  const avgWithin = withinModelSims.length > 0
+    ? withinModelSims.reduce((sum, w) => sum + w.similarity, 0) / withinModelSims.length
+    : null;
+
+  if (allHigh) {
+    console.log(ui.success(`Shared embedding space confirmed! Avg cross-model similarity: ${avgCrossModel.toFixed(4)}`));
+  } else {
+    console.log(ui.warn(`Cross-model similarity lower than expected. Avg: ${avgCrossModel.toFixed(4)}`));
+  }
+
+  if (avgWithin !== null) {
+    const ratio = (avgCrossModel / avgWithin).toFixed(1);
+    console.log(ui.dim(`  Cross-model same-text similarity is ${ratio}× higher than same-model different-text similarity.`));
+  }
+
+  console.log('');
+  console.log(ui.dim('  This means you can embed docs with voyage-4-large and query with voyage-4-lite'));
+  console.log(ui.dim('  — the embeddings live in the same space. See "vai explain shared-space".'));
+  console.log('');
 }
 
 module.exports = { registerBenchmark };
