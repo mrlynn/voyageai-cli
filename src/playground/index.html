@@ -1003,6 +1003,9 @@ Reranking models rescore initial search results to improve relevance ordering.</
 
 <!-- ========== EXPLORE TAB ========== -->
 <div class="tab-panel" id="tab-explore">
+  <div style="margin-bottom:16px;">
+    <input type="text" id="exploreSearch" placeholder="🔍 Search concepts..." oninput="filterExplore()" style="max-width:400px;">
+  </div>
   <div class="explore-grid" id="exploreGrid"></div>
 </div>
 
@@ -1022,7 +1025,7 @@ let lastEmbedding = null;
 async function init() {
   setupTabs();
   await loadConfig();
-  await loadModels();
+  await Promise.all([loadModels(), loadConcepts()]);
   populateModelSelects();
   buildExploreCards();
 }
@@ -1393,101 +1396,100 @@ function createResultItem(rank, result, maxScore, movement) {
 }
 
 // ── Explore ──
-const exploreTopics = [
-  {
-    key: 'embeddings', icon: '🧮', title: 'Embeddings',
-    summary: 'Numerical representations that capture meaning',
-    content: 'Vector embeddings are arrays of floating-point numbers (typically 256–2048 dimensions) that capture the semantic meaning of text. When you embed text, a neural network reads the input and produces a fixed-size vector. Texts with similar meanings end up close together in this high-dimensional space, even if they share no words.\n\nHigher dimensions capture more nuance but cost more to store and search. Voyage 4 models default to 1024 dimensions but support 256–2048 via Matryoshka representation learning — you can truncate embeddings without retraining.',
-    tab: 'embed', prefill: () => { document.getElementById('embedInput').value = 'Artificial intelligence is transforming how we build software applications.'; }
-  },
-  {
-    key: 'reranking', icon: '🏆', title: 'Reranking',
-    summary: 'Second-stage precision with cross-attention',
-    content: 'Reranking re-scores candidate documents against a query using cross-attention — it reads the query and each document together, producing much more accurate relevance scores than embedding similarity alone.\n\nThe two-stage pattern: embedding search retrieves a broad set (high recall), then the reranker re-orders them (high precision). This adds ~50-200ms but dramatically improves result quality.',
-    tab: 'search', prefill: () => {
-      document.getElementById('searchQuery').value = 'How do I implement semantic search?';
-      document.getElementById('searchDocs').value = 'MongoDB Atlas provides vector search capabilities\nThe recipe calls for two cups of flour\nSemantic search uses embeddings to find meaning\nVector databases store high-dimensional data\nThe weather forecast predicts rain tomorrow';
-    }
-  },
-  {
-    key: 'vector-search', icon: '🔎', title: 'Vector Search',
-    summary: 'Finding documents by meaning, not keywords',
-    content: 'Vector search finds documents whose embeddings are closest to a query embedding. Instead of matching keywords, it matches meaning. MongoDB Atlas Vector Search uses $vectorSearch with HNSW (Hierarchical Navigable Small World) graph indexes for fast approximate nearest neighbor search.\n\nSimilarity functions: cosine (direction, ignoring magnitude — best default), dotProduct (magnitude-sensitive), euclidean (straight-line distance).',
-    tab: 'search', prefill: () => {}
-  },
-  {
-    key: 'rag', icon: '🤖', title: 'RAG',
-    summary: 'Retrieval-Augmented Generation',
-    content: 'RAG combines retrieval with LLM generation: instead of relying on the LLM\'s training data alone, you retrieve relevant context from your own data and include it in the prompt.\n\nThe pattern: 1) Embed your corpus and store vectors, 2) Embed the user\'s question and run vector search, 3) Pass retrieved documents + question to an LLM. Adding reranking between steps 2 and 3 dramatically improves answer quality.',
-    tab: 'search', prefill: () => {}
-  },
-  {
-    key: 'cosine', icon: '📐', title: 'Cosine Similarity',
-    summary: 'Measuring the angle between vectors',
-    content: 'Cosine similarity measures the angle between two vectors, ignoring magnitude. Vectors pointing the same direction score 1, perpendicular score 0, opposite score -1.\n\nFor text embeddings (which are typically normalized), cosine similarity and dot product give identical rankings. Cosine is preferred because it\'s intuitive: it measures how similar the direction (meaning) is, regardless of scale.',
-    tab: 'compare', prefill: () => {
-      document.getElementById('compareA').value = 'The database stores information efficiently';
-      document.getElementById('compareB').value = 'Data is saved in an optimized storage system';
-    }
-  },
-  {
-    key: 'two-stage', icon: '🎯', title: 'Two-Stage Retrieval',
-    summary: 'Embed → Search → Rerank for best results',
-    content: 'Two-stage retrieval combines a fast first stage (embedding search for recall) with a precise second stage (reranking for precision).\n\nStage 1: Embed query, run ANN search, retrieve top-100 candidates (fast, milliseconds). Stage 2: Feed query + candidates to a reranker with cross-attention, return top-5-10 (precise, ~100ms extra). This gives you both speed and accuracy.',
-    tab: 'search', prefill: () => {}
-  },
-  {
-    key: 'input-types', icon: '🏷️', title: 'Input Types',
-    summary: 'Query vs document — why it matters',
-    content: 'The input_type parameter tells the model whether text is a search query or a document being indexed. The model internally prepends different prompt prefixes for each, optimizing embeddings for asymmetric retrieval.\n\nAlways use input_type="query" for search queries and input_type="document" for corpus text. Omitting this parameter degrades retrieval accuracy.',
-    tab: 'embed', prefill: () => {
-      document.getElementById('embedInput').value = 'What is vector search and how does it work?';
-      document.getElementById('embedInputType').value = 'query';
-    }
-  },
-  {
-    key: 'models', icon: '🧠', title: 'Models',
-    summary: 'Choosing the right model for your task',
-    content: 'Voyage 4 Series: voyage-4-large (best quality, $0.12/1M tokens), voyage-4 (balanced, $0.06), voyage-4-lite (budget, $0.02). All share the same embedding space — you can mix models.\n\nDomain-specific: voyage-code-3 (code), voyage-finance-2 (financial), voyage-law-2 (legal). Rerankers: rerank-2.5 (best quality), rerank-2.5-lite (faster). Start with voyage-4 for general use.',
-    tab: 'embed', prefill: () => {}
-  },
-];
+// ── Explore: icons and tab mappings per concept ──
+const CONCEPT_META = {
+  embeddings:          { icon: '🧮', tab: 'embed' },
+  reranking:           { icon: '🏆', tab: 'search' },
+  'vector-search':     { icon: '🔎', tab: 'search' },
+  rag:                 { icon: '🤖', tab: 'search' },
+  'cosine-similarity': { icon: '📐', tab: 'compare' },
+  'two-stage-retrieval': { icon: '🎯', tab: 'search' },
+  'input-type':        { icon: '🏷️', tab: 'embed' },
+  models:              { icon: '🧠', tab: 'embed' },
+  'api-keys':          { icon: '🔑', tab: 'embed' },
+  'api-access':        { icon: '🌐', tab: 'embed' },
+  'batch-processing':  { icon: '📦', tab: 'embed' },
+  benchmarking:        { icon: '⏱', tab: 'benchmark' },
+};
+
+let exploreConcepts = {};
+
+async function loadConcepts() {
+  try {
+    const res = await fetch('/api/concepts');
+    const data = await res.json();
+    exploreConcepts = data.concepts || {};
+  } catch {
+    console.error('Failed to load concepts');
+  }
+}
+
+function escapeHtml(str) {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
 
 function buildExploreCards() {
   const grid = document.getElementById('exploreGrid');
   grid.innerHTML = '';
-  exploreTopics.forEach(topic => {
+
+  for (const [key, concept] of Object.entries(exploreConcepts)) {
+    const meta = CONCEPT_META[key] || { icon: '📚', tab: 'embed' };
     const card = document.createElement('div');
     card.className = 'explore-card';
+    card.dataset.key = key;
+
+    // Build links HTML
+    let linksHtml = '';
+    if (concept.links && concept.links.length > 0) {
+      linksHtml = '<div style="margin-top:12px;"><strong style="color:var(--accent);font-size:12px;">LEARN MORE</strong><br>' +
+        concept.links.map(url => `<a href="${escapeHtml(url)}" target="_blank" rel="noopener" style="color:var(--accent);font-size:12px;word-break:break-all;">${escapeHtml(url)}</a>`).join('<br>') +
+        '</div>';
+    }
+
+    // Build try-it HTML
+    let tryItHtml = '';
+    if (concept.tryIt && concept.tryIt.length > 0) {
+      tryItHtml = '<div style="margin-top:12px;"><strong style="color:var(--accent);font-size:12px;">TRY IT</strong>' +
+        concept.tryIt.map(cmd => `<div style="font-family:var(--mono);font-size:12px;color:var(--text-dim);background:var(--bg);padding:4px 8px;border-radius:4px;margin-top:4px;">$ ${escapeHtml(cmd)}</div>`).join('') +
+        '</div>';
+    }
+
     card.innerHTML = `
-      <div class="explore-card-icon">${topic.icon}</div>
-      <div class="explore-card-title">${topic.title}</div>
-      <div class="explore-card-summary">${topic.summary}</div>
-      <div class="explore-card-content">${topic.content}</div>
+      <div class="explore-card-icon">${meta.icon}</div>
+      <div class="explore-card-title">${escapeHtml(concept.title)}</div>
+      <div class="explore-card-summary">${escapeHtml(concept.summary)}</div>
+      <div class="explore-card-content">${escapeHtml(concept.content)}${linksHtml}${tryItHtml}</div>
       <div class="explore-card-actions">
-        <button class="btn btn-small" onclick="tryTopic('${topic.key}')">Try it →</button>
+        <button class="btn btn-small" onclick="tryTopic('${escapeHtml(key)}')">Try it in playground →</button>
         <button class="btn btn-secondary btn-small" onclick="collapseTopic(this)">Collapse</button>
       </div>
     `;
     card.addEventListener('click', function(e) {
-      if (e.target.tagName === 'BUTTON') return;
+      if (e.target.tagName === 'BUTTON' || e.target.tagName === 'A') return;
       if (!this.classList.contains('expanded')) {
         this.classList.add('expanded');
       }
     });
     grid.appendChild(card);
-  });
+  }
 }
 
 window.tryTopic = function(key) {
-  const topic = exploreTopics.find(t => t.key === key);
-  if (!topic) return;
-  if (topic.prefill) topic.prefill();
-  switchTab(topic.tab);
+  const meta = CONCEPT_META[key];
+  if (meta) switchTab(meta.tab);
 };
 
 window.collapseTopic = function(btn) {
   btn.closest('.explore-card').classList.remove('expanded');
+};
+
+window.filterExplore = function() {
+  const q = document.getElementById('exploreSearch').value.toLowerCase().trim();
+  document.querySelectorAll('#exploreGrid .explore-card').forEach(card => {
+    if (!q) { card.style.display = ''; return; }
+    const text = card.textContent.toLowerCase();
+    card.style.display = text.includes(q) ? '' : 'none';
+  });
 };
 
 // ── Benchmark: Sub-panel switching ──
