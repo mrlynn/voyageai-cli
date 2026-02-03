@@ -13,6 +13,7 @@ function registerPing(program) {
     .description('Test connectivity to Voyage AI API (and optionally MongoDB)')
     .option('--json', 'Machine-readable JSON output')
     .option('-q, --quiet', 'Suppress non-essential output')
+    .option('--mask', 'Mask sensitive info (cluster hostnames, endpoints) in output')
     .action(async (opts) => {
       const results = {};
 
@@ -27,6 +28,31 @@ function registerPing(program) {
 
       const useColor = !opts.json;
       const useSpinner = useColor && !opts.quiet;
+
+      // Masking helper: "performance.zbcul.mongodb.net" → "perfo*****.mongodb.net"
+      const PUBLIC_HOSTS = ['ai.mongodb.com', 'api.voyageai.com'];
+      const maskHost = (host) => {
+        if (!opts.mask || !host) return host;
+        if (PUBLIC_HOSTS.includes(host)) return host;
+        const parts = host.split('.');
+        if (parts.length >= 3) {
+          const name = parts[0];
+          const masked = name.slice(0, Math.min(5, name.length)) + '*****';
+          return [masked, ...parts.slice(1)].join('.');
+        }
+        return host.slice(0, 5) + '*****';
+      };
+
+      const maskUrl = (url) => {
+        if (!opts.mask || !url) return url;
+        try {
+          const u = new URL(url);
+          u.hostname = maskHost(u.hostname);
+          return u.toString().replace(/\/$/, '');
+        } catch {
+          return url;
+        }
+      };
 
       const apiBase = getApiBase();
       const model = 'voyage-4-lite';
@@ -94,7 +120,7 @@ function registerPing(program) {
           console.log(`ok ${elapsed}ms`);
         } else {
           console.log(ui.success(`Connected to Voyage AI API ${ui.dim('(' + elapsed + 'ms)')}`));
-          console.log(ui.label('Endpoint', apiBase));
+          console.log(ui.label('Endpoint', maskUrl(apiBase)));
           console.log(ui.label('Model', model));
           console.log(ui.label('Dimensions', String(dims)));
           console.log(ui.label('Tokens', String(tokens)));
@@ -145,7 +171,7 @@ function registerPing(program) {
           if (!opts.json && !opts.quiet) {
             console.log('');
             console.log(ui.success(`Connected to MongoDB Atlas ${ui.dim('(' + mongoElapsed + 'ms)')}`));
-            console.log(ui.label('Cluster', cluster));
+            console.log(ui.label('Cluster', maskHost(cluster)));
           }
 
           await client.close();
