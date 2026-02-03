@@ -173,6 +173,12 @@ vai rerank --query "how does cloud database work" \
 | `VOYAGE_API_KEY` | embed, rerank, store, search, ping | [Model API key](https://www.mongodb.com/docs/voyageai/management/api-keys/) from MongoDB Atlas |
 | `MONGODB_URI` | store, search, index, ping (optional) | MongoDB Atlas connection string |
 
+Credentials are resolved in this order (highest priority first):
+
+1. **Environment variables** (`export VOYAGE_API_KEY=...`)
+2. **`.env` file** in your working directory
+3. **Config file** (`~/.vai/config.json` via `vai config set`)
+
 You can also create a `.env` file in your project directory instead of exporting variables:
 
 ```
@@ -180,7 +186,25 @@ VOYAGE_API_KEY=your-key
 MONGODB_URI=mongodb+srv://user:pass@cluster.mongodb.net/
 ```
 
-The CLI will automatically load variables from `.env` using [dotenv](https://www.npmjs.com/package/dotenv).
+> ⚠️ **Add `.env` to your `.gitignore`** to avoid accidentally committing secrets.
+
+Or use the built-in config store:
+
+```bash
+# Pipe to avoid key appearing in shell history
+echo "your-key" | vai config set api-key --stdin
+vai config set mongodb-uri "mongodb+srv://user:pass@cluster.mongodb.net/"
+
+# Verify (secrets are masked)
+vai config get
+```
+
+### Security
+
+- Config file (`~/.vai/config.json`) is created with `600` permissions (owner read/write only)
+- Secrets are always masked in `vai config get` output
+- Use `echo "key" | vai config set api-key --stdin` or `vai config set api-key --stdin < keyfile` to avoid shell history exposure
+- The config file stores credentials in plaintext (similar to `~/.aws/credentials` and `~/.npmrc`) — protect your home directory accordingly
 
 ## Global Flags
 

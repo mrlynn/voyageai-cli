@@ -24,15 +24,41 @@ function registerConfig(program) {
     .command('config')
     .description('Manage persistent configuration (~/.vai/config.json)');
 
-  // ── config set <key> <value> ──
+  // ── config set <key> [value] ──
   configCmd
-    .command('set <key> <value>')
-    .description('Set a config value')
-    .action((key, value) => {
+    .command('set <key> [value]')
+    .description('Set a config value (omit value to read from stdin)')
+    .option('--stdin', 'Read value from stdin (avoids shell history exposure)')
+    .action(async (key, value, opts) => {
       const internalKey = KEY_MAP[key];
       if (!internalKey) {
         console.error(`Error: Unknown config key "${key}".`);
         console.error(`Valid keys: ${VALID_KEYS.join(', ')}`);
+        process.exit(1);
+      }
+
+      // Read from stdin if no value provided or --stdin flag
+      if (!value || opts.stdin) {
+        if (process.stdin.isTTY && !value) {
+          // Interactive: prompt without echo for secrets
+          const isSecret = SECRET_KEYS.has(internalKey);
+          if (isSecret) {
+            process.stderr.write(`Enter ${key}: `);
+          } else {
+            process.stderr.write(`Enter ${key}: `);
+          }
+        }
+        if (!value) {
+          const chunks = [];
+          for await (const chunk of process.stdin) {
+            chunks.push(chunk);
+          }
+          value = Buffer.concat(chunks).toString('utf-8').trim();
+        }
+      }
+
+      if (!value) {
+        console.error('Error: No value provided.');
         process.exit(1);
       }
 

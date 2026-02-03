@@ -1,6 +1,6 @@
 'use strict';
 
-const { API_BASE } = require('../lib/api');
+const { API_BASE, requireApiKey } = require('../lib/api');
 
 /**
  * Register the ping command on a Commander program.
@@ -16,16 +16,11 @@ function registerPing(program) {
       const results = {};
 
       // ── Voyage AI ping ──
-      const apiKey = process.env.VOYAGE_API_KEY;
-      if (!apiKey) {
-        if (opts.json) {
-          console.log(JSON.stringify({ ok: false, error: 'VOYAGE_API_KEY not set' }));
-        } else {
-          console.error('✗ VOYAGE_API_KEY is not set.');
-          console.error('');
-          console.error('Get one from MongoDB Atlas → AI Models → Create model API key');
-          console.error('Then: export VOYAGE_API_KEY="your-key-here"');
-        }
+      let apiKey;
+      try {
+        apiKey = requireApiKey();
+      } catch {
+        // requireApiKey calls process.exit, but just in case
         process.exit(1);
       }
 
@@ -103,7 +98,8 @@ function registerPing(program) {
       }
 
       // ── MongoDB ping (optional) ──
-      const mongoUri = process.env.MONGODB_URI;
+      const { getConfigValue } = require('../lib/config');
+      const mongoUri = process.env.MONGODB_URI || getConfigValue('mongodbUri');
       if (mongoUri) {
         const mongoStart = Date.now();
         try {
