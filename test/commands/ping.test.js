@@ -14,6 +14,10 @@ describe('ping command', () => {
   let output;
   let errorOutput;
 
+  // Strip ANSI escape codes for reliable string assertions in CI
+  // (GitHub Actions sets FORCE_COLOR which adds ANSI codes via picocolors)
+  const stripAnsi = (s) => s.replace(/\x1b\[[0-9;]*m/g, '');
+
   beforeEach(() => {
     originalLog = console.log;
     originalError = console.error;
@@ -70,7 +74,7 @@ describe('ping command', () => {
 
     await program.parseAsync(['node', 'test', 'ping']);
 
-    const combined = output.join('\n');
+    const combined = stripAnsi(output.join('\n'));
     assert.ok(combined.includes('✓ Connected to Voyage AI API'), 'Should show success message');
     assert.ok(combined.includes('voyage-4-lite'), 'Should show model name');
     assert.ok(combined.includes('1024'), 'Should show dimensions');
@@ -101,7 +105,7 @@ describe('ping command', () => {
     );
 
     assert.equal(exitCode, 1);
-    const combined = errorOutput.join('\n');
+    const combined = stripAnsi(errorOutput.join('\n'));
     assert.ok(combined.includes('Authentication failed'), 'Should show auth error');
   });
 
@@ -134,7 +138,7 @@ describe('ping command', () => {
       );
 
       assert.equal(exitCode, 1);
-      const combined = errorOutput.join('\n');
+      const combined = stripAnsi(errorOutput.join('\n'));
       assert.ok(combined.includes('VOYAGE_API_KEY'), 'Should mention missing key');
     } finally {
       config.getConfigValue = origGetConfigValue;
