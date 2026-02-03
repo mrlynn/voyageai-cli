@@ -7,6 +7,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/).
 ## [Unreleased]
 
 ### Added
+- `vai similarity` — Compute cosine similarity between texts without MongoDB
 - `vai demo` — Interactive guided walkthrough of all features
 - ASCII banner when running `vai` with no arguments
 - CONTRIBUTING.md for open-source contributors

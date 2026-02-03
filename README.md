@@ -66,6 +66,19 @@ vai rerank --query "best database" --documents-file candidates.json --top-k 3
 vai rerank --query "query" --documents "doc1" "doc2" --model rerank-2.5-lite
 ```
 
+### `vai similarity` — Compare text similarity
+
+```bash
+# Compare two texts
+vai similarity "MongoDB is a document database" "MongoDB Atlas is a cloud database"
+
+# Compare one text against many
+vai similarity "database performance" --against "MongoDB is fast" "PostgreSQL is relational"
+
+# From files
+vai similarity --file1 doc1.txt --file2 doc2.txt
+```
+
 ### `vai store` — Embed and insert into MongoDB Atlas
 
 Requires `MONGODB_URI` environment variable.
