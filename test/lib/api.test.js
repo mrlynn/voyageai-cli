@@ -25,8 +25,13 @@ describe('api', () => {
   describe('requireApiKey', () => {
     it('throws/exits when VOYAGE_API_KEY is not set', () => {
       delete process.env.VOYAGE_API_KEY;
-      // Re-require to get fresh module
+      // Re-require to get fresh modules (clear config cache too)
       delete require.cache[require.resolve('../../src/lib/api')];
+      delete require.cache[require.resolve('../../src/lib/config')];
+      const config = require('../../src/lib/config');
+      const originalGetConfigValue = config.getConfigValue;
+      config.getConfigValue = () => undefined;
+
       const { requireApiKey } = require('../../src/lib/api');
 
       let exitCode = null;
@@ -35,8 +40,12 @@ describe('api', () => {
         throw new Error('process.exit called');
       };
 
-      assert.throws(() => requireApiKey(), /process\.exit called/);
-      assert.equal(exitCode, 1);
+      try {
+        assert.throws(() => requireApiKey(), /process\.exit called/);
+        assert.equal(exitCode, 1);
+      } finally {
+        config.getConfigValue = originalGetConfigValue;
+      }
     });
 
     it('returns key when VOYAGE_API_KEY is set', () => {

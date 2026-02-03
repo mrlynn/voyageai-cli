@@ -243,6 +243,19 @@ describe('ingest', () => {
       assert.ok(optionNames.includes('--json'), 'should have --json option');
       assert.ok(optionNames.includes('--quiet'), 'should have --quiet option');
       assert.ok(optionNames.includes('--strict'), 'should have --strict option');
+      assert.ok(optionNames.includes('--input-type'), 'should have --input-type option');
+    });
+
+    it('--input-type defaults to document', () => {
+      delete require.cache[require.resolve('../../src/commands/ingest')];
+      const { registerIngest } = require('../../src/commands/ingest');
+      const { Command } = require('commander');
+      const program = new Command();
+      registerIngest(program);
+
+      const ingestCmd = program.commands.find(c => c.name() === 'ingest');
+      const inputTypeOpt = ingestCmd.options.find(o => o.long === '--input-type');
+      assert.equal(inputTypeOpt.defaultValue, 'document', '--input-type should default to document');
     });
   });
 });

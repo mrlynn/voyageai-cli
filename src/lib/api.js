@@ -1,7 +1,31 @@
 'use strict';
 
-const API_BASE = 'https://ai.mongodb.com/v1';
+const ATLAS_API_BASE = 'https://ai.mongodb.com/v1';
+const VOYAGE_API_BASE = 'https://api.voyageai.com/v1';
 const MAX_RETRIES = 3;
+
+/**
+ * Resolve the API base URL.
+ * Priority: VOYAGE_API_BASE env → config baseUrl → auto-detect from key prefix.
+ * Keys starting with 'pa-' that work on Voyage platform use VOYAGE_API_BASE.
+ * @returns {string}
+ */
+function getApiBase() {
+  const { getConfigValue } = require('./config');
+
+  // Explicit override wins
+  const envBase = process.env.VOYAGE_API_BASE;
+  if (envBase) return envBase.replace(/\/+$/, '');
+
+  const configBase = getConfigValue('baseUrl');
+  if (configBase) return configBase.replace(/\/+$/, '');
+
+  // Default to Atlas endpoint
+  return ATLAS_API_BASE;
+}
+
+// Legacy export for backward compat
+const API_BASE = ATLAS_API_BASE;
 
 /**
  * Get the Voyage API key or exit with a helpful error.
@@ -18,6 +42,7 @@ function requireApiKey() {
     console.error('Option 2: vai config set api-key <your-key>');
     console.error('');
     console.error('Get one from MongoDB Atlas → AI Models → Create model API key');
+    console.error('       or Voyage AI platform → Dashboard → API Keys');
     process.exit(1);
   }
   return key;
@@ -40,7 +65,8 @@ function sleep(ms) {
  */
 async function apiRequest(endpoint, body) {
   const apiKey = requireApiKey();
-  const url = `${API_BASE}${endpoint}`;
+  const base = getApiBase();
+  const url = `${base}${endpoint}`;
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     const response = await fetch(url, {
@@ -69,6 +95,23 @@ async function apiRequest(endpoint, body) {
         errorDetail = await response.text();
       }
       console.error(`API Error (${response.status}): ${errorDetail}`);
+
+      // Help users diagnose endpoint mismatch
+      if (response.status === 403 && base === ATLAS_API_BASE) {
+        console.error('');
+        console.error('Hint: 403 on ai.mongodb.com often means your key is for the Voyage AI');
+        console.error('platform, not MongoDB Atlas. Try switching the base URL:');
+        console.error('');
+        console.error('  vai config set base-url https://api.voyageai.com/v1/');
+        console.error('');
+        console.error('Or set VOYAGE_API_BASE=https://api.voyageai.com/v1/ in your environment.');
+      } else if (response.status === 401 && base === VOYAGE_API_BASE) {
+        console.error('');
+        console.error('Hint: 401 on api.voyageai.com may mean your key is an Atlas AI key.');
+        console.error('Try switching back:');
+        console.error('');
+        console.error('  vai config set base-url https://ai.mongodb.com/v1/');
+      }
       process.exit(1);
     }
 
@@ -83,6 +126,7 @@ async function apiRequest(endpoint, body) {
  * @param {string} [options.model] - Model name
  * @param {string} [options.inputType] - Input type (query|document)
  * @param {number} [options.dimensions] - Output dimensions
+ * @param {boolean} [options.truncation] - Enable/disable truncation
  * @returns {Promise<object>} API response with embeddings
  */
 async function generateEmbeddings(texts, options = {}) {
@@ -99,12 +143,18 @@ async function generateEmbeddings(texts, options = {}) {
   if (options.dimensions) {
     body.output_dimension = options.dimensions;
   }
+  if (options.truncation !== undefined) {
+    body.truncation = options.truncation;
+  }
 
   return apiRequest('/embeddings', body);
 }
 
 module.exports = {
   API_BASE,
+  ATLAS_API_BASE,
+  VOYAGE_API_BASE,
+  getApiBase,
   requireApiKey,
   apiRequest,
   generateEmbeddings,

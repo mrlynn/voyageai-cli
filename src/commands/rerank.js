@@ -18,6 +18,9 @@ function registerRerank(program) {
     .option('--documents-file <path>', 'File with documents (JSON array or newline-delimited)')
     .option('-m, --model <model>', 'Reranking model', DEFAULT_RERANK_MODEL)
     .option('-k, --top-k <n>', 'Return top K results', (v) => parseInt(v, 10))
+    .option('--truncation', 'Enable truncation for long inputs')
+    .option('--no-truncation', 'Disable truncation')
+    .option('--return-documents', 'Return document text in results')
     .option('--json', 'Machine-readable JSON output')
     .option('-q, --quiet', 'Suppress non-essential output')
     .action(async (opts) => {
@@ -76,6 +79,12 @@ function registerRerank(program) {
         if (opts.topK) {
           body.top_k = opts.topK;
         }
+        if (opts.truncation !== undefined) {
+          body.truncation = opts.truncation;
+        }
+        if (opts.returnDocuments) {
+          body.return_documents = true;
+        }
 
         const useColor = !opts.json;
         const useSpinner = useColor && !opts.quiet;
@@ -106,8 +115,9 @@ function registerRerank(program) {
 
         if (result.data) {
           for (const item of result.data) {
-            const docPreview = documents[item.index].substring(0, 80);
-            const ellipsis = documents[item.index].length > 80 ? '...' : '';
+            const docText = item.document || documents[item.index];
+            const docPreview = docText.substring(0, 80);
+            const ellipsis = docText.length > 80 ? '...' : '';
             console.log(`${ui.dim('[' + item.index + ']')} Score: ${ui.score(item.relevance_score)}  ${ui.dim('"' + docPreview + ellipsis + '"')}`);
           }
         }

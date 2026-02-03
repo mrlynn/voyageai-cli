@@ -105,8 +105,17 @@ describe('ping command', () => {
     assert.ok(combined.includes('Authentication failed'), 'Should show auth error');
   });
 
-  it('exits when VOYAGE_API_KEY is not set', async () => {
+  it('exits when VOYAGE_API_KEY is not set and no config', async () => {
     delete process.env.VOYAGE_API_KEY;
+    // Mock config to return nothing so the key isn't found in ~/.vai/config.json
+    delete require.cache[require.resolve('../../src/lib/config')];
+    delete require.cache[require.resolve('../../src/lib/api')];
+    delete require.cache[require.resolve('../../src/commands/ping')];
+    const config = require('../../src/lib/config');
+    const origGetConfigValue = config.getConfigValue;
+    config.getConfigValue = () => undefined;
+
+    const { registerPing: registerPingFresh } = require('../../src/commands/ping');
 
     let exitCode = null;
     process.exit = (code) => {
@@ -116,16 +125,20 @@ describe('ping command', () => {
 
     const program = new Command();
     program.exitOverride();
-    registerPing(program);
+    registerPingFresh(program);
 
-    await assert.rejects(
-      () => program.parseAsync(['node', 'test', 'ping']),
-      /process\.exit called/
-    );
+    try {
+      await assert.rejects(
+        () => program.parseAsync(['node', 'test', 'ping']),
+        /process\.exit called/
+      );
 
-    assert.equal(exitCode, 1);
-    const combined = errorOutput.join('\n');
-    assert.ok(combined.includes('VOYAGE_API_KEY'), 'Should mention missing key');
+      assert.equal(exitCode, 1);
+      const combined = errorOutput.join('\n');
+      assert.ok(combined.includes('VOYAGE_API_KEY'), 'Should mention missing key');
+    } finally {
+      config.getConfigValue = origGetConfigValue;
+    }
   });
 
   it('outputs JSON when --json flag is used', async () => {
