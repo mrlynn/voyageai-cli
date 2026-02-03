@@ -4,6 +4,7 @@
 require('dotenv').config({ quiet: true });
 
 const { program } = require('commander');
+const pc = require('picocolors');
 const { registerEmbed } = require('./commands/embed');
 const { registerRerank } = require('./commands/rerank');
 const { registerStore } = require('./commands/store');
@@ -13,12 +14,15 @@ const { registerModels } = require('./commands/models');
 const { registerPing } = require('./commands/ping');
 const { registerConfig } = require('./commands/config');
 const { registerDemo } = require('./commands/demo');
-const { showBanner, showQuickStart } = require('./lib/banner');
+const { registerExplain } = require('./commands/explain');
+const { showBanner, showQuickStart, getVersion } = require('./lib/banner');
+
+const version = getVersion();
 
 program
   .name('vai')
   .description('Voyage AI embeddings, reranking, and Atlas Vector Search CLI')
-  .version('1.1.0');
+  .version(`vai/${version} (community tool — not an official MongoDB or Voyage AI product)`, '-V, --version', 'output the version number');
 
 registerEmbed(program);
 registerRerank(program);
@@ -29,6 +33,13 @@ registerModels(program);
 registerPing(program);
 registerConfig(program);
 registerDemo(program);
+registerExplain(program);
+
+// Append disclaimer to all help output
+program.addHelpText('after', `
+${pc.dim('Community tool — not an official MongoDB or Voyage AI product.')}
+${pc.dim('Docs: https://www.mongodb.com/docs/voyageai/')}
+`);
 
 // If no args (just `vai`), show banner + quick start + help
 if (process.argv.length <= 2) {

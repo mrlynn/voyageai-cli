@@ -130,6 +130,9 @@ function registerDemo(program) {
       console.log(pc.bold('  🧭 Voyage AI Interactive Demo'));
       console.log(pc.dim('  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━'));
       console.log('');
+      console.log(pc.dim('  Note: This is a community tool, not an official MongoDB or Voyage AI product.'));
+      console.log(pc.dim('  For official docs and support: https://www.mongodb.com/docs/voyageai/'));
+      console.log('');
       console.log('  This walkthrough demonstrates embeddings, semantic search, and reranking');
       console.log('  using Voyage AI models via MongoDB Atlas.');
       console.log('');

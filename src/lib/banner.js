@@ -35,6 +35,7 @@ function showBanner() {
   console.log(titleLine);
   console.log(taglineLine);
   console.log(bot);
+  console.log(pc.dim('  Community tool — not an official MongoDB or Voyage AI product'));
   console.log('');
 }
 

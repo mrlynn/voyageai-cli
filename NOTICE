@@ -1,0 +1,23 @@
+voyageai-cli — Community CLI for Voyage AI and MongoDB Atlas Vector Search
+
+Copyright (c) 2026 Michael Lynn
+
+DISCLAIMER:
+This software is an independent, community-built tool. It is NOT an official
+product of MongoDB, Inc. or Voyage AI (a MongoDB company). It is not supported,
+endorsed, or maintained by either organization.
+
+This tool interacts with:
+- The MongoDB Atlas Embedding and Reranking API (https://ai.mongodb.com/v1/)
+- MongoDB Atlas Vector Search (https://www.mongodb.com/docs/atlas/atlas-vector-search/)
+
+For official documentation, support, and products:
+- MongoDB: https://www.mongodb.com
+- Voyage AI: https://www.mongodb.com/docs/voyageai/
+- MongoDB Support: https://support.mongodb.com
+
+"MongoDB", "MongoDB Atlas", and "Voyage AI" are trademarks of MongoDB, Inc.
+All trademarks belong to their respective owners.
+
+This software is provided "as is" without warranty of any kind. See LICENSE
+for the full MIT License terms.

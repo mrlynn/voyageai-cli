@@ -6,6 +6,12 @@ CLI for [Voyage AI](https://www.mongodb.com/docs/voyageai/) embeddings, rerankin
 
 Generate embeddings, rerank search results, store vectors in Atlas, and run semantic search — all from the command line.
 
+> **⚠️ Disclaimer:** This is an independent, community-built tool. It is **not** an official product of MongoDB, Inc. or Voyage AI. It is not supported, endorsed, or maintained by either company. For official documentation, support, and products, visit:
+> - **MongoDB:** [mongodb.com](https://www.mongodb.com) | [MongoDB Atlas](https://www.mongodb.com/atlas) | [Support](https://support.mongodb.com)
+> - **Voyage AI:** [MongoDB Voyage AI Docs](https://www.mongodb.com/docs/voyageai/)
+>
+> Use at your own risk. No warranty is provided. See [LICENSE](LICENSE) for details.
+
 ## Install
 
 ```bash
@@ -236,6 +242,10 @@ Free tier: 200M tokens for most models. All Voyage 4 series models share the sam
 - Node.js 18+
 - A [MongoDB Atlas](https://www.mongodb.com/atlas) account (free tier works)
 - A [Voyage AI model API key](https://www.mongodb.com/docs/voyageai/management/api-keys/) (created in Atlas)
+
+## Disclaimer
+
+This is a community tool and is not affiliated with, endorsed by, or supported by MongoDB, Inc. or Voyage AI. All trademarks belong to their respective owners. For official support, visit [mongodb.com](https://www.mongodb.com).
 
 ## License
 
