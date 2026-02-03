@@ -15,6 +15,7 @@ describe('explanations', () => {
     'input-type',
     'models',
     'api-keys',
+    'api-access',
     'batch-processing',
   ];
 
@@ -81,6 +82,10 @@ describe('explanations', () => {
       similarity: 'cosine-similarity',
       'two-stage': 'two-stage-retrieval',
       keys: 'api-keys',
+      access: 'api-access',
+      auth: 'api-access',
+      'atlas-vs-voyage': 'api-access',
+      endpoint: 'api-access',
       batch: 'batch-processing',
       model: 'models',
       batching: 'batch-processing',
