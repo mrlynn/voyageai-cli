@@ -3,6 +3,11 @@
 /**
  * Compute cosine similarity between two vectors.
  * cosine_sim(a, b) = dot(a, b) / (||a|| * ||b||)
+ *
+ * Fun fact: this is basically asking "how much do these two vectors
+ * vibe?" — 1.0 means soulmates, 0.0 means strangers at a party,
+ * -1.0 means they're in a Twitter argument.
+ *
  * @param {number[]} a
  * @param {number[]} b
  * @returns {number} Similarity score in [-1, 1]

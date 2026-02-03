@@ -78,6 +78,8 @@ async function apiRequest(endpoint, body) {
       body: JSON.stringify(body),
     });
 
+    // 429: The API said "slow down monkey" — respect the rate limit
+    // like you'd respect a $merge that's already running on your replica set.
     if (response.status === 429 && attempt < MAX_RETRIES) {
       const retryAfter = response.headers.get('Retry-After');
       const waitMs = retryAfter ? parseInt(retryAfter, 10) * 1000 : Math.pow(2, attempt) * 1000;

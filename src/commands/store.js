@@ -170,6 +170,8 @@ async function handleBatchStore(opts) {
 
     const { client: c, collection } = await getMongoCollection(opts.db, opts.collection);
     client = c;
+    // insertMany: because life's too short for one document at a time.
+    // This is the MongoDB equivalent of "I'll have what everyone's having."
     const result = await collection.insertMany(docs);
 
     if (spin) spin.stop();

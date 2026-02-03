@@ -22,6 +22,8 @@ function getDefaultDimensions() {
   return getConfigValue('defaultDimensions') || DEFAULT_DIMENSIONS;
 }
 
+// The model catalog: like a wine list (I don't drink :-P), except every choice
+// leads to vectors instead of regret.
 /** @type {Array<{name: string, type: string, context: string, dimensions: string, price: string, bestFor: string}>} */
 const MODEL_CATALOG = [
   { name: 'voyage-4-large', type: 'embedding', context: '32K', dimensions: '1024 (default), 256, 512, 2048', price: '$0.12/1M tokens', bestFor: 'Best quality, multilingual', shortFor: 'Best quality' },
