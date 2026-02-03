@@ -12,12 +12,8 @@ const { registerIndex } = require('./commands/index');
 const { registerModels } = require('./commands/models');
 const { registerPing } = require('./commands/ping');
 const { registerConfig } = require('./commands/config');
-
-// Check for updates (async, non-blocking, cached for 1 day)
-const updateNotifierModule = require('update-notifier');
-const updateNotifier = updateNotifierModule.default || updateNotifierModule;
-const pkg = require('../package.json');
-updateNotifier({ pkg, updateCheckInterval: 1000 * 60 * 60 * 24 }).notify({ isGlobal: true });
+const { registerDemo } = require('./commands/demo');
+const { showBanner, showQuickStart } = require('./lib/banner');
 
 program
   .name('vai')
@@ -32,5 +28,14 @@ registerIndex(program);
 registerModels(program);
 registerPing(program);
 registerConfig(program);
+registerDemo(program);
+
+// If no args (just `vai`), show banner + quick start + help
+if (process.argv.length <= 2) {
+  showBanner();
+  showQuickStart();
+  program.outputHelp();
+  process.exit(0);
+}
 
 program.parse();
