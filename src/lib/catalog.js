@@ -32,7 +32,7 @@ const MODEL_CATALOG = [
   { name: 'voyage-code-3', type: 'embedding', context: '32K', dimensions: '1024 (default), 256, 512, 2048', price: '$0.18/1M tokens', bestFor: 'Code retrieval', shortFor: 'Code' },
   { name: 'voyage-finance-2', type: 'embedding', context: '32K', dimensions: '1024', price: '$0.12/1M tokens', bestFor: 'Finance', shortFor: 'Finance' },
   { name: 'voyage-law-2', type: 'embedding', context: '16K', dimensions: '1024', price: '$0.12/1M tokens', bestFor: 'Legal', shortFor: 'Legal' },
-  { name: 'voyage-context-3', type: 'embedding', context: '32K', dimensions: '1024 (default), 256, 512, 2048', price: '$0.18/1M tokens', bestFor: 'Contextualized chunks', shortFor: 'Context chunks' },
+  { name: 'voyage-context-3', type: 'embedding', context: '32K', dimensions: '1024 (default), 256, 512, 2048', price: '$0.18/1M tokens', bestFor: 'Contextualized chunks', shortFor: 'Context chunks', unreleased: true },
   { name: 'voyage-multimodal-3.5', type: 'embedding-multimodal', context: '32K', dimensions: '1024 (default), 256, 512, 2048', price: '$0.12/M + $0.60/B px', bestFor: 'Text + images + video', shortFor: 'Multimodal', multimodal: true },
   { name: 'rerank-2.5', type: 'reranking', context: '32K', dimensions: '—', price: '$0.05/1M tokens', bestFor: 'Best quality reranking', shortFor: 'Best reranker' },
   { name: 'rerank-2.5-lite', type: 'reranking', context: '32K', dimensions: '—', price: '$0.02/1M tokens', bestFor: 'Fast reranking', shortFor: 'Fast reranker' },

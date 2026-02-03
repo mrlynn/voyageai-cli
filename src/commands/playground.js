@@ -84,7 +84,7 @@ function createPlaygroundServer() {
 
       // API: Models
       if (req.method === 'GET' && req.url === '/api/models') {
-        const models = MODEL_CATALOG.filter(m => !m.legacy && !m.local);
+        const models = MODEL_CATALOG.filter(m => !m.legacy && !m.local && !m.unreleased);
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ models }));
         return;
