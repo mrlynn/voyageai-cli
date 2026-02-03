@@ -19,7 +19,7 @@ _vai_completions() {
   prev="\${COMP_WORDS[COMP_CWORD-1]}"
 
   # Top-level commands
-  commands="embed rerank store search index models ping config demo explain similarity ingest completions help"
+  commands="embed rerank store search index models ping config demo explain similarity ingest estimate completions help"
 
   # Subcommands
   local index_subs="create list delete"
@@ -102,6 +102,10 @@ _vai_completions() {
       COMPREPLY=( \$(compgen -W "--file --db --collection --field --model --input-type --dimensions --batch-size --text-field --text-column --strict --dry-run --json --quiet --help" -- "\$cur") )
       return 0
       ;;
+    estimate)
+      COMPREPLY=( \$(compgen -W "--docs --queries --doc-tokens --query-tokens --doc-model --query-model --months --json --quiet --help" -- "\$cur") )
+      return 0
+      ;;
     completions)
       COMPREPLY=( \$(compgen -W "bash zsh --help" -- "\$cur") )
       return 0
@@ -172,6 +176,7 @@ _vai() {
     'explain:Learn about AI and vector search concepts'
     'similarity:Compute cosine similarity between texts'
     'ingest:Bulk import documents with progress'
+    'estimate:Estimate embedding costs — symmetric vs asymmetric'
     'completions:Generate shell completion scripts'
     'help:Display help for command'
   )
@@ -372,6 +377,18 @@ _vai() {
             '--text-column[CSV column to embed]:column:' \\
             '--strict[Abort on first batch error]' \\
             '--dry-run[Validate only, no API calls]' \\
+            '--json[Machine-readable JSON output]' \\
+            '(-q --quiet)'{-q,--quiet}'[Suppress non-essential output]'
+          ;;
+        estimate)
+          _arguments \\
+            '--docs[Number of documents]:count:' \\
+            '--queries[Queries per month]:count:' \\
+            '--doc-tokens[Avg tokens per document]:tokens:' \\
+            '--query-tokens[Avg tokens per query]:tokens:' \\
+            '--doc-model[Document embedding model]:model:(\$models)' \\
+            '--query-model[Query embedding model]:model:(\$models)' \\
+            '--months[Months to project]:months:' \\
             '--json[Machine-readable JSON output]' \\
             '(-q --quiet)'{-q,--quiet}'[Suppress non-essential output]'
           ;;
