@@ -19,7 +19,7 @@ _vai_completions() {
   prev="\${COMP_WORDS[COMP_CWORD-1]}"
 
   # Top-level commands
-  commands="embed rerank store search index models ping config demo explain similarity ingest estimate completions help"
+  commands="embed rerank store search index models ping config demo explain similarity ingest estimate init chunk completions help"
 
   # Subcommands
   local index_subs="create list delete"
@@ -106,6 +106,14 @@ _vai_completions() {
       COMPREPLY=( \$(compgen -W "--docs --queries --doc-tokens --query-tokens --doc-model --query-model --months --json --quiet --help" -- "\$cur") )
       return 0
       ;;
+    init)
+      COMPREPLY=( \$(compgen -W "--yes --force --json --quiet --help" -- "\$cur") )
+      return 0
+      ;;
+    chunk)
+      COMPREPLY=( \$(compgen -W "--strategy --chunk-size --overlap --min-size --output --text-field --extensions --ignore --dry-run --stats --json --quiet --help" -- "\$cur") )
+      return 0
+      ;;
     completions)
       COMPREPLY=( \$(compgen -W "bash zsh --help" -- "\$cur") )
       return 0
@@ -177,6 +185,8 @@ _vai() {
     'similarity:Compute cosine similarity between texts'
     'ingest:Bulk import documents with progress'
     'estimate:Estimate embedding costs — symmetric vs asymmetric'
+    'init:Initialize project with .vai.json'
+    'chunk:Chunk documents for embedding'
     'completions:Generate shell completion scripts'
     'help:Display help for command'
   )
@@ -390,6 +400,29 @@ _vai() {
             '--query-model[Query embedding model]:model:(\$models)' \\
             '--months[Months to project]:months:' \\
             '--json[Machine-readable JSON output]' \\
+            '(-q --quiet)'{-q,--quiet}'[Suppress non-essential output]'
+          ;;
+        init)
+          _arguments \\
+            '(-y --yes)'{-y,--yes}'[Accept all defaults]' \\
+            '--force[Overwrite existing .vai.json]' \\
+            '--json[Output config as JSON]' \\
+            '(-q --quiet)'{-q,--quiet}'[Suppress non-essential output]'
+          ;;
+        chunk)
+          _arguments \\
+            '1:input:_files' \\
+            '(-s --strategy)'{-s,--strategy}'[Chunking strategy]:strategy:(fixed sentence paragraph recursive markdown)' \\
+            '(-c --chunk-size)'{-c,--chunk-size}'[Target chunk size]:size:' \\
+            '--overlap[Overlap between chunks]:chars:' \\
+            '--min-size[Minimum chunk size]:chars:' \\
+            '(-o --output)'{-o,--output}'[Output file]:file:_files' \\
+            '--text-field[Text field for JSON]:field:' \\
+            '--extensions[File extensions]:exts:' \\
+            '--ignore[Dirs to skip]:dirs:' \\
+            '--dry-run[Preview without processing]' \\
+            '--stats[Show statistics]' \\
+            '--json[JSON output]' \\
             '(-q --quiet)'{-q,--quiet}'[Suppress non-essential output]'
           ;;
         completions)
