@@ -17,7 +17,7 @@ function registerStore(program) {
     .description('Embed text and store in MongoDB Atlas')
     .requiredOption('--db <database>', 'Database name')
     .requiredOption('--collection <name>', 'Collection name')
-    .requiredOption('--field <name>', 'Embedding field name')
+    .option('--field <name>', 'Embedding field name', 'embedding')
     .option('--text <text>', 'Text to embed and store')
     .option('-f, --file <path>', 'File to embed and store (text file or .jsonl for batch mode)')
     .option('-m, --model <model>', 'Embedding model', getDefaultModel())
