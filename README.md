@@ -312,6 +312,29 @@ All commands support:
 
 Free tier: 200M tokens for most models. All Voyage 4 series models share the same embedding space.
 
+## Benchmarks: vai vs. Voyage AI's Published Results
+
+Voyage AI publishes [retrieval quality benchmarks](https://blog.voyageai.com/2026/01/15/voyage-4/) — NDCG@10 scores across 29 RTEB datasets measuring how *accurate* each model's embeddings are. Their results show voyage-4-large outperforms Gemini Embedding 001 by 3.87%, Cohere Embed v4 by 8.20%, and OpenAI v3 Large by 14.05%.
+
+**`vai benchmark` measures something different:** real-world latency, cost, and whether models agree on ranking *your specific data*. The two are complementary:
+
+| | Voyage AI Benchmarks | vai benchmark |
+|---|---|---|
+| **Measures** | Retrieval quality (NDCG@10) | Latency, cost, ranking agreement |
+| **Data** | 29 standardized datasets | Your actual data |
+| **Answers** | "Which model produces the best embeddings?" | "For my data and budget, which model should I use?" |
+
+Voyage AI's key insight — [asymmetric retrieval](https://blog.voyageai.com/2026/01/15/voyage-4/) (embed docs with voyage-4-large, query with voyage-4-lite) — is directly testable with `vai`:
+
+```bash
+# Does the cheap query model find the same results as the expensive one?
+vai benchmark asymmetric --doc-model voyage-4-large \
+  --query-models voyage-4-large,voyage-4,voyage-4-lite \
+  --file your-corpus.txt --query "your actual query"
+```
+
+If rankings agree, you can embed documents once with voyage-4-large and query with voyage-4-lite — **6x cheaper** at query time with no re-indexing.
+
 ## Requirements
 
 - Node.js 18+

@@ -797,6 +797,16 @@ select:focus { outline: none; border-color: var(--accent); }
         <option value="2048">2048</option>
       </select>
     </div>
+    <div class="option-group">
+      <span class="option-label">Output Type</span>
+      <select id="embedOutputDtype">
+        <option value="float">float (32-bit)</option>
+        <option value="int8">int8 (4× smaller)</option>
+        <option value="uint8">uint8 (4× smaller)</option>
+        <option value="binary">binary (32× smaller)</option>
+        <option value="ubinary">ubinary (32× smaller)</option>
+      </select>
+    </div>
     <button class="btn" id="embedBtn" onclick="doEmbed()">⚡ Embed</button>
   </div>
 
@@ -1238,6 +1248,12 @@ function populateModelSelects() {
 }
 
 // ── API Helpers ──
+function formatBytesUI(bytes) {
+  if (bytes >= 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  if (bytes >= 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  return bytes + ' B';
+}
+
 async function apiPost(url, body) {
   const res = await fetch(url, {
     method: 'POST',
@@ -1284,16 +1300,29 @@ window.doEmbed = async function() {
     const dims = document.getElementById('embedDimensions').value;
     const dimensions = dims ? parseInt(dims, 10) : undefined;
 
-    const data = await apiPost('/api/embed', { texts: [text], model, inputType, dimensions });
+    const outputDtype = document.getElementById('embedOutputDtype').value;
+    const body = { texts: [text], model, inputType, dimensions };
+    if (outputDtype && outputDtype !== 'float') body.output_dtype = outputDtype;
+
+    const data = await apiPost('/api/embed', body);
     const emb = data.data[0].embedding;
     lastEmbedding = emb;
 
     // Stats
+    const dtype = outputDtype || 'float';
+    const bytesPerDim = (dtype === 'binary' || dtype === 'ubinary') ? 0.125 : (dtype === 'int8' || dtype === 'uint8') ? 1 : 4;
+    const totalBytes = emb.length * bytesPerDim;
+    const storageLine = dtype !== 'float'
+      ? `<br><span style="color:var(--success)">📦 ${dtype}: ${formatBytesUI(totalBytes)}/vector (${(4 * emb.length / totalBytes).toFixed(0)}× smaller than float)</span>`
+      : '';
+
     const statsEl = document.getElementById('embedStats');
     statsEl.innerHTML = `
       <span class="stat"><span class="stat-label">Model</span><span class="stat-value">${data.model}</span></span>
       <span class="stat"><span class="stat-label">Dimensions</span><span class="stat-value">${emb.length}</span></span>
       <span class="stat"><span class="stat-label">Tokens</span><span class="stat-value">${data.usage?.total_tokens || '—'}</span></span>
+      <span class="stat"><span class="stat-label">Type</span><span class="stat-value">${dtype}</span></span>
+      ${storageLine}
     `;
 
     // Vector preview

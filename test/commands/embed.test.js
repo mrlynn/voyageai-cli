@@ -29,4 +29,14 @@ describe('embed command', () => {
     const optionNames = embedCmd.options.map(o => o.long);
     assert.ok(optionNames.includes('--input-type'), 'should have --input-type option');
   });
+
+  it('has --output-dtype flag with float default', () => {
+    const program = new Command();
+    registerEmbed(program);
+    const embedCmd = program.commands.find(c => c.name() === 'embed');
+    const optionNames = embedCmd.options.map(o => o.long);
+    assert.ok(optionNames.includes('--output-dtype'), 'should have --output-dtype option');
+    const opt = embedCmd.options.find(o => o.long === '--output-dtype');
+    assert.equal(opt.defaultValue, 'float');
+  });
 });

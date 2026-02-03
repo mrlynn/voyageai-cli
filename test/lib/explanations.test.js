@@ -17,6 +17,7 @@ describe('explanations', () => {
     'api-keys',
     'api-access',
     'batch-processing',
+    'quantization',
     'benchmarking',
   ];
 
@@ -90,6 +91,11 @@ describe('explanations', () => {
       batch: 'batch-processing',
       model: 'models',
       batching: 'batch-processing',
+      quantize: 'quantization',
+      int8: 'quantization',
+      binary: 'quantization',
+      matryoshka: 'quantization',
+      dtype: 'quantization',
     };
 
     it('alias map covers expected aliases', () => {

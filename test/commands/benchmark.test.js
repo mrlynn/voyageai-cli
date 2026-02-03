@@ -241,6 +241,73 @@ describe('benchmark command', () => {
     assert.ok(optionNames.includes('--save'), 'should have --save option');
   });
 
+  it('has asymmetric subcommand', () => {
+    const program = new Command();
+    registerBenchmark(program);
+    const benchCmd = program.commands.find(c => c.name() === 'benchmark');
+    const asymSub = benchCmd.commands.find(c => c.name() === 'asymmetric');
+    assert.ok(asymSub, 'asymmetric subcommand should be registered');
+  });
+
+  it('asymmetric has --doc-model and --query-models options', () => {
+    const program = new Command();
+    registerBenchmark(program);
+    const benchCmd = program.commands.find(c => c.name() === 'benchmark');
+    const asymSub = benchCmd.commands.find(c => c.name() === 'asymmetric');
+    const optionNames = asymSub.options.map(o => o.long);
+    assert.ok(optionNames.includes('--doc-model'), 'should have --doc-model');
+    assert.ok(optionNames.includes('--query-models'), 'should have --query-models');
+  });
+
+  it('asymmetric defaults doc-model to voyage-4-large', () => {
+    const program = new Command();
+    registerBenchmark(program);
+    const benchCmd = program.commands.find(c => c.name() === 'benchmark');
+    const asymSub = benchCmd.commands.find(c => c.name() === 'asymmetric');
+    const opt = asymSub.options.find(o => o.long === '--doc-model');
+    assert.equal(opt.defaultValue, 'voyage-4-large');
+  });
+
+  it('has quantization subcommand with quant alias', () => {
+    const program = new Command();
+    registerBenchmark(program);
+    const benchCmd = program.commands.find(c => c.name() === 'benchmark');
+    const quantSub = benchCmd.commands.find(c => c.name() === 'quantization');
+    assert.ok(quantSub, 'quantization subcommand should be registered');
+    assert.ok(quantSub.aliases().includes('quant'), 'should have "quant" alias');
+  });
+
+  it('quantization has --model, --dtypes, --query options', () => {
+    const program = new Command();
+    registerBenchmark(program);
+    const benchCmd = program.commands.find(c => c.name() === 'benchmark');
+    const quantSub = benchCmd.commands.find(c => c.name() === 'quantization');
+    const optionNames = quantSub.options.map(o => o.long);
+    assert.ok(optionNames.includes('--model'), 'should have --model');
+    assert.ok(optionNames.includes('--dtypes'), 'should have --dtypes');
+    assert.ok(optionNames.includes('--query'), 'should have --query');
+  });
+
+  it('quantization defaults dtypes to float,int8,ubinary', () => {
+    const program = new Command();
+    registerBenchmark(program);
+    const benchCmd = program.commands.find(c => c.name() === 'benchmark');
+    const quantSub = benchCmd.commands.find(c => c.name() === 'quantization');
+    const dtypesOpt = quantSub.options.find(o => o.long === '--dtypes');
+    assert.equal(dtypesOpt.defaultValue, 'float,int8,ubinary');
+  });
+
+  it('quantization has --dimensions, --save, --file options', () => {
+    const program = new Command();
+    registerBenchmark(program);
+    const benchCmd = program.commands.find(c => c.name() === 'benchmark');
+    const quantSub = benchCmd.commands.find(c => c.name() === 'quantization');
+    const optionNames = quantSub.options.map(o => o.long);
+    assert.ok(optionNames.includes('--dimensions'), 'should have --dimensions');
+    assert.ok(optionNames.includes('--save'), 'should have --save');
+    assert.ok(optionNames.includes('--file'), 'should have --file');
+  });
+
   it('batch defaults batch-sizes to 1,5,10,25,50', () => {
     const program = new Command();
     registerBenchmark(program);
