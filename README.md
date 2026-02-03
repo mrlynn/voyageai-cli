@@ -6,15 +6,11 @@
 
 [![CI](https://github.com/mrlynn/voyageai-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/mrlynn/voyageai-cli/actions/workflows/ci.yml) [![npm version](https://img.shields.io/npm/v/voyageai-cli.svg)](https://www.npmjs.com/package/voyageai-cli) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT) [![Node.js](https://img.shields.io/node/v/voyageai-cli.svg)](https://nodejs.org)
 
-CLI for [Voyage AI](https://www.mongodb.com/docs/voyageai/) embeddings, reranking, and [MongoDB Atlas Vector Search](https://www.mongodb.com/docs/atlas/atlas-vector-search/). Embed text, benchmark models, compare quantization tradeoffs, and search — all from the terminal. Pure Node.js — no Python required.
+The fastest path from documents to semantic search. Chunk files, generate [Voyage AI](https://www.mongodb.com/docs/voyageai/) embeddings, store in [MongoDB Atlas](https://www.mongodb.com/docs/atlas/atlas-vector-search/), and query with two-stage retrieval — all from the terminal.
 
-**16 commands · 201 tests · Interactive playground · Quantization benchmarks**
+**21 commands · 312 tests · 5 chunking strategies · End-to-end RAG pipeline**
 
-> **⚠️ Disclaimer:** This is an independent, community-built tool. It is **not** an official product of MongoDB, Inc. or Voyage AI. It is not supported, endorsed, or maintained by either company. For official documentation, support, and products, visit:
-> - **MongoDB:** [mongodb.com](https://www.mongodb.com) | [MongoDB Atlas](https://www.mongodb.com/atlas) | [Support](https://support.mongodb.com)
-> - **Voyage AI:** [MongoDB Voyage AI Docs](https://www.mongodb.com/docs/voyageai/)
->
-> Use at your own risk. No warranty is provided. See [LICENSE](LICENSE) for details.
+> **⚠️ Disclaimer:** This is an independent, community-built tool — **not** an official product of MongoDB, Inc. or Voyage AI. See [Disclaimer](#disclaimer) for details.
 
 ## Install
 
@@ -22,328 +18,285 @@ CLI for [Voyage AI](https://www.mongodb.com/docs/voyageai/) embeddings, rerankin
 npm install -g voyageai-cli
 ```
 
-## Quick Start
+## 5-Minute RAG Pipeline
+
+Go from a folder of documents to a searchable vector database:
 
 ```bash
-# Set your API key (get one from MongoDB Atlas → AI Models)
+# Set credentials
 export VOYAGE_API_KEY="your-key"
+export MONGODB_URI="mongodb+srv://user:pass@cluster.mongodb.net/"
 
-# Generate an embedding
-vai embed "What is MongoDB?"
+# Initialize project
+vai init --yes
 
-# List available models
-vai models
+# Chunk → embed → store (one command)
+vai pipeline ./docs/ --db myapp --collection knowledge --create-index
+
+# Search with two-stage retrieval
+vai query "How do I configure replica sets?" --db myapp --collection knowledge
 ```
 
-## Commands
+That's it. Documents chunked, embedded with `voyage-4-large`, stored in Atlas with metadata, vector index created, and searchable with reranking.
 
-### `vai embed` — Generate embeddings
+## Project Config
+
+Stop typing `--db myapp --collection docs` on every command:
 
 ```bash
-# Single text
-vai embed "Hello, world"
-
-# With options
-vai embed "search query" --model voyage-4-large --input-type query --dimensions 512
-
-# From a file
-vai embed --file document.txt --input-type document
-
-# Bulk from stdin (newline-delimited)
-cat texts.txt | vai embed
-
-# Raw array output
-vai embed "hello" --output-format array
+vai init
 ```
 
-### `vai rerank` — Rerank documents by relevance
+Creates `.vai.json` with your defaults — model, database, collection, chunking strategy. Every command reads it automatically. CLI flags override when needed.
+
+```json
+{
+  "model": "voyage-4-large",
+  "db": "myapp",
+  "collection": "knowledge",
+  "field": "embedding",
+  "dimensions": 1024,
+  "chunk": {
+    "strategy": "recursive",
+    "size": 512,
+    "overlap": 50
+  }
+}
+```
+
+## Core Workflow
+
+### `vai pipeline` — Chunk → embed → store
+
+The end-to-end command. Takes files or directories, chunks them, embeds in batches, stores in MongoDB Atlas.
 
 ```bash
-# Inline documents
+# Directory of docs
+vai pipeline ./docs/ --db myapp --collection knowledge --create-index
+
+# Single file
+vai pipeline whitepaper.pdf --db myapp --collection papers
+
+# Preview without API calls
+vai pipeline ./docs/ --dry-run
+
+# Custom chunking
+vai pipeline ./docs/ --strategy markdown --chunk-size 1024 --overlap 100
+```
+
+Supports: `.txt`, `.md`, `.html`, `.json`, `.jsonl`, `.pdf` (optional `pdf-parse` dependency). Auto-detects markdown files for heading-aware chunking.
+
+### `vai query` — Search + rerank
+
+Two-stage retrieval in one command: embed query → vector search → rerank → results.
+
+```bash
+# Search with reranking (default)
+vai query "How does authentication work?" --db myapp --collection knowledge
+
+# Vector search only (skip rerank)
+vai query "auth setup" --no-rerank
+
+# With pre-filter
+vai query "performance tuning" --filter '{"category": "guides"}' --top-k 10
+```
+
+### `vai chunk` — Document chunking
+
+Standalone chunking for when you need control over the pipeline.
+
+```bash
+# Chunk a directory, output JSONL
+vai chunk ./docs/ --output chunks.jsonl --stats
+
+# Specific strategy
+vai chunk paper.md --strategy markdown --chunk-size 1024
+
+# Preview
+vai chunk ./docs/ --dry-run
+```
+
+Five strategies: `fixed`, `sentence`, `paragraph`, `recursive` (default), `markdown`.
+
+### `vai estimate` — Cost estimator
+
+Compare symmetric vs. asymmetric embedding strategies before committing.
+
+```bash
+vai estimate --docs 10M --queries 100M --months 12
+```
+
+Shows cost breakdown for every Voyage 4 model combination, including asymmetric retrieval (embed docs with `voyage-4-large`, query with `voyage-4-lite` — same quality, fraction of the cost).
+
+## Individual Commands
+
+For when you need fine-grained control:
+
+```bash
+# Embed text
+vai embed "What is MongoDB?" --model voyage-4-large --dimensions 512
+
+# Rerank documents
 vai rerank --query "database performance" \
-  --documents "MongoDB is fast" "Redis is cached" "SQL is relational"
+  --documents "MongoDB is fast" "PostgreSQL is relational" "Redis is cached"
 
-# From a file (JSON array or newline-delimited)
-vai rerank --query "best database" --documents-file candidates.json --top-k 3
+# Compare similarity
+vai similarity "MongoDB is a database" "Atlas is a cloud database"
 
-# Different model
-vai rerank --query "query" --documents "doc1" "doc2" --model rerank-2.5-lite
-```
-
-### `vai similarity` — Compare text similarity
-
-```bash
-# Compare two texts
-vai similarity "MongoDB is a document database" "MongoDB Atlas is a cloud database"
-
-# Compare one text against many
-vai similarity "database performance" --against "MongoDB is fast" "PostgreSQL is relational"
-
-# From files
-vai similarity --file1 doc1.txt --file2 doc2.txt
-```
-
-### `vai store` — Embed and insert into MongoDB Atlas
-
-Requires `MONGODB_URI` environment variable.
-
-```bash
-# Single document with metadata
+# Store a single document
 vai store --db myapp --collection docs --field embedding \
-  --text "MongoDB Atlas is a cloud database" \
-  --metadata '{"source": "docs", "category": "product"}'
+  --text "MongoDB Atlas provides managed cloud databases"
 
-# From a file
-vai store --db myapp --collection docs --field embedding \
-  --file article.txt
-
-# Batch from JSONL (one {"text": "...", "metadata": {...}} per line)
-vai store --db myapp --collection docs --field embedding \
-  --file documents.jsonl
-```
-
-### `vai ingest` — Bulk import with progress
-
-```bash
-# JSONL (one JSON object per line with a "text" field)
+# Bulk import from file
 vai ingest --file corpus.jsonl --db myapp --collection docs --field embedding
 
-# JSON array
-vai ingest --file documents.json --db myapp --collection docs --field embedding
+# Vector search (raw)
+vai search --query "cloud database" --db myapp --collection docs
 
-# CSV (specify text column)
-vai ingest --file data.csv --db myapp --collection docs --field embedding --text-column content
-
-# Plain text (one document per line)
-vai ingest --file lines.txt --db myapp --collection docs --field embedding
-
-# Options
-vai ingest --file corpus.jsonl --db myapp --collection docs --field embedding \
-  --model voyage-4 --batch-size 100 --input-type document
-
-# Preview without embedding
-vai ingest --file corpus.jsonl --db myapp --collection docs --field embedding --dry-run
-```
-
-### `vai search` — Vector similarity search
-
-Requires `MONGODB_URI` environment variable.
-
-```bash
-# Basic search
-vai search --query "cloud database" \
-  --db myapp --collection docs \
-  --index vector_index --field embedding
-
-# With pre-filter and limit
-vai search --query "performance tuning" \
-  --db myapp --collection docs \
-  --index vector_index --field embedding \
-  --filter '{"category": "guides"}' --limit 5
-```
-
-### `vai index` — Manage Atlas Vector Search indexes
-
-Requires `MONGODB_URI` environment variable.
-
-```bash
-# Create an index
-vai index create --db myapp --collection docs --field embedding \
-  --dimensions 1024 --similarity cosine --index-name my_index
-
-# List indexes
+# Manage indexes
+vai index create --db myapp --collection docs --field embedding
 vai index list --db myapp --collection docs
-
-# Delete an index
-vai index delete --db myapp --collection docs --index-name my_index
 ```
 
-### `vai ping` — Test API connectivity
+## Models & Benchmarks
 
 ```bash
-# Test Voyage AI API
-vai ping
+# List models with architecture and shared space info
+vai models --wide
 
-# Also tests MongoDB if MONGODB_URI is set
-export MONGODB_URI="mongodb+srv://user:pass@cluster.mongodb.net/"
-vai ping
-
-# JSON output
-vai ping --json
+# Show RTEB benchmark scores
+vai models --benchmarks
 ```
 
-### `vai models` — List available models
+### Voyage 4 Family
+
+| Model | Architecture | Price/1M tokens | RTEB Score | Best For |
+|-------|-------------|----------------|------------|----------|
+| voyage-4-large | **MoE** | $0.12 | **71.41** | Best quality — first production MoE embedding model |
+| voyage-4 | Dense | $0.06 | 70.07 | Balanced quality/cost |
+| voyage-4-lite | Dense | $0.02 | 68.10 | High-volume, budget |
+| voyage-4-nano | Dense | Free (open-weight) | — | Local dev, edge, [HuggingFace](https://huggingface.co/voyageai/voyage-4-nano) |
+
+**Shared embedding space:** All Voyage 4 models produce compatible embeddings. Embed docs with `voyage-4-large`, query with `voyage-4-lite` — no re-vectorization needed.
+
+### Competitive Landscape (RTEB NDCG@10)
+
+| Model | Score |
+|-------|-------|
+| **voyage-4-large** | **71.41** |
+| voyage-4 | 70.07 |
+| Gemini Embedding 001 | 68.66 |
+| voyage-4-lite | 68.10 |
+| Cohere Embed v4 | 65.75 |
+| OpenAI v3 Large | 62.57 |
+
+Also available: `voyage-code-3` (code), `voyage-finance-2` (finance), `voyage-law-2` (legal), `rerank-2.5` / `rerank-2.5-lite`.
+
+## Benchmarking Your Data
+
+Published benchmarks measure average quality across standardized datasets. `vai benchmark` measures what matters for **your** use case:
 
 ```bash
-# All models
-vai models
+# Compare model latency and cost
+vai benchmark embed --models voyage-4-large,voyage-4,voyage-4-lite --rounds 5
 
-# Filter by type
-vai models --type embedding
-vai models --type reranking
+# Test asymmetric retrieval on your data
+vai benchmark asymmetric --file your-corpus.txt --query "your actual query"
+
+# Validate shared embedding space
+vai benchmark space
+
+# Compare quantization tradeoffs
+vai benchmark quantization --model voyage-4-large --dtypes float,int8,ubinary
+
+# Project costs at scale
+vai benchmark cost --tokens 500 --volumes 100,1000,10000,100000
 ```
 
-## Full Pipeline Example
+## Learn
+
+Interactive explanations of key concepts:
 
 ```bash
-export VOYAGE_API_KEY="your-key"
-export MONGODB_URI="mongodb+srv://user:pass@cluster.mongodb.net/"
-
-# 1. Store documents with embeddings
-vai store --db myapp --collection articles --field embedding \
-  --text "MongoDB Atlas provides a fully managed cloud database" \
-  --metadata '{"title": "Atlas Overview"}'
-
-vai store --db myapp --collection articles --field embedding \
-  --text "Vector search enables semantic similarity matching" \
-  --metadata '{"title": "Vector Search Guide"}'
-
-# 2. Create a vector search index
-vai index create --db myapp --collection articles --field embedding \
-  --dimensions 1024 --similarity cosine --index-name article_search
-
-# 3. Search (wait ~60s for index to build on small collections)
-vai search --query "how does cloud database work" \
-  --db myapp --collection articles --index article_search --field embedding
-
-# 4. Rerank for precision
-vai rerank --query "how does cloud database work" \
-  --documents "MongoDB Atlas provides a fully managed cloud database" \
-    "Vector search enables semantic similarity matching"
+vai explain embeddings        # What are vector embeddings?
+vai explain moe               # Mixture-of-experts architecture
+vai explain shared-space      # Shared embedding space & asymmetric retrieval
+vai explain rteb              # RTEB benchmark scores
+vai explain quantization      # Matryoshka dimensions & quantization
+vai explain two-stage         # The embed → search → rerank pattern
+vai explain nano              # voyage-4-nano open-weight model
+vai explain models            # How to choose the right model
 ```
 
-## Environment Variables
+17 topics covering embeddings, reranking, vector search, RAG, and more.
+
+## Environment & Auth
 
 | Variable | Required For | Description |
 |----------|-------------|-------------|
-| `VOYAGE_API_KEY` | embed, rerank, store, search, ping | [Model API key](https://www.mongodb.com/docs/voyageai/management/api-keys/) from MongoDB Atlas |
-| `MONGODB_URI` | store, search, index, ping (optional) | MongoDB Atlas connection string |
+| `VOYAGE_API_KEY` | All embedding/reranking | [Model API key](https://www.mongodb.com/docs/voyageai/management/api-keys/) from MongoDB Atlas |
+| `MONGODB_URI` | store, search, query, pipeline, index | MongoDB Atlas connection string |
 
-Credentials are resolved in this order (highest priority first):
-
-1. **Environment variables** (`export VOYAGE_API_KEY=...`)
-2. **`.env` file** in your working directory
-3. **Config file** (`~/.vai/config.json` via `vai config set`)
-
-You can also create a `.env` file in your project directory instead of exporting variables:
-
-```
-VOYAGE_API_KEY=your-key
-MONGODB_URI=mongodb+srv://user:pass@cluster.mongodb.net/
-```
-
-> ⚠️ **Add `.env` to your `.gitignore`** to avoid accidentally committing secrets.
-
-Or use the built-in config store:
+Credentials resolve in order: environment variables → `.env` file → `~/.vai/config.json`.
 
 ```bash
-# Pipe to avoid key appearing in shell history
+# Or use the built-in config store
 echo "your-key" | vai config set api-key --stdin
-vai config set mongodb-uri "mongodb+srv://user:pass@cluster.mongodb.net/"
-
-# Verify (secrets are masked)
-vai config get
+vai config set mongodb-uri "mongodb+srv://..."
 ```
-
-### Security
-
-- Config file (`~/.vai/config.json`) is created with `600` permissions (owner read/write only)
-- Secrets are always masked in `vai config get` output
-- Use `echo "key" | vai config set api-key --stdin` or `vai config set api-key --stdin < keyfile` to avoid shell history exposure
-- The config file stores credentials in plaintext (similar to `~/.aws/credentials` and `~/.npmrc`) — protect your home directory accordingly
 
 ## Shell Completions
 
-`vai` supports tab completion for bash and zsh.
-
-### Bash
-
 ```bash
-# Add to ~/.bashrc (or ~/.bash_profile on macOS)
+# Bash
 vai completions bash >> ~/.bashrc
-source ~/.bashrc
 
-# Or install system-wide (Linux)
-vai completions bash > /etc/bash_completion.d/vai
-
-# Or with Homebrew (macOS)
-vai completions bash > $(brew --prefix)/etc/bash_completion.d/vai
-```
-
-### Zsh
-
-```bash
-# Create completions directory
+# Zsh
 mkdir -p ~/.zsh/completions
-
-# Add to fpath in ~/.zshrc (if not already there)
-echo 'fpath=(~/.zsh/completions $fpath)' >> ~/.zshrc
-echo 'autoload -Uz compinit && compinit' >> ~/.zshrc
-
-# Generate the completion file
 vai completions zsh > ~/.zsh/completions/_vai
-source ~/.zshrc
 ```
 
-Completions cover all 14 commands, subcommands, flags, model names, and explain topics.
+Covers all 21 commands, subcommands, flags, model names, and explain topics.
 
-## Global Flags
+## All Commands
 
-All commands support:
-
-| Flag | Description |
-|------|-------------|
-| `--json` | Machine-readable JSON output |
-| `--quiet` | Suppress non-essential output |
-
-## Models
-
-| Model | Type | Dimensions | Price/1M tokens | Best For |
-|-------|------|-----------|----------------|----------|
-| voyage-4-large | embedding | 1024 (default), 256-2048 | $0.12 | Best quality |
-| voyage-4 | embedding | 1024 (default), 256-2048 | $0.06 | Balanced |
-| voyage-4-lite | embedding | 1024 (default), 256-2048 | $0.02 | Lowest cost |
-| voyage-code-3 | embedding | 1024 (default), 256-2048 | $0.18 | Code |
-| voyage-finance-2 | embedding | 1024 | $0.12 | Finance |
-| voyage-law-2 | embedding | 1024 | $0.12 | Legal |
-| voyage-multimodal-3.5 | embedding | 1024 (default), 256-2048 | $0.12 + pixels | Text + images |
-| rerank-2.5 | reranking | — | $0.05 | Best reranking |
-| rerank-2.5-lite | reranking | — | $0.02 | Fast reranking |
-
-Free tier: 200M tokens for most models. All Voyage 4 series models share the same embedding space.
-
-## Benchmarks: vai vs. Voyage AI's Published Results
-
-Voyage AI publishes [retrieval quality benchmarks](https://blog.voyageai.com/2026/01/15/voyage-4/) — NDCG@10 scores across 29 RTEB datasets measuring how *accurate* each model's embeddings are. Their results show voyage-4-large outperforms Gemini Embedding 001 by 3.87%, Cohere Embed v4 by 8.20%, and OpenAI v3 Large by 14.05%.
-
-**`vai benchmark` measures something different:** real-world latency, cost, and whether models agree on ranking *your specific data*. The two are complementary:
-
-| | Voyage AI Benchmarks | vai benchmark |
-|---|---|---|
-| **Measures** | Retrieval quality (NDCG@10) | Latency, cost, ranking agreement |
-| **Data** | 29 standardized datasets | Your actual data |
-| **Answers** | "Which model produces the best embeddings?" | "For my data and budget, which model should I use?" |
-
-Voyage AI's key insight — [asymmetric retrieval](https://blog.voyageai.com/2026/01/15/voyage-4/) (embed docs with voyage-4-large, query with voyage-4-lite) — is directly testable with `vai`:
-
-```bash
-# Does the cheap query model find the same results as the expensive one?
-vai benchmark asymmetric --doc-model voyage-4-large \
-  --query-models voyage-4-large,voyage-4,voyage-4-lite \
-  --file your-corpus.txt --query "your actual query"
-```
-
-If rankings agree, you can embed documents once with voyage-4-large and query with voyage-4-lite — **6x cheaper** at query time with no re-indexing.
+| Command | Description |
+|---------|-------------|
+| `vai init` | Initialize project with `.vai.json` |
+| `vai pipeline` | Chunk → embed → store (end-to-end) |
+| `vai query` | Search + rerank (two-stage retrieval) |
+| `vai chunk` | Chunk documents (5 strategies) |
+| `vai estimate` | Cost estimator (symmetric vs asymmetric) |
+| `vai embed` | Generate embeddings |
+| `vai rerank` | Rerank documents by relevance |
+| `vai similarity` | Compare text similarity |
+| `vai store` | Embed and store single documents |
+| `vai ingest` | Bulk import with progress |
+| `vai search` | Vector similarity search |
+| `vai index` | Manage Atlas Vector Search indexes |
+| `vai models` | List models, benchmarks, architecture |
+| `vai benchmark` | 8 subcommands for model comparison |
+| `vai explain` | 17 interactive concept explainers |
+| `vai config` | Manage persistent configuration |
+| `vai ping` | Test API and MongoDB connectivity |
+| `vai playground` | Interactive web playground |
+| `vai demo` | Guided walkthrough |
+| `vai completions` | Shell completion scripts |
+| `vai about` | About this tool |
 
 ## Requirements
 
 - Node.js 18+
-- A [MongoDB Atlas](https://www.mongodb.com/atlas) account (free tier works)
-- A [Voyage AI model API key](https://www.mongodb.com/docs/voyageai/management/api-keys/) (created in Atlas)
+- [MongoDB Atlas](https://www.mongodb.com/atlas) account (free tier works)
+- [Voyage AI model API key](https://www.mongodb.com/docs/voyageai/management/api-keys/) (created in Atlas)
 
 ## Disclaimer
 
-This is a community tool and is not affiliated with, endorsed by, or supported by MongoDB, Inc. or Voyage AI. All trademarks belong to their respective owners. For official support, visit [mongodb.com](https://www.mongodb.com).
+This is a community tool and is not affiliated with, endorsed by, or supported by MongoDB, Inc. or Voyage AI. All trademarks belong to their respective owners.
+
+For official documentation and support:
+- **MongoDB:** [mongodb.com](https://www.mongodb.com) | [Atlas](https://www.mongodb.com/atlas) | [Support](https://support.mongodb.com)
+- **Voyage AI:** [MongoDB Voyage AI Docs](https://www.mongodb.com/docs/voyageai/)
 
 ## License
 
