@@ -19,7 +19,7 @@ _vai_completions() {
   prev="\${COMP_WORDS[COMP_CWORD-1]}"
 
   # Top-level commands
-  commands="embed rerank store search index models ping config demo explain similarity ingest estimate init chunk completions help"
+  commands="embed rerank store search index models ping config demo explain similarity ingest estimate init chunk query pipeline completions help"
 
   # Subcommands
   local index_subs="create list delete"
@@ -114,6 +114,14 @@ _vai_completions() {
       COMPREPLY=( \$(compgen -W "--strategy --chunk-size --overlap --min-size --output --text-field --extensions --ignore --dry-run --stats --json --quiet --help" -- "\$cur") )
       return 0
       ;;
+    query)
+      COMPREPLY=( \$(compgen -W "--db --collection --index --field --model --dimensions --limit --top-k --rerank --no-rerank --rerank-model --text-field --filter --num-candidates --show-vectors --json --quiet --help" -- "\$cur") )
+      return 0
+      ;;
+    pipeline)
+      COMPREPLY=( \$(compgen -W "--db --collection --field --index --model --dimensions --strategy --chunk-size --overlap --batch-size --text-field --extensions --ignore --create-index --dry-run --json --quiet --help" -- "\$cur") )
+      return 0
+      ;;
     completions)
       COMPREPLY=( \$(compgen -W "bash zsh --help" -- "\$cur") )
       return 0
@@ -187,6 +195,8 @@ _vai() {
     'estimate:Estimate embedding costs — symmetric vs asymmetric'
     'init:Initialize project with .vai.json'
     'chunk:Chunk documents for embedding'
+    'query:Search + rerank in one shot'
+    'pipeline:Chunk, embed, and store documents'
     'completions:Generate shell completion scripts'
     'help:Display help for command'
   )
@@ -422,6 +432,46 @@ _vai() {
             '--ignore[Dirs to skip]:dirs:' \\
             '--dry-run[Preview without processing]' \\
             '--stats[Show statistics]' \\
+            '--json[JSON output]' \\
+            '(-q --quiet)'{-q,--quiet}'[Suppress non-essential output]'
+          ;;
+        query)
+          _arguments \\
+            '1:query text:' \\
+            '--db[Database name]:database:' \\
+            '--collection[Collection name]:collection:' \\
+            '--index[Vector search index]:index:' \\
+            '--field[Embedding field]:field:' \\
+            '(-m --model)'{-m,--model}'[Embedding model]:model:(\$models)' \\
+            '(-d --dimensions)'{-d,--dimensions}'[Output dimensions]:dims:' \\
+            '(-l --limit)'{-l,--limit}'[Search candidates]:limit:' \\
+            '(-k --top-k)'{-k,--top-k}'[Final results]:k:' \\
+            '--rerank[Enable reranking]' \\
+            '--no-rerank[Skip reranking]' \\
+            '--rerank-model[Reranking model]:model:' \\
+            '--text-field[Document text field]:field:' \\
+            '--filter[Pre-filter JSON]:json:' \\
+            '--json[JSON output]' \\
+            '(-q --quiet)'{-q,--quiet}'[Suppress non-essential output]'
+          ;;
+        pipeline)
+          _arguments \\
+            '1:input:_files' \\
+            '--db[Database name]:database:' \\
+            '--collection[Collection name]:collection:' \\
+            '--field[Embedding field]:field:' \\
+            '--index[Vector search index]:index:' \\
+            '(-m --model)'{-m,--model}'[Embedding model]:model:(\$models)' \\
+            '(-d --dimensions)'{-d,--dimensions}'[Output dimensions]:dims:' \\
+            '(-s --strategy)'{-s,--strategy}'[Chunking strategy]:strategy:(fixed sentence paragraph recursive markdown)' \\
+            '(-c --chunk-size)'{-c,--chunk-size}'[Chunk size]:size:' \\
+            '--overlap[Chunk overlap]:chars:' \\
+            '--batch-size[Texts per API call]:size:' \\
+            '--text-field[Text field for JSON]:field:' \\
+            '--extensions[File extensions]:exts:' \\
+            '--ignore[Dirs to skip]:dirs:' \\
+            '--create-index[Auto-create vector index]' \\
+            '--dry-run[Preview without executing]' \\
             '--json[JSON output]' \\
             '(-q --quiet)'{-q,--quiet}'[Suppress non-essential output]'
           ;;
