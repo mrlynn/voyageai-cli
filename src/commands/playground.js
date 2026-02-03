@@ -90,6 +90,28 @@ function createPlaygroundServer() {
         return;
       }
 
+      // API: Concepts (from vai explain)
+      if (req.method === 'GET' && req.url === '/api/concepts') {
+        const { concepts } = require('../lib/explanations');
+        // Strip picocolors ANSI from content for web display
+        // eslint-disable-next-line no-control-regex
+        const ANSI_RE = /\x1b\[[0-9;]*m/g;
+        const stripped = {};
+        for (const [key, concept] of Object.entries(concepts)) {
+          stripped[key] = {
+            title: concept.title,
+            summary: concept.summary,
+            content: (typeof concept.content === 'string' ? concept.content : concept.content).replace(ANSI_RE, ''),
+            links: concept.links || [],
+            tryIt: concept.tryIt || [],
+            keyPoints: concept.keyPoints || [],
+          };
+        }
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ concepts: stripped }));
+        return;
+      }
+
       // API: Config
       if (req.method === 'GET' && req.url === '/api/config') {
         const key = process.env.VOYAGE_API_KEY || getConfigValue('apiKey');
