@@ -53,7 +53,7 @@ function registerModels(program) {
       const legacyModels = models.filter(m => m.legacy);
 
       if (opts.type !== 'all') {
-        models = models.filter(m => m.type === opts.type);
+        models = models.filter(m => opts.type === 'embedding' ? m.type.startsWith('embedding') : m.type === opts.type);
       }
 
       if (!showLegacy) {
@@ -84,14 +84,14 @@ function registerModels(program) {
 
       const formatWideRow = (m) => {
         const name = ui.cyan(m.name);
-        const type = m.type === 'embedding' ? ui.green(m.type) : ui.yellow(m.type);
+        const type = m.type.startsWith('embedding') ? ui.green(m.type) : ui.yellow(m.type);
         const price = ui.dim(m.price);
         return [name, type, m.context, m.dimensions, price, m.bestFor];
       };
 
       const formatCompactRow = (m) => {
         const name = ui.cyan(m.name);
-        const type = m.type === 'embedding' ? ui.green('embed') : ui.yellow('rerank');
+        const type = m.type.startsWith('embedding') ? ui.green(m.multimodal ? 'multi' : 'embed') : ui.yellow('rerank');
         const dims = compactDimensions(m.dimensions);
         const price = ui.dim(compactPrice(m.price));
         return [name, type, dims, price, m.shortFor || m.bestFor];
