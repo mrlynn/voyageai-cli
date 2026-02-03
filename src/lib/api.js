@@ -5,15 +5,19 @@ const MAX_RETRIES = 3;
 
 /**
  * Get the Voyage API key or exit with a helpful error.
+ * Checks: env var → config file.
  * @returns {string}
  */
 function requireApiKey() {
-  const key = process.env.VOYAGE_API_KEY;
+  const { getConfigValue } = require('./config');
+  const key = process.env.VOYAGE_API_KEY || getConfigValue('apiKey');
   if (!key) {
-    console.error('Error: VOYAGE_API_KEY environment variable is not set.');
+    console.error('Error: VOYAGE_API_KEY is not set.');
+    console.error('');
+    console.error('Option 1: export VOYAGE_API_KEY="your-key-here"');
+    console.error('Option 2: vai config set api-key <your-key>');
     console.error('');
     console.error('Get one from MongoDB Atlas → AI Models → Create model API key');
-    console.error('Then: export VOYAGE_API_KEY="your-key-here"');
     process.exit(1);
   }
   return key;
@@ -82,11 +86,11 @@ async function apiRequest(endpoint, body) {
  * @returns {Promise<object>} API response with embeddings
  */
 async function generateEmbeddings(texts, options = {}) {
-  const { DEFAULT_EMBED_MODEL } = require('./catalog');
+  const { getDefaultModel } = require('./catalog');
 
   const body = {
     input: texts,
-    model: options.model || DEFAULT_EMBED_MODEL,
+    model: options.model || getDefaultModel(),
   };
 
   if (options.inputType) {

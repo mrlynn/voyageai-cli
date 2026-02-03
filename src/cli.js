@@ -11,6 +11,7 @@ const { registerSearch } = require('./commands/search');
 const { registerIndex } = require('./commands/index');
 const { registerModels } = require('./commands/models');
 const { registerPing } = require('./commands/ping');
+const { registerConfig } = require('./commands/config');
 
 program
   .name('vai')
@@ -24,5 +25,6 @@ registerSearch(program);
 registerIndex(program);
 registerModels(program);
 registerPing(program);
+registerConfig(program);
 
 program.parse();

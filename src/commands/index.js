@@ -1,6 +1,6 @@
 'use strict';
 
-const { DEFAULT_DIMENSIONS } = require('../lib/catalog');
+const { getDefaultDimensions } = require('../lib/catalog');
 const { getMongoCollection } = require('../lib/mongo');
 
 /**
@@ -19,7 +19,7 @@ function registerIndex(program) {
     .requiredOption('--db <database>', 'Database name')
     .requiredOption('--collection <name>', 'Collection name')
     .requiredOption('--field <name>', 'Embedding field name')
-    .option('-d, --dimensions <n>', 'Vector dimensions', (v) => parseInt(v, 10), DEFAULT_DIMENSIONS)
+    .option('-d, --dimensions <n>', 'Vector dimensions', (v) => parseInt(v, 10), getDefaultDimensions())
     .option('-s, --similarity <type>', 'Similarity function: cosine, dotProduct, euclidean', 'cosine')
     .option('-n, --index-name <name>', 'Index name', 'default')
     .option('--json', 'Machine-readable JSON output')
@@ -38,7 +38,7 @@ function registerIndex(program) {
               {
                 type: 'vector',
                 path: opts.field,
-                numDimensions: parseInt(opts.dimensions, 10) || DEFAULT_DIMENSIONS,
+                numDimensions: parseInt(opts.dimensions, 10) || getDefaultDimensions(),
                 similarity: opts.similarity,
               },
             ],

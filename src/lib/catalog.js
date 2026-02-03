@@ -1,8 +1,26 @@
 'use strict';
 
+const { getConfigValue } = require('./config');
+
 const DEFAULT_EMBED_MODEL = 'voyage-4-large';
 const DEFAULT_RERANK_MODEL = 'rerank-2.5';
 const DEFAULT_DIMENSIONS = 1024;
+
+/**
+ * Get the default embedding model (config override or built-in default).
+ * @returns {string}
+ */
+function getDefaultModel() {
+  return getConfigValue('defaultModel') || DEFAULT_EMBED_MODEL;
+}
+
+/**
+ * Get the default dimensions (config override or built-in default).
+ * @returns {number}
+ */
+function getDefaultDimensions() {
+  return getConfigValue('defaultDimensions') || DEFAULT_DIMENSIONS;
+}
 
 /** @type {Array<{name: string, type: string, context: string, dimensions: string, price: string, bestFor: string}>} */
 const MODEL_CATALOG = [
@@ -22,5 +40,7 @@ module.exports = {
   DEFAULT_EMBED_MODEL,
   DEFAULT_RERANK_MODEL,
   DEFAULT_DIMENSIONS,
+  getDefaultModel,
+  getDefaultDimensions,
   MODEL_CATALOG,
 };

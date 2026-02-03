@@ -1,6 +1,6 @@
 'use strict';
 
-const { DEFAULT_EMBED_MODEL } = require('../lib/catalog');
+const { getDefaultModel } = require('../lib/catalog');
 const { generateEmbeddings } = require('../lib/api');
 const { getMongoCollection } = require('../lib/mongo');
 
@@ -17,7 +17,7 @@ function registerSearch(program) {
     .requiredOption('--collection <name>', 'Collection name')
     .requiredOption('--index <name>', 'Vector search index name')
     .requiredOption('--field <name>', 'Embedding field name')
-    .option('-m, --model <model>', 'Embedding model', DEFAULT_EMBED_MODEL)
+    .option('-m, --model <model>', 'Embedding model', getDefaultModel())
     .option('--input-type <type>', 'Input type for query embedding', 'query')
     .option('-d, --dimensions <n>', 'Output dimensions', (v) => parseInt(v, 10))
     .option('-l, --limit <n>', 'Maximum results', (v) => parseInt(v, 10), 10)

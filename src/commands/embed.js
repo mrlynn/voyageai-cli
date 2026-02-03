@@ -1,6 +1,6 @@
 'use strict';
 
-const { DEFAULT_EMBED_MODEL } = require('../lib/catalog');
+const { getDefaultModel } = require('../lib/catalog');
 const { generateEmbeddings } = require('../lib/api');
 const { resolveTextInput } = require('../lib/input');
 
@@ -12,7 +12,7 @@ function registerEmbed(program) {
   program
     .command('embed [text]')
     .description('Generate embeddings for text')
-    .option('-m, --model <model>', 'Embedding model', DEFAULT_EMBED_MODEL)
+    .option('-m, --model <model>', 'Embedding model', getDefaultModel())
     .option('-t, --input-type <type>', 'Input type: query or document')
     .option('-d, --dimensions <n>', 'Output dimensions', (v) => parseInt(v, 10))
     .option('-f, --file <path>', 'Read text from file')

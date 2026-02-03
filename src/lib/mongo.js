@@ -2,15 +2,17 @@
 
 /**
  * Get MongoDB URI or exit with a helpful error.
+ * Checks: env var → config file.
  * @returns {string}
  */
 function requireMongoUri() {
-  const uri = process.env.MONGODB_URI;
+  const { getConfigValue } = require('./config');
+  const uri = process.env.MONGODB_URI || getConfigValue('mongodbUri');
   if (!uri) {
-    console.error('Error: MONGODB_URI environment variable is not set.');
+    console.error('Error: MONGODB_URI is not set.');
     console.error('');
-    console.error('Set your Atlas connection string:');
-    console.error('  export MONGODB_URI="mongodb+srv://user:pass@cluster.mongodb.net/"');
+    console.error('Option 1: export MONGODB_URI="mongodb+srv://user:pass@cluster.mongodb.net/"');
+    console.error('Option 2: vai config set mongodb-uri "mongodb+srv://user:pass@cluster.mongodb.net/"');
     process.exit(1);
   }
   return uri;

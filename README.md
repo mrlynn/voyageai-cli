@@ -1,5 +1,7 @@
 # voyageai-cli
 
+[![CI](https://github.com/mrlynn/voyageai-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/mrlynn/voyageai-cli/actions/workflows/ci.yml) [![npm version](https://img.shields.io/npm/v/voyageai-cli.svg)](https://www.npmjs.com/package/voyageai-cli) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT) [![Node.js](https://img.shields.io/node/v/voyageai-cli.svg)](https://nodejs.org)
+
 CLI for [Voyage AI](https://www.mongodb.com/docs/voyageai/) embeddings, reranking, and [MongoDB Atlas Vector Search](https://www.mongodb.com/docs/atlas/atlas-vector-search/). Pure Node.js — no Python required.
 
 Generate embeddings, rerank search results, store vectors in Atlas, and run semantic search — all from the command line.

@@ -1,7 +1,7 @@
 'use strict';
 
 const fs = require('fs');
-const { DEFAULT_EMBED_MODEL } = require('../lib/catalog');
+const { getDefaultModel } = require('../lib/catalog');
 const { generateEmbeddings } = require('../lib/api');
 const { resolveTextInput } = require('../lib/input');
 const { getMongoCollection } = require('../lib/mongo');
@@ -19,7 +19,7 @@ function registerStore(program) {
     .requiredOption('--field <name>', 'Embedding field name')
     .option('--text <text>', 'Text to embed and store')
     .option('-f, --file <path>', 'File to embed and store (text file or .jsonl for batch mode)')
-    .option('-m, --model <model>', 'Embedding model', DEFAULT_EMBED_MODEL)
+    .option('-m, --model <model>', 'Embedding model', getDefaultModel())
     .option('--input-type <type>', 'Input type: query or document', 'document')
     .option('-d, --dimensions <n>', 'Output dimensions', (v) => parseInt(v, 10))
     .option('--metadata <json>', 'Additional metadata as JSON')
@@ -48,7 +48,7 @@ function registerStore(program) {
         const doc = {
           text: textContent,
           [opts.field]: embedding,
-          model: opts.model || DEFAULT_EMBED_MODEL,
+          model: opts.model || getDefaultModel(),
           dimensions: embedding.length,
           createdAt: new Date(),
         };
@@ -142,7 +142,7 @@ async function handleBatchStore(opts) {
       const doc = {
         text: record.text,
         [opts.field]: embedding,
-        model: opts.model || DEFAULT_EMBED_MODEL,
+        model: opts.model || getDefaultModel(),
         dimensions: embedding.length,
         createdAt: new Date(),
       };
@@ -161,7 +161,7 @@ async function handleBatchStore(opts) {
         insertedCount: result.insertedCount,
         insertedIds: result.insertedIds,
         dimensions: docs[0]?.dimensions,
-        model: opts.model || DEFAULT_EMBED_MODEL,
+        model: opts.model || getDefaultModel(),
         tokens: embedResult.usage?.total_tokens,
       }, null, 2));
     } else if (!opts.quiet) {
@@ -170,7 +170,7 @@ async function handleBatchStore(opts) {
       console.log(`  Collection: ${opts.collection}`);
       console.log(`  Field:      ${opts.field}`);
       console.log(`  Dimensions: ${docs[0]?.dimensions}`);
-      console.log(`  Model:      ${opts.model || DEFAULT_EMBED_MODEL}`);
+      console.log(`  Model:      ${opts.model || getDefaultModel()}`);
       if (embedResult.usage) {
         console.log(`  Tokens:     ${embedResult.usage.total_tokens}`);
       }
