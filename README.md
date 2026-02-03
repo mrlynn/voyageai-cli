@@ -1,14 +1,14 @@
 # voyageai-cli
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/mrlynn/voyageai-cli/main/voyageai-cli.png" alt="voyageai-cli" width="600" />
+  <img src="https://raw.githubusercontent.com/mrlynn/voyageai-cli/main/demo-readme.gif" alt="voyageai-cli demo" width="800" />
 </p>
 
 [![CI](https://github.com/mrlynn/voyageai-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/mrlynn/voyageai-cli/actions/workflows/ci.yml) [![npm version](https://img.shields.io/npm/v/voyageai-cli.svg)](https://www.npmjs.com/package/voyageai-cli) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT) [![Node.js](https://img.shields.io/node/v/voyageai-cli.svg)](https://nodejs.org)
 
-CLI for [Voyage AI](https://www.mongodb.com/docs/voyageai/) embeddings, reranking, and [MongoDB Atlas Vector Search](https://www.mongodb.com/docs/atlas/atlas-vector-search/). Pure Node.js — no Python required.
+CLI for [Voyage AI](https://www.mongodb.com/docs/voyageai/) embeddings, reranking, and [MongoDB Atlas Vector Search](https://www.mongodb.com/docs/atlas/atlas-vector-search/). Embed text, benchmark models, compare quantization tradeoffs, and search — all from the terminal. Pure Node.js — no Python required.
 
-Generate embeddings, rerank search results, store vectors in Atlas, and run semantic search — all from the command line.
+**16 commands · 201 tests · Interactive playground · Quantization benchmarks**
 
 > **⚠️ Disclaimer:** This is an independent, community-built tool. It is **not** an official product of MongoDB, Inc. or Voyage AI. It is not supported, endorsed, or maintained by either company. For official documentation, support, and products, visit:
 > - **MongoDB:** [mongodb.com](https://www.mongodb.com) | [MongoDB Atlas](https://www.mongodb.com/atlas) | [Support](https://support.mongodb.com)

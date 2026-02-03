@@ -1,0 +1,19 @@
+# Dev/build files
+test/
+video/
+.github/
+scripts/
+demo.tape
+demo.gif
+voyageai-cli.png
+voyageai-cli-playground.png
+blog-*.md
+*.tape
+.eslintrc*
+.prettierrc*
+CONTRIBUTING.md
+
+# Git
+.git/
+.gitignore
+*.tgz
