@@ -19,6 +19,10 @@ describe('explanations', () => {
     'batch-processing',
     'quantization',
     'benchmarking',
+    'mixture-of-experts',
+    'shared-embedding-space',
+    'rteb-benchmarks',
+    'voyage-4-nano',
   ];
 
   it('has all expected concepts', () => {

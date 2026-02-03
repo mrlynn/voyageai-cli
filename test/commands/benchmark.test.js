@@ -316,4 +316,43 @@ describe('benchmark command', () => {
     const sizesOpt = batchSub.options.find(o => o.long === '--batch-sizes');
     assert.equal(sizesOpt.defaultValue, '1,5,10,25,50');
   });
+
+  it('has space subcommand', () => {
+    const program = new Command();
+    registerBenchmark(program);
+    const benchCmd = program.commands.find(c => c.name() === 'benchmark');
+    const spaceSub = benchCmd.commands.find(c => c.name() === 'space');
+    assert.ok(spaceSub, 'space subcommand should be registered');
+  });
+
+  it('space has --models, --text, --texts, --dimensions options', () => {
+    const program = new Command();
+    registerBenchmark(program);
+    const benchCmd = program.commands.find(c => c.name() === 'benchmark');
+    const spaceSub = benchCmd.commands.find(c => c.name() === 'space');
+    const optionNames = spaceSub.options.map(o => o.long);
+    assert.ok(optionNames.includes('--models'), 'should have --models');
+    assert.ok(optionNames.includes('--text'), 'should have --text');
+    assert.ok(optionNames.includes('--texts'), 'should have --texts');
+    assert.ok(optionNames.includes('--dimensions'), 'should have --dimensions');
+  });
+
+  it('space defaults models to voyage-4-large,voyage-4,voyage-4-lite', () => {
+    const program = new Command();
+    registerBenchmark(program);
+    const benchCmd = program.commands.find(c => c.name() === 'benchmark');
+    const spaceSub = benchCmd.commands.find(c => c.name() === 'space');
+    const modelsOpt = spaceSub.options.find(o => o.long === '--models');
+    assert.equal(modelsOpt.defaultValue, 'voyage-4-large,voyage-4,voyage-4-lite');
+  });
+
+  it('space has --json and --quiet options', () => {
+    const program = new Command();
+    registerBenchmark(program);
+    const benchCmd = program.commands.find(c => c.name() === 'benchmark');
+    const spaceSub = benchCmd.commands.find(c => c.name() === 'space');
+    const optionNames = spaceSub.options.map(o => o.long);
+    assert.ok(optionNames.includes('--json'), 'should have --json');
+    assert.ok(optionNames.includes('--quiet'), 'should have --quiet');
+  });
 });

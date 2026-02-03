@@ -20,6 +20,7 @@ const { registerIngest } = require('./commands/ingest');
 const { registerCompletions } = require('./commands/completions');
 const { registerPlayground } = require('./commands/playground');
 const { registerBenchmark } = require('./commands/benchmark');
+const { registerEstimate } = require('./commands/estimate');
 const { registerAbout } = require('./commands/about');
 const { showBanner, showQuickStart, getVersion } = require('./lib/banner');
 
@@ -45,6 +46,7 @@ registerIngest(program);
 registerCompletions(program);
 registerPlayground(program);
 registerBenchmark(program);
+registerEstimate(program);
 registerAbout(program);
 
 // Append disclaimer to all help output
