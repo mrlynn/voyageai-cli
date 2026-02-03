@@ -551,6 +551,83 @@ select:focus { outline: none; border-color: var(--accent); }
 .rank-differ { border-left-color: var(--yellow); }
 .rank-arrow { text-align: center; color: var(--text-muted); font-size: 18px; padding-top: 4px; }
 
+/* Quantization charts */
+.quant-charts { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+@media (max-width: 768px) { .quant-charts { grid-template-columns: 1fr; } }
+
+.quant-bar-group { margin-bottom: 14px; }
+.quant-bar-label {
+  display: flex; justify-content: space-between; align-items: baseline;
+  margin-bottom: 4px; font-size: 13px;
+}
+.quant-bar-label .dtype-name { color: var(--accent); font-weight: 600; font-family: var(--mono); }
+.quant-bar-label .dtype-value { color: var(--text-dim); font-family: var(--mono); font-size: 12px; }
+.quant-bar-track {
+  height: 32px; background: var(--bg-input); border-radius: 6px;
+  overflow: hidden; position: relative;
+}
+.quant-bar-fill {
+  height: 100%; border-radius: 6px;
+  transition: width 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+  display: flex; align-items: center; padding: 0 10px;
+  font-family: var(--mono); font-size: 12px; font-weight: 600;
+  color: #0a0a1a; white-space: nowrap; min-width: fit-content;
+}
+.quant-bar-fill.storage { background: linear-gradient(90deg, #00d4aa, #4ecdc4); }
+.quant-bar-fill.latency { background: linear-gradient(90deg, #45b7d1, #82aaff); }
+.quant-bar-badge {
+  position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+  font-size: 12px; color: var(--text-dim); font-family: var(--mono);
+}
+
+.quant-quality-meter { margin-bottom: 14px; }
+.quant-meter-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 6px;
+}
+.quant-meter-header .dtype-name { color: var(--accent); font-weight: 600; font-family: var(--mono); font-size: 13px; }
+.quant-meter-header .verdict-badge {
+  font-size: 12px; padding: 2px 8px; border-radius: 10px; font-weight: 600;
+}
+.quant-meter-header .verdict-badge.perfect { background: rgba(0,212,170,0.15); color: var(--green); }
+.quant-meter-header .verdict-badge.good { background: rgba(255,217,61,0.15); color: var(--yellow); }
+.quant-meter-header .verdict-badge.degraded { background: rgba(255,107,107,0.15); color: var(--red); }
+.quant-meter-track {
+  height: 10px; background: var(--bg-input); border-radius: 5px; overflow: hidden;
+}
+.quant-meter-fill {
+  height: 100%; border-radius: 5px;
+  transition: width 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.quant-meter-fill.perfect { background: linear-gradient(90deg, #00d4aa, #00e4ba); }
+.quant-meter-fill.good { background: linear-gradient(90deg, #ffd93d, #ffe066); }
+.quant-meter-fill.degraded { background: linear-gradient(90deg, #ff6b6b, #ff8e8e); }
+.quant-meter-detail { font-size: 11px; color: var(--text-muted); margin-top: 4px; font-family: var(--mono); }
+
+.quant-rank-cols {
+  display: grid; gap: 12px;
+}
+.quant-rank-col-header {
+  font-weight: 600; color: var(--accent); font-size: 13px; font-family: var(--mono);
+  margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid var(--border);
+}
+.quant-rank-item {
+  padding: 8px 10px; margin-bottom: 4px; border-radius: 6px;
+  font-size: 12px; position: relative; border-left: 3px solid transparent;
+  transition: background 0.2s;
+}
+.quant-rank-item:hover { background: rgba(255,255,255,0.03); }
+.quant-rank-item.match { border-left-color: var(--green); background: rgba(0,212,170,0.06); }
+.quant-rank-item.differ { border-left-color: var(--red); background: rgba(255,107,107,0.06); }
+.quant-rank-item.baseline { border-left-color: var(--border); background: var(--bg-input); }
+.quant-rank-pos {
+  display: inline-block; width: 22px; height: 22px; line-height: 22px;
+  text-align: center; border-radius: 50%; background: var(--bg-surface);
+  color: var(--accent); font-weight: 700; font-size: 11px; font-family: var(--mono);
+  margin-right: 8px;
+}
+.quant-rank-score { color: var(--text-muted); font-size: 11px; font-family: var(--mono); margin-top: 3px; }
+
 /* Cost calculator */
 .cost-slider-row {
   display: flex;
@@ -1086,13 +1163,19 @@ Reranking models rescore initial search results to improve relevance ordering.</
     <div class="error-msg" id="quantError"></div>
 
     <div class="result-section" id="quantResult">
-      <div class="card">
-        <div class="card-title">Storage Comparison</div>
-        <div id="quantStorageTable"></div>
+      <div class="quant-charts">
+        <div class="card">
+          <div class="card-title">📦 Storage per Vector</div>
+          <div id="quantStorageChart"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">⏱ API Latency</div>
+          <div id="quantLatencyChart"></div>
+        </div>
       </div>
-      <div class="card" style="margin-top:16px;">
-        <div class="card-title">Ranking Quality</div>
-        <div id="quantRankVerdict" style="margin-bottom:12px;font-size:14px;"></div>
+      <div class="card">
+        <div class="card-title">🎯 Ranking Quality vs Float Baseline</div>
+        <div id="quantQualityMeters" style="margin-bottom:16px;"></div>
         <div id="quantRankGrid"></div>
       </div>
     </div>
@@ -2117,73 +2200,113 @@ window.doBenchQuantization = async function() {
       return;
     }
 
-    // ── Render Storage Comparison Table ──
+    // ── Render Charts ──
     const baseline = completed.find(r => r.dtype === 'float') || completed[0];
-    let tableHTML = `<table class="cost-table">
-      <thead><tr>
-        <th>Data Type</th><th>Dimensions</th><th>Bytes/Vector</th>
-        <th>1M Docs</th><th>Savings</th><th>Latency</th>
-      </tr></thead><tbody>`;
+    const maxBytes = Math.max(...completed.map(r => r.bytesPerVec));
+    const maxLatency = Math.max(...completed.map(r => r.latency));
+    const DTYPE_COLORS = { float: '#00d4aa', int8: '#4ecdc4', uint8: '#45b7d1', ubinary: '#ffd93d', binary: '#ff6b6b' };
 
+    // ── Storage Bar Chart ──
+    let storageHTML = '';
     for (const r of completed) {
-      const savings = r.bytesPerVec < baseline.bytesPerVec
-        ? `<span style="color:var(--green)">${(baseline.bytesPerVec / r.bytesPerVec).toFixed(0)}×</span>`
-        : '<span style="color:var(--text-dim)">baseline</span>';
+      const pct = Math.max(8, (r.bytesPerVec / maxBytes) * 100);
       const totalMB = (r.bytesPerVec * 1_000_000) / (1024 * 1024);
       const sizeStr = totalMB >= 1024 ? `${(totalMB / 1024).toFixed(1)} GB` : `${totalMB.toFixed(0)} MB`;
-
-      tableHTML += `<tr>
-        <td style="color:var(--accent);font-weight:600">${r.dtype}</td>
-        <td>${r.actualDims}</td>
-        <td>${formatBytesUI(r.bytesPerVec)}</td>
-        <td>${sizeStr}</td>
-        <td>${savings}</td>
-        <td>${r.latency.toFixed(0)}ms</td>
-      </tr>`;
+      const savings = r.bytesPerVec < baseline.bytesPerVec
+        ? `${(baseline.bytesPerVec / r.bytesPerVec).toFixed(0)}× smaller`
+        : 'baseline';
+      const color = DTYPE_COLORS[r.dtype] || '#82aaff';
+      storageHTML += `<div class="quant-bar-group">
+        <div class="quant-bar-label">
+          <span class="dtype-name">${r.dtype}</span>
+          <span class="dtype-value">${formatBytesUI(r.bytesPerVec)}/vec · ${sizeStr} @ 1M</span>
+        </div>
+        <div class="quant-bar-track">
+          <div class="quant-bar-fill storage" style="width:${pct}%;background:linear-gradient(90deg, ${color}, ${color}cc);">${savings}</div>
+        </div>
+      </div>`;
     }
-    tableHTML += '</tbody></table>';
-    document.getElementById('quantStorageTable').innerHTML = tableHTML;
+    document.getElementById('quantStorageChart').innerHTML = storageHTML;
 
-    // ── Render Ranking Comparison ──
+    // ── Latency Bar Chart ──
+    let latencyHTML = '';
+    const minLatency = Math.min(...completed.map(r => r.latency));
+    for (const r of completed) {
+      const pct = Math.max(8, (r.latency / maxLatency) * 100);
+      const color = DTYPE_COLORS[r.dtype] || '#82aaff';
+      const badge = r.latency === minLatency ? ' ⚡' : '';
+      latencyHTML += `<div class="quant-bar-group">
+        <div class="quant-bar-label">
+          <span class="dtype-name">${r.dtype}</span>
+          <span class="dtype-value">${r.latency.toFixed(0)}ms${badge}</span>
+        </div>
+        <div class="quant-bar-track">
+          <div class="quant-bar-fill latency" style="width:${pct}%;background:linear-gradient(90deg, ${color}, ${color}cc);">${r.latency.toFixed(0)}ms</div>
+        </div>
+      </div>`;
+    }
+    document.getElementById('quantLatencyChart').innerHTML = latencyHTML;
+
+    // ── Quality Meters + Ranking Grid ──
     const topK = Math.min(5, corpus.length);
-    const verdictEl = document.getElementById('quantRankVerdict');
+    const metersEl = document.getElementById('quantQualityMeters');
     const gridEl = document.getElementById('quantRankGrid');
     gridEl.innerHTML = '';
+    metersEl.innerHTML = '';
 
     if (completed.length >= 2 && baseline) {
       const baselineRanking = baseline.ranked.slice(0, topK).map(r => r.index);
 
-      let verdictParts = [];
+      // Quality meters for each non-baseline dtype
+      let metersHTML = '';
       for (const r of completed) {
         if (r.dtype === baseline.dtype) continue;
         const otherRanking = r.ranked.slice(0, topK).map(x => x.index);
         const overlap = baselineRanking.filter(idx => otherRanking.includes(idx)).length;
-        const overlapPct = ((overlap / topK) * 100).toFixed(0);
+        const overlapPct = (overlap / topK) * 100;
         const exactMatch = baselineRanking.every((idx, pos) => otherRanking[pos] === idx);
+        const positionMatches = baselineRanking.filter((idx, pos) => otherRanking[pos] === idx).length;
+        const posMatchPct = (positionMatches / topK) * 100;
 
+        let grade, gradeLabel, detail;
         if (exactMatch) {
-          verdictParts.push(`<span style="color:var(--green)">✓ ${r.dtype}: identical ranking to ${baseline.dtype}</span>`);
+          grade = 'perfect'; gradeLabel = '✓ Perfect';
+          detail = `Identical ranking — all ${topK} positions match float baseline`;
         } else if (overlap === topK) {
-          verdictParts.push(`<span style="color:var(--yellow)">⚠ ${r.dtype}: same top-${topK} docs, different order</span>`);
+          grade = 'good'; gradeLabel = '≈ Reordered';
+          detail = `Same ${topK} documents, ${positionMatches}/${topK} in same position`;
         } else {
-          verdictParts.push(`<span style="color:var(--warning)">⚠ ${r.dtype}: ${overlapPct}% overlap in top-${topK} vs ${baseline.dtype}</span>`);
+          grade = overlap >= topK * 0.6 ? 'good' : 'degraded';
+          gradeLabel = `${overlapPct.toFixed(0)}% overlap`;
+          detail = `${overlap}/${topK} documents match, ${positionMatches}/${topK} positions match`;
         }
-      }
-      verdictEl.innerHTML = verdictParts.join('<br>');
 
-      // Build side-by-side ranking grid
-      let rankHTML = '<div style="display:grid;grid-template-columns:' + 'repeat(' + completed.length + ',1fr)' + ';gap:12px;">';
+        metersHTML += `<div class="quant-quality-meter">
+          <div class="quant-meter-header">
+            <span class="dtype-name">${r.dtype}</span>
+            <span class="verdict-badge ${grade}">${gradeLabel}</span>
+          </div>
+          <div class="quant-meter-track">
+            <div class="quant-meter-fill ${grade}" style="width:${exactMatch ? 100 : posMatchPct}%"></div>
+          </div>
+          <div class="quant-meter-detail">${detail}</div>
+        </div>`;
+      }
+      metersEl.innerHTML = metersHTML;
+
+      // Side-by-side ranking columns
+      let rankHTML = `<div class="quant-rank-cols" style="grid-template-columns:repeat(${completed.length},1fr);">`;
       for (const r of completed) {
-        rankHTML += `<div>
-          <div style="font-weight:600;color:var(--accent);font-size:13px;margin-bottom:8px;">${r.dtype}</div>`;
+        rankHTML += `<div><div class="quant-rank-col-header">${r.dtype}${r === baseline ? ' (baseline)' : ''}</div>`;
         r.ranked.slice(0, topK).forEach((item, pos) => {
-          const trunc = item.text.length > 50 ? item.text.slice(0, 47) + '...' : item.text;
-          const isMatch = baseline.ranked[pos] && item.index === baseline.ranked[pos].index;
-          const bg = r === baseline ? 'var(--bg-input)' : (isMatch ? 'rgba(0,212,170,0.08)' : 'rgba(255,107,107,0.08)');
-          rankHTML += `<div style="padding:6px 8px;margin-bottom:4px;border-radius:4px;background:${bg};font-size:12px;" title="${item.text.replace(/"/g, '&quot;')}">
-            <span style="color:var(--text-dim);margin-right:4px;">#${pos + 1}</span>
-            ${trunc}
-            <div style="color:var(--text-muted);font-size:11px;margin-top:2px;">${item.similarity.toFixed(4)} [doc ${item.index}]</div>
+          const trunc = item.text.length > 55 ? item.text.slice(0, 52) + '…' : item.text;
+          let cls = 'baseline';
+          if (r !== baseline) {
+            cls = (baseline.ranked[pos] && item.index === baseline.ranked[pos].index) ? 'match' : 'differ';
+          }
+          rankHTML += `<div class="quant-rank-item ${cls}" title="${item.text.replace(/"/g, '&quot;')}">
+            <span class="quant-rank-pos">${pos + 1}</span>${trunc}
+            <div class="quant-rank-score">${item.similarity.toFixed(4)} · doc ${item.index}</div>
           </div>`;
         });
         rankHTML += '</div>';
@@ -2191,7 +2314,7 @@ window.doBenchQuantization = async function() {
       rankHTML += '</div>';
       gridEl.innerHTML = rankHTML;
     } else {
-      verdictEl.innerHTML = '<span style="color:var(--text-dim)">Select multiple data types (including float) to compare rankings.</span>';
+      metersEl.innerHTML = '<span style="color:var(--text-dim)">Select multiple data types (including float) to compare rankings.</span>';
     }
 
     document.getElementById('quantResult').classList.add('visible');
