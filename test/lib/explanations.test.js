@@ -17,6 +17,7 @@ describe('explanations', () => {
     'api-keys',
     'api-access',
     'batch-processing',
+    'benchmarking',
   ];
 
   it('has all expected concepts', () => {

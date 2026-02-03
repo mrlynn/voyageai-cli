@@ -19,6 +19,7 @@ const { registerSimilarity } = require('./commands/similarity');
 const { registerIngest } = require('./commands/ingest');
 const { registerCompletions } = require('./commands/completions');
 const { registerPlayground } = require('./commands/playground');
+const { registerBenchmark } = require('./commands/benchmark');
 const { showBanner, showQuickStart, getVersion } = require('./lib/banner');
 
 const version = getVersion();
@@ -42,6 +43,7 @@ registerSimilarity(program);
 registerIngest(program);
 registerCompletions(program);
 registerPlayground(program);
+registerBenchmark(program);
 
 // Append disclaimer to all help output
 program.addHelpText('after', `
