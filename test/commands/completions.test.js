@@ -95,9 +95,9 @@ describe('completions command', () => {
 });
 
 describe('generateBashCompletions', () => {
-  it('includes all 19 commands (including completions)', () => {
+  it('includes all 20 commands (including completions)', () => {
     const script = generateBashCompletions();
-    const commands = ['embed', 'rerank', 'store', 'search', 'index', 'models', 'ping', 'config', 'demo', 'explain', 'similarity', 'ingest', 'estimate', 'init', 'chunk', 'query', 'pipeline', 'completions', 'help'];
+    const commands = ['embed', 'rerank', 'store', 'search', 'index', 'models', 'ping', 'config', 'demo', 'explain', 'similarity', 'ingest', 'estimate', 'init', 'chunk', 'query', 'pipeline', 'eval', 'completions', 'help'];
     for (const cmd of commands) {
       assert.ok(script.includes(cmd), `should include command: ${cmd}`);
     }

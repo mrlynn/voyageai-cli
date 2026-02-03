@@ -19,7 +19,7 @@ _vai_completions() {
   prev="\${COMP_WORDS[COMP_CWORD-1]}"
 
   # Top-level commands
-  commands="embed rerank store search index models ping config demo explain similarity ingest estimate init chunk query pipeline completions help"
+  commands="embed rerank store search index models ping config demo explain similarity ingest estimate init chunk query pipeline eval completions help"
 
   # Subcommands
   local index_subs="create list delete"
@@ -122,6 +122,10 @@ _vai_completions() {
       COMPREPLY=( \$(compgen -W "--db --collection --field --index --model --dimensions --strategy --chunk-size --overlap --batch-size --text-field --extensions --ignore --create-index --dry-run --json --quiet --help" -- "\$cur") )
       return 0
       ;;
+    eval)
+      COMPREPLY=( \$(compgen -W "--test-set --db --collection --index --field --model --dimensions --limit --k-values --rerank --no-rerank --rerank-model --text-field --id-field --compare --json --quiet --help" -- "\$cur") )
+      return 0
+      ;;
     completions)
       COMPREPLY=( \$(compgen -W "bash zsh --help" -- "\$cur") )
       return 0
@@ -197,6 +201,7 @@ _vai() {
     'chunk:Chunk documents for embedding'
     'query:Search + rerank in one shot'
     'pipeline:Chunk, embed, and store documents'
+    'eval:Evaluate retrieval quality (MRR, NDCG, recall)'
     'completions:Generate shell completion scripts'
     'help:Display help for command'
   )
@@ -472,6 +477,26 @@ _vai() {
             '--ignore[Dirs to skip]:dirs:' \\
             '--create-index[Auto-create vector index]' \\
             '--dry-run[Preview without executing]' \\
+            '--json[JSON output]' \\
+            '(-q --quiet)'{-q,--quiet}'[Suppress non-essential output]'
+          ;;
+        eval)
+          _arguments \\
+            '--test-set[JSONL test set file]:file:_files' \\
+            '--db[Database name]:database:' \\
+            '--collection[Collection name]:collection:' \\
+            '--index[Vector search index]:index:' \\
+            '--field[Embedding field]:field:' \\
+            '(-m --model)'{-m,--model}'[Embedding model]:model:(\$models)' \\
+            '(-d --dimensions)'{-d,--dimensions}'[Output dimensions]:dims:' \\
+            '(-l --limit)'{-l,--limit}'[Search candidates]:limit:' \\
+            '(-k --k-values)'{-k,--k-values}'[K values for metrics]:values:' \\
+            '--rerank[Enable reranking]' \\
+            '--no-rerank[Skip reranking]' \\
+            '--rerank-model[Reranking model]:model:' \\
+            '--text-field[Document text field]:field:' \\
+            '--id-field[Document ID field]:field:' \\
+            '--compare[Compare configs]:configs:' \\
             '--json[JSON output]' \\
             '(-q --quiet)'{-q,--quiet}'[Suppress non-essential output]'
           ;;
