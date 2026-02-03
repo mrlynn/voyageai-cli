@@ -84,7 +84,7 @@ function createPlaygroundServer() {
 
       // API: Models
       if (req.method === 'GET' && req.url === '/api/models') {
-        const models = MODEL_CATALOG.filter(m => !m.legacy);
+        const models = MODEL_CATALOG.filter(m => !m.legacy && !m.local);
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ models }));
         return;
@@ -149,6 +149,54 @@ function createPlaygroundServer() {
           const result = await apiRequest('/rerank', rerankBody);
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify(result));
+          return;
+        }
+
+        // API: Benchmark (single model, single round — UI calls this per model)
+        if (req.url === '/api/benchmark/embed') {
+          const { texts, model, inputType, dimensions } = parsed;
+          if (!texts || !Array.isArray(texts) || texts.length === 0) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'texts must be a non-empty array' }));
+            return;
+          }
+          const opts = { model: model || undefined };
+          if (inputType) opts.inputType = inputType;
+          if (dimensions) opts.dimensions = dimensions;
+          const start = performance.now();
+          const result = await generateEmbeddings(texts, opts);
+          const elapsed = performance.now() - start;
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({
+            model: result.model,
+            elapsed,
+            tokens: result.usage?.total_tokens || 0,
+            dimensions: result.data?.[0]?.embedding?.length || 0,
+            embeddings: result.data?.map(d => d.embedding),
+          }));
+          return;
+        }
+
+        if (req.url === '/api/benchmark/rerank') {
+          const { query, documents, model, topK } = parsed;
+          if (!query || !documents || !Array.isArray(documents)) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'query and documents are required' }));
+            return;
+          }
+          const { apiRequest } = require('../lib/api');
+          const body = { query, documents, model: model || 'rerank-2.5' };
+          if (topK) body.top_k = topK;
+          const start = performance.now();
+          const result = await apiRequest('/rerank', body);
+          const elapsed = performance.now() - start;
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({
+            model: result.model,
+            elapsed,
+            tokens: result.usage?.total_tokens || 0,
+            results: result.data || [],
+          }));
           return;
         }
 

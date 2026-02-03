@@ -438,6 +438,248 @@ select:focus { outline: none; border-color: var(--accent); }
 }
 .explore-card.expanded .explore-card-actions { display: flex; }
 
+/* Benchmark tab */
+.bench-panels { display: flex; gap: 8px; margin-bottom: 16px; }
+.bench-panel-btn {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  padding: 8px 18px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-family: var(--font);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.bench-panel-btn:hover { color: var(--text); border-color: var(--text-dim); }
+.bench-panel-btn.active { color: var(--accent); border-color: var(--accent); background: var(--accent-glow); }
+
+.bench-view { display: none; }
+.bench-view.active { display: block; }
+
+.latency-chart { margin-top: 16px; }
+.latency-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.latency-model {
+  font-family: var(--mono);
+  font-size: 13px;
+  min-width: 170px;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.latency-bar-outer {
+  flex: 1;
+  height: 28px;
+  background: var(--bg-input);
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+.latency-bar-inner {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: #0a0a1a;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.latency-bar-inner.running {
+  background: var(--border) !important;
+  width: 100% !important;
+  animation: pulse-bar 1.2s ease-in-out infinite;
+}
+@keyframes pulse-bar {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.6; }
+}
+.latency-stats {
+  min-width: 90px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text-dim);
+  text-align: right;
+}
+.latency-badge {
+  font-size: 14px;
+  min-width: 20px;
+  text-align: center;
+}
+
+/* Ranking diff */
+.rank-comparison { margin-top: 16px; }
+.rank-row {
+  display: grid;
+  grid-template-columns: 30px 1fr 40px 1fr;
+  gap: 8px;
+  align-items: start;
+  margin-bottom: 8px;
+  padding: 8px;
+  background: var(--bg-input);
+  border-radius: var(--radius);
+}
+.rank-num {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--accent);
+  font-family: var(--mono);
+  text-align: center;
+}
+.rank-item {
+  font-size: 13px;
+  padding: 6px 10px;
+  border-radius: 4px;
+  border-left: 3px solid var(--border);
+}
+.rank-item .rank-score {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+.rank-match { border-left-color: var(--green); }
+.rank-differ { border-left-color: var(--yellow); }
+.rank-arrow { text-align: center; color: var(--text-muted); font-size: 18px; padding-top: 4px; }
+
+/* Cost calculator */
+.cost-slider-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.cost-slider-label {
+  font-size: 13px;
+  color: var(--text-dim);
+  min-width: 130px;
+}
+.cost-slider {
+  flex: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  background: var(--bg-input);
+  border-radius: 3px;
+  outline: none;
+}
+.cost-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  box-shadow: 0 0 8px var(--accent-glow);
+}
+.cost-slider-value {
+  font-family: var(--mono);
+  font-size: 14px;
+  color: var(--accent);
+  min-width: 80px;
+  text-align: right;
+  font-weight: 600;
+}
+.cost-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin-top: 12px;
+}
+.cost-table th {
+  text-align: left;
+  padding: 8px 12px;
+  color: var(--text-dim);
+  font-weight: 500;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.cost-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(42, 53, 80, 0.3);
+  font-family: var(--mono);
+}
+.cost-table tr:hover { background: rgba(0, 212, 170, 0.03); }
+.cost-highlight {
+  color: var(--accent);
+  font-weight: 600;
+}
+.cost-bar-cell { position: relative; }
+.cost-bar {
+  position: absolute;
+  left: 0; top: 50%;
+  transform: translateY(-50%);
+  height: 20px;
+  background: var(--accent-glow);
+  border-radius: 3px;
+  transition: width 0.4s ease;
+}
+
+/* History chart */
+.history-empty {
+  text-align: center;
+  padding: 40px;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+.history-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 120px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+.history-bar-group {
+  flex: 1;
+  display: flex;
+  gap: 2px;
+  align-items: flex-end;
+  height: 100%;
+  min-width: 0;
+}
+.history-bar {
+  flex: 1;
+  border-radius: 3px 3px 0 0;
+  min-width: 4px;
+  transition: height 0.4s ease;
+  cursor: pointer;
+  position: relative;
+}
+.history-bar:hover { opacity: 0.8; }
+.history-legend {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+.history-legend-dot {
+  display: inline-block;
+  width: 10px; height: 10px;
+  border-radius: 2px;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+.history-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
 @media (max-width: 768px) {
   .compare-grid, .search-results { grid-template-columns: 1fr; }
   .nav { padding: 0 12px; }
@@ -467,6 +709,7 @@ select:focus { outline: none; border-color: var(--accent); }
   <button class="tab-btn active" data-tab="embed">⚡ Embed</button>
   <button class="tab-btn" data-tab="compare">⚖️ Compare</button>
   <button class="tab-btn" data-tab="search">🔍 Search</button>
+  <button class="tab-btn" data-tab="benchmark">⏱ Benchmark</button>
   <button class="tab-btn" data-tab="explore">📚 Explore</button>
 </div>
 
@@ -612,6 +855,150 @@ Semantic search understands meaning beyond keyword matching</textarea>
   <div class="result-section" id="searchResult">
     <div class="search-results" id="searchResultGrid"></div>
   </div>
+</div>
+
+<!-- ========== BENCHMARK TAB ========== -->
+<div class="tab-panel" id="tab-benchmark">
+
+  <!-- Sub-panel switcher -->
+  <div class="bench-panels">
+    <button class="bench-panel-btn active" data-bench="latency">⚡ Latency</button>
+    <button class="bench-panel-btn" data-bench="ranking">🏆 Ranking</button>
+    <button class="bench-panel-btn" data-bench="cost">💰 Cost</button>
+    <button class="bench-panel-btn" data-bench="history">📊 History</button>
+  </div>
+
+  <!-- ── Latency Panel ── -->
+  <div class="bench-view active" id="bench-latency">
+    <div class="card">
+      <div class="card-title">Embedding Latency Benchmark</div>
+      <textarea id="benchLatencyInput" rows="3" placeholder="Enter text to benchmark (or leave for built-in sample)..."></textarea>
+      <div class="options-row">
+        <div class="option-group">
+          <span class="option-label">Models</span>
+          <div id="benchModelChecks" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
+        </div>
+        <div class="option-group">
+          <span class="option-label">Rounds</span>
+          <select id="benchRounds">
+            <option value="1">1</option>
+            <option value="3" selected>3</option>
+            <option value="5">5</option>
+            <option value="10">10</option>
+          </select>
+        </div>
+        <button class="btn" id="benchLatencyBtn" onclick="doBenchLatency()">⚡ Run Benchmark</button>
+      </div>
+    </div>
+
+    <div class="error-msg" id="benchLatencyError"></div>
+
+    <div class="result-section" id="benchLatencyResult">
+      <div class="card">
+        <div class="card-title">Results</div>
+        <div id="benchLatencyStats"></div>
+        <div class="latency-chart" id="benchLatencyChart"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Ranking Panel ── -->
+  <div class="bench-view" id="bench-ranking">
+    <div class="card">
+      <div class="card-title">Model Ranking Comparison</div>
+      <div style="margin-bottom:12px;">
+        <input type="text" id="benchRankQuery" placeholder="Search query..." value="How do I search for similar documents using embeddings?">
+      </div>
+      <textarea id="benchRankDocs" rows="6" placeholder="Documents (one per line)...">Vector search finds documents by computing similarity between embedding vectors in high-dimensional space.
+MongoDB Atlas Vector Search lets you index and query vector embeddings alongside your operational data.
+Traditional full-text search uses inverted indexes to match keyword terms in documents.
+Cosine similarity measures the angle between two vectors, commonly used for semantic search.
+Database sharding distributes data across multiple servers for horizontal scalability.
+Embedding models convert text into dense numerical vectors that capture meaning.
+Approximate nearest neighbor algorithms like HNSW enable fast similarity search at scale.
+Reranking models rescore initial search results to improve relevance ordering.</textarea>
+      <div class="options-row">
+        <div class="option-group">
+          <span class="option-label">Model A</span>
+          <select id="benchRankModelA"></select>
+        </div>
+        <div class="option-group">
+          <span class="option-label">Model B</span>
+          <select id="benchRankModelB"></select>
+        </div>
+        <div class="option-group">
+          <span class="option-label">Mode</span>
+          <select id="benchRankMode">
+            <option value="embed">Embedding Similarity</option>
+            <option value="rerank">Reranking</option>
+          </select>
+        </div>
+        <div class="option-group">
+          <span class="option-label">Top K</span>
+          <select id="benchRankTopK">
+            <option value="3">3</option>
+            <option value="5" selected>5</option>
+            <option value="8">8</option>
+          </select>
+        </div>
+        <button class="btn" id="benchRankBtn" onclick="doBenchRanking()">🏆 Compare Rankings</button>
+      </div>
+    </div>
+
+    <div class="error-msg" id="benchRankError"></div>
+
+    <div class="result-section" id="benchRankResult">
+      <div class="card">
+        <div class="card-title">Ranking Comparison</div>
+        <div id="benchRankVerdict" style="margin-bottom:12px;font-size:14px;"></div>
+        <div class="rank-comparison" id="benchRankGrid"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Cost Panel ── -->
+  <div class="bench-view" id="bench-cost">
+    <div class="card">
+      <div class="card-title">Cost Calculator</div>
+      <div class="cost-slider-row">
+        <span class="cost-slider-label">Tokens per query</span>
+        <input type="range" class="cost-slider" id="costTokens" min="50" max="5000" value="500" step="50">
+        <span class="cost-slider-value" id="costTokensValue">500</span>
+      </div>
+      <div class="cost-slider-row">
+        <span class="cost-slider-label">Queries per day</span>
+        <input type="range" class="cost-slider" id="costQueries" min="10" max="500000" value="1000" step="10">
+        <span class="cost-slider-value" id="costQueriesValue">1,000</span>
+      </div>
+      <table class="cost-table" id="costTable">
+        <thead>
+          <tr>
+            <th>Model</th>
+            <th>Type</th>
+            <th>$/1M tokens</th>
+            <th>Daily Cost</th>
+            <th>Monthly Cost</th>
+            <th style="width:30%">Relative</th>
+          </tr>
+        </thead>
+        <tbody id="costTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── History Panel ── -->
+  <div class="bench-view" id="bench-history">
+    <div class="card">
+      <div class="card-title">Benchmark History</div>
+      <div id="benchHistoryContent">
+        <div class="history-empty">No benchmarks recorded yet. Run a latency benchmark to start tracking.</div>
+      </div>
+      <div style="margin-top:12px;text-align:right;">
+        <button class="btn btn-secondary btn-small" onclick="clearHistory()">🗑 Clear History</button>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <!-- ========== EXPLORE TAB ========== -->
@@ -1101,6 +1488,454 @@ window.tryTopic = function(key) {
 
 window.collapseTopic = function(btn) {
   btn.closest('.explore-card').classList.remove('expanded');
+};
+
+// ── Benchmark: Sub-panel switching ──
+document.querySelectorAll('.bench-panel-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.bench-panel-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.bench-view').forEach(v => v.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('bench-' + btn.dataset.bench).classList.add('active');
+  });
+});
+
+// ── Benchmark: Model checkboxes ──
+function buildModelCheckboxes() {
+  const container = document.getElementById('benchModelChecks');
+  container.innerHTML = '';
+  const defaults = ['voyage-4-large', 'voyage-4', 'voyage-4-lite'];
+  embedModels.forEach(m => {
+    const label = document.createElement('label');
+    label.style.cssText = 'display:flex;align-items:center;gap:4px;font-size:13px;cursor:pointer;color:var(--text);';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.value = m.name;
+    cb.checked = defaults.includes(m.name);
+    cb.style.accentColor = 'var(--accent)';
+    label.appendChild(cb);
+    label.appendChild(document.createTextNode(m.name));
+    container.appendChild(label);
+  });
+}
+
+function populateBenchRankSelects() {
+  const selA = document.getElementById('benchRankModelA');
+  const selB = document.getElementById('benchRankModelB');
+  [selA, selB].forEach(sel => {
+    sel.innerHTML = '';
+    [...embedModels, ...rerankModels].forEach(m => {
+      const opt = document.createElement('option');
+      opt.value = m.name;
+      opt.textContent = m.name;
+      sel.appendChild(opt);
+    });
+  });
+  // Sensible defaults
+  if (embedModels.length >= 2) {
+    selA.value = embedModels[0].name;
+    selB.value = embedModels[embedModels.length > 2 ? 2 : 1].name;
+  }
+}
+
+// ── Benchmark: Latency ──
+const BENCH_SAMPLE_TEXTS = [
+  'MongoDB Atlas provides a fully managed cloud database service with built-in vector search capabilities.',
+  'Kubernetes orchestrates containerized applications across clusters of machines for high availability.',
+  'Machine learning models transform raw data into embeddings that capture semantic meaning.',
+  'RESTful APIs use HTTP methods like GET, POST, PUT, and DELETE to manage resources.',
+  'Natural language processing enables computers to understand and generate human language.',
+];
+
+const MODEL_COLORS = [
+  '#00d4aa', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffd93d',
+  '#ff6b6b', '#c792ea', '#f78c6c', '#82aaff', '#c3e88d',
+];
+
+window.doBenchLatency = async function() {
+  hideError('benchLatencyError');
+  const checks = document.querySelectorAll('#benchModelChecks input:checked');
+  const models = Array.from(checks).map(c => c.value);
+  if (models.length === 0) { showError('benchLatencyError', 'Select at least one model'); return; }
+
+  const rounds = parseInt(document.getElementById('benchRounds').value, 10);
+  const customText = document.getElementById('benchLatencyInput').value.trim();
+  const texts = customText ? [customText] : BENCH_SAMPLE_TEXTS;
+
+  setLoading('benchLatencyBtn', true);
+  document.getElementById('benchLatencyResult').classList.add('visible');
+
+  const chart = document.getElementById('benchLatencyChart');
+  const statsEl = document.getElementById('benchLatencyStats');
+
+  // Build placeholder bars
+  chart.innerHTML = '';
+  models.forEach((model, i) => {
+    const row = document.createElement('div');
+    row.className = 'latency-row';
+    row.innerHTML = `
+      <span class="latency-model">${model}</span>
+      <div class="latency-bar-outer">
+        <div class="latency-bar-inner running" id="bench-bar-${i}" style="background:${MODEL_COLORS[i % MODEL_COLORS.length]}"></div>
+      </div>
+      <span class="latency-stats" id="bench-stats-${i}">Running...</span>
+      <span class="latency-badge" id="bench-badge-${i}"></span>
+    `;
+    chart.appendChild(row);
+  });
+  statsEl.innerHTML = `<span class="stat"><span class="stat-label">Texts</span><span class="stat-value">${texts.length}</span></span>
+    <span class="stat"><span class="stat-label">Rounds</span><span class="stat-value">${rounds}</span></span>`;
+
+  const results = [];
+
+  for (let mi = 0; mi < models.length; mi++) {
+    const model = models[mi];
+    const latencies = [];
+    let tokens = 0, dims = 0;
+
+    for (let r = 0; r < rounds; r++) {
+      try {
+        const data = await apiPost('/api/benchmark/embed', { texts, model, inputType: 'document' });
+        latencies.push(data.elapsed);
+        tokens = data.tokens;
+        dims = data.dimensions;
+      } catch (err) {
+        document.getElementById(`bench-stats-${mi}`).textContent = 'Error';
+        document.getElementById(`bench-bar-${mi}`).classList.remove('running');
+        document.getElementById(`bench-bar-${mi}`).style.width = '0%';
+        break;
+      }
+    }
+
+    if (latencies.length > 0) {
+      const avg = latencies.reduce((a, b) => a + b, 0) / latencies.length;
+      const sorted = [...latencies].sort((a, b) => a - b);
+      const p50 = sorted[Math.floor(sorted.length / 2)];
+      results.push({ model, avg, p50, min: sorted[0], max: sorted[sorted.length - 1], tokens, dims, idx: mi });
+    }
+  }
+
+  // Animate bars to final widths
+  if (results.length > 0) {
+    const maxAvg = Math.max(...results.map(r => r.avg));
+    const minAvg = Math.min(...results.map(r => r.avg));
+
+    results.forEach(r => {
+      const bar = document.getElementById(`bench-bar-${r.idx}`);
+      const stats = document.getElementById(`bench-stats-${r.idx}`);
+      const badge = document.getElementById(`bench-badge-${r.idx}`);
+      bar.classList.remove('running');
+      const pct = Math.max(15, (r.avg / maxAvg) * 100);
+      bar.style.width = pct + '%';
+      bar.textContent = r.avg.toFixed(0) + 'ms';
+      stats.textContent = `p50: ${r.p50.toFixed(0)}ms`;
+      stats.title = `min: ${r.min.toFixed(0)}ms, max: ${r.max.toFixed(0)}ms`;
+      if (r.avg === minAvg) badge.textContent = '⚡';
+    });
+
+    // Update stats
+    const fastest = results.reduce((a, b) => a.avg < b.avg ? a : b);
+    const price = getModelPrice(fastest.model);
+    statsEl.innerHTML += `
+      <span class="stat"><span class="stat-label">Fastest</span><span class="stat-value">${fastest.model}</span></span>
+      <span class="stat"><span class="stat-label">Avg</span><span class="stat-value">${fastest.avg.toFixed(0)}ms</span></span>
+      <span class="stat"><span class="stat-label">Dims</span><span class="stat-value">${fastest.dims}</span></span>
+      ${price ? `<span class="stat"><span class="stat-label">Price</span><span class="stat-value">${price}</span></span>` : ''}
+    `;
+
+    // Save to history
+    saveBenchHistory(results, texts.length, rounds);
+    renderHistory();
+  }
+
+  setLoading('benchLatencyBtn', false);
+};
+
+function getModelPrice(name) {
+  const m = allModels.find(m => m.name === name);
+  return m ? m.price : null;
+}
+
+function getModelPriceNum(name) {
+  const m = allModels.find(m => m.name === name);
+  if (!m) return null;
+  const match = m.price.match(/\$([0-9.]+)\/1M/);
+  return match ? parseFloat(match[1]) : null;
+}
+
+// ── Benchmark: Ranking Comparison ──
+window.doBenchRanking = async function() {
+  hideError('benchRankError');
+  const query = document.getElementById('benchRankQuery').value.trim();
+  const docsText = document.getElementById('benchRankDocs').value.trim();
+  if (!query || !docsText) { showError('benchRankError', 'Enter a query and documents'); return; }
+
+  const documents = docsText.split('\n').map(d => d.trim()).filter(Boolean);
+  if (documents.length < 2) { showError('benchRankError', 'Enter at least 2 documents'); return; }
+
+  const modelA = document.getElementById('benchRankModelA').value;
+  const modelB = document.getElementById('benchRankModelB').value;
+  const mode = document.getElementById('benchRankMode').value;
+  const topK = parseInt(document.getElementById('benchRankTopK').value, 10);
+
+  setLoading('benchRankBtn', true);
+
+  try {
+    let rankedA, rankedB;
+
+    if (mode === 'embed') {
+      // Embedding similarity mode
+      const [dataA, dataB] = await Promise.all([
+        apiPost('/api/benchmark/embed', { texts: [query, ...documents], model: modelA, inputType: 'document' }),
+        apiPost('/api/benchmark/embed', { texts: [query, ...documents], model: modelB, inputType: 'document' }),
+      ]);
+
+      rankedA = rankBySimilarity(dataA.embeddings, documents, topK);
+      rankedB = rankBySimilarity(dataB.embeddings, documents, topK);
+    } else {
+      // Rerank mode
+      const [dataA, dataB] = await Promise.all([
+        apiPost('/api/benchmark/rerank', { query, documents, model: modelA, topK }),
+        apiPost('/api/benchmark/rerank', { query, documents, model: modelB, topK }),
+      ]);
+
+      rankedA = dataA.results.slice(0, topK).map(r => ({
+        index: r.index,
+        text: documents[r.index],
+        score: r.relevance_score,
+      }));
+      rankedB = dataB.results.slice(0, topK).map(r => ({
+        index: r.index,
+        text: documents[r.index],
+        score: r.relevance_score,
+      }));
+    }
+
+    // Render comparison
+    renderRankComparison(modelA, modelB, rankedA, rankedB, topK);
+    document.getElementById('benchRankResult').classList.add('visible');
+  } catch (err) {
+    showError('benchRankError', err.message);
+  } finally {
+    setLoading('benchRankBtn', false);
+  }
+};
+
+function rankBySimilarity(embeddings, documents, topK) {
+  const queryVec = embeddings[0];
+  const docVecs = embeddings.slice(1);
+  const scores = docVecs.map((dv, i) => ({
+    index: i,
+    text: documents[i],
+    score: cosineSim(queryVec, dv),
+  }));
+  scores.sort((a, b) => b.score - a.score);
+  return scores.slice(0, topK);
+}
+
+function renderRankComparison(modelA, modelB, rankedA, rankedB, topK) {
+  const grid = document.getElementById('benchRankGrid');
+  const verdict = document.getElementById('benchRankVerdict');
+  grid.innerHTML = '';
+
+  // Header
+  const header = document.createElement('div');
+  header.className = 'rank-row';
+  header.style.background = 'none';
+  header.style.fontWeight = '600';
+  header.style.fontSize = '13px';
+  header.style.color = 'var(--accent)';
+  header.innerHTML = `<div></div><div>${modelA}</div><div></div><div>${modelB}</div>`;
+  grid.appendChild(header);
+
+  const orderA = rankedA.map(r => r.index);
+  const orderB = rankedB.map(r => r.index);
+  let matches = 0;
+
+  const k = Math.min(topK, rankedA.length, rankedB.length);
+  for (let i = 0; i < k; i++) {
+    const a = rankedA[i];
+    const b = rankedB[i];
+    const same = a.index === b.index;
+    if (same) matches++;
+
+    const truncA = a.text.length > 60 ? a.text.slice(0, 57) + '...' : a.text;
+    const truncB = b.text.length > 60 ? b.text.slice(0, 57) + '...' : b.text;
+
+    const row = document.createElement('div');
+    row.className = 'rank-row';
+    row.innerHTML = `
+      <div class="rank-num">${i + 1}</div>
+      <div class="rank-item ${same ? 'rank-match' : 'rank-differ'}">
+        <div title="${a.text.replace(/"/g, '&quot;')}">${truncA}</div>
+        <div class="rank-score">${a.score.toFixed(4)} [doc ${a.index}]</div>
+      </div>
+      <div class="rank-arrow">${same ? '=' : '≠'}</div>
+      <div class="rank-item ${same ? 'rank-match' : 'rank-differ'}">
+        <div title="${b.text.replace(/"/g, '&quot;')}">${truncB}</div>
+        <div class="rank-score">${b.score.toFixed(4)} [doc ${b.index}]</div>
+      </div>
+    `;
+    grid.appendChild(row);
+  }
+
+  // Compute overlap
+  const setA = new Set(orderA.slice(0, k));
+  const setB = new Set(orderB.slice(0, k));
+  const overlap = [...setA].filter(x => setB.has(x)).length;
+  const overlapPct = ((overlap / k) * 100).toFixed(0);
+  const agreePct = ((matches / k) * 100).toFixed(0);
+
+  if (matches === k) {
+    verdict.innerHTML = `<span style="color:var(--green)">✓ Models agree on all ${k} positions — the cheaper model is likely sufficient.</span>`;
+  } else if (overlap === k) {
+    verdict.innerHTML = `<span style="color:var(--yellow)">⚠ Same ${k} documents in top-${k}, but in different order (${agreePct}% exact match).</span>`;
+  } else {
+    verdict.innerHTML = `<span style="color:var(--warning)">⚠ ${overlapPct}% overlap in top-${k} results — models see different relevance signals.</span>`;
+  }
+}
+
+// ── Benchmark: Cost Calculator ──
+function initCostCalculator() {
+  const tokSlider = document.getElementById('costTokens');
+  const qSlider = document.getElementById('costQueries');
+  const tokValue = document.getElementById('costTokensValue');
+  const qValue = document.getElementById('costQueriesValue');
+
+  function updateCost() {
+    const tokens = parseInt(tokSlider.value, 10);
+    const queries = parseInt(qSlider.value, 10);
+    tokValue.textContent = tokens.toLocaleString();
+    qValue.textContent = queries.toLocaleString();
+    renderCostTable(tokens, queries);
+  }
+
+  tokSlider.addEventListener('input', updateCost);
+  qSlider.addEventListener('input', updateCost);
+
+  // Initialize
+  updateCost();
+}
+
+function renderCostTable(tokensPerQuery, queriesPerDay) {
+  const tbody = document.getElementById('costTableBody');
+  tbody.innerHTML = '';
+
+  const models = allModels.filter(m => !m.legacy);
+  const rows = [];
+
+  models.forEach(m => {
+    const match = m.price.match(/\$([0-9.]+)\/1M/);
+    if (!match) return;
+    const pricePerM = parseFloat(match[1]);
+    const dailyTokens = tokensPerQuery * queriesPerDay;
+    const dailyCost = (dailyTokens / 1_000_000) * pricePerM;
+    const monthlyCost = dailyCost * 30;
+    rows.push({ name: m.name, type: m.type === 'embedding' ? 'embed' : 'rerank', pricePerM, dailyCost, monthlyCost });
+  });
+
+  rows.sort((a, b) => a.monthlyCost - b.monthlyCost);
+  const maxMonthly = Math.max(...rows.map(r => r.monthlyCost), 0.01);
+
+  rows.forEach(r => {
+    const tr = document.createElement('tr');
+    const barPct = Math.max(2, (r.monthlyCost / maxMonthly) * 100);
+    const monthlyStr = r.monthlyCost < 0.01 ? '<$0.01' : '$' + (r.monthlyCost < 1 ? r.monthlyCost.toFixed(2) : r.monthlyCost < 100 ? r.monthlyCost.toFixed(1) : r.monthlyCost.toFixed(0));
+    const dailyStr = r.dailyCost < 0.01 ? '<$0.01' : '$' + r.dailyCost.toFixed(2);
+
+    tr.innerHTML = `
+      <td style="color:var(--text)">${r.name}</td>
+      <td style="color:var(--text-dim)">${r.type}</td>
+      <td>$${r.pricePerM.toFixed(2)}</td>
+      <td>${dailyStr}</td>
+      <td class="cost-highlight">${monthlyStr}</td>
+      <td class="cost-bar-cell" style="position:relative;padding-left:8px;">
+        <div class="cost-bar" style="width:${barPct}%;"></div>
+        <span style="position:relative;z-index:1;font-size:12px;color:var(--text-dim);">${monthlyStr}</span>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// ── Benchmark: History ──
+const HISTORY_KEY = 'vai-bench-history';
+
+function saveBenchHistory(results, textCount, rounds) {
+  const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+  history.push({
+    timestamp: Date.now(),
+    textCount,
+    rounds,
+    results: results.map(r => ({ model: r.model, avg: r.avg, p50: r.p50, dims: r.dims })),
+  });
+  // Keep last 20
+  if (history.length > 20) history.splice(0, history.length - 20);
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+}
+
+function renderHistory() {
+  const container = document.getElementById('benchHistoryContent');
+  const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+
+  if (history.length === 0) {
+    container.innerHTML = '<div class="history-empty">No benchmarks recorded yet. Run a latency benchmark to start tracking.</div>';
+    return;
+  }
+
+  // Collect all models that appear
+  const modelSet = new Set();
+  history.forEach(h => h.results.forEach(r => modelSet.add(r.model)));
+  const models = [...modelSet];
+  const colorMap = {};
+  models.forEach((m, i) => { colorMap[m] = MODEL_COLORS[i % MODEL_COLORS.length]; });
+
+  // Find global max for scale
+  const maxAvg = Math.max(...history.flatMap(h => h.results.map(r => r.avg)));
+
+  let html = '<div class="history-chart">';
+  history.forEach((h, hi) => {
+    html += '<div class="history-bar-group" title="' + new Date(h.timestamp).toLocaleString() + '">';
+    models.forEach(m => {
+      const r = h.results.find(r => r.model === m);
+      const height = r ? Math.max(4, (r.avg / maxAvg) * 100) : 0;
+      const label = r ? `${m}: ${r.avg.toFixed(0)}ms` : '';
+      html += `<div class="history-bar" style="height:${height}%;background:${colorMap[m]};" title="${label}"></div>`;
+    });
+    html += '</div>';
+  });
+  html += '</div>';
+
+  // Legend
+  html += '<div class="history-legend">';
+  models.forEach(m => {
+    html += `<span><span class="history-legend-dot" style="background:${colorMap[m]}"></span>${m}</span>`;
+  });
+  html += '</div>';
+
+  // Time labels
+  if (history.length > 1) {
+    const first = new Date(history[0].timestamp);
+    const last = new Date(history[history.length - 1].timestamp);
+    html += `<div class="history-labels"><span>${first.toLocaleDateString()} ${first.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</span><span>${last.toLocaleDateString()} ${last.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</span></div>`;
+  }
+
+  container.innerHTML = html;
+}
+
+window.clearHistory = function() {
+  localStorage.removeItem(HISTORY_KEY);
+  renderHistory();
+};
+
+// ── Patch init to include benchmark setup ──
+const _origInit = init;
+init = async function() {
+  await _origInit();
+  buildModelCheckboxes();
+  populateBenchRankSelects();
+  initCostCalculator();
+  renderHistory();
 };
 
 // ── Start ──
