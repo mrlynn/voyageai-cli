@@ -96,25 +96,29 @@ async function apiRequest(endpoint, body) {
       } catch {
         errorDetail = await response.text();
       }
-      console.error(`API Error (${response.status}): ${errorDetail}`);
+      const errMsg = `API Error (${response.status}): ${errorDetail}`;
 
       // Help users diagnose endpoint mismatch
+      let hint = '';
       if (response.status === 403 && base === ATLAS_API_BASE) {
-        console.error('');
-        console.error('Hint: 403 on ai.mongodb.com often means your key is for the Voyage AI');
-        console.error('platform, not MongoDB Atlas. Try switching the base URL:');
-        console.error('');
-        console.error('  vai config set base-url https://api.voyageai.com/v1/');
-        console.error('');
-        console.error('Or set VOYAGE_API_BASE=https://api.voyageai.com/v1/ in your environment.');
+        hint = '\n\nHint: 403 on ai.mongodb.com often means your key is for the Voyage AI' +
+          '\nplatform, not MongoDB Atlas. Try switching the base URL:' +
+          '\n\n  vai config set base-url https://api.voyageai.com/v1/' +
+          '\n\nOr set VOYAGE_API_BASE=https://api.voyageai.com/v1/ in your environment.';
       } else if (response.status === 401 && base === VOYAGE_API_BASE) {
-        console.error('');
-        console.error('Hint: 401 on api.voyageai.com may mean your key is an Atlas AI key.');
-        console.error('Try switching back:');
-        console.error('');
-        console.error('  vai config set base-url https://ai.mongodb.com/v1/');
+        hint = '\n\nHint: 401 on api.voyageai.com may mean your key is an Atlas AI key.' +
+          '\nTry switching back:' +
+          '\n\n  vai config set base-url https://ai.mongodb.com/v1/';
       }
-      process.exit(1);
+
+      // Log the error + hint to stderr for CLI users
+      console.error(errMsg);
+      if (hint) console.error(hint);
+
+      // Throw instead of process.exit so callers (like playground) can catch gracefully
+      const err = new Error(errMsg);
+      err.statusCode = response.status;
+      throw err;
     }
 
     return response.json();

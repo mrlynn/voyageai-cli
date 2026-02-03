@@ -33,7 +33,7 @@ const MODEL_CATALOG = [
   { name: 'voyage-finance-2', type: 'embedding', context: '32K', dimensions: '1024', price: '$0.12/1M tokens', bestFor: 'Finance', shortFor: 'Finance' },
   { name: 'voyage-law-2', type: 'embedding', context: '16K', dimensions: '1024', price: '$0.12/1M tokens', bestFor: 'Legal', shortFor: 'Legal' },
   { name: 'voyage-context-3', type: 'embedding', context: '32K', dimensions: '1024 (default), 256, 512, 2048', price: '$0.18/1M tokens', bestFor: 'Contextualized chunks', shortFor: 'Context chunks' },
-  { name: 'voyage-multimodal-3.5', type: 'embedding', context: '32K', dimensions: '1024 (default), 256, 512, 2048', price: '$0.12/M + $0.60/B px', bestFor: 'Text + images + video', shortFor: 'Multimodal' },
+  { name: 'voyage-multimodal-3.5', type: 'embedding-multimodal', context: '32K', dimensions: '1024 (default), 256, 512, 2048', price: '$0.12/M + $0.60/B px', bestFor: 'Text + images + video', shortFor: 'Multimodal', multimodal: true },
   { name: 'rerank-2.5', type: 'reranking', context: '32K', dimensions: '—', price: '$0.05/1M tokens', bestFor: 'Best quality reranking', shortFor: 'Best reranker' },
   { name: 'rerank-2.5-lite', type: 'reranking', context: '32K', dimensions: '—', price: '$0.02/1M tokens', bestFor: 'Fast reranking', shortFor: 'Fast reranker' },
   { name: 'voyage-4-nano', type: 'embedding', context: '32K', dimensions: '512 (default), 128, 256', price: 'Open-weight', bestFor: 'Open-weight / edge', shortFor: 'Open / edge', local: true },
@@ -42,7 +42,7 @@ const MODEL_CATALOG = [
   { name: 'voyage-3.5', type: 'embedding', context: '32K', dimensions: '1024 (default), 256, 512, 2048', price: '$0.06/1M tokens', bestFor: 'Previous gen balanced', shortFor: 'Previous gen balanced', legacy: true },
   { name: 'voyage-3.5-lite', type: 'embedding', context: '32K', dimensions: '1024 (default), 256, 512, 2048', price: '$0.02/1M tokens', bestFor: 'Previous gen budget', shortFor: 'Previous gen budget', legacy: true },
   { name: 'voyage-code-2', type: 'embedding', context: '16K', dimensions: '1536', price: '$0.12/1M tokens', bestFor: 'Legacy code', shortFor: 'Legacy code', legacy: true },
-  { name: 'voyage-multimodal-3', type: 'embedding', context: '32K', dimensions: '1024', price: '$0.12/1M tokens', bestFor: 'Legacy multimodal', shortFor: 'Legacy multimodal', legacy: true },
+  { name: 'voyage-multimodal-3', type: 'embedding-multimodal', context: '32K', dimensions: '1024', price: '$0.12/1M tokens', bestFor: 'Legacy multimodal', shortFor: 'Legacy multimodal', legacy: true, multimodal: true },
   { name: 'rerank-2', type: 'reranking', context: '16K', dimensions: '—', price: '$0.05/1M tokens', bestFor: 'Legacy reranker', shortFor: 'Legacy reranker', legacy: true },
   { name: 'rerank-2-lite', type: 'reranking', context: '8K', dimensions: '—', price: '$0.02/1M tokens', bestFor: 'Legacy fast reranker', shortFor: 'Legacy fast reranker', legacy: true },
 ];

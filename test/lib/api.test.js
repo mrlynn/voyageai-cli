@@ -97,9 +97,8 @@ describe('api', () => {
 
       await assert.rejects(
         () => apiRequest('/embeddings', { input: ['test'], model: 'voyage-4-lite' }),
-        /process\.exit called/
+        /API Error \(400\)/
       );
-      assert.equal(exitCode, 1);
     });
 
     it('retries on 429', async () => {
