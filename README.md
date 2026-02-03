@@ -110,6 +110,20 @@ vai index list --db myapp --collection docs
 vai index delete --db myapp --collection docs --index-name my_index
 ```
 
+### `vai ping` — Test API connectivity
+
+```bash
+# Test Voyage AI API
+vai ping
+
+# Also tests MongoDB if MONGODB_URI is set
+export MONGODB_URI="mongodb+srv://user:pass@cluster.mongodb.net/"
+vai ping
+
+# JSON output
+vai ping --json
+```
+
 ### `vai models` — List available models
 
 ```bash
@@ -154,8 +168,17 @@ vai rerank --query "how does cloud database work" \
 
 | Variable | Required For | Description |
 |----------|-------------|-------------|
-| `VOYAGE_API_KEY` | embed, rerank, store, search | [Model API key](https://www.mongodb.com/docs/voyageai/management/api-keys/) from MongoDB Atlas |
-| `MONGODB_URI` | store, search, index | MongoDB Atlas connection string |
+| `VOYAGE_API_KEY` | embed, rerank, store, search, ping | [Model API key](https://www.mongodb.com/docs/voyageai/management/api-keys/) from MongoDB Atlas |
+| `MONGODB_URI` | store, search, index, ping (optional) | MongoDB Atlas connection string |
+
+You can also create a `.env` file in your project directory instead of exporting variables:
+
+```
+VOYAGE_API_KEY=your-key
+MONGODB_URI=mongodb+srv://user:pass@cluster.mongodb.net/
+```
+
+The CLI will automatically load variables from `.env` using [dotenv](https://www.npmjs.com/package/dotenv).
 
 ## Global Flags
 
