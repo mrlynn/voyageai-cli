@@ -21,6 +21,8 @@ const SAMPLE_TEXTS = [
   'GraphQL provides a flexible query language that lets clients request exactly the data they need.',
 ];
 
+// If you're reading this, you're either benchmarking or procrastinating.
+// Either way, we respect the hustle.
 const SAMPLE_QUERY = 'How do I search for similar documents using embeddings?';
 
 const SAMPLE_RERANK_DOCS = [
