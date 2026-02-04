@@ -67,6 +67,9 @@ ${pc.dim('Community tool — not an official MongoDB or Voyage AI product.')}
 ${pc.dim('Docs: https://www.mongodb.com/docs/voyageai/')}
 `);
 
+// Anonymous telemetry (fire-and-forget, non-blocking)
+const telemetry = require('./lib/telemetry');
+
 // If no args (just `vai`), show banner + quick start + help
 if (process.argv.length <= 2) {
   showBanner();
@@ -74,5 +77,11 @@ if (process.argv.length <= 2) {
   program.outputHelp();
   process.exit(0);
 }
+
+// Track command usage after parsing
+program.hook('preAction', (thisCommand) => {
+  const cmd = thisCommand.args?.[0] || thisCommand.name();
+  telemetry.send('cli_command', { command: cmd });
+});
 
 program.parse();

@@ -3253,6 +3253,15 @@ Reranking models rescore initial search results to improve relevance ordering.</
           <button class="settings-reset-btn" id="settingsClearCache">Clear All Data</button>
         </div>
       </div>
+      <div class="settings-row">
+        <div class="settings-label">
+          <span class="settings-label-text">Anonymous Usage Analytics</span>
+          <span class="settings-label-hint">Help improve Vai by sharing anonymous usage data (version, platform, features used). No API keys or personal data.</span>
+        </div>
+        <div class="settings-control">
+          <button class="settings-toggle active" id="settingsTelemetry" type="button"></button>
+        </div>
+      </div>
     </div>
 
     <!-- Version Info (visible in Electron only) -->
@@ -3375,6 +3384,54 @@ let rerankModels = [];
 let lastEmbedding = null;
 
 // ── Init ──
+// ── Anonymous Telemetry ──
+const TELEMETRY_URL = 'https://vai.mlynn.org/api/telemetry';
+const TELEMETRY_KEY = 'vai-telemetry-enabled';
+
+function isTelemetryEnabled() {
+  const stored = localStorage.getItem(TELEMETRY_KEY);
+  return stored === null ? true : stored === 'true'; // default on
+}
+
+function sendTelemetry(event, extra = {}) {
+  if (!isTelemetryEnabled()) return;
+  try {
+    const isElectron = !!(window.vai && window.vai.isElectron);
+    const payload = {
+      event,
+      version: document.getElementById('appVersionLabel')?.textContent?.replace('v','') || 'web',
+      context: isElectron ? 'electron' : 'web',
+      platform: navigator.platform || undefined,
+      locale: navigator.language || undefined,
+      ...extra,
+    };
+    // Use sendBeacon for fire-and-forget (survives page unload)
+    if (navigator.sendBeacon) {
+      navigator.sendBeacon(TELEMETRY_URL, JSON.stringify(payload));
+    } else {
+      fetch(TELEMETRY_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        keepalive: true,
+      }).catch(() => {});
+    }
+  } catch { /* telemetry should never break the app */ }
+}
+
+function initTelemetryToggle() {
+  const toggle = document.getElementById('settingsTelemetry');
+  if (!toggle) return;
+  const enabled = isTelemetryEnabled();
+  toggle.classList.toggle('active', enabled);
+  toggle.addEventListener('click', () => {
+    const nowEnabled = !toggle.classList.contains('active');
+    toggle.classList.toggle('active', nowEnabled);
+    localStorage.setItem(TELEMETRY_KEY, String(nowEnabled));
+    showSettingsSaved();
+  });
+}
+
 async function init() {
   // Mark body for Electron vs Web styling
   if (window.vai && window.vai.isElectron) {
@@ -3385,6 +3442,10 @@ async function init() {
   await Promise.all([loadModels(), loadConcepts()]);
   populateModelSelects();
   buildExploreCards();
+
+  // Telemetry
+  initTelemetryToggle();
+  sendTelemetry('app_launch');
 }
 
 // ── Tabs ──
@@ -3414,6 +3475,8 @@ function switchTab(tab) {
   // Sync settings cog highlight
   const settingsBtn = document.querySelector('.sidebar-settings-btn');
   if (settingsBtn) settingsBtn.classList.toggle('active', tab === 'settings');
+  // Track tab views
+  sendTelemetry('tab_view', { tab });
 }
 // Expose globally so Electron main process can call it
 window.switchTab = switchTab;
@@ -3530,6 +3593,7 @@ window.doEmbed = async function() {
   hideError('embedError');
   const text = document.getElementById('embedInput').value.trim();
   if (!text) { showError('embedError', 'Enter some text to embed'); return; }
+  sendTelemetry('api_call', { endpoint: 'embed', model: document.getElementById('embedModel').value });
 
   setLoading('embedBtn', true);
   try {
@@ -3612,6 +3676,7 @@ function buildHeatmap(vec, container) {
 // ── Compare ──
 window.doCompare = async function() {
   hideError('compareError');
+  sendTelemetry('api_call', { endpoint: 'compare', model: document.getElementById('compareModel').value });
   const a = document.getElementById('compareA').value.trim();
   const b = document.getElementById('compareB').value.trim();
   if (!a || !b) { showError('compareError', 'Enter text in both fields'); return; }
@@ -3704,6 +3769,7 @@ window.doCompare = async function() {
 // ── Search ──
 window.doSearch = async function(withRerank) {
   hideError('searchError');
+  sendTelemetry('api_call', { endpoint: withRerank ? 'rerank' : 'search' });
   const query = document.getElementById('searchQuery').value.trim();
   const docsText = document.getElementById('searchDocs').value.trim();
   if (!query || !docsText) { showError('searchError', 'Enter a query and documents'); return; }
@@ -5593,6 +5659,7 @@ window.clearMultimodalImage = function() {
 
 window.doMultimodalCompare = async function() {
   hideError('mmError');
+  sendTelemetry('api_call', { endpoint: 'multimodal-compare', model: document.getElementById('mmModel').value });
   const text = document.getElementById('mmText').value.trim();
   if (!mmImageData) { showError('mmError', 'Upload an image first'); return; }
   if (!text) { showError('mmError', 'Enter text to compare against the image'); return; }
@@ -5744,6 +5811,7 @@ window.setMmSearchMode = function(mode) {
 
 window.doMultimodalSearch = async function() {
   hideError('mmSearchError');
+  sendTelemetry('api_call', { endpoint: 'multimodal-search', model: document.getElementById('mmModel').value });
 
   const corpusText = document.getElementById('mmCorpusText').value.trim();
   const textItems = corpusText ? corpusText.split('\n').map(t => t.trim()).filter(Boolean) : [];
