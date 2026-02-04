@@ -19,7 +19,7 @@ jobs:
             platform: mac
             arch: arm64
             artifact_glob: '../dist-electron/*.dmg'
-          - os: macos-15-large
+          - os: macos-15-intel
             platform: mac
             arch: x64
             artifact_glob: '../dist-electron/*.dmg'
@@ -55,6 +55,7 @@ jobs:
         
       - name: Build Electron app
         working-directory: electron
+        shell: bash
         run: |
           EXTRA_ARGS=""
           if [ "${{ matrix.platform }}" = "mac" ] && [ -z "${{ secrets.CSC_LINK }}" ]; then
@@ -62,7 +63,6 @@ jobs:
           fi
           npm run package:${{ matrix.platform }} -- --${{ matrix.arch }} $EXTRA_ARGS
         env:
-          # macOS code signing (optional — set secrets when ready)
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
