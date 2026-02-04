@@ -1,6 +1,6 @@
 {
   "name": "voyage-ai-playground",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "description": "Vai Playground — Desktop app for exploring embeddings, reranking, and vector search",
   "main": "main.js",
   "author": "Michael Lynn",
@@ -50,14 +50,24 @@
         "to": "cli-package.json"
       }
     ],
+    "publish": {
+      "provider": "github",
+      "owner": "mrlynn",
+      "repo": "voyageai-cli"
+    },
     "mac": {
       "category": "public.app-category.developer-tools",
-      "target": "dmg",
+      "target": ["dmg", "zip"],
       "icon": "icons/dark/icon.icns"
     },
     "win": {
       "target": "nsis",
-      "icon": "icons/dark/AppIcons/Assets.xcassets/AppIcon.appiconset/256.png"
+      "icon": "icons/dark/AppIcons/Assets.xcassets/AppIcon.appiconset/256.png",
+      "publisherName": "Michael Lynn"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false
     },
     "linux": {
       "target": "AppImage",
@@ -82,5 +92,8 @@
   "devDependencies": {
     "electron": "^33.0.0",
     "electron-builder": "^25.0.0"
+  },
+  "dependencies": {
+    "electron-updater": "^6.7.3"
   }
 }
