@@ -94,4 +94,57 @@ The "polished product" story. A standalone app with OS keychain integration, cus
 4. **`vai app --download`** — command that fetches the latest release from GitHub and opens it
 
 
-### Brew and package distribution alternatives - let's investigagte.
+### Brew and package distribution alternatives - let's investigate.
+
+
+
+
+
+
+Great question. Voyage AI's multimodal-3 model is a genuine differentiator — same vector space for text, images, and mixed content. Here's what would make the playground a killer demo:
+
+## High-Impact Multimodal Features
+
+### 1. **Image Embedding Tab** 🖼️
+- Drag-and-drop image upload (or paste from clipboard)
+- Embed images alongside text in the same space
+- Show the raw embedding vector + metadata
+- *"See? Same 1024-dim space as your text embeddings."*
+
+### 2. **Cross-Modal Search** 🔍
+- Build a small corpus of images + text descriptions
+- Search images with text queries ("sunset over mountains")
+- Search text with image queries (drop an image, find matching descriptions)
+- This is the "wow" moment — it just works across modalities
+
+### 3. **Image ↔ Text Similarity** 📊
+- Side-by-side: paste an image on the left, type text on the right
+- Real-time cosine similarity score between them
+- Try multiple descriptions, see which matches best
+- Great for understanding how the model "sees" images
+
+### 4. **Multimodal Compare** ⚖️
+- Extension of the existing Compare tab
+- Mix images and text in the comparison grid
+- Heatmap showing cross-modal similarities
+- *"How similar is this product photo to this description?"*
+
+### 5. **Visual RAG Pipeline Demo** 🔄
+- Upload a mix of images + text documents
+- Chunk, embed, store — the existing pipeline but with images
+- Query with text OR images, get results from both modalities
+- Shows the real production use case (product catalogs, medical imaging, etc.)
+
+### 6. **Multimodal Clustering Visualization** 🗺️
+- Upload 10-20 mixed items (images + text)
+- 2D scatter plot (t-SNE/UMAP projected) showing how they cluster
+- Color-coded by modality — see text and images grouping by *meaning*, not type
+- Interactive: hover to preview, click to inspect
+
+## My Recommendation: Start with #3 and #2
+
+**Image ↔ Text Similarity** is the fastest to build (single image + single text, one API call each, cosine score) and gives the immediate "oh wow" moment. Then **Cross-Modal Search** builds on it with a mini-corpus.
+
+These two alone tell the story: *"Your text and images live in the same semantic space. Search anything with anything."*
+
+Want me to start building the Image ↔ Text Similarity tab? It'd slot right into the existing sidebar nav pattern.
