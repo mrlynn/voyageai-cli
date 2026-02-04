@@ -142,6 +142,192 @@ body {
 }
 .update-banner-dismiss:hover { color: var(--text); }
 
+/* ── Onboarding Walkthrough ── */
+.onboarding-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+}
+.onboarding-overlay.active { display: block; }
+.onboarding-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  transition: opacity 0.3s;
+}
+.onboarding-spotlight {
+  position: absolute;
+  border-radius: var(--radius);
+  box-shadow: 0 0 0 9999px rgba(0,0,0,0.55);
+  transition: all 0.4s cubic-bezier(0.4,0,0.2,1);
+  z-index: 10001;
+  pointer-events: none;
+}
+.onboarding-tooltip {
+  position: absolute;
+  z-index: 10002;
+  background: var(--bg-card);
+  border: 1px solid var(--accent);
+  border-radius: 12px;
+  padding: 24px 28px 20px;
+  width: 380px;
+  max-width: 90vw;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.4), 0 0 0 1px rgba(0,237,100,0.15);
+  transition: all 0.4s cubic-bezier(0.4,0,0.2,1);
+  opacity: 0;
+  transform: translateY(10px);
+}
+.onboarding-tooltip.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.onboarding-tooltip-arrow {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--accent);
+  transform: rotate(45deg);
+}
+.onboarding-tooltip-arrow.top {
+  top: -7px;
+  left: 30px;
+  border-right: none;
+  border-bottom: none;
+}
+.onboarding-tooltip-arrow.bottom {
+  bottom: -7px;
+  left: 30px;
+  border-left: none;
+  border-top: none;
+}
+.onboarding-tooltip-arrow.left {
+  left: -7px;
+  top: 24px;
+  border-right: none;
+  border-top: none;
+}
+.onboarding-step-icon {
+  font-size: 28px;
+  margin-bottom: 8px;
+}
+.onboarding-step-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--accent-text);
+  margin-bottom: 6px;
+}
+.onboarding-step-body {
+  font-size: 13px;
+  color: var(--text-dim);
+  line-height: 1.6;
+  margin-bottom: 18px;
+}
+.onboarding-step-body strong { color: var(--accent); }
+.onboarding-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.onboarding-dots {
+  display: flex;
+  gap: 6px;
+}
+.onboarding-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--border);
+  transition: background 0.2s;
+}
+.onboarding-dot.active { background: var(--accent); }
+.onboarding-dot.completed { background: var(--accent-dim); }
+.onboarding-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.onboarding-skip {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 12px;
+  cursor: pointer;
+  font-family: var(--font);
+  padding: 6px 10px;
+  border-radius: 6px;
+  transition: color 0.15s;
+}
+.onboarding-skip:hover { color: var(--text); }
+.onboarding-next {
+  background: var(--accent);
+  color: var(--bg);
+  border: none;
+  border-radius: 6px;
+  padding: 8px 20px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: var(--font);
+  transition: opacity 0.15s;
+}
+.onboarding-next:hover { opacity: 0.85; }
+.onboarding-welcome-center {
+  position: fixed;
+  inset: 0;
+  z-index: 10002;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.onboarding-welcome-card {
+  background: var(--bg-card);
+  border: 1px solid var(--accent);
+  border-radius: 16px;
+  padding: 40px 44px 32px;
+  width: 460px;
+  max-width: 90vw;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,237,100,0.08);
+  pointer-events: auto;
+  opacity: 0;
+  transform: scale(0.95);
+  transition: all 0.4s cubic-bezier(0.4,0,0.2,1);
+}
+.onboarding-welcome-card.visible {
+  opacity: 1;
+  transform: scale(1);
+}
+.onboarding-welcome-logo {
+  width: 64px;
+  height: 64px;
+  margin-bottom: 16px;
+}
+.onboarding-welcome-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--accent-text);
+  margin-bottom: 8px;
+}
+.onboarding-welcome-sub {
+  font-size: 14px;
+  color: var(--text-dim);
+  line-height: 1.6;
+  margin-bottom: 28px;
+}
+[data-theme="light"] .onboarding-tooltip {
+  box-shadow: 0 12px 40px rgba(0,30,43,0.15), 0 0 0 1px rgba(0,163,92,0.2);
+}
+[data-theme="light"] .onboarding-welcome-card {
+  box-shadow: 0 20px 60px rgba(0,30,43,0.18), 0 0 80px rgba(0,163,92,0.06);
+}
+[data-theme="light"] .onboarding-backdrop {
+  background: rgba(0,30,43,0.45);
+}
+
 /* ── App Shell: sidebar + content layout ── */
 .app-shell {
   display: flex;
@@ -2619,6 +2805,19 @@ Reranking models rescore initial search results to improve relevance ordering.</
     </div>
 
     <div class="settings-section">
+      <div class="settings-section-title">Help</div>
+      <div class="settings-row">
+        <div class="settings-label">
+          <span class="settings-label-text">Welcome Tour</span>
+          <span class="settings-label-hint">Replay the onboarding walkthrough</span>
+        </div>
+        <div class="settings-control">
+          <button class="settings-reset-btn" id="settingsShowTour" style="background:var(--accent);color:var(--bg);">Show Welcome Tour</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-section">
       <div class="settings-section-title">Data &amp; Privacy</div>
       <div class="settings-row">
         <div class="settings-label">
@@ -2673,6 +2872,38 @@ Reranking models rescore initial search results to improve relevance ordering.</
 </div><!-- .main -->
 </div><!-- .content-area -->
 </div><!-- .app-shell -->
+
+<!-- Onboarding Walkthrough Overlay -->
+<div class="onboarding-overlay" id="onboardingOverlay">
+  <div class="onboarding-backdrop" id="onboardingBackdrop"></div>
+  <div class="onboarding-spotlight" id="onboardingSpotlight"></div>
+  <!-- Welcome card (step 0) -->
+  <div class="onboarding-welcome-center" id="onboardingWelcomeWrap">
+    <div class="onboarding-welcome-card" id="onboardingWelcomeCard">
+      <img class="onboarding-welcome-logo" id="onboardingLogo" src="/icons/dark/64.png" alt="Vai">
+      <div class="onboarding-welcome-title">Welcome to Vai</div>
+      <div class="onboarding-welcome-sub">Explore embeddings, compare text similarity, and search with vector models — all from one playground.</div>
+      <div class="onboarding-footer" style="justify-content:center;">
+        <button class="onboarding-skip" id="onboardingWelcomeSkip">Skip tour</button>
+        <button class="onboarding-next" id="onboardingWelcomeNext">Take the tour →</button>
+      </div>
+    </div>
+  </div>
+  <!-- Tooltip for steps 1-4 -->
+  <div class="onboarding-tooltip" id="onboardingTooltip">
+    <div class="onboarding-tooltip-arrow top" id="onboardingArrow"></div>
+    <div class="onboarding-step-icon" id="onboardingIcon"></div>
+    <div class="onboarding-step-title" id="onboardingTitle"></div>
+    <div class="onboarding-step-body" id="onboardingBody"></div>
+    <div class="onboarding-footer">
+      <div class="onboarding-dots" id="onboardingDots"></div>
+      <div class="onboarding-actions">
+        <button class="onboarding-skip" id="onboardingSkip">Skip</button>
+        <button class="onboarding-next" id="onboardingNext">Next</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <script>
 // Apply saved theme immediately to prevent flash
@@ -4559,6 +4790,216 @@ function checkForAppUpdate() {
   });
 }
 
+// ── Onboarding Walkthrough ──
+function initOnboarding() {
+  const ONBOARDING_KEY = 'vai-onboarding-complete';
+  const overlay = document.getElementById('onboardingOverlay');
+  const welcomeWrap = document.getElementById('onboardingWelcomeWrap');
+  const welcomeCard = document.getElementById('onboardingWelcomeCard');
+  const tooltip = document.getElementById('onboardingTooltip');
+  const spotlight = document.getElementById('onboardingSpotlight');
+  const arrow = document.getElementById('onboardingArrow');
+  const dotsContainer = document.getElementById('onboardingDots');
+  const titleEl = document.getElementById('onboardingTitle');
+  const bodyEl = document.getElementById('onboardingBody');
+  const iconEl = document.getElementById('onboardingIcon');
+
+  if (!overlay) return;
+
+  const isElectron = !!(window.vai && window.vai.isElectron);
+
+  const steps = [
+    {
+      target: null, // welcome card, no spotlight
+      icon: '🚀',
+      title: 'Welcome to Vai',
+      body: 'Explore embeddings, compare text similarity, and search with vector models — all from one playground.',
+    },
+    {
+      target: '[data-tab="settings"]',
+      icon: '🔑',
+      title: 'API Key Setup',
+      body: 'First, add your <strong>Voyage AI API key</strong> in Settings. You can get one free at <strong>dash.voyageai.com</strong>.' +
+        (isElectron ? '<br><br>💎 On desktop, your key is encrypted via <strong>OS keychain</strong> for secure storage.' : ''),
+      arrow: 'left',
+    },
+    {
+      target: '[data-tab="embed"]',
+      icon: '⚡',
+      title: 'Embed',
+      body: 'Turn any text into a <strong>vector embedding</strong> — a numerical fingerprint that captures meaning. Visualize the raw vectors and explore what models produce.',
+      arrow: 'left',
+    },
+    {
+      target: '[data-tab="compare"]',
+      icon: '🔥',
+      title: 'Compare',
+      body: 'Paste multiple texts and see a <strong>similarity heatmap</strong> — instantly discover which phrases are semantically close and which are far apart.',
+      arrow: 'left',
+    },
+    {
+      target: '[data-tab="search"]',
+      icon: '🔍',
+      title: 'Search & Rerank',
+      body: 'Run <strong>vector search</strong> against a set of documents and optionally <strong>rerank</strong> results for higher precision. Great for building RAG pipelines.',
+      arrow: 'left',
+    },
+  ];
+
+  let currentStep = 0;
+  const totalSteps = steps.length;
+
+  function buildDots() {
+    dotsContainer.innerHTML = '';
+    for (let i = 1; i < totalSteps; i++) {
+      const dot = document.createElement('div');
+      dot.className = 'onboarding-dot';
+      if (i < currentStep) dot.classList.add('completed');
+      if (i === currentStep) dot.classList.add('active');
+      dotsContainer.appendChild(dot);
+    }
+  }
+
+  function positionTooltipNear(targetEl) {
+    const step = steps[currentStep];
+    const rect = targetEl.getBoundingClientRect();
+
+    // Position spotlight over the target
+    spotlight.style.display = 'block';
+    const pad = 6;
+    spotlight.style.left = (rect.left - pad) + 'px';
+    spotlight.style.top = (rect.top - pad) + 'px';
+    spotlight.style.width = (rect.width + pad * 2) + 'px';
+    spotlight.style.height = (rect.height + pad * 2) + 'px';
+
+    // Reset arrow classes
+    arrow.className = 'onboarding-tooltip-arrow';
+
+    // Position tooltip to the right of sidebar items
+    if (step.arrow === 'left') {
+      arrow.classList.add('left');
+      tooltip.style.left = (rect.right + 16) + 'px';
+      tooltip.style.top = Math.max(8, rect.top - 10) + 'px';
+      tooltip.style.right = 'auto';
+      tooltip.style.bottom = 'auto';
+    } else {
+      // Below the target
+      arrow.classList.add('top');
+      tooltip.style.left = Math.max(8, rect.left) + 'px';
+      tooltip.style.top = (rect.bottom + 14) + 'px';
+      tooltip.style.right = 'auto';
+      tooltip.style.bottom = 'auto';
+    }
+
+    // Ensure tooltip doesn't overflow viewport
+    requestAnimationFrame(() => {
+      const tr = tooltip.getBoundingClientRect();
+      if (tr.bottom > window.innerHeight - 10) {
+        tooltip.style.top = Math.max(8, window.innerHeight - tr.height - 10) + 'px';
+      }
+      if (tr.right > window.innerWidth - 10) {
+        tooltip.style.left = Math.max(8, window.innerWidth - tr.width - 10) + 'px';
+      }
+    });
+  }
+
+  function showStep(idx) {
+    currentStep = idx;
+    const step = steps[idx];
+
+    if (idx === 0) {
+      // Welcome card — centered, no spotlight
+      welcomeWrap.style.display = 'flex';
+      tooltip.classList.remove('visible');
+      tooltip.style.display = 'none';
+      spotlight.style.display = 'none';
+      requestAnimationFrame(() => {
+        welcomeCard.classList.add('visible');
+      });
+      return;
+    }
+
+    // Hide welcome card
+    welcomeWrap.style.display = 'none';
+    welcomeCard.classList.remove('visible');
+
+    // Show tooltip
+    tooltip.style.display = 'block';
+    tooltip.classList.remove('visible');
+    iconEl.textContent = step.icon;
+    titleEl.textContent = step.title;
+    bodyEl.innerHTML = step.body;
+    buildDots();
+
+    // Update next button text
+    const nextBtn = document.getElementById('onboardingNext');
+    nextBtn.textContent = (idx === totalSteps - 1) ? 'Get Started' : 'Next';
+
+    // Find target element and position
+    const targetEl = document.querySelector(step.target);
+    if (targetEl) {
+      positionTooltipNear(targetEl);
+    }
+
+    requestAnimationFrame(() => {
+      tooltip.classList.add('visible');
+    });
+  }
+
+  function finish() {
+    tooltip.classList.remove('visible');
+    welcomeCard.classList.remove('visible');
+    spotlight.style.display = 'none';
+    setTimeout(() => {
+      overlay.classList.remove('active');
+    }, 300);
+    localStorage.setItem(ONBOARDING_KEY, 'true');
+  }
+
+  function nextStep() {
+    if (currentStep < totalSteps - 1) {
+      showStep(currentStep + 1);
+    } else {
+      finish();
+    }
+  }
+
+  // Wire up buttons
+  document.getElementById('onboardingWelcomeNext').addEventListener('click', nextStep);
+  document.getElementById('onboardingWelcomeSkip').addEventListener('click', finish);
+  document.getElementById('onboardingNext').addEventListener('click', nextStep);
+  document.getElementById('onboardingSkip').addEventListener('click', finish);
+  document.getElementById('onboardingBackdrop').addEventListener('click', finish);
+
+  // "Show Welcome Tour" button in settings
+  const tourBtn = document.getElementById('settingsShowTour');
+  if (tourBtn) {
+    tourBtn.addEventListener('click', () => {
+      startOnboarding();
+    });
+  }
+
+  // Auto-start on first visit
+  function startOnboarding() {
+    // Sync onboarding logo with current theme
+    const onboardLogo = document.getElementById('onboardingLogo');
+    if (onboardLogo) {
+      const theme = localStorage.getItem('vai-theme') || 'dark';
+      onboardLogo.src = '/icons/' + (theme === 'light' ? 'light' : 'dark') + '/64.png';
+    }
+    overlay.classList.add('active');
+    showStep(0);
+  }
+
+  if (!localStorage.getItem(ONBOARDING_KEY)) {
+    // Delay slightly so the app is fully rendered
+    setTimeout(startOnboarding, 600);
+  }
+
+  // Expose for manual replay
+  window.startOnboarding = startOnboarding;
+}
+
 // ── Patch init to include benchmark setup ──
 const _origInit = init;
 init = async function() {
@@ -4571,6 +5012,7 @@ init = async function() {
   renderHistory();
   initSettings();
   checkForAppUpdate();
+  initOnboarding();
 };
 
 // ── Start ──
