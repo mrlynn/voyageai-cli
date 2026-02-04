@@ -8,7 +8,7 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  /* MongoDB Design System — Dark Mode Palette */
+  /* MongoDB Design System — Dark Mode Palette (default) */
   --bg: #001E2B;            /* MDB Black */
   --bg-surface: #112733;    /* Gray Dark 4 */
   --bg-card: #1C2D38;       /* Gray Dark 3 */
@@ -33,6 +33,60 @@
   --font: 'Euclid Circular A', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
   --mono: 'Source Code Pro', 'SF Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
 }
+
+/* MongoDB Design System — Light Mode Palette */
+[data-theme="light"] {
+  --bg: #FFFFFF;             /* White */
+  --bg-surface: #F9FBFA;    /* Gray Light 3 */
+  --bg-card: #FFFFFF;        /* White */
+  --bg-input: #F9FBFA;      /* Gray Light 3 */
+  --accent: #00A35C;         /* Green Dark 1 (better contrast on white) */
+  --accent-dim: #00684A;     /* Green Dark 2 */
+  --accent-glow: rgba(0, 163, 92, 0.08);
+  --text: #001E2B;           /* MDB Black */
+  --text-dim: #5C6C75;       /* Gray Dark 1 */
+  --text-muted: #889397;     /* Gray Base */
+  --border: #E8EDEB;         /* Gray Light 2 */
+  --error: #DB3030;          /* Red Base */
+  --warning: #944F01;        /* Yellow Dark 2 */
+  --success: #00684A;        /* Green Dark 2 */
+  --red: #DB3030;            /* Red Base */
+  --yellow: #944F01;         /* Yellow Dark 2 */
+  --green: #00684A;          /* Green Dark 2 */
+  --blue: #016BF8;           /* Blue Base */
+  --purple: #5E0C9E;         /* Purple Dark 2 */
+  --green-dark: #023430;     /* Green Dark 3 */
+}
+/* Light mode shadow + card adjustments */
+[data-theme="light"] .explore-card,
+[data-theme="light"] .card,
+[data-theme="light"] .cost-strategy,
+[data-theme="light"] .cost-summary-card {
+  box-shadow: 0 1px 4px rgba(0, 30, 43, 0.08);
+}
+[data-theme="light"] .explore-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 163, 92, 0.12);
+}
+[data-theme="light"] .cost-modal,
+[data-theme="light"] .explore-modal {
+  box-shadow: 0 20px 60px rgba(0, 30, 43, 0.2);
+}
+[data-theme="light"] .cost-modal-overlay,
+[data-theme="light"] .explore-modal-overlay {
+  background: rgba(0, 30, 43, 0.4);
+}
+[data-theme="light"] .nav {
+  box-shadow: 0 1px 3px rgba(0, 30, 43, 0.06);
+}
+/* Light mode gradient overrides */
+[data-theme="light"] .quant-bar-fill.storage { background: linear-gradient(90deg, #00A35C, #00ED64); }
+[data-theme="light"] .quant-bar-fill.latency { background: linear-gradient(90deg, #016BF8, #0498EC); }
+[data-theme="light"] .quant-meter-fill.perfect { background: linear-gradient(90deg, #00A35C, #00ED64); }
+[data-theme="light"] .quant-meter-fill.good { background: linear-gradient(90deg, #944F01, #FFC010); }
+[data-theme="light"] .quant-meter-fill.degraded { background: linear-gradient(90deg, #DB3030, #FF6960); }
+/* Light mode button text */
+[data-theme="light"] .btn { color: #FFFFFF; }
+[data-theme="light"] .btn:hover { background: #00684A; }
 
 html, body { height: 100%; }
 
@@ -66,6 +120,24 @@ body {
 }
 
 .nav-spacer { flex: 1; }
+
+.theme-toggle {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 5px 10px;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.theme-toggle:hover {
+  border-color: var(--accent);
+  background: var(--accent-glow);
+}
 
 .status-dot {
   width: 8px; height: 8px;
@@ -928,7 +1000,7 @@ select:focus { outline: none; border-color: var(--accent); }
 .cost-strategy-total-value { font-family: var(--mono); font-size: 18px; font-weight: 700; color: var(--accent); }
 .cost-savings {
   font-size: 11px;
-  color: #71F6BA;
+  color: var(--success);
   font-weight: 600;
   margin-top: 6px;
   text-align: right;
@@ -1236,6 +1308,7 @@ select:focus { outline: none; border-color: var(--accent); }
     <span class="option-label">Default Model</span>
     <select id="globalModel" class="nav-model-select"></select>
   </div>
+  <button class="theme-toggle" id="themeToggle" title="Toggle light/dark mode">🌙</button>
   <div style="display:flex;align-items:center;gap:6px;">
     <div class="status-dot" id="statusDot"></div>
     <span class="status-label" id="statusLabel">Checking...</span>
@@ -1816,8 +1889,41 @@ Reranking models rescore initial search results to improve relevance ordering.</
 </div><!-- .main -->
 
 <script>
+// Apply saved theme immediately to prevent flash
+(function() {
+  var t = localStorage.getItem('vai-theme') || 'dark';
+  if (t === 'light') document.documentElement.setAttribute('data-theme', 'light');
+})();
+</script>
+<script>
 (function() {
 'use strict';
+
+// ── Theme Toggle ──
+function initThemeToggle() {
+  const toggle = document.getElementById('themeToggle');
+  const saved = localStorage.getItem('vai-theme') || 'dark';
+  let current = saved;
+
+  function applyTheme(theme) {
+    current = theme;
+    if (theme === 'light') {
+      document.documentElement.setAttribute('data-theme', 'light');
+      toggle.textContent = '☀️';
+      toggle.title = 'Switch to dark mode';
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+      toggle.textContent = '🌙';
+      toggle.title = 'Switch to light mode';
+    }
+    localStorage.setItem('vai-theme', theme);
+  }
+
+  applyTheme(current);
+  toggle.addEventListener('click', () => {
+    applyTheme(current === 'dark' ? 'light' : 'dark');
+  });
+}
 
 // ── State ──
 let allModels = [];
@@ -3124,7 +3230,7 @@ function updateRagCalculator() {
     </div>
     <div class="cost-summary-card">
       <div class="cost-summary-label">Max potential savings</div>
-      <div class="cost-summary-value" style="color:#71F6BA">${maxCost > 0 ? ((1 - strategies[0].totalCost / maxCost) * 100).toFixed(0) + '%' : '0%'}</div>
+      <div class="cost-summary-value" style="color:var(--success)">${maxCost > 0 ? ((1 - strategies[0].totalCost / maxCost) * 100).toFixed(0) + '%' : '0%'}</div>
       <div class="cost-summary-detail">vs ${strategies[strategies.length - 1].name.split(':')[1]?.trim() || 'most expensive'}</div>
     </div>
   `;
@@ -3280,6 +3386,7 @@ window.clearHistory = function() {
 const _origInit = init;
 init = async function() {
   await _origInit();
+  initThemeToggle();
   buildModelCheckboxes();
   populateBenchRankSelects();
   populateQuantModelSelect();
