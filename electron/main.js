@@ -62,7 +62,7 @@ function registerApiKeyHandlers() {
   });
 
   ipcMain.handle('app:version', () => {
-    return { app: APP_VERSION, cli: CLI_VERSION };
+    return { app: APP_VERSION, cli: getCliVersion() };
   });
 
   ipcMain.handle('app:check-update', () => {
@@ -98,9 +98,15 @@ function updateDockIcon() {
 
 const GITHUB_RELEASES_URL = 'https://api.github.com/repos/mrlynn/voyageai-cli/releases/latest';
 const APP_VERSION = require('./package.json').version;
-const CLI_VERSION = (() => {
-  try { return require('../package.json').version; } catch { return 'unknown'; }
-})();
+function getCliVersion() {
+  try {
+    // In dev: ../package.json; in packaged app: Resources/cli-package.json
+    const pkgPath = app.isPackaged
+      ? path.join(process.resourcesPath, 'cli-package.json')
+      : path.join(__dirname, '..', 'package.json');
+    return JSON.parse(fs.readFileSync(pkgPath, 'utf8')).version;
+  } catch { return 'unknown'; }
+}
 
 function checkForUpdates() {
   const https = require('https');
@@ -200,7 +206,12 @@ async function startPlaygroundServer() {
   serverPort = port;
 
   // Reuse the playground's HTTP server directly.
-  const playgroundPath = path.join(__dirname, '..', 'src', 'commands', 'playground.js');
+  // In dev: ../src/commands/playground.js (relative to electron/)
+  // In packaged app: process.resourcesPath/src/commands/playground.js (extraResources)
+  const srcBase = app.isPackaged
+    ? path.join(process.resourcesPath, 'src')
+    : path.join(__dirname, '..', 'src');
+  const playgroundPath = path.join(srcBase, 'commands', 'playground.js');
   const { createPlaygroundServer } = require(playgroundPath);
 
   return new Promise((resolve, reject) => {

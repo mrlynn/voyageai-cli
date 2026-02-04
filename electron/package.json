@@ -23,7 +23,19 @@
     "files": [
       "main.js",
       "preload.js",
-      "../src/**/*"
+      "icons/**/*",
+      "!node_modules"
+    ],
+    "extraResources": [
+      {
+        "from": "../src",
+        "to": "src",
+        "filter": ["**/*"]
+      },
+      {
+        "from": "../package.json",
+        "to": "cli-package.json"
+      }
     ],
     "mac": {
       "category": "public.app-category.developer-tools",
