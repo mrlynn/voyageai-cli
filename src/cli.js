@@ -26,6 +26,7 @@ const { registerChunk } = require('./commands/chunk');
 const { registerQuery } = require('./commands/query');
 const { registerPipeline } = require('./commands/pipeline');
 const { registerEval } = require('./commands/eval');
+const { registerApp } = require('./commands/app');
 const { registerAbout } = require('./commands/about');
 const { showBanner, showQuickStart, getVersion } = require('./lib/banner');
 
@@ -57,6 +58,7 @@ registerChunk(program);
 registerQuery(program);
 registerPipeline(program);
 registerEval(program);
+registerApp(program);
 registerAbout(program);
 
 // Append disclaimer to all help output
