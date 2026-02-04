@@ -21,9 +21,16 @@
       "output": "../dist-electron"
     },
     "files": [
-      "main.js",
-      "preload.js",
-      "icons/**/*"
+      {
+        "from": ".",
+        "to": ".",
+        "filter": ["main.js", "preload.js"]
+      },
+      {
+        "from": "icons",
+        "to": "icons",
+        "filter": ["**/*"]
+      }
     ],
     "extraResources": [
       {
