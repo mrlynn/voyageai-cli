@@ -403,8 +403,7 @@ select:focus { outline: none; border-color: var(--accent); }
   box-shadow: 0 4px 20px rgba(0, 212, 170, 0.1);
 }
 .explore-card.expanded {
-  grid-column: 1 / -1;
-  cursor: default;
+  border-color: var(--accent);
 }
 
 .explore-card-icon {
@@ -423,20 +422,136 @@ select:focus { outline: none; border-color: var(--accent); }
 }
 .explore-card-content {
   display: none;
-  margin-top: 16px;
+}
+.explore-card-actions {
+  display: none;
+}
+
+/* Explore modal */
+.explore-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+.explore-modal-overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+.explore-modal {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  max-width: 720px;
+  width: 92%;
+  max-height: 85vh;
+  overflow-y: auto;
+  padding: 0;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  position: relative;
+  animation: exploreModalIn 0.2s ease-out;
+}
+@keyframes exploreModalIn {
+  from { opacity: 0; transform: scale(0.95) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+.explore-modal::-webkit-scrollbar { width: 6px; }
+.explore-modal::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+.explore-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 24px 28px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.explore-modal-icon { font-size: 32px; }
+.explore-modal-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+}
+.explore-modal-summary {
+  font-size: 13px;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+.explore-modal-close {
+  position: absolute;
+  top: 16px; right: 18px;
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 22px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.15s;
+  z-index: 1;
+}
+.explore-modal-close:hover { background: rgba(255,255,255,0.05); color: var(--text); }
+.explore-modal-body {
+  padding: 20px 28px 24px;
   font-size: 14px;
-  line-height: 1.7;
+  line-height: 1.75;
   color: var(--text);
   white-space: pre-wrap;
 }
-.explore-card.expanded .explore-card-content { display: block; }
-
-.explore-card-actions {
-  display: none;
+.explore-modal-links {
   margin-top: 16px;
-  gap: 8px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
 }
-.explore-card.expanded .explore-card-actions { display: flex; }
+.explore-modal-links-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+.explore-modal-links a {
+  display: block;
+  color: var(--accent);
+  font-size: 12px;
+  word-break: break-all;
+  margin-bottom: 4px;
+  text-decoration: none;
+}
+.explore-modal-links a:hover { text-decoration: underline; }
+.explore-modal-tryit {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+.explore-modal-tryit-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+.explore-modal-tryit-cmd {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text-dim);
+  background: var(--bg);
+  padding: 6px 10px;
+  border-radius: 5px;
+  margin-bottom: 4px;
+}
+.explore-modal-actions {
+  display: flex;
+  gap: 8px;
+  padding: 0 28px 24px;
+}
 
 /* Benchmark tab */
 .bench-panels { display: flex; gap: 8px; margin-bottom: 16px; }
@@ -1678,6 +1793,22 @@ Reranking models rescore initial search results to improve relevance ordering.</
   <div class="explore-grid" id="exploreGrid"></div>
 </div>
 
+<!-- Explore Concept Modal -->
+<div class="explore-modal-overlay" id="exploreModal">
+  <div class="explore-modal">
+    <button class="explore-modal-close" id="exploreModalClose">&times;</button>
+    <div class="explore-modal-header">
+      <div class="explore-modal-icon" id="exploreModalIcon"></div>
+      <div>
+        <div class="explore-modal-title" id="exploreModalTitle"></div>
+        <div class="explore-modal-summary" id="exploreModalSummary"></div>
+      </div>
+    </div>
+    <div class="explore-modal-body" id="exploreModalBody"></div>
+    <div class="explore-modal-actions" id="exploreModalActions"></div>
+  </div>
+</div>
+
 </div><!-- .main -->
 
 <script>
@@ -2127,49 +2258,69 @@ function buildExploreCards() {
     card.className = 'explore-card';
     card.dataset.key = key;
 
-    // Build links HTML
-    let linksHtml = '';
-    if (concept.links && concept.links.length > 0) {
-      linksHtml = '<div style="margin-top:12px;"><strong style="color:var(--accent);font-size:12px;">LEARN MORE</strong><br>' +
-        concept.links.map(url => `<a href="${escapeHtml(url)}" target="_blank" rel="noopener" style="color:var(--accent);font-size:12px;word-break:break-all;">${escapeHtml(url)}</a>`).join('<br>') +
-        '</div>';
-    }
-
-    // Build try-it HTML
-    let tryItHtml = '';
-    if (concept.tryIt && concept.tryIt.length > 0) {
-      tryItHtml = '<div style="margin-top:12px;"><strong style="color:var(--accent);font-size:12px;">TRY IT</strong>' +
-        concept.tryIt.map(cmd => `<div style="font-family:var(--mono);font-size:12px;color:var(--text-dim);background:var(--bg);padding:4px 8px;border-radius:4px;margin-top:4px;">$ ${escapeHtml(cmd)}</div>`).join('') +
-        '</div>';
-    }
-
     card.innerHTML = `
       <div class="explore-card-icon">${meta.icon}</div>
       <div class="explore-card-title">${escapeHtml(concept.title)}</div>
       <div class="explore-card-summary">${escapeHtml(concept.summary)}</div>
-      <div class="explore-card-content">${escapeHtml(concept.content)}${linksHtml}${tryItHtml}</div>
-      <div class="explore-card-actions">
-        <button class="btn btn-small" onclick="tryTopic('${escapeHtml(key)}')">Try it in playground →</button>
-        <button class="btn btn-secondary btn-small" onclick="collapseTopic(this)">Collapse</button>
-      </div>
     `;
-    card.addEventListener('click', function(e) {
-      if (e.target.tagName === 'BUTTON' || e.target.tagName === 'A') return;
-      if (!this.classList.contains('expanded')) {
-        this.classList.add('expanded');
-      }
-    });
+    card.addEventListener('click', () => openExploreModal(key));
     grid.appendChild(card);
   }
+
+  // Modal close handlers
+  const modal = document.getElementById('exploreModal');
+  document.getElementById('exploreModalClose').addEventListener('click', closeExploreModal);
+  modal.addEventListener('click', (e) => { if (e.target === modal) closeExploreModal(); });
+}
+
+function openExploreModal(key) {
+  const concept = exploreConcepts[key];
+  if (!concept) return;
+  const meta = CONCEPT_META[key] || { icon: '📚', tab: 'embed' };
+
+  document.getElementById('exploreModalIcon').textContent = meta.icon;
+  document.getElementById('exploreModalTitle').textContent = concept.title;
+  document.getElementById('exploreModalSummary').textContent = concept.summary;
+
+  // Build body: content + links + tryIt
+  let bodyHtml = escapeHtml(concept.content);
+
+  if (concept.links && concept.links.length > 0) {
+    bodyHtml += '<div class="explore-modal-links">' +
+      '<div class="explore-modal-links-title">Learn More</div>' +
+      concept.links.map(url =>
+        `<a href="${escapeHtml(url)}" target="_blank" rel="noopener">${escapeHtml(url)}</a>`
+      ).join('') + '</div>';
+  }
+
+  if (concept.tryIt && concept.tryIt.length > 0) {
+    bodyHtml += '<div class="explore-modal-tryit">' +
+      '<div class="explore-modal-tryit-title">Try It</div>' +
+      concept.tryIt.map(cmd =>
+        `<div class="explore-modal-tryit-cmd">$ ${escapeHtml(cmd)}</div>`
+      ).join('') + '</div>';
+  }
+
+  document.getElementById('exploreModalBody').innerHTML = bodyHtml;
+
+  // Actions
+  const actionsEl = document.getElementById('exploreModalActions');
+  actionsEl.innerHTML = `<button class="btn btn-small" id="exploreModalTry">Try it in playground →</button>`;
+  actionsEl.querySelector('#exploreModalTry').addEventListener('click', () => {
+    closeExploreModal();
+    if (meta.tab) switchTab(meta.tab);
+  });
+
+  document.getElementById('exploreModal').classList.add('open');
+}
+
+function closeExploreModal() {
+  document.getElementById('exploreModal').classList.remove('open');
 }
 
 window.tryTopic = function(key) {
   const meta = CONCEPT_META[key];
   if (meta) switchTab(meta.tab);
-};
-
-window.collapseTopic = function(btn) {
-  btn.closest('.explore-card').classList.remove('expanded');
 };
 
 window.filterExplore = function() {
@@ -2754,7 +2905,12 @@ function initCostCalculator() {
   document.getElementById('costHelpBtn').addEventListener('click', () => helpModal.classList.add('open'));
   document.getElementById('costHelpClose').addEventListener('click', () => helpModal.classList.remove('open'));
   helpModal.addEventListener('click', (e) => { if (e.target === helpModal) helpModal.classList.remove('open'); });
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') helpModal.classList.remove('open'); });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      helpModal.classList.remove('open');
+      closeExploreModal();
+    }
+  });
 
   // Simple mode sliders
   const tokSlider = document.getElementById('costTokens');
