@@ -3,3 +3,7 @@ node_modules/
 *.tgz
 video
 *.tgz
+
+# Electron
+electron/node_modules/
+dist-electron/

@@ -19,7 +19,7 @@ _vai_completions() {
   prev="\${COMP_WORDS[COMP_CWORD-1]}"
 
   # Top-level commands
-  commands="embed rerank store search index models ping config demo explain similarity ingest estimate init chunk query pipeline eval completions help"
+  commands="embed rerank store search index models ping config demo explain similarity ingest estimate init chunk query pipeline eval app completions help"
 
   # Subcommands
   local index_subs="create list delete"
@@ -126,6 +126,10 @@ _vai_completions() {
       COMPREPLY=( \$(compgen -W "--test-set --mode --db --collection --index --field --model --models --dimensions --limit --k-values --rerank --no-rerank --rerank-model --top-k --text-field --id-field --compare --json --quiet --help" -- "\$cur") )
       return 0
       ;;
+    app)
+      COMPREPLY=( \$(compgen -W "--install --dev --help" -- "\$cur") )
+      return 0
+      ;;
     completions)
       COMPREPLY=( \$(compgen -W "bash zsh --help" -- "\$cur") )
       return 0
@@ -202,6 +206,7 @@ _vai() {
     'query:Search + rerank in one shot'
     'pipeline:Chunk, embed, and store documents'
     'eval:Evaluate retrieval & reranking quality (MRR, NDCG, recall)'
+    'app:Launch the desktop app (Electron)'
     'completions:Generate shell completion scripts'
     'help:Display help for command'
   )
@@ -502,6 +507,11 @@ _vai() {
             '--compare[Compare configs]:configs:' \\
             '--json[JSON output]' \\
             '(-q --quiet)'{-q,--quiet}'[Suppress non-essential output]'
+          ;;
+        app)
+          _arguments \\
+            '--install[Install Electron dependencies]' \\
+            '--dev[Run in development mode]'
           ;;
         completions)
           _arguments \\
