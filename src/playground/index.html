@@ -3556,13 +3556,23 @@ function formatBytesUI(bytes) {
 }
 
 async function apiPost(url, body) {
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
+  let res;
+  try {
+    res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+  } catch (fetchErr) {
+    throw new Error('Failed to connect to server. Is the playground still running?');
+  }
   const data = await res.json();
-  if (!res.ok) throw new Error(data.error || data.detail || 'API error');
+  if (!res.ok) {
+    if (data.code === 'NO_API_KEY') {
+      throw new Error('🔑 No API key configured. Open Settings (⚙) to add your Voyage AI API key, or run: vai config set api-key <your-key>');
+    }
+    throw new Error(data.error || data.detail || 'API error');
+  }
   return data;
 }
 
