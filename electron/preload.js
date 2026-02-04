@@ -17,7 +17,7 @@ contextBridge.exposeInMainWorld('vai', {
     check:       ()    => ipcRenderer.invoke('app:check-update'),
     openRelease: (url) => ipcRenderer.invoke('app:open-release', url),
   },
-  // App info
+  // App info — returns { app, cli }
   getVersion: () => ipcRenderer.invoke('app:version'),
   isElectron: true,
 });

@@ -62,7 +62,7 @@ function registerApiKeyHandlers() {
   });
 
   ipcMain.handle('app:version', () => {
-    return APP_VERSION;
+    return { app: APP_VERSION, cli: CLI_VERSION };
   });
 
   ipcMain.handle('app:check-update', () => {
@@ -98,6 +98,9 @@ function updateDockIcon() {
 
 const GITHUB_RELEASES_URL = 'https://api.github.com/repos/mrlynn/voyageai-cli/releases/latest';
 const APP_VERSION = require('./package.json').version;
+const CLI_VERSION = (() => {
+  try { return require('../package.json').version; } catch { return 'unknown'; }
+})();
 
 function checkForUpdates() {
   const https = require('https');
