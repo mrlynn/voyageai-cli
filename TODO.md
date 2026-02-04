@@ -1,7 +1,3 @@
-Here's my take on organizing, distributing, and marketing this as three distinct but connected products:
-
----
-
 ## 🏗️ Organization
 
 Right now everything's in one npm package. That's fine for the CLI + web playground (they share code), but the Electron app should be a separate distribution. Here's the structure I'd recommend:
@@ -96,9 +92,6 @@ The "polished product" story. A standalone app with OS keychain integration, cus
 2. **Update the README** with Desktop App screenshots + download link
 3. **Tweet/LinkedIn post** — "Built a desktop app for Voyage AI embeddings" with a screenshot of the sidebar UI
 4. **`vai app --download`** — command that fetches the latest release from GitHub and opens it
-
-Want me to start building any of these? The GitHub Actions workflow and README overhaul are probably highest ROI right now.
-
 
 
 ### Brew and package distribution alternatives - let's investigagte.
