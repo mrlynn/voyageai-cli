@@ -5797,6 +5797,362 @@ init = async function() {
 
 // ── Start ──
 init();
+
+// ── 🕹️ Vector Space Invaders (Easter Egg) ──
+// Trigger: Konami code (↑↑↓↓←→←→BA) or 7 rapid clicks on sidebar logo
+(function initEasterEgg() {
+  const KONAMI = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'];
+  let konamiIdx = 0;
+  let logoClicks = [];
+
+  document.addEventListener('keydown', (e) => {
+    if (document.getElementById('vsiOverlay')?.style.display === 'flex') return;
+    if (e.key === KONAMI[konamiIdx]) { konamiIdx++; if (konamiIdx === KONAMI.length) { konamiIdx = 0; launchVSI(); } }
+    else { konamiIdx = 0; }
+  });
+
+  const logo = document.getElementById('sidebarLogo');
+  if (logo) {
+    logo.addEventListener('click', () => {
+      const now = Date.now();
+      logoClicks.push(now);
+      logoClicks = logoClicks.filter(t => now - t < 2000);
+      if (logoClicks.length >= 7) { logoClicks = []; launchVSI(); }
+    });
+  }
+
+  function launchVSI() {
+    const overlay = document.getElementById('vsiOverlay');
+    const canvas = document.getElementById('vsiCanvas');
+    if (!overlay || !canvas) return;
+    overlay.style.display = 'flex';
+    startVSI(canvas, () => { overlay.style.display = 'none'; });
+  }
+})();
+
+function startVSI(canvas, onExit) {
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width = 600;
+  const H = canvas.height = 500;
+
+  // Ship
+  const ship = { x: W / 2, w: 40, h: 16, speed: 5 };
+  const bullets = [];
+  const particles = [];
+  const explosionTexts = [];
+
+  // Enemies — vectors descending
+  const VECTORS = [
+    '[0.23, -0.41, 0.87]', '[0.95, 0.12, -0.33]', '[-0.56, 0.78, 0.14]',
+    '[0.44, 0.62, -0.71]', '[0.01, -0.99, 0.51]', '[-0.88, 0.35, 0.22]',
+    '[0.67, -0.23, 0.91]', '[-0.12, 0.84, -0.55]', '[0.33, 0.33, 0.33]',
+    '[0.77, -0.64, 0.08]', '[-0.45, -0.45, 0.78]', '[0.91, 0.11, -0.42]',
+  ];
+  const BOSS_VEC = 'CLIP-ViT-L/14-336';
+
+  let enemies = [];
+  let wave = 1;
+  let score = 0;
+  let lives = 3;
+  let gameOver = false;
+  let bossMode = false;
+  let boss = null;
+  let frame = 0;
+  let lastShot = 0;
+
+  const keys = {};
+  const keyDown = (e) => { keys[e.key] = true; if (['ArrowLeft','ArrowRight',' ','Escape'].includes(e.key)) e.preventDefault(); if (e.key === 'Escape') { cleanup(); onExit(); } };
+  const keyUp = (e) => { keys[e.key] = false; };
+  document.addEventListener('keydown', keyDown);
+  document.addEventListener('keyup', keyUp);
+
+  function cleanup() { document.removeEventListener('keydown', keyDown); document.removeEventListener('keyup', keyUp); gameOver = true; }
+
+  function spawnWave() {
+    enemies = [];
+    if (wave % 5 === 0) {
+      // Boss wave every 5 waves
+      bossMode = true;
+      boss = { x: W / 2, y: 50, w: 180, h: 30, hp: 10 + wave, maxHp: 10 + wave, dx: 2, text: BOSS_VEC };
+    } else {
+      bossMode = false;
+      boss = null;
+      const rows = Math.min(3, 1 + Math.floor(wave / 2));
+      const cols = Math.min(6, 3 + Math.floor(wave / 3));
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          enemies.push({
+            x: 80 + c * 80,
+            y: 40 + r * 45,
+            w: 70, h: 20,
+            hp: 1 + Math.floor(wave / 4),
+            text: VECTORS[(r * cols + c) % VECTORS.length],
+            dx: 1 + wave * 0.3,
+            dir: 1,
+          });
+        }
+      }
+    }
+  }
+
+  function shoot() {
+    if (frame - lastShot < 10) return;
+    lastShot = frame;
+    bullets.push({ x: ship.x, y: H - 40, dy: -7 });
+  }
+
+  function addExplosion(x, y, sim) {
+    const color = sim > 0.7 ? '#00ED64' : sim > 0.4 ? '#FFC010' : '#FF6960';
+    for (let i = 0; i < 8; i++) {
+      const angle = (Math.PI * 2 / 8) * i + Math.random() * 0.5;
+      const speed = 1.5 + Math.random() * 2;
+      particles.push({ x, y, dx: Math.cos(angle) * speed, dy: Math.sin(angle) * speed, life: 30, color });
+    }
+    explosionTexts.push({ x, y, text: sim.toFixed(2), life: 40, color });
+  }
+
+  function update() {
+    // Move ship
+    if (keys['ArrowLeft'] || keys['a'])  ship.x = Math.max(ship.w / 2, ship.x - ship.speed);
+    if (keys['ArrowRight'] || keys['d']) ship.x = Math.min(W - ship.w / 2, ship.x + ship.speed);
+    if (keys[' ']) shoot();
+
+    // Move bullets
+    for (let i = bullets.length - 1; i >= 0; i--) {
+      bullets[i].y += bullets[i].dy;
+      if (bullets[i].y < -10) bullets.splice(i, 1);
+    }
+
+    // Boss logic
+    if (bossMode && boss) {
+      boss.x += boss.dx;
+      if (boss.x < boss.w / 2 || boss.x > W - boss.w / 2) boss.dx *= -1;
+      // Boss drops enemy vectors periodically
+      if (frame % 60 === 0) {
+        enemies.push({ x: boss.x, y: boss.y + 30, w: 60, h: 16, hp: 1, text: VECTORS[frame % VECTORS.length], dx: 0, dir: 0, dropping: true, dy: 2 });
+      }
+      // Bullet-boss collision
+      for (let i = bullets.length - 1; i >= 0; i--) {
+        const b = bullets[i];
+        if (b.x > boss.x - boss.w / 2 && b.x < boss.x + boss.w / 2 && b.y > boss.y - boss.h / 2 && b.y < boss.y + boss.h / 2) {
+          boss.hp--;
+          bullets.splice(i, 1);
+          const sim = 0.1 + Math.random() * 0.3;
+          addExplosion(b.x, b.y, sim);
+          score += 50;
+          if (boss.hp <= 0) {
+            addExplosion(boss.x, boss.y, 0.99);
+            score += 500;
+            boss = null;
+            bossMode = false;
+            wave++;
+            setTimeout(spawnWave, 1000);
+          }
+        }
+      }
+    }
+
+    // Move enemies
+    let edgeHit = false;
+    for (const e of enemies) {
+      if (e.dropping) {
+        e.y += e.dy || 2;
+      } else {
+        e.x += e.dx * e.dir;
+        if (e.x < 30 || e.x > W - 30) edgeHit = true;
+      }
+    }
+    if (edgeHit) {
+      for (const e of enemies) {
+        if (!e.dropping) { e.dir *= -1; e.y += 15; }
+      }
+    }
+
+    // Bullet-enemy collision
+    for (let i = bullets.length - 1; i >= 0; i--) {
+      for (let j = enemies.length - 1; j >= 0; j--) {
+        const b = bullets[i], e = enemies[j];
+        if (!b) break;
+        if (b.x > e.x - e.w / 2 && b.x < e.x + e.w / 2 && b.y > e.y - e.h / 2 && b.y < e.y + e.h / 2) {
+          e.hp--;
+          bullets.splice(i, 1);
+          const sim = 0.5 + Math.random() * 0.5;
+          addExplosion(b.x, b.y, sim);
+          if (e.hp <= 0) {
+            enemies.splice(j, 1);
+            score += 100;
+          }
+          break;
+        }
+      }
+    }
+
+    // Enemy reaching bottom = lose life
+    for (let i = enemies.length - 1; i >= 0; i--) {
+      if (enemies[i].y > H - 50) {
+        enemies.splice(i, 1);
+        lives--;
+        if (lives <= 0) gameOver = true;
+      }
+    }
+
+    // Next wave
+    if (!bossMode && enemies.length === 0 && !gameOver) {
+      wave++;
+      setTimeout(spawnWave, 800);
+    }
+
+    // Particles
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.x += p.dx; p.y += p.dy; p.life--;
+      if (p.life <= 0) particles.splice(i, 1);
+    }
+    for (let i = explosionTexts.length - 1; i >= 0; i--) {
+      explosionTexts[i].y -= 0.5;
+      explosionTexts[i].life--;
+      if (explosionTexts[i].life <= 0) explosionTexts.splice(i, 1);
+    }
+  }
+
+  function draw() {
+    ctx.fillStyle = '#001E2B';
+    ctx.fillRect(0, 0, W, H);
+
+    // Stars
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    for (let i = 0; i < 40; i++) {
+      const sx = (i * 137 + frame * 0.1) % W;
+      const sy = (i * 97 + frame * 0.05) % H;
+      ctx.fillRect(sx, sy, 1, 1);
+    }
+
+    // Ship (triangle)
+    ctx.fillStyle = '#00ED64';
+    ctx.beginPath();
+    ctx.moveTo(ship.x, H - 40);
+    ctx.lineTo(ship.x - ship.w / 2, H - 24);
+    ctx.lineTo(ship.x + ship.w / 2, H - 24);
+    ctx.closePath();
+    ctx.fill();
+    // Ship label
+    ctx.fillStyle = '#00ED64';
+    ctx.font = '9px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('query', ship.x, H - 14);
+
+    // Bullets
+    ctx.fillStyle = '#00ED64';
+    for (const b of bullets) {
+      ctx.fillRect(b.x - 1, b.y, 2, 8);
+    }
+
+    // Boss
+    if (boss) {
+      const hpPct = boss.hp / boss.maxHp;
+      ctx.fillStyle = hpPct > 0.5 ? '#FF6960' : '#FFC010';
+      ctx.strokeStyle = '#FF6960';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(boss.x - boss.w / 2, boss.y - boss.h / 2, boss.w, boss.h);
+      ctx.fillStyle = '#FF6960';
+      ctx.font = 'bold 13px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(boss.text, boss.x, boss.y + 5);
+      // HP bar
+      ctx.fillStyle = '#3D4F58';
+      ctx.fillRect(boss.x - boss.w / 2, boss.y - boss.h / 2 - 8, boss.w, 4);
+      ctx.fillStyle = '#FF6960';
+      ctx.fillRect(boss.x - boss.w / 2, boss.y - boss.h / 2 - 8, boss.w * hpPct, 4);
+    }
+
+    // Enemies
+    for (const e of enemies) {
+      ctx.fillStyle = 'rgba(61,79,88,0.6)';
+      ctx.fillRect(e.x - e.w / 2, e.y - e.h / 2, e.w, e.h);
+      ctx.strokeStyle = '#0498EC';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(e.x - e.w / 2, e.y - e.h / 2, e.w, e.h);
+      ctx.fillStyle = '#E8EDEB';
+      ctx.font = '10px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(e.text, e.x, e.y + 4);
+    }
+
+    // Particles
+    for (const p of particles) {
+      ctx.globalAlpha = p.life / 30;
+      ctx.fillStyle = p.color;
+      ctx.fillRect(p.x - 2, p.y - 2, 4, 4);
+    }
+    ctx.globalAlpha = 1;
+
+    // Explosion texts (similarity scores)
+    for (const et of explosionTexts) {
+      ctx.globalAlpha = et.life / 40;
+      ctx.fillStyle = et.color;
+      ctx.font = 'bold 14px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(et.text, et.x, et.y);
+    }
+    ctx.globalAlpha = 1;
+
+    // HUD
+    ctx.fillStyle = '#E8EDEB';
+    ctx.font = '13px monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText(`SCORE: ${score}`, 12, 20);
+    ctx.fillText(`WAVE: ${wave}`, 12, 38);
+    ctx.textAlign = 'right';
+    ctx.fillText('❤️'.repeat(lives), W - 12, 20);
+
+    // Title
+    ctx.fillStyle = '#00ED64';
+    ctx.font = 'bold 10px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('VECTOR SPACE INVADERS', W / 2, H - 4);
+
+    // Game over
+    if (gameOver) {
+      ctx.fillStyle = 'rgba(0,30,43,0.8)';
+      ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = '#00ED64';
+      ctx.font = 'bold 28px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('GAME OVER', W / 2, H / 2 - 30);
+      ctx.fillStyle = '#E8EDEB';
+      ctx.font = '16px monospace';
+      ctx.fillText(`Final Score: ${score}  |  Wave: ${wave}`, W / 2, H / 2 + 10);
+      ctx.fillStyle = '#889397';
+      ctx.font = '12px monospace';
+      ctx.fillText('Press SPACE to play again  |  ESC to exit', W / 2, H / 2 + 40);
+
+      if (keys[' ']) {
+        // Restart
+        score = 0; wave = 1; lives = 3; gameOver = false;
+        enemies = []; bullets.length = 0; particles.length = 0; explosionTexts.length = 0;
+        boss = null; bossMode = false; ship.x = W / 2;
+        spawnWave();
+      }
+    }
+  }
+
+  function loop() {
+    if (!document.getElementById('vsiOverlay') || document.getElementById('vsiOverlay').style.display === 'none') {
+      cleanup();
+      return;
+    }
+    frame++;
+    update();
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  spawnWave();
+  loop();
+}
+
+// ── Start ──
+init();
 })();
 </script>
 <!-- Cost Help Modal -->
@@ -5877,6 +6233,11 @@ init();
       CLI equivalent: <code>vai estimate --docs 100K --queries 1M --doc-model voyage-4-large --query-model voyage-4-lite</code>
     </p>
   </div>
+</div>
+<!-- 🕹️ Vector Space Invaders -->
+<div id="vsiOverlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,30,43,0.92);z-index:99999;align-items:center;justify-content:center;flex-direction:column;gap:12px;">
+  <canvas id="vsiCanvas" width="600" height="500" style="border:1px solid #3D4F58;border-radius:8px;image-rendering:pixelated;"></canvas>
+  <div style="color:#889397;font-size:11px;font-family:monospace;text-align:center;">← → move &nbsp;|&nbsp; SPACE shoot &nbsp;|&nbsp; ESC exit</div>
 </div>
 </body>
 </html>
