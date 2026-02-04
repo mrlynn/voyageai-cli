@@ -1516,6 +1516,32 @@ select:focus { outline: none; border-color: var(--accent); }
   color: var(--text-dim);
 }
 
+/* ── Page Headers ── */
+.page-header {
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+.page-header-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--accent-text, var(--text));
+  margin: 0 0 4px;
+  letter-spacing: -0.3px;
+}
+.page-header-subtitle {
+  font-size: 14px;
+  color: var(--text-dim);
+  margin: 0 0 6px;
+  font-weight: 500;
+}
+.page-header-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 0;
+  line-height: 1.5;
+}
+
 /* ── Settings page ── */
 .settings-container { max-width: 640px; margin: 0 auto; }
 .settings-section {
@@ -1868,6 +1894,11 @@ select:focus { outline: none; border-color: var(--accent); }
 
 <!-- ========== EMBED TAB ========== -->
 <div class="tab-panel active" id="tab-embed">
+  <div class="page-header">
+    <h2 class="page-header-title">Embed</h2>
+    <p class="page-header-subtitle">Generate vector embeddings for text</p>
+    <p class="page-header-hint">Paste or type text below, choose a model, and hit Embed to see the raw vectors and token usage.</p>
+  </div>
   <div class="card">
     <div class="card-title">Input Text</div>
     <textarea id="embedInput" rows="5" placeholder="Enter text to embed...">MongoDB Atlas provides powerful vector search capabilities for AI applications.</textarea>
@@ -1927,6 +1958,11 @@ select:focus { outline: none; border-color: var(--accent); }
 
 <!-- ========== COMPARE TAB ========== -->
 <div class="tab-panel" id="tab-compare">
+  <div class="page-header">
+    <h2 class="page-header-title">Compare</h2>
+    <p class="page-header-subtitle">Visualize similarity between text pairs</p>
+    <p class="page-header-hint">Enter two texts and compare their embeddings — see cosine similarity, a heatmap of vector dimensions, and a visual diff.</p>
+  </div>
   <div class="compare-grid">
     <div class="card">
       <div class="card-title">Text A</div>
@@ -1976,6 +2012,11 @@ select:focus { outline: none; border-color: var(--accent); }
 
 <!-- ========== SEARCH TAB ========== -->
 <div class="tab-panel" id="tab-search">
+  <div class="page-header">
+    <h2 class="page-header-title">Rerank</h2>
+    <p class="page-header-subtitle">Re-order documents by relevance to a query</p>
+    <p class="page-header-hint">Enter a search query and a set of documents — the reranker scores and sorts them by semantic relevance.</p>
+  </div>
   <div class="card">
     <div class="card-title">Query</div>
     <input type="text" id="searchQuery" placeholder="Enter your search query..." value="How do I build AI-powered search?">
@@ -2022,6 +2063,11 @@ Semantic search understands meaning beyond keyword matching</textarea>
 
 <!-- ========== BENCHMARK TAB ========== -->
 <div class="tab-panel" id="tab-benchmark">
+  <div class="page-header">
+    <h2 class="page-header-title">Benchmark</h2>
+    <p class="page-header-subtitle">Compare model speed, cost, and quality</p>
+    <p class="page-header-hint">Run latency tests, compare ranking accuracy, analyze quantization trade-offs, and estimate costs across models.</p>
+  </div>
 
   <!-- Sub-panel switcher -->
   <div class="bench-panels">
@@ -2405,6 +2451,11 @@ Reranking models rescore initial search results to improve relevance ordering.</
 
 <!-- ========== EXPLORE TAB ========== -->
 <div class="tab-panel" id="tab-explore">
+  <div class="page-header">
+    <h2 class="page-header-title">Explore</h2>
+    <p class="page-header-subtitle">Learn embedding and vector search concepts</p>
+    <p class="page-header-hint">Browse interactive explanations of key topics — from cosine similarity to quantization to RAG pipelines.</p>
+  </div>
   <div style="margin-bottom:16px;">
     <input type="text" id="exploreSearch" placeholder="🔍 Search concepts..." oninput="filterExplore()" style="max-width:400px;">
   </div>
@@ -2433,6 +2484,10 @@ Reranking models rescore initial search results to improve relevance ordering.</
 <!-- ========== SETTINGS TAB ========== -->
 <div class="tab-panel" id="tab-settings">
   <div class="settings-container">
+    <div class="page-header">
+      <h2 class="page-header-title">Settings</h2>
+      <p class="page-header-subtitle">Configure appearance, models, and API access</p>
+    </div>
 
     <div class="settings-section">
       <div class="settings-section-title">Appearance</div>
