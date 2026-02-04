@@ -362,6 +362,12 @@ body {
   align-items: center;
   gap: 10px;
 }
+body:not(.is-electron) .sidebar-drag-region {
+  height: auto;
+  min-height: auto;
+  padding-top: 16px;
+  padding-bottom: 12px;
+}
 
 .sidebar-logo {
   width: 28px;
@@ -560,6 +566,10 @@ body {
   min-height: 38px;
   flex-shrink: 0;
 }
+
+/* Web mode: hide Electron-only elements */
+body:not(.is-electron) .content-drag-region { display: none; }
+body:not(.is-electron) .update-banner { display: none !important; }
 
 /* Main */
 .main { padding: 24px; max-width: 1200px; margin: 0 auto; width: 100%; }
@@ -2285,7 +2295,7 @@ select:focus { outline: none; border-color: var(--accent); }
     <path fill-rule="evenodd" clip-rule="evenodd" d="M2 3C2 2.44772 2.44772 2 3 2H13C13.5523 2 14 2.44772 14 3V13C14 13.5523 13.5523 14 13 14H3C2.44772 14 2 13.5523 2 13V3ZM4 4V9.586L5.793 7.793C6.183 7.403 6.817 7.403 7.207 7.793L8.5 9.086L10.293 7.293C10.683 6.903 11.317 6.903 11.707 7.293L12 7.586V4H4ZM12 10.414L10.5 8.914L8.207 11.207C7.817 11.597 7.183 11.597 6.793 11.207L5.5 9.914L4 11.414V12H12V10.414ZM10 5.5C10 6.328 10.672 7 11.5 7C11.776 7 12 6.776 12 6.5V5C12 4.724 11.776 4.5 11.5 4.5H10.5C10.224 4.5 10 4.724 10 5V5.5Z" fill="currentColor"/>
   </symbol>
   <symbol id="lg-config" viewBox="0 0 16 16">
-    <path d="M12.7 2.56989C12.41 2.56989 12.17 2.80989 12.17 3.09989V4.34989L11.32 3.49989C9.21 1.39989 5.75 1.51989 3.78 3.75989C2.65 5.03989 2.23 6.82989 2.68 8.48989C3.24 10.5299 4.98 12.0099 7.08 12.2299L8.1 12.3399C8.42 13.2799 9.3 13.9499 10.34 13.9499C11.65 13.9499 12.71 12.8899 12.71 11.5799C12.71 10.2699 11.65 9.20989 10.34 9.20989C9.14 9.20989 8.16 10.0999 8 11.2599L7.19 11.1799C5.53 11.0099 4.14 9.82989 3.7 8.21989C3.34 6.90989 3.67 5.48989 4.58 4.46989C6.15 2.68989 8.9 2.59989 10.57 4.26989L11.42 5.11989H10.17C9.88 5.11989 9.64 5.35989 9.64 5.64989C9.64 5.93989 9.88 6.17989 10.17 6.17989H12.71C13 6.17989 13.24 5.93989 13.24 5.64989V3.09989C13.24 2.80989 13 2.56989 12.71 2.56989H12.7ZM10.34 10.3099C11.04 10.3099 11.6 10.8799 11.6 11.5699C11.6 12.2599 11.03 12.8299 10.34 12.8299C9.65 12.8299 9.08 12.2599 9.08 11.5699C9.08 10.8799 9.65 10.3099 10.34 10.3099Z" fill="currentColor"/>
+    <path fill-rule="evenodd" clip-rule="evenodd" d="M6.5 1.5A.5.5 0 0 1 7 1h2a.5.5 0 0 1 .5.5v1.05a5 5 0 0 1 1.37.57l.74-.74a.5.5 0 0 1 .7 0l1.42 1.42a.5.5 0 0 1 0 .7l-.74.74c.25.43.44.89.57 1.37H14.5a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-.5.5h-1.05a5 5 0 0 1-.57 1.37l.74.74a.5.5 0 0 1 0 .7l-1.42 1.42a.5.5 0 0 1-.7 0l-.74-.74a5 5 0 0 1-1.37.57V14.5a.5.5 0 0 1-.5.5H7a.5.5 0 0 1-.5-.5v-1.05a5 5 0 0 1-1.37-.57l-.74.74a.5.5 0 0 1-.7 0L2.27 12.2a.5.5 0 0 1 0-.7l.74-.74a5 5 0 0 1-.57-1.37H1.5A.5.5 0 0 1 1 9V7a.5.5 0 0 1 .5-.5h1.05c.13-.48.32-.94.57-1.37l-.74-.74a.5.5 0 0 1 0-.7L3.8 2.27a.5.5 0 0 1 .7 0l.74.74A5 5 0 0 1 6.6 2.44V1.5zM8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z" fill="currentColor"/>
   </symbol>
 </svg>
 
@@ -3366,6 +3376,10 @@ let lastEmbedding = null;
 
 // ── Init ──
 async function init() {
+  // Mark body for Electron vs Web styling
+  if (window.vai && window.vai.isElectron) {
+    document.body.classList.add('is-electron');
+  }
   setupTabs();
   await loadConfig();
   await Promise.all([loadModels(), loadConcepts()]);
