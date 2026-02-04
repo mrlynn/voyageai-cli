@@ -12,6 +12,12 @@ const { execSync } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 
+// Skip in CI — electron-builder handles naming via productName
+if (process.env.CI) {
+  console.log('⏭  CI detected — skipping dev-only postinstall');
+  process.exit(0);
+}
+
 const APP_NAME = 'Vai';
 const distDir = path.join(__dirname, '..', 'node_modules', 'electron', 'dist');
 const oldApp = path.join(distDir, 'Electron.app');
