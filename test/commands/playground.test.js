@@ -73,10 +73,15 @@ describe('playground command', () => {
 
   it('returns 400 for POST /api/embed with invalid body', async () => {
     await serverReady;
+    // Ensure an API key is available so we reach body validation (not 401)
+    const saved = process.env.VOYAGE_API_KEY;
+    process.env.VOYAGE_API_KEY = saved || 'test-dummy-key';
     const { statusCode, body } = await httpPostFull(`http://localhost:${port}/api/embed`, { texts: 'not-an-array' });
     assert.equal(statusCode, 400);
     const data = JSON.parse(body);
     assert.ok(data.error, 'should return an error message');
+    if (saved !== undefined) process.env.VOYAGE_API_KEY = saved;
+    else delete process.env.VOYAGE_API_KEY;
   });
 });
 
