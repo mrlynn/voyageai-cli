@@ -5843,10 +5843,10 @@ function startVSI(canvas, onExit) {
 
   // Enemies — vectors descending
   const VECTORS = [
-    '[0.23, -0.41, 0.87]', '[0.95, 0.12, -0.33]', '[-0.56, 0.78, 0.14]',
-    '[0.44, 0.62, -0.71]', '[0.01, -0.99, 0.51]', '[-0.88, 0.35, 0.22]',
-    '[0.67, -0.23, 0.91]', '[-0.12, 0.84, -0.55]', '[0.33, 0.33, 0.33]',
-    '[0.77, -0.64, 0.08]', '[-0.45, -0.45, 0.78]', '[0.91, 0.11, -0.42]',
+    '[.23,-.41]', '[.95, .12]', '[-.56,.78]',
+    '[.44,-.71]', '[.01,-.99]', '[-.88,.35]',
+    '[.67, .91]', '[-.12,.84]', '[.33, .33]',
+    '[.77,-.64]', '[-.45,.78]', '[.91,-.42]',
   ];
   const BOSS_VEC = 'CLIP-ViT-L/14-336';
 
@@ -5883,9 +5883,9 @@ function startVSI(canvas, onExit) {
       for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
           enemies.push({
-            x: 80 + c * 80,
-            y: 40 + r * 45,
-            w: 70, h: 20,
+            x: 60 + c * 90,
+            y: 40 + r * 40,
+            w: 78, h: 22,
             hp: 1 + Math.floor(wave / 4),
             text: VECTORS[(r * cols + c) % VECTORS.length],
             dx: 1 + wave * 0.3,
@@ -5930,7 +5930,7 @@ function startVSI(canvas, onExit) {
       if (boss.x < boss.w / 2 || boss.x > W - boss.w / 2) boss.dx *= -1;
       // Boss drops enemy vectors periodically
       if (frame % 60 === 0) {
-        enemies.push({ x: boss.x, y: boss.y + 30, w: 60, h: 16, hp: 1, text: VECTORS[frame % VECTORS.length], dx: 0, dir: 0, dropping: true, dy: 2 });
+        enemies.push({ x: boss.x, y: boss.y + 30, w: 78, h: 22, hp: 1, text: VECTORS[frame % VECTORS.length], dx: 0, dir: 0, dropping: true, dy: 2 });
       }
       // Bullet-boss collision
       for (let i = bullets.length - 1; i >= 0; i--) {
@@ -6076,9 +6076,9 @@ function startVSI(canvas, onExit) {
       ctx.lineWidth = 1;
       ctx.strokeRect(e.x - e.w / 2, e.y - e.h / 2, e.w, e.h);
       ctx.fillStyle = '#E8EDEB';
-      ctx.font = '10px monospace';
+      ctx.font = '9px monospace';
       ctx.textAlign = 'center';
-      ctx.fillText(e.text, e.x, e.y + 4);
+      ctx.fillText(e.text, e.x, e.y + 3);
     }
 
     // Particles
