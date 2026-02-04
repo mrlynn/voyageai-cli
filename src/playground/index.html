@@ -629,16 +629,22 @@ select:focus { outline: none; border-color: var(--accent); }
 .quant-rank-score { color: var(--text-muted); font-size: 11px; font-family: var(--mono); margin-top: 3px; }
 
 /* Cost calculator */
+.cost-controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px 32px;
+  margin-bottom: 20px;
+}
+.cost-controls-full { grid-column: 1 / -1; }
 .cost-slider-row {
   display: flex;
   align-items: center;
-  gap: 16px;
-  margin-bottom: 16px;
+  gap: 12px;
 }
 .cost-slider-label {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--text-dim);
-  min-width: 130px;
+  min-width: 110px;
 }
 .cost-slider {
   flex: 1;
@@ -659,11 +665,154 @@ select:focus { outline: none; border-color: var(--accent); }
 }
 .cost-slider-value {
   font-family: var(--mono);
-  font-size: 14px;
+  font-size: 13px;
   color: var(--accent);
-  min-width: 80px;
+  min-width: 70px;
   text-align: right;
   font-weight: 600;
+}
+.cost-mode-toggle {
+  display: flex;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  width: fit-content;
+}
+.cost-mode-btn {
+  padding: 8px 20px;
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: var(--mono);
+}
+.cost-mode-btn.active {
+  background: var(--accent);
+  color: var(--bg);
+  font-weight: 600;
+}
+.cost-mode-btn:hover:not(.active) {
+  background: rgba(0, 212, 170, 0.1);
+  color: var(--text);
+}
+.cost-select {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 6px 10px;
+  min-width: 160px;
+}
+.cost-select:focus { border-color: var(--accent); outline: none; }
+.cost-model-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.cost-model-label {
+  font-size: 12px;
+  color: var(--text-dim);
+  min-width: 110px;
+}
+.cost-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.cost-summary-card {
+  background: var(--bg-input);
+  border-radius: 8px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+}
+.cost-summary-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+.cost-summary-value {
+  font-family: var(--mono);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--accent);
+}
+.cost-summary-detail {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 4px;
+  font-family: var(--mono);
+}
+.cost-strategy-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+.cost-strategy {
+  background: var(--bg-input);
+  border-radius: 10px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  transition: border-color 0.2s, box-shadow 0.2s;
+  position: relative;
+}
+.cost-strategy.recommended {
+  border-color: var(--accent);
+  box-shadow: 0 0 16px var(--accent-glow);
+}
+.cost-strategy-badge {
+  position: absolute;
+  top: -10px;
+  right: 16px;
+  background: var(--accent);
+  color: var(--bg);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.cost-strategy-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 12px;
+}
+.cost-strategy-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+  font-size: 12px;
+}
+.cost-strategy-row-label { color: var(--text-dim); }
+.cost-strategy-row-value { font-family: var(--mono); color: var(--text); font-weight: 500; }
+.cost-strategy-total {
+  border-top: 1px solid var(--border);
+  margin-top: 10px;
+  padding-top: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.cost-strategy-total-label { font-size: 13px; font-weight: 600; color: var(--text); }
+.cost-strategy-total-value { font-family: var(--mono); font-size: 18px; font-weight: 700; color: var(--accent); }
+.cost-savings {
+  font-size: 11px;
+  color: #4ade80;
+  font-weight: 600;
+  margin-top: 6px;
+  text-align: right;
 }
 .cost-table {
   width: 100%;
@@ -700,6 +849,24 @@ select:focus { outline: none; border-color: var(--accent); }
   background: var(--accent-glow);
   border-radius: 3px;
   transition: width 0.4s ease;
+}
+.cost-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 20px 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.cost-tip {
+  font-size: 12px;
+  color: var(--text-muted);
+  background: rgba(0, 212, 170, 0.05);
+  border-left: 3px solid var(--accent);
+  padding: 10px 14px;
+  border-radius: 0 6px 6px 0;
+  margin-top: 16px;
 }
 
 /* History chart */
@@ -1184,30 +1351,116 @@ Reranking models rescore initial search results to improve relevance ordering.</
   <!-- ── Cost Panel ── -->
   <div class="bench-view" id="bench-cost">
     <div class="card">
-      <div class="card-title">Cost Calculator</div>
-      <div class="cost-slider-row">
-        <span class="cost-slider-label">Tokens per query</span>
-        <input type="range" class="cost-slider" id="costTokens" min="50" max="5000" value="500" step="50">
-        <span class="cost-slider-value" id="costTokensValue">500</span>
+      <div class="card-title">💰 RAG Cost Calculator</div>
+
+      <!-- Mode toggle -->
+      <div style="margin-bottom: 20px;">
+        <div class="cost-mode-toggle">
+          <button class="cost-mode-btn active" data-mode="simple" onclick="setCostMode('simple')">Simple</button>
+          <button class="cost-mode-btn" data-mode="rag" onclick="setCostMode('rag')">RAG Planner</button>
+        </div>
       </div>
-      <div class="cost-slider-row">
-        <span class="cost-slider-label">Queries per day</span>
-        <input type="range" class="cost-slider" id="costQueries" min="10" max="500000" value="1000" step="10">
-        <span class="cost-slider-value" id="costQueriesValue">1,000</span>
+
+      <!-- Simple mode (query cost comparison) -->
+      <div id="costSimpleMode">
+        <div class="cost-controls cost-controls-full">
+          <div class="cost-slider-row">
+            <span class="cost-slider-label">Tokens / query</span>
+            <input type="range" class="cost-slider" id="costTokens" min="50" max="5000" value="500" step="50">
+            <span class="cost-slider-value" id="costTokensValue">500</span>
+          </div>
+          <div class="cost-slider-row">
+            <span class="cost-slider-label">Queries / day</span>
+            <input type="range" class="cost-slider" id="costQueries" min="10" max="500000" value="1000" step="10">
+            <span class="cost-slider-value" id="costQueriesValue">1,000</span>
+          </div>
+        </div>
+        <table class="cost-table" id="costTable">
+          <thead>
+            <tr>
+              <th>Model</th>
+              <th>Type</th>
+              <th>$/1M tokens</th>
+              <th>Daily Cost</th>
+              <th>Monthly Cost</th>
+              <th style="width:30%">Relative</th>
+            </tr>
+          </thead>
+          <tbody id="costTableBody"></tbody>
+        </table>
       </div>
-      <table class="cost-table" id="costTable">
-        <thead>
-          <tr>
-            <th>Model</th>
-            <th>Type</th>
-            <th>$/1M tokens</th>
-            <th>Daily Cost</th>
-            <th>Monthly Cost</th>
-            <th style="width:30%">Relative</th>
-          </tr>
-        </thead>
-        <tbody id="costTableBody"></tbody>
-      </table>
+
+      <!-- RAG Planner mode (full TCO) -->
+      <div id="costRagMode" style="display:none;">
+        <div class="cost-section-title">📄 Documents (one-time ingestion)</div>
+        <div class="cost-controls">
+          <div class="cost-slider-row">
+            <span class="cost-slider-label">Documents</span>
+            <input type="range" class="cost-slider" id="ragDocs" min="1000" max="10000000" value="100000" step="1000">
+            <span class="cost-slider-value" id="ragDocsValue">100K</span>
+          </div>
+          <div class="cost-slider-row">
+            <span class="cost-slider-label">Tokens / doc</span>
+            <input type="range" class="cost-slider" id="ragDocTokens" min="50" max="5000" value="500" step="50">
+            <span class="cost-slider-value" id="ragDocTokensValue">500</span>
+          </div>
+        </div>
+
+        <div class="cost-section-title">🔍 Queries (recurring)</div>
+        <div class="cost-controls">
+          <div class="cost-slider-row">
+            <span class="cost-slider-label">Queries / month</span>
+            <input type="range" class="cost-slider" id="ragQueries" min="1000" max="50000000" value="1000000" step="1000">
+            <span class="cost-slider-value" id="ragQueriesValue">1M</span>
+          </div>
+          <div class="cost-slider-row">
+            <span class="cost-slider-label">Tokens / query</span>
+            <input type="range" class="cost-slider" id="ragQueryTokens" min="10" max="500" value="30" step="5">
+            <span class="cost-slider-value" id="ragQueryTokensValue">30</span>
+          </div>
+        </div>
+
+        <div class="cost-section-title">⚙️ Configuration</div>
+        <div class="cost-controls">
+          <div class="cost-model-row">
+            <span class="cost-model-label">Doc model</span>
+            <select class="cost-select" id="ragDocModel"></select>
+          </div>
+          <div class="cost-model-row">
+            <span class="cost-model-label">Query model</span>
+            <select class="cost-select" id="ragQueryModel"></select>
+          </div>
+          <div class="cost-slider-row">
+            <span class="cost-slider-label">Projection</span>
+            <input type="range" class="cost-slider" id="ragMonths" min="1" max="36" value="12" step="1">
+            <span class="cost-slider-value" id="ragMonthsValue">12 mo</span>
+          </div>
+        </div>
+
+        <!-- Summary cards -->
+        <div class="cost-summary" id="ragSummary"></div>
+
+        <!-- Strategy comparison -->
+        <div class="cost-section-title">📊 Strategy Comparison</div>
+        <div class="cost-strategy-cards" id="ragStrategies"></div>
+
+        <!-- Per-model table -->
+        <div class="cost-section-title">📋 Per-Model Breakdown</div>
+        <table class="cost-table" id="ragTable">
+          <thead>
+            <tr>
+              <th>Model</th>
+              <th>Doc Cost</th>
+              <th>Query $/mo</th>
+              <th>Total (projected)</th>
+              <th style="width:25%">Relative</th>
+            </tr>
+          </thead>
+          <tbody id="ragTableBody"></tbody>
+        </table>
+
+        <div class="cost-tip" id="ragTip"></div>
+      </div>
     </div>
   </div>
 
@@ -2326,7 +2579,49 @@ window.doBenchQuantization = async function() {
 };
 
 // ── Benchmark: Cost Calculator ──
+// ── Cost Calculator: Shared Helpers ──
+
+function costFormatDollars(n) {
+  if (n === 0) return '$0.00';
+  if (n < 0.01 && n > 0) return '$' + n.toFixed(4);
+  if (n < 1) return '$' + n.toFixed(2);
+  return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function costShortNum(n) {
+  if (n >= 1e9) return (n / 1e9).toFixed(n % 1e9 === 0 ? 0 : 1) + 'B';
+  if (n >= 1e6) return (n / 1e6).toFixed(n % 1e6 === 0 ? 0 : 1) + 'M';
+  if (n >= 1e3) return (n / 1e3).toFixed(n % 1e3 === 0 ? 0 : 1) + 'K';
+  return String(n);
+}
+
+function costGetPricePerM(model) {
+  const match = model.price.match(/\$([0-9.]+)\/1M/);
+  return match ? parseFloat(match[1]) : null;
+}
+
+function costGetV4Models() {
+  return allModels.filter(m => !m.legacy && !m.unreleased && costGetPricePerM(m) !== null);
+}
+
+// ── Cost Mode Toggle ──
+
+let currentCostMode = 'simple';
+
+function setCostMode(mode) {
+  currentCostMode = mode;
+  document.querySelectorAll('.cost-mode-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.mode === mode);
+  });
+  document.getElementById('costSimpleMode').style.display = mode === 'simple' ? '' : 'none';
+  document.getElementById('costRagMode').style.display = mode === 'rag' ? '' : 'none';
+  if (mode === 'rag') updateRagCalculator();
+}
+
+// ── Simple Mode (query-only comparison) ──
+
 function initCostCalculator() {
+  // Simple mode sliders
   const tokSlider = document.getElementById('costTokens');
   const qSlider = document.getElementById('costQueries');
   const tokValue = document.getElementById('costTokensValue');
@@ -2342,22 +2637,22 @@ function initCostCalculator() {
 
   tokSlider.addEventListener('input', updateCost);
   qSlider.addEventListener('input', updateCost);
-
-  // Initialize
   updateCost();
+
+  // RAG mode init
+  initRagCalculator();
 }
 
 function renderCostTable(tokensPerQuery, queriesPerDay) {
   const tbody = document.getElementById('costTableBody');
   tbody.innerHTML = '';
 
-  const models = allModels.filter(m => !m.legacy);
+  const models = allModels.filter(m => !m.legacy && !m.unreleased);
   const rows = [];
 
   models.forEach(m => {
-    const match = m.price.match(/\$([0-9.]+)\/1M/);
-    if (!match) return;
-    const pricePerM = parseFloat(match[1]);
+    const pricePerM = costGetPricePerM(m);
+    if (pricePerM === null) return;
     const dailyTokens = tokensPerQuery * queriesPerDay;
     const dailyCost = (dailyTokens / 1_000_000) * pricePerM;
     const monthlyCost = dailyCost * 30;
@@ -2386,6 +2681,234 @@ function renderCostTable(tokensPerQuery, queriesPerDay) {
     `;
     tbody.appendChild(tr);
   });
+}
+
+// ── RAG Planner Mode (full TCO with strategies) ──
+
+function initRagCalculator() {
+  // Populate model dropdowns
+  const embeddingModels = allModels.filter(m =>
+    m.type === 'embedding' && !m.legacy && !m.unreleased && costGetPricePerM(m) !== null
+  );
+
+  const docSelect = document.getElementById('ragDocModel');
+  const querySelect = document.getElementById('ragQueryModel');
+
+  embeddingModels.forEach(m => {
+    const pricePerM = costGetPricePerM(m);
+    const opt1 = document.createElement('option');
+    opt1.value = m.name;
+    opt1.textContent = `${m.name} ($${pricePerM.toFixed(2)}/1M)`;
+    docSelect.appendChild(opt1);
+
+    const opt2 = document.createElement('option');
+    opt2.value = m.name;
+    opt2.textContent = `${m.name} ($${pricePerM.toFixed(2)}/1M)`;
+    querySelect.appendChild(opt2);
+  });
+
+  // Set defaults: voyage-4-large for docs, voyage-4-lite for queries
+  docSelect.value = 'voyage-4-large';
+  querySelect.value = 'voyage-4-lite';
+
+  // Bind all sliders and selects
+  const ids = ['ragDocs', 'ragDocTokens', 'ragQueries', 'ragQueryTokens', 'ragMonths'];
+  ids.forEach(id => {
+    document.getElementById(id).addEventListener('input', updateRagCalculator);
+  });
+  docSelect.addEventListener('change', updateRagCalculator);
+  querySelect.addEventListener('change', updateRagCalculator);
+
+  updateRagCalculator();
+}
+
+function updateRagCalculator() {
+  const numDocs = parseInt(document.getElementById('ragDocs').value, 10);
+  const docTokens = parseInt(document.getElementById('ragDocTokens').value, 10);
+  const numQueries = parseInt(document.getElementById('ragQueries').value, 10);
+  const queryTokens = parseInt(document.getElementById('ragQueryTokens').value, 10);
+  const months = parseInt(document.getElementById('ragMonths').value, 10);
+  const docModelName = document.getElementById('ragDocModel').value;
+  const queryModelName = document.getElementById('ragQueryModel').value;
+
+  // Update slider display values
+  document.getElementById('ragDocsValue').textContent = costShortNum(numDocs);
+  document.getElementById('ragDocTokensValue').textContent = docTokens.toLocaleString();
+  document.getElementById('ragQueriesValue').textContent = costShortNum(numQueries);
+  document.getElementById('ragQueryTokensValue').textContent = queryTokens.toLocaleString();
+  document.getElementById('ragMonthsValue').textContent = months + ' mo';
+
+  const docTotalTokens = numDocs * docTokens;
+  const queryTotalTokensPerMonth = numQueries * queryTokens;
+
+  // Get model prices
+  const docModel = allModels.find(m => m.name === docModelName);
+  const queryModel = allModels.find(m => m.name === queryModelName);
+  const docPrice = docModel ? costGetPricePerM(docModel) : 0;
+  const queryPrice = queryModel ? costGetPricePerM(queryModel) : 0;
+
+  // ── Build strategies (same logic as CLI) ──
+  const strategies = [];
+  const v4Embedding = allModels.filter(m =>
+    m.type === 'embedding' && !m.legacy && !m.unreleased &&
+    (m.sharedSpace === 'voyage-4' || m.name.startsWith('voyage-4')) &&
+    costGetPricePerM(m) !== null && costGetPricePerM(m) > 0
+  );
+
+  // Strategy group 1: Symmetric with each V4 model
+  v4Embedding.forEach(m => {
+    const price = costGetPricePerM(m);
+    const docCost = (docTotalTokens / 1e6) * price;
+    const queryCostPerMonth = (queryTotalTokensPerMonth / 1e6) * price;
+    const totalCost = docCost + (queryCostPerMonth * months);
+    strategies.push({
+      name: `Symmetric: ${m.name}`,
+      type: 'symmetric',
+      docModel: m.name,
+      queryModel: m.name,
+      docCost,
+      queryCostPerMonth,
+      totalCost,
+      months,
+    });
+  });
+
+  // Strategy 2: Asymmetric — user-selected combo
+  const asymDocCost = (docTotalTokens / 1e6) * docPrice;
+  const asymQueryCostPerMonth = (queryTotalTokensPerMonth / 1e6) * queryPrice;
+  const asymTotalCost = asymDocCost + (asymQueryCostPerMonth * months);
+
+  // Only add if it's actually asymmetric (different models)
+  if (docModelName !== queryModelName) {
+    strategies.push({
+      name: `Asymmetric: ${docModelName} + ${queryModelName}`,
+      type: 'asymmetric',
+      docModel: docModelName,
+      queryModel: queryModelName,
+      docCost: asymDocCost,
+      queryCostPerMonth: asymQueryCostPerMonth,
+      totalCost: asymTotalCost,
+      months,
+      recommended: true,
+    });
+  }
+
+  // Strategy 3: Asymmetric with nano (local, free queries)
+  strategies.push({
+    name: `Asymmetric: ${docModelName} + nano (local)`,
+    type: 'asymmetric-local',
+    docModel: docModelName,
+    queryModel: 'voyage-4-nano',
+    docCost: asymDocCost,
+    queryCostPerMonth: 0,
+    totalCost: asymDocCost,
+    months,
+    localNote: 'Query cost = $0 (runs locally via HuggingFace)',
+  });
+
+  strategies.sort((a, b) => a.totalCost - b.totalCost);
+  const maxCost = Math.max(...strategies.map(s => s.totalCost), 0.01);
+
+  // ── Render summary cards ──
+  const summaryEl = document.getElementById('ragSummary');
+  summaryEl.innerHTML = `
+    <div class="cost-summary-card">
+      <div class="cost-summary-label">Document tokens</div>
+      <div class="cost-summary-value">${costShortNum(docTotalTokens)}</div>
+      <div class="cost-summary-detail">${costShortNum(numDocs)} docs × ${docTokens.toLocaleString()} tok</div>
+    </div>
+    <div class="cost-summary-card">
+      <div class="cost-summary-label">Query tokens / mo</div>
+      <div class="cost-summary-value">${costShortNum(queryTotalTokensPerMonth)}</div>
+      <div class="cost-summary-detail">${costShortNum(numQueries)} queries × ${queryTokens} tok</div>
+    </div>
+    <div class="cost-summary-card">
+      <div class="cost-summary-label">Best ${months}-mo total</div>
+      <div class="cost-summary-value">${costFormatDollars(strategies[0].totalCost)}</div>
+      <div class="cost-summary-detail">${strategies[0].name}</div>
+    </div>
+    <div class="cost-summary-card">
+      <div class="cost-summary-label">Max potential savings</div>
+      <div class="cost-summary-value" style="color:#4ade80">${maxCost > 0 ? ((1 - strategies[0].totalCost / maxCost) * 100).toFixed(0) + '%' : '0%'}</div>
+      <div class="cost-summary-detail">vs ${strategies[strategies.length - 1].name.split(':')[1]?.trim() || 'most expensive'}</div>
+    </div>
+  `;
+
+  // ── Render strategy cards ──
+  const stratEl = document.getElementById('ragStrategies');
+  stratEl.innerHTML = strategies.map(s => {
+    const savings = maxCost > 0 ? ((1 - s.totalCost / maxCost) * 100) : 0;
+    const savingsHtml = savings > 0 ? `<div class="cost-savings">↓ ${savings.toFixed(0)}% savings</div>` : '';
+    const badgeHtml = s.recommended ? '<div class="cost-strategy-badge">★ Recommended</div>' : '';
+    const localHtml = s.localNote ? `<div style="font-size:11px;color:var(--text-muted);margin-top:6px;">⚡ ${s.localNote}</div>` : '';
+
+    return `
+      <div class="cost-strategy${s.recommended ? ' recommended' : ''}">
+        ${badgeHtml}
+        <div class="cost-strategy-name">${s.name}</div>
+        <div class="cost-strategy-row">
+          <span class="cost-strategy-row-label">Doc embedding</span>
+          <span class="cost-strategy-row-value">${costFormatDollars(s.docCost)} <span style="color:var(--text-muted);font-size:11px">(one-time)</span></span>
+        </div>
+        <div class="cost-strategy-row">
+          <span class="cost-strategy-row-label">Query cost</span>
+          <span class="cost-strategy-row-value">${costFormatDollars(s.queryCostPerMonth)}/mo</span>
+        </div>
+        <div class="cost-strategy-total">
+          <span class="cost-strategy-total-label">${s.months}-month total</span>
+          <span class="cost-strategy-total-value">${costFormatDollars(s.totalCost)}</span>
+        </div>
+        ${savingsHtml}
+        ${localHtml}
+      </div>
+    `;
+  }).join('');
+
+  // ── Render per-model table ──
+  const ragTbody = document.getElementById('ragTableBody');
+  ragTbody.innerHTML = '';
+
+  const allEmbedding = allModels.filter(m =>
+    m.type === 'embedding' && !m.legacy && !m.unreleased && costGetPricePerM(m) !== null && costGetPricePerM(m) > 0
+  );
+
+  const tableRows = allEmbedding.map(m => {
+    const price = costGetPricePerM(m);
+    const dCost = (docTotalTokens / 1e6) * price;
+    const qCostMo = (queryTotalTokensPerMonth / 1e6) * price;
+    const total = dCost + (qCostMo * months);
+    return { name: m.name, dCost, qCostMo, total };
+  }).sort((a, b) => a.total - b.total);
+
+  const maxTable = Math.max(...tableRows.map(r => r.total), 0.01);
+
+  tableRows.forEach(r => {
+    const tr = document.createElement('tr');
+    const barPct = Math.max(2, (r.total / maxTable) * 100);
+    tr.innerHTML = `
+      <td style="color:var(--text)">${r.name}</td>
+      <td>${costFormatDollars(r.dCost)}</td>
+      <td>${costFormatDollars(r.qCostMo)}</td>
+      <td class="cost-highlight">${costFormatDollars(r.total)}</td>
+      <td class="cost-bar-cell" style="position:relative;padding-left:8px;">
+        <div class="cost-bar" style="width:${barPct}%;"></div>
+        <span style="position:relative;z-index:1;font-size:12px;color:var(--text-dim);">${costFormatDollars(r.total)}</span>
+      </td>
+    `;
+    ragTbody.appendChild(tr);
+  });
+
+  // ── Tip ──
+  const bestSym = strategies.find(s => s.type === 'symmetric' && s.docModel === 'voyage-4-large');
+  const bestAsym = strategies.find(s => s.recommended);
+  const tipEl = document.getElementById('ragTip');
+  if (bestSym && bestAsym && bestSym.totalCost > bestAsym.totalCost) {
+    const saved = bestSym.totalCost - bestAsym.totalCost;
+    const pct = ((saved / bestSym.totalCost) * 100).toFixed(0);
+    tipEl.innerHTML = `💡 <strong>Asymmetric retrieval saves ${costFormatDollars(saved)} (${pct}%)</strong> over symmetric voyage-4-large — same document quality, lower query costs. The shared embedding space makes this possible. <code>vai explain shared-space</code>`;
+  } else {
+    tipEl.innerHTML = '💡 Try selecting different doc and query models to see asymmetric cost savings. <code>vai explain shared-space</code>';
+  }
 }
 
 // ── Benchmark: History ──
