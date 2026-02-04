@@ -1356,8 +1356,8 @@ Reranking models rescore initial search results to improve relevance ordering.</
       <!-- Mode toggle -->
       <div style="margin-bottom: 20px;">
         <div class="cost-mode-toggle">
-          <button class="cost-mode-btn active" data-mode="simple" onclick="setCostMode('simple')">Simple</button>
-          <button class="cost-mode-btn" data-mode="rag" onclick="setCostMode('rag')">RAG Planner</button>
+          <button class="cost-mode-btn active" data-mode="simple" id="costModeSimple">Simple</button>
+          <button class="cost-mode-btn" data-mode="rag" id="costModeRag">RAG Planner</button>
         </div>
       </div>
 
@@ -2621,6 +2621,10 @@ function setCostMode(mode) {
 // ── Simple Mode (query-only comparison) ──
 
 function initCostCalculator() {
+  // Mode toggle buttons
+  document.getElementById('costModeSimple').addEventListener('click', () => setCostMode('simple'));
+  document.getElementById('costModeRag').addEventListener('click', () => setCostMode('rag'));
+
   // Simple mode sliders
   const tokSlider = document.getElementById('costTokens');
   const qSlider = document.getElementById('costQueries');
