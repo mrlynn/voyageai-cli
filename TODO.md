@@ -98,3 +98,7 @@ The "polished product" story. A standalone app with OS keychain integration, cus
 4. **`vai app --download`** — command that fetches the latest release from GitHub and opens it
 
 Want me to start building any of these? The GitHub Actions workflow and README overhaul are probably highest ROI right now.
+
+
+
+### Brew and package distribution alternatives - let's investigagte.
