@@ -72,6 +72,14 @@ function registerApiKeyHandlers() {
   ipcMain.handle('app:open-release', (_event, url) => {
     shell.openExternal(url);
   });
+
+  ipcMain.handle('app:download-update', () => {
+    return downloadUpdate();
+  });
+
+  ipcMain.handle('app:install-update', () => {
+    autoUpdater.quitAndInstall(false, true);
+  });
 }
 
 // ── Icon helpers ──
@@ -93,13 +101,14 @@ function updateDockIcon() {
   }
 }
 
-// ── Update Checker ──
-// Checks GitHub Releases for a newer version on launch (non-blocking)
+// ── Update Checker (electron-updater) ──
+// Auto-downloads updates from GitHub Releases, supports quit-and-install.
+
+const { autoUpdater } = require('electron-updater');
 
 const APP_VERSION = require('./package.json').version;
 function getCliVersion() {
   try {
-    // In dev: ../package.json; in packaged app: Resources/cli-package.json
     const pkgPath = app.isPackaged
       ? path.join(process.resourcesPath, 'cli-package.json')
       : path.join(__dirname, '..', 'package.json');
@@ -107,11 +116,93 @@ function getCliVersion() {
   } catch { return 'unknown'; }
 }
 
+// Configure autoUpdater
+autoUpdater.autoDownload = false;          // We control when to download
+autoUpdater.autoInstallOnAppQuit = true;   // Install on next quit if downloaded
+autoUpdater.allowPrerelease = false;
+
+// Send update events to renderer
+function sendUpdateEvent(event, data) {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('update-event', { event, ...data });
+  }
+}
+
+autoUpdater.on('update-available', (info) => {
+  sendUpdateEvent('update-available', {
+    latestVersion: info.version,
+    currentVersion: APP_VERSION,
+    releaseName: info.releaseName || `v${info.version}`,
+    releaseNotes: info.releaseNotes || '',
+    releaseDate: info.releaseDate || '',
+  });
+});
+
+autoUpdater.on('update-not-available', (info) => {
+  sendUpdateEvent('update-not-available', {
+    currentVersion: APP_VERSION,
+    latestVersion: info.version,
+  });
+});
+
+autoUpdater.on('download-progress', (progress) => {
+  sendUpdateEvent('download-progress', {
+    percent: progress.percent,
+    bytesPerSecond: progress.bytesPerSecond,
+    transferred: progress.transferred,
+    total: progress.total,
+  });
+});
+
+autoUpdater.on('update-downloaded', (info) => {
+  sendUpdateEvent('update-downloaded', {
+    latestVersion: info.version,
+    releaseName: info.releaseName || `v${info.version}`,
+  });
+});
+
+autoUpdater.on('error', (err) => {
+  sendUpdateEvent('update-error', { message: err.message || 'Update check failed' });
+});
+
 function checkForUpdates() {
+  if (!app.isPackaged) {
+    // In dev mode, fall back to manual GitHub API check
+    return checkForUpdatesManual();
+  }
+  return autoUpdater.checkForUpdates().then((result) => {
+    if (!result || !result.updateInfo) {
+      return { hasUpdate: false, currentVersion: APP_VERSION };
+    }
+    const info = result.updateInfo;
+    const hasUpdate = compareVersions(info.version, APP_VERSION) > 0;
+    return {
+      hasUpdate,
+      currentVersion: APP_VERSION,
+      latestVersion: info.version,
+      releaseName: info.releaseName || `v${info.version}`,
+      releaseUrl: `https://github.com/mrlynn/voyageai-cli/releases/tag/app-v${info.version}`,
+    };
+  }).catch(() => {
+    return { hasUpdate: false, currentVersion: APP_VERSION, error: 'check_failed' };
+  });
+}
+
+function downloadUpdate() {
+  if (!app.isPackaged) {
+    return Promise.resolve({ error: 'dev_mode' });
+  }
+  return autoUpdater.downloadUpdate().then(() => {
+    return { success: true };
+  }).catch((err) => {
+    return { error: err.message };
+  });
+}
+
+// Manual fallback for dev mode (no code signing = no autoUpdater)
+function checkForUpdatesManual() {
   const https = require('https');
   return new Promise((resolve) => {
-    // Fetch recent releases (not /latest, which may return a CLI release instead
-    // of a desktop app release). We look for the newest release tagged `app-v*`.
     const options = {
       hostname: 'api.github.com',
       path: '/repos/mrlynn/voyageai-cli/releases?per_page=20',
@@ -120,35 +211,25 @@ function checkForUpdates() {
     };
     const req = https.get(options, (res) => {
       if (res.statusCode === 302 || res.statusCode === 301) {
-        const redirectOpts = {
-          headers: options.headers,
-          timeout: 5000,
-        };
-        https.get(res.headers.location, redirectOpts, handleResponse);
+        https.get(res.headers.location, { headers: options.headers, timeout: 5000 }, handleResponse);
         return;
       }
       handleResponse(res);
     });
-
     function handleResponse(res) {
       let data = '';
       res.on('data', (chunk) => data += chunk);
       res.on('end', () => {
         try {
           const releases = JSON.parse(data);
-          // Find the first (newest) release whose tag starts with "app-v"
           const appRelease = Array.isArray(releases)
             ? releases.find(r => r.tag_name && r.tag_name.startsWith('app-v'))
             : null;
-
-          // Fallback: if no app-v* release found, try the single-object
-          // response (in case the API returned a single release)
           const release = appRelease || (releases && releases.tag_name ? releases : null);
           if (!release) {
             resolve({ hasUpdate: false, currentVersion: APP_VERSION, error: 'no_app_release' });
             return;
           }
-
           const latestTag = (release.tag_name || '').replace(/^app-v/, '');
           if (latestTag && compareVersions(latestTag, APP_VERSION) > 0) {
             resolve({
@@ -167,7 +248,6 @@ function checkForUpdates() {
         }
       });
     }
-
     req.on('error', () => resolve({ hasUpdate: false, currentVersion: APP_VERSION, error: 'network_error' }));
     req.on('timeout', () => { req.destroy(); resolve({ hasUpdate: false, currentVersion: APP_VERSION, error: 'timeout' }); });
   });

@@ -141,6 +141,11 @@ body {
   padding: 0 4px;
 }
 .update-banner-dismiss:hover { color: var(--text); }
+.update-progress { display: flex; align-items: center; gap: 8px; flex: 1; }
+.update-progress-bar { flex: 1; height: 6px; background: rgba(255,255,255,0.15); border-radius: 3px; overflow: hidden; }
+[data-theme="light"] .update-progress-bar { background: rgba(0,0,0,0.1); }
+.update-progress-fill { height: 100%; background: var(--accent); border-radius: 3px; transition: width 0.3s ease; width: 0%; }
+.update-progress-label { font-size: 12px; font-family: var(--mono); color: var(--accent); min-width: 40px; text-align: right; }
 
 /* ── Onboarding Walkthrough ── */
 .onboarding-overlay {
@@ -2308,11 +2313,16 @@ select:focus { outline: none; border-color: var(--accent); }
   <div class="content-drag-region"></div>
   <div class="update-banner" id="updateBanner">
     <span class="update-banner-icon">🚀</span>
-    <span class="update-banner-text">
+    <span class="update-banner-text" id="updateBannerText">
       <strong>Vai <span id="updateVersion"></span></strong> is available.
       You're on <span id="currentVersion"></span>.
     </span>
-    <button class="update-banner-btn" id="updateDownloadBtn">Download</button>
+    <div class="update-progress" id="updateProgress" style="display:none;">
+      <div class="update-progress-bar"><div class="update-progress-fill" id="updateProgressFill"></div></div>
+      <span class="update-progress-label" id="updateProgressLabel">0%</span>
+    </div>
+    <button class="update-banner-btn" id="updateDownloadBtn">Download &amp; Install</button>
+    <button class="update-banner-btn" id="updateInstallBtn" style="display:none;">Restart &amp; Update</button>
     <button class="update-banner-dismiss" id="updateDismissBtn" title="Dismiss">×</button>
   </div>
   <div class="main">
@@ -5095,15 +5105,12 @@ function checkForAppUpdate() {
   // Show version in sidebar + settings page
   window.vai.getVersion().then(v => {
     if (!v) return;
-    // v can be string (old) or { app, cli } (new)
     const appVer = typeof v === 'object' ? v.app : v;
     const cliVer = typeof v === 'object' ? v.cli : null;
 
-    // Sidebar label
     const label = document.getElementById('appVersionLabel');
     if (label && appVer) label.textContent = 'v' + appVer;
 
-    // Settings version section
     const section = document.getElementById('settingsVersionSection');
     const appBadge = document.getElementById('settingsAppVersion');
     const cliBadge = document.getElementById('settingsCliVersion');
@@ -5117,7 +5124,43 @@ function checkForAppUpdate() {
   const dismissed = localStorage.getItem(DISMISS_KEY);
   if (dismissed) {
     const dismissedAt = parseInt(dismissed, 10);
-    if (Date.now() - dismissedAt < 3600000) return; // 1 hour cooldown
+    if (Date.now() - dismissedAt < 3600000) return;
+  }
+
+  // Listen for real-time update events from electron-updater
+  if (window.vai.updates.onEvent) {
+    window.vai.updates.onEvent((data) => {
+      const banner = document.getElementById('updateBanner');
+      const progressWrap = document.getElementById('updateProgress');
+      const progressFill = document.getElementById('updateProgressFill');
+      const progressLabel = document.getElementById('updateProgressLabel');
+      const bannerText = document.getElementById('updateBannerText');
+      const downloadBtn = document.getElementById('updateDownloadBtn');
+      const installBtn = document.getElementById('updateInstallBtn');
+
+      if (data.event === 'download-progress') {
+        const pct = Math.round(data.percent || 0);
+        progressFill.style.width = pct + '%';
+        const mbTransferred = (data.transferred / 1048576).toFixed(1);
+        const mbTotal = (data.total / 1048576).toFixed(1);
+        progressLabel.textContent = `${pct}% (${mbTransferred}/${mbTotal} MB)`;
+      }
+
+      if (data.event === 'update-downloaded') {
+        progressWrap.style.display = 'none';
+        bannerText.innerHTML = `<strong>Vai v${data.latestVersion}</strong> is ready to install.`;
+        bannerText.style.display = '';
+        downloadBtn.style.display = 'none';
+        installBtn.style.display = '';
+      }
+
+      if (data.event === 'update-error') {
+        progressWrap.style.display = 'none';
+        bannerText.innerHTML = `Update failed: ${data.message}. <a href="#" onclick="window.vai.updates.openRelease('https://github.com/mrlynn/voyageai-cli/releases');return false;" style="color:var(--accent);">Download manually</a>`;
+        bannerText.style.display = '';
+        downloadBtn.style.display = 'none';
+      }
+    });
   }
 
   window.vai.updates.check().then(result => {
@@ -5127,7 +5170,10 @@ function checkForAppUpdate() {
     const versionEl = document.getElementById('updateVersion');
     const currentEl = document.getElementById('currentVersion');
     const downloadBtn = document.getElementById('updateDownloadBtn');
+    const installBtn = document.getElementById('updateInstallBtn');
     const dismissBtn = document.getElementById('updateDismissBtn');
+    const bannerText = document.getElementById('updateBannerText');
+    const progressWrap = document.getElementById('updateProgress');
 
     if (!banner) return;
 
@@ -5136,7 +5182,24 @@ function checkForAppUpdate() {
     banner.classList.add('show');
 
     downloadBtn.addEventListener('click', () => {
-      window.vai.updates.openRelease(result.releaseUrl);
+      // Start auto-download
+      if (window.vai.updates.download) {
+        downloadBtn.style.display = 'none';
+        bannerText.style.display = 'none';
+        progressWrap.style.display = 'flex';
+        window.vai.updates.download().catch(() => {
+          // Fallback to manual download
+          window.vai.updates.openRelease(result.releaseUrl);
+        });
+      } else {
+        window.vai.updates.openRelease(result.releaseUrl);
+      }
+    });
+
+    installBtn.addEventListener('click', () => {
+      installBtn.textContent = 'Restarting...';
+      installBtn.disabled = true;
+      window.vai.updates.install();
     });
 
     dismissBtn.addEventListener('click', () => {
