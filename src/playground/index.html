@@ -102,6 +102,46 @@ body {
   overflow-x: hidden;
 }
 
+/* ── Update banner ── */
+.update-banner {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, rgba(0,163,92,0.12), rgba(4,152,236,0.12));
+  border-bottom: 1px solid rgba(0,237,100,0.2);
+  font-size: 13px;
+  color: var(--text);
+  flex-shrink: 0;
+}
+.update-banner.show { display: flex; }
+.update-banner-icon { font-size: 16px; }
+.update-banner-text { flex: 1; }
+.update-banner-text strong { color: var(--accent); }
+.update-banner-btn {
+  background: var(--accent);
+  color: var(--bg);
+  border: none;
+  border-radius: 4px;
+  padding: 5px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: var(--font);
+  transition: opacity 0.15s;
+}
+.update-banner-btn:hover { opacity: 0.85; }
+.update-banner-dismiss {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  padding: 0 4px;
+}
+.update-banner-dismiss:hover { color: var(--text); }
+
 /* ── App Shell: sidebar + content layout ── */
 .app-shell {
   display: flex;
@@ -1790,12 +1830,22 @@ select:focus { outline: none; border-color: var(--accent); }
       </div>
       <button class="theme-toggle" id="themeToggle" title="Toggle light/dark mode">🌙</button>
     </div>
+    <div id="appVersionLabel" style="font-size:10px;color:var(--text-muted);text-align:center;"></div>
   </div>
 </aside>
 
 <!-- Content -->
 <div class="content-area">
   <div class="content-drag-region"></div>
+  <div class="update-banner" id="updateBanner">
+    <span class="update-banner-icon">🚀</span>
+    <span class="update-banner-text">
+      <strong>Vai <span id="updateVersion"></span></strong> is available.
+      You're on <span id="currentVersion"></span>.
+    </span>
+    <button class="update-banner-btn" id="updateDownloadBtn">Download</button>
+    <button class="update-banner-dismiss" id="updateDismissBtn" title="Dismiss">×</button>
+  </div>
   <div class="main">
 
 <!-- ========== EMBED TAB ========== -->
@@ -4353,6 +4403,52 @@ function initSettings() {
   }
 }
 
+// ── Update Checker ──
+function checkForAppUpdate() {
+  if (!window.vai || !window.vai.isElectron) return;
+
+  // Show version in sidebar
+  window.vai.getVersion().then(v => {
+    const label = document.getElementById('appVersionLabel');
+    if (label && v) label.textContent = 'v' + v;
+  });
+
+  // Don't check more than once per hour
+  const DISMISS_KEY = 'vai-update-dismissed';
+  const dismissed = localStorage.getItem(DISMISS_KEY);
+  if (dismissed) {
+    const dismissedAt = parseInt(dismissed, 10);
+    if (Date.now() - dismissedAt < 3600000) return; // 1 hour cooldown
+  }
+
+  window.vai.updates.check().then(result => {
+    if (!result || !result.hasUpdate) return;
+
+    const banner = document.getElementById('updateBanner');
+    const versionEl = document.getElementById('updateVersion');
+    const currentEl = document.getElementById('currentVersion');
+    const downloadBtn = document.getElementById('updateDownloadBtn');
+    const dismissBtn = document.getElementById('updateDismissBtn');
+
+    if (!banner) return;
+
+    versionEl.textContent = 'v' + result.latestVersion;
+    currentEl.textContent = 'v' + result.currentVersion;
+    banner.classList.add('show');
+
+    downloadBtn.addEventListener('click', () => {
+      window.vai.updates.openRelease(result.releaseUrl);
+    });
+
+    dismissBtn.addEventListener('click', () => {
+      banner.classList.remove('show');
+      localStorage.setItem(DISMISS_KEY, String(Date.now()));
+    });
+  }).catch(() => {
+    // Silent fail — update check is non-critical
+  });
+}
+
 // ── Patch init to include benchmark setup ──
 const _origInit = init;
 init = async function() {
@@ -4364,6 +4460,7 @@ init = async function() {
   initCostCalculator();
   renderHistory();
   initSettings();
+  checkForAppUpdate();
 };
 
 // ── Start ──

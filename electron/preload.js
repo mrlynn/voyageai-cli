@@ -12,6 +12,11 @@ contextBridge.exposeInMainWorld('vai', {
     exists: ()      => ipcRenderer.invoke('api-key:exists'),
     mask:   (key)   => key ? key.slice(0, 6) + '•'.repeat(Math.max(0, key.length - 10)) + key.slice(-4) : '',
   },
+  // Update checker
+  updates: {
+    check:       ()    => ipcRenderer.invoke('app:check-update'),
+    openRelease: (url) => ipcRenderer.invoke('app:open-release', url),
+  },
   // App info
   getVersion: () => ipcRenderer.invoke('app:version'),
   isElectron: true,

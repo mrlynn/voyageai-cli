@@ -62,7 +62,15 @@ function registerApiKeyHandlers() {
   });
 
   ipcMain.handle('app:version', () => {
-    return app.getVersion();
+    return APP_VERSION;
+  });
+
+  ipcMain.handle('app:check-update', () => {
+    return checkForUpdates();
+  });
+
+  ipcMain.handle('app:open-release', (_event, url) => {
+    shell.openExternal(url);
   });
 }
 
@@ -83,6 +91,72 @@ function updateDockIcon() {
   } catch (err) {
     console.error('Failed to set dock icon:', err.message);
   }
+}
+
+// ── Update Checker ──
+// Checks GitHub Releases for a newer version on launch (non-blocking)
+
+const GITHUB_RELEASES_URL = 'https://api.github.com/repos/mrlynn/voyageai-cli/releases/latest';
+const APP_VERSION = require('./package.json').version;
+
+function checkForUpdates() {
+  const https = require('https');
+  return new Promise((resolve) => {
+    const options = {
+      hostname: 'api.github.com',
+      path: '/repos/mrlynn/voyageai-cli/releases/latest',
+      headers: { 'User-Agent': `Vai/${APP_VERSION}` },
+      timeout: 5000,
+    };
+    const req = https.get(options, (res) => {
+      if (res.statusCode === 302 || res.statusCode === 301) {
+        // Follow redirect
+        https.get(res.headers.location, { headers: options.headers, timeout: 5000 }, handleResponse);
+        return;
+      }
+      handleResponse(res);
+    });
+
+    function handleResponse(res) {
+      let data = '';
+      res.on('data', (chunk) => data += chunk);
+      res.on('end', () => {
+        try {
+          const release = JSON.parse(data);
+          const latestTag = (release.tag_name || '').replace(/^app-v/, '');
+          if (latestTag && compareVersions(latestTag, APP_VERSION) > 0) {
+            resolve({
+              hasUpdate: true,
+              currentVersion: APP_VERSION,
+              latestVersion: latestTag,
+              releaseUrl: release.html_url,
+              releaseName: release.name || `v${latestTag}`,
+              publishedAt: release.published_at,
+            });
+          } else {
+            resolve({ hasUpdate: false, currentVersion: APP_VERSION, latestVersion: latestTag });
+          }
+        } catch {
+          resolve({ hasUpdate: false, currentVersion: APP_VERSION, error: 'parse_error' });
+        }
+      });
+    }
+
+    req.on('error', () => resolve({ hasUpdate: false, currentVersion: APP_VERSION, error: 'network_error' }));
+    req.on('timeout', () => { req.destroy(); resolve({ hasUpdate: false, currentVersion: APP_VERSION, error: 'timeout' }); });
+  });
+}
+
+function compareVersions(a, b) {
+  const pa = a.split('.').map(Number);
+  const pb = b.split('.').map(Number);
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    const na = pa[i] || 0;
+    const nb = pb[i] || 0;
+    if (na > nb) return 1;
+    if (na < nb) return -1;
+  }
+  return 0;
 }
 
 // ── App name & early dock icon (must be set before 'ready') ──
