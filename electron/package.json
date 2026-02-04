@@ -1,6 +1,6 @@
 {
   "name": "voyage-ai-playground",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Vai Playground — Desktop app for exploring embeddings, reranking, and vector search",
   "main": "main.js",
   "author": "Michael Lynn",
@@ -24,19 +24,26 @@
       {
         "from": ".",
         "to": ".",
-        "filter": ["main.js", "preload.js"]
+        "filter": [
+          "main.js",
+          "preload.js"
+        ]
       },
       {
         "from": "icons",
         "to": "icons",
-        "filter": ["**/*"]
+        "filter": [
+          "**/*"
+        ]
       }
     ],
     "extraResources": [
       {
         "from": "../src",
         "to": "src",
-        "filter": ["**/*"]
+        "filter": [
+          "**/*"
+        ]
       },
       {
         "from": "../package.json",
@@ -59,8 +66,16 @@
     "dmg": {
       "title": "Vai Playground",
       "contents": [
-        { "x": 130, "y": 220 },
-        { "x": 410, "y": 220, "type": "link", "path": "/Applications" }
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
       ]
     }
   },
