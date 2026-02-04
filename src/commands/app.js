@@ -99,8 +99,21 @@ function registerApp(program) {
       const electronPkg = path.join(electronDir, 'package.json');
 
       if (!fs.existsSync(electronPkg)) {
-        console.error('❌ Electron app not found. Expected at:', electronDir);
-        process.exit(1);
+        console.log('');
+        console.log('🖥️  The Vai desktop app is not installed locally.');
+        console.log('');
+        console.log('   Download the latest release for your platform:');
+        console.log('');
+        console.log('     vai app --download');
+        console.log('');
+        console.log('   Or grab it directly from GitHub:');
+        console.log('     https://github.com/mrlynn/voyageai-cli/releases/latest');
+        console.log('');
+        console.log('   Don\'t need the desktop app? Use the web playground instead:');
+        console.log('');
+        console.log('     vai playground');
+        console.log('');
+        return;
       }
 
       // Check if electron is installed
