@@ -377,7 +377,26 @@ body {
   color: var(--accent-text);
   white-space: nowrap;
   letter-spacing: -0.2px;
+  flex: 1;
 }
+
+.sidebar-settings-btn {
+  -webkit-app-region: no-drag;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.sidebar-settings-btn:hover { color: var(--text); background: rgba(255,255,255,0.06); }
+.sidebar-settings-btn.active { color: var(--accent); }
+[data-theme="light"] .sidebar-settings-btn:hover { background: rgba(0,0,0,0.04); }
 
 .sidebar-nav {
   flex: 1;
@@ -2277,6 +2296,7 @@ select:focus { outline: none; border-color: var(--accent); }
   <div class="sidebar-drag-region">
     <img class="sidebar-logo" id="sidebarLogo" src="/icons/dark/64.png" alt="Vai">
     <span class="sidebar-title">Vai</span>
+    <button class="sidebar-settings-btn" data-tab="settings" title="Settings"><svg width="16" height="16" viewBox="0 0 16 16"><use href="#lg-config"/></svg></button>
   </div>
   <nav class="sidebar-nav">
     <div class="sidebar-nav-group">
@@ -2293,8 +2313,6 @@ select:focus { outline: none; border-color: var(--accent); }
       <button class="tab-btn" data-tab="explore"><span class="tab-btn-icon"><svg><use href="#lg-bulb"/></svg></span><span>Explore</span></button>
       <button class="tab-btn" data-tab="about"><span class="tab-btn-icon"><svg><use href="#lg-info"/></svg></span><span>About</span></button>
     </div>
-    <div class="sidebar-nav-divider"></div>
-    <button class="tab-btn" data-tab="settings"><span class="tab-btn-icon"><svg><use href="#lg-config"/></svg></span><span>Settings</span></button>
   </nav>
   <div class="sidebar-footer">
     <div style="display:flex;align-items:center;gap:8px;justify-content:space-between;">
@@ -2976,8 +2994,20 @@ Reranking models rescore initial search results to improve relevance ordering.</
           <strong>⚡ Embed</strong> — Generate vector embeddings for any text<br>
           <strong>⚖️ Compare</strong> — Measure similarity with cosine, dot product &amp; euclidean distance<br>
           <strong>🔍 Search</strong> — Semantic search with optional reranking<br>
+          <strong>🔮 Multimodal</strong> — Compare images and text in the same vector space with voyage-multimodal-3.5<br>
           <strong>⏱ Benchmark</strong> — Compare model latency, ranking quality, and costs<br>
-          <strong>📚 Explore</strong> — Learn about embeddings, vector search, RAG, and more
+          <strong>📚 Explore</strong> — Learn about embeddings, vector search, multimodal, RAG, and more
+        </div>
+      </div>
+
+      <div class="about-section">
+        <div class="about-section-title">Supported Models</div>
+        <div class="about-text" style="font-size:13px;">
+          <strong style="color:var(--accent);">Text Embeddings</strong> — voyage-4-large, voyage-4, voyage-4-lite, voyage-code-3, voyage-finance-2, voyage-law-2<br>
+          <strong style="color:var(--accent);">Multimodal</strong> — voyage-multimodal-3.5 (text + images + video in one vector space)<br>
+          <strong style="color:var(--accent);">Reranking</strong> — rerank-2.5, rerank-2.5-lite<br><br>
+          All models are accessible via the <a href="https://docs.voyageai.com/" target="_blank" style="color:var(--blue);">Voyage AI API</a>
+          or through <a href="https://www.mongodb.com/docs/atlas/atlas-vector-search/" target="_blank" style="color:var(--blue);">MongoDB Atlas Vector Search</a>.
         </div>
       </div>
 
@@ -2993,8 +3023,20 @@ Reranking models rescore initial search results to improve relevance ordering.</
       </div>
     </div>
 
+    <div class="card" style="margin-top:16px;">
+      <div class="about-section" style="padding-bottom:0;">
+        <div class="about-section-title">What's New</div>
+        <div class="about-text" style="font-size:13px;">
+          <strong>v1.2</strong> — Multimodal tab (image ↔ text similarity, cross-modal gallery search),
+          4 new Explore concepts (multimodal embeddings, cross-modal search, modality gap, multimodal RAG),
+          auto-update with in-app download &amp; restart, and a hidden easter egg 🕹️
+        </div>
+      </div>
+    </div>
+
     <div style="text-align:center;margin-top:16px;font-size:12px;color:var(--text-muted);">
       Made with ☕ and curiosity · <a href="https://github.com/mrlynn/voyageai-cli" target="_blank" style="color:var(--text-dim);">Source on GitHub</a>
+      · <a href="https://github.com/mrlynn/voyageai-cli/releases" target="_blank" style="color:var(--text-dim);">Releases</a>
     </div>
   </div>
 </div>
@@ -3335,12 +3377,17 @@ async function init() {
 function setupTabs() {
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-      btn.classList.add('active');
-      document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+      switchTab(btn.dataset.tab);
     });
   });
+
+  // Settings cog in header
+  const settingsCog = document.querySelector('.sidebar-settings-btn');
+  if (settingsCog) {
+    settingsCog.addEventListener('click', () => {
+      switchTab(settingsCog.dataset.tab);
+    });
+  }
 }
 
 function switchTab(tab) {
@@ -3350,6 +3397,9 @@ function switchTab(tab) {
   document.querySelectorAll('.tab-panel').forEach(p => {
     p.classList.toggle('active', p.id === 'tab-' + tab);
   });
+  // Sync settings cog highlight
+  const settingsBtn = document.querySelector('.sidebar-settings-btn');
+  if (settingsBtn) settingsBtn.classList.toggle('active', tab === 'settings');
 }
 // Expose globally so Electron main process can call it
 window.switchTab = switchTab;
