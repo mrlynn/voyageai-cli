@@ -64,17 +64,57 @@ function registerApp(program) {
 
       // --download: fetch latest GitHub release and open download URL
       if (opts.download) {
-        const releaseUrl = 'https://api.github.com/repos/mrlynn/voyageai-cli/releases/latest';
+        // Try /releases/latest first, then scan all releases for app-v* tags
+        const latestUrl = 'https://api.github.com/repos/mrlynn/voyageai-cli/releases/latest';
+        const allUrl = 'https://api.github.com/repos/mrlynn/voyageai-cli/releases?per_page=10';
         try {
           console.log('🔍 Checking for the latest desktop app release...');
-          const release = await fetchJSON(releaseUrl);
+
+          let release;
+          try {
+            release = await fetchJSON(latestUrl);
+          } catch {
+            // /releases/latest might 404 — fall back to scanning
+            release = null;
+          }
+
+          // If latest release has no assets or isn't an app release, scan all
+          if (!release || !release.assets || release.assets.length === 0) {
+            const releases = await fetchJSON(allUrl);
+            release = releases.find(
+              (r) => !r.draft && !r.prerelease && r.assets && r.assets.length > 0
+                && r.tag_name && r.tag_name.startsWith('app-v')
+            );
+          }
+
+          if (!release || !release.assets) {
+            console.log('\n❌ No desktop app releases found on GitHub.');
+            console.log('   Run \'vai playground\' for the web version instead.');
+            console.log('   Or visit: https://github.com/mrlynn/voyageai-cli/releases');
+            return;
+          }
 
           const extMap = { darwin: '.dmg', win32: '.exe', linux: '.AppImage' };
           const ext = extMap[process.platform];
 
-          const asset = ext && release.assets
-            ? release.assets.find((a) => a.name.endsWith(ext))
-            : null;
+          if (!ext) {
+            console.log(`\n⚠ No desktop app available for ${process.platform}.`);
+            console.log('   Run \'vai playground\' for the web version instead.');
+            return;
+          }
+
+          // Find matching asset — prefer arch-specific on macOS (arm64 vs x64)
+          const candidates = release.assets.filter((a) => a.name.endsWith(ext));
+          let asset = null;
+
+          if (candidates.length > 1 && process.platform === 'darwin') {
+            const arch = process.arch; // 'arm64' or 'x64'
+            asset = candidates.find((a) => a.name.includes(arch))
+              || candidates.find((a) => a.name.includes('arm64')) // default to arm64
+              || candidates[0];
+          } else {
+            asset = candidates[0] || null;
+          }
 
           if (asset) {
             console.log(`\n✅ Found release: ${release.tag_name || release.name}`);
@@ -83,15 +123,14 @@ function registerApp(program) {
             console.log('Opening download in your browser...');
             openInBrowser(asset.browser_download_url);
           } else {
-            console.log(
-              "No desktop app release found for your platform. Run 'vai playground' for the web version."
-            );
+            console.log(`\n❌ No ${ext} asset found in release ${release.tag_name}.`);
+            console.log('   Available assets:');
+            release.assets.forEach((a) => console.log(`     • ${a.name}`));
+            console.log(`\n   Visit: https://github.com/mrlynn/voyageai-cli/releases`);
           }
         } catch (err) {
-          console.error(
-            "No desktop app release found. Run 'vai playground' for the web version."
-          );
-          if (process.env.DEBUG) console.error(err);
+          console.error('❌ Failed to check GitHub releases:', err.message);
+          console.error('   Visit: https://github.com/mrlynn/voyageai-cli/releases');
         }
         return;
       }
