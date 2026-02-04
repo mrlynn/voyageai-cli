@@ -149,6 +149,17 @@ function createPlaygroundServer() {
 
       // Parse JSON body for POST routes
       if (req.method === 'POST') {
+        // Check for API key before processing any API calls
+        const apiKeyConfigured = !!(process.env.VOYAGE_API_KEY || getConfigValue('apiKey'));
+        if (!apiKeyConfigured) {
+          res.writeHead(401, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({
+            error: 'No API key configured. Run: vai config set api-key <your-key>',
+            code: 'NO_API_KEY',
+          }));
+          return;
+        }
+
         const body = await readBody(req);
         let parsed;
         try {
