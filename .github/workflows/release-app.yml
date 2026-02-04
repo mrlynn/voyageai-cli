@@ -17,11 +17,7 @@ jobs:
         include:
           - os: macos-latest
             platform: mac
-            arch: arm64
-            artifact_glob: '../dist-electron/*.dmg'
-          - os: macos-15-intel
-            platform: mac
-            arch: x64
+            arch: universal
             artifact_glob: '../dist-electron/*.dmg'
           - os: windows-latest
             platform: win
@@ -61,7 +57,11 @@ jobs:
           if [ "${{ matrix.platform }}" = "mac" ] && [ -z "${{ secrets.CSC_LINK }}" ]; then
             EXTRA_ARGS="--config.mac.identity=null"
           fi
-          npm run package:${{ matrix.platform }} -- --${{ matrix.arch }} $EXTRA_ARGS
+          if [ "${{ matrix.arch }}" = "universal" ]; then
+            npm run package:${{ matrix.platform }} -- --arm64 --x64 $EXTRA_ARGS
+          else
+            npm run package:${{ matrix.platform }} -- --${{ matrix.arch }} $EXTRA_ARGS
+          fi
         env:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
