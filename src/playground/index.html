@@ -395,6 +395,65 @@ select:focus { outline: none; border-color: var(--accent); }
   border-radius: 4px;
   transition: width 0.6s ease, background 0.6s ease;
 }
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-top: 24px;
+}
+.metric-card {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 16px;
+  text-align: center;
+  transition: border-color 0.2s;
+}
+.metric-card.primary {
+  border-color: var(--accent);
+  background: var(--accent-glow);
+}
+.metric-card-value {
+  font-family: var(--mono);
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
+}
+.metric-card-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin-top: 10px;
+}
+.metric-card-desc {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 4px;
+  line-height: 1.4;
+}
+.metric-bar {
+  width: 100%;
+  height: 6px;
+  background: var(--bg);
+  border-radius: 3px;
+  margin-top: 12px;
+  overflow: hidden;
+}
+.metric-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.6s ease, background 0.6s ease;
+}
+.metric-note {
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 16px;
+  padding: 10px 16px;
+  background: var(--bg-input);
+  border-radius: 8px;
+  line-height: 1.6;
+}
 
 /* Search tab */
 .search-results {
@@ -1428,7 +1487,9 @@ select:focus { outline: none; border-color: var(--accent); }
           <div class="similarity-bar-inner" id="simBar" style="width:0%"></div>
         </div>
       </div>
-      <div id="compareStats" style="text-align:center;"></div>
+      <div class="metrics-grid" id="metricsGrid"></div>
+      <div class="metric-note" id="metricNote"></div>
+      <div id="compareStats" style="text-align:center;margin-top:16px;"></div>
     </div>
   </div>
 </div>
@@ -1837,7 +1898,7 @@ Reranking models rescore initial search results to improve relevance ordering.</
         <div class="about-section-title">What You Can Do Here</div>
         <div class="about-text">
           <strong>⚡ Embed</strong> — Generate vector embeddings for any text<br>
-          <strong>⚖️ Compare</strong> — Measure cosine similarity between texts<br>
+          <strong>⚖️ Compare</strong> — Measure similarity with cosine, dot product &amp; euclidean distance<br>
           <strong>🔍 Search</strong> — Semantic search with optional reranking<br>
           <strong>⏱ Benchmark</strong> — Compare model latency, ranking quality, and costs<br>
           <strong>📚 Explore</strong> — Learn about embeddings, vector search, RAG, and more
@@ -2166,27 +2227,73 @@ window.doCompare = async function() {
     const dimensions = dims ? parseInt(dims, 10) : undefined;
 
     const data = await apiPost('/api/similarity', { texts: [a, b], model, dimensions });
-    const sim = data.matrix[0][1];
-    const pct = Math.max(0, sim * 100);
 
-    // Color
-    let color;
-    if (sim > 0.7) color = 'var(--green)';
-    else if (sim > 0.4) color = 'var(--yellow)';
-    else color = 'var(--red)';
+    // Get raw embeddings for all metrics
+    const vecA = data.embeddings[0].embedding;
+    const vecB = data.embeddings[1].embedding;
+
+    const cosine = cosineSim(vecA, vecB);
+    const dot = dotProduct(vecA, vecB);
+    const euclid = euclideanDist(vecA, vecB);
+
+    // Hero display — cosine similarity
+    const cosinePct = Math.max(0, cosine * 100);
+    let cosineColor;
+    if (cosine > 0.7) cosineColor = 'var(--green)';
+    else if (cosine > 0.4) cosineColor = 'var(--yellow)';
+    else cosineColor = 'var(--red)';
 
     const scoreEl = document.getElementById('simScore');
-    scoreEl.textContent = sim.toFixed(4);
-    scoreEl.style.color = color;
+    scoreEl.textContent = cosine.toFixed(4);
+    scoreEl.style.color = cosineColor;
 
     const barEl = document.getElementById('simBar');
-    barEl.style.width = pct + '%';
-    barEl.style.background = color;
+    barEl.style.width = cosinePct + '%';
+    barEl.style.background = cosineColor;
+
+    // Metric cards — all three
+    const dotColor = dot > 0.7 ? 'var(--green)' : dot > 0.4 ? 'var(--yellow)' : 'var(--red)';
+    // Euclidean: 0 = identical, ~2 = max for normalized vectors. Invert for color.
+    const euclidColor = euclid < 0.6 ? 'var(--green)' : euclid < 1.0 ? 'var(--yellow)' : 'var(--red)';
+    // For euclidean bar, invert: 0 dist = 100% bar, 2.0 dist = 0%
+    const euclidPct = Math.max(0, Math.min(100, (1 - euclid / 2) * 100));
+
+    const metricsEl = document.getElementById('metricsGrid');
+    metricsEl.innerHTML = `
+      <div class="metric-card primary">
+        <div class="metric-card-value" style="color:${cosineColor}">${cosine.toFixed(4)}</div>
+        <div class="metric-card-name">Cosine Similarity</div>
+        <div class="metric-card-desc">Angle between vectors (−1 to 1). Standard for semantic search.</div>
+        <div class="metric-bar"><div class="metric-bar-fill" style="width:${cosinePct}%;background:${cosineColor}"></div></div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-card-value" style="color:${dotColor}">${dot.toFixed(4)}</div>
+        <div class="metric-card-name">Dot Product</div>
+        <div class="metric-card-desc">Sum of element-wise products. Equals cosine for normalized vectors.</div>
+        <div class="metric-bar"><div class="metric-bar-fill" style="width:${Math.max(0, dot * 100)}%;background:${dotColor}"></div></div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-card-value" style="color:${euclidColor}">${euclid.toFixed(4)}</div>
+        <div class="metric-card-name">Euclidean Distance</div>
+        <div class="metric-card-desc">Straight-line distance (0 = identical). Lower is more similar.</div>
+        <div class="metric-bar"><div class="metric-bar-fill" style="width:${euclidPct}%;background:${euclidColor}"></div></div>
+      </div>
+    `;
+
+    // Insight note
+    const noteEl = document.getElementById('metricNote');
+    const diff = Math.abs(cosine - dot);
+    if (diff < 0.001) {
+      noteEl.innerHTML = '💡 <strong>Cosine ≈ Dot Product</strong> — these vectors are L2-normalized (as Voyage AI models produce), so cosine similarity and dot product give identical results. Euclidean distance is <code>√(2 − 2·cosine)</code> for normalized vectors.';
+    } else {
+      noteEl.innerHTML = '💡 Cosine and dot product differ because these vectors are not perfectly L2-normalized. Atlas Vector Search uses cosine by default.';
+    }
 
     // Stats
     const statsEl = document.getElementById('compareStats');
     statsEl.innerHTML = `
       <span class="stat"><span class="stat-label">Model</span><span class="stat-value">${data.model}</span></span>
+      <span class="stat"><span class="stat-label">Dimensions</span><span class="stat-value">${vecA.length}</span></span>
       <span class="stat"><span class="stat-label">Tokens</span><span class="stat-value">${data.usage?.total_tokens || '—'}</span></span>
     `;
 
@@ -2261,6 +2368,18 @@ function cosineSim(a, b) {
     normB += b[i] * b[i];
   }
   return dot / (Math.sqrt(normA) * Math.sqrt(normB));
+}
+
+function dotProduct(a, b) {
+  let sum = 0;
+  for (let i = 0; i < a.length; i++) sum += a[i] * b[i];
+  return sum;
+}
+
+function euclideanDist(a, b) {
+  let sum = 0;
+  for (let i = 0; i < a.length; i++) sum += (a[i] - b[i]) ** 2;
+  return Math.sqrt(sum);
 }
 
 function renderSearchResults(embResults, rerankResults) {
