@@ -19,6 +19,12 @@
   ],
   "author": "Michael Lynn",
   "license": "MIT",
+  "files": [
+    "src/",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/mrlynn/voyageai-cli"
