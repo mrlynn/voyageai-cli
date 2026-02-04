@@ -479,7 +479,20 @@ app.whenReady().then(async () => {
     }
   }
 
-  // Check for API key — show warning only if no env var AND no stored key
+  // Also check ~/.vai/config.json (CLI config file) as fallback
+  if (!process.env.VOYAGE_API_KEY) {
+    try {
+      const cliConfigPath = path.join(require('os').homedir(), '.vai', 'config.json');
+      if (fs.existsSync(cliConfigPath)) {
+        const cliConfig = JSON.parse(fs.readFileSync(cliConfigPath, 'utf8'));
+        if (cliConfig.apiKey) {
+          process.env.VOYAGE_API_KEY = cliConfig.apiKey;
+        }
+      }
+    } catch { /* ignore */ }
+  }
+
+  // Check for API key — show warning only if no env var, no stored key, AND no CLI config
   if (!process.env.VOYAGE_API_KEY) {
     const result = dialog.showMessageBoxSync({
       type: 'warning',
