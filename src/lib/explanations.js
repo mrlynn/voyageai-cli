@@ -816,7 +816,10 @@ const concepts = {
       'https://arxiv.org/abs/2203.02053',
       'https://blog.voyageai.com/2024/11/12/voyage-multimodal-3/',
     ],
-    tryIt: [],
+    tryIt: [
+      'vai explain multimodal-embeddings',
+      'vai explain cross-modal-search',
+    ],
   },
 
   'multimodal-rag': {

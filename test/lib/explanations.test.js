@@ -24,6 +24,10 @@ describe('explanations', () => {
     'rteb-benchmarks',
     'voyage-4-nano',
     'rerank-eval',
+    'multimodal-embeddings',
+    'cross-modal-search',
+    'modality-gap',
+    'multimodal-rag',
   ];
 
   it('has all expected concepts', () => {
