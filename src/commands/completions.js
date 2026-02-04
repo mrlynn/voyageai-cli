@@ -91,7 +91,7 @@ _vai_completions() {
       return 0
       ;;
     explain)
-      COMPREPLY=( \$(compgen -W "embeddings reranking vector-search rag cosine-similarity two-stage-retrieval input-type models api-keys api-access batch-processing --help" -- "\$cur") )
+      COMPREPLY=( \$(compgen -W "embeddings reranking vector-search rag cosine-similarity two-stage-retrieval input-type models api-keys api-access batch-processing quantization benchmarking mixture-of-experts shared-embedding-space rteb-benchmarks voyage-4-nano rerank-eval --help" -- "\$cur") )
       return 0
       ;;
     similarity)
@@ -123,7 +123,7 @@ _vai_completions() {
       return 0
       ;;
     eval)
-      COMPREPLY=( \$(compgen -W "--test-set --db --collection --index --field --model --dimensions --limit --k-values --rerank --no-rerank --rerank-model --text-field --id-field --compare --json --quiet --help" -- "\$cur") )
+      COMPREPLY=( \$(compgen -W "--test-set --mode --db --collection --index --field --model --models --dimensions --limit --k-values --rerank --no-rerank --rerank-model --top-k --text-field --id-field --compare --json --quiet --help" -- "\$cur") )
       return 0
       ;;
     completions)
@@ -201,7 +201,7 @@ _vai() {
     'chunk:Chunk documents for embedding'
     'query:Search + rerank in one shot'
     'pipeline:Chunk, embed, and store documents'
-    'eval:Evaluate retrieval quality (MRR, NDCG, recall)'
+    'eval:Evaluate retrieval & reranking quality (MRR, NDCG, recall)'
     'completions:Generate shell completion scripts'
     'help:Display help for command'
   )
@@ -210,7 +210,7 @@ _vai() {
   models=(voyage-4-large voyage-4 voyage-4-lite voyage-code-3 voyage-finance-2 voyage-law-2 voyage-multimodal-3.5 rerank-2.5 rerank-2.5-lite)
 
   local -a explain_topics
-  explain_topics=(embeddings reranking vector-search rag cosine-similarity two-stage-retrieval input-type models api-keys api-access batch-processing)
+  explain_topics=(embeddings reranking vector-search rag cosine-similarity two-stage-retrieval input-type models api-keys api-access batch-processing quantization benchmarking mixture-of-experts shared-embedding-space rteb-benchmarks voyage-4-nano rerank-eval)
 
   _arguments -C \\
     '(-V --version)'{-V,--version}'[output the version number]' \\
@@ -483,17 +483,20 @@ _vai() {
         eval)
           _arguments \\
             '--test-set[JSONL test set file]:file:_files' \\
+            '--mode[Evaluation mode]:mode:(retrieval rerank)' \\
             '--db[Database name]:database:' \\
             '--collection[Collection name]:collection:' \\
             '--index[Vector search index]:index:' \\
             '--field[Embedding field]:field:' \\
-            '(-m --model)'{-m,--model}'[Embedding model]:model:(\$models)' \\
+            '(-m --model)'{-m,--model}'[Embedding/rerank model]:model:(\$models)' \\
+            '--models[Compare multiple rerank models]:models:' \\
             '(-d --dimensions)'{-d,--dimensions}'[Output dimensions]:dims:' \\
             '(-l --limit)'{-l,--limit}'[Search candidates]:limit:' \\
             '(-k --k-values)'{-k,--k-values}'[K values for metrics]:values:' \\
             '--rerank[Enable reranking]' \\
             '--no-rerank[Skip reranking]' \\
             '--rerank-model[Reranking model]:model:' \\
+            '--top-k[Top-K results from reranker]:k:' \\
             '--text-field[Document text field]:field:' \\
             '--id-field[Document ID field]:field:' \\
             '--compare[Compare configs]:configs:' \\

@@ -676,6 +676,53 @@ const concepts = {
       'vai benchmark space',
     ],
   },
+
+  'rerank-eval': {
+    title: 'Reranking Evaluation — nDCG, Recall, MRR for Rerankers',
+    summary: 'Measure how well a reranker surfaces relevant documents',
+    content: [
+      `${pc.bold('What is reranking evaluation?')}`,
+      `After an initial retrieval step (vector search, BM25, etc.) returns candidate`,
+      `documents, a reranker re-orders them by relevance. Evaluation measures how well`,
+      `the reranker puts the truly relevant documents at the top of the list.`,
+      ``,
+      `${pc.bold('Key metrics:')}`,
+      `  ${pc.dim('•')} ${pc.cyan('nDCG@K')} — Normalized Discounted Cumulative Gain. Measures ranking quality`,
+      `    with position-weighted scoring. A result at rank 1 matters more than rank 10.`,
+      `    Range: 0.0 (worst) to 1.0 (perfect). The standard metric for reranker leaderboards.`,
+      `  ${pc.dim('•')} ${pc.cyan('Recall@K')} — What fraction of relevant documents appear in the top K?`,
+      `    Recall@5 = 0.8 means 80% of relevant docs are in the top 5.`,
+      `  ${pc.dim('•')} ${pc.cyan('MRR')} — Mean Reciprocal Rank. 1/position of the first relevant result.`,
+      `    MRR = 1.0 means every query's first result is relevant.`,
+      `  ${pc.dim('•')} ${pc.cyan('MAP')} — Mean Average Precision. Area under the precision-recall curve.`,
+      `  ${pc.dim('•')} ${pc.cyan('P@K')} — Precision at K. Fraction of top-K results that are relevant.`,
+      ``,
+      `${pc.bold('Test set format (JSONL):')}`,
+      `  ${pc.dim('{"query": "...", "documents": ["doc1", "doc2", ...], "relevant": [0, 2]}')}`,
+      `  • ${pc.cyan('query')} — The search query`,
+      `  • ${pc.cyan('documents')} — Candidate documents to rerank`,
+      `  • ${pc.cyan('relevant')} — Indices into documents array that are relevant`,
+      ``,
+      `${pc.bold('Comparing rerankers:')}`,
+      `Use ${pc.cyan('--models')} to compare multiple rerank models side by side.`,
+      `The evaluation shows nDCG, Recall, latency, cost, and ranking agreement.`,
+      `High agreement (>80%) on top-5 rankings suggests the cheaper model is sufficient.`,
+      ``,
+      `${pc.bold('How this relates to embedding eval:')}`,
+      `  ${pc.dim('•')} ${pc.cyan('vai eval')} (default) evaluates the full pipeline: embed → search → (rerank)`,
+      `  ${pc.dim('•')} ${pc.cyan('vai eval --mode rerank')} evaluates reranking in isolation`,
+      `  Use both: first optimize your embedding retrieval, then optimize reranking.`,
+    ].join('\n'),
+    links: [
+      'https://agentset.ai/rerankers',
+      'https://en.wikipedia.org/wiki/Discounted_cumulative_gain',
+    ],
+    tryIt: [
+      'vai eval --mode rerank --test-set rerank-test.jsonl',
+      'vai eval --mode rerank --models "rerank-2.5,rerank-2.5-lite" --test-set test.jsonl',
+      'vai eval --mode rerank --test-set test.jsonl --json',
+    ],
+  },
 };
 
 /**
@@ -750,6 +797,12 @@ const aliases = {
   'open-weight': 'voyage-4-nano',
   huggingface: 'voyage-4-nano',
   local: 'voyage-4-nano',
+  'rerank-eval': 'rerank-eval',
+  'reranking-eval': 'rerank-eval',
+  ndcg: 'rerank-eval',
+  recall: 'rerank-eval',
+  mrr: 'rerank-eval',
+  'eval-rerank': 'rerank-eval',
 };
 
 /**
