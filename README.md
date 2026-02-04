@@ -398,21 +398,20 @@ Covers all 22 commands, subcommands, flags, model names, and explain topics.
 
 ## Screenshots
 
-> 📸 **Coming soon** — Screenshots of the Desktop App, Web Playground, and CLI in action will be added here.
+### Desktop App — Dark Theme
+![Vai - Embed Tab (Dark)](screenshots/vai-dark-embed.png)
 
-<!-- 
-### Desktop App
-![Desktop App - Embed Tab](screenshots/desktop-embed.png)
-![Desktop App - Dark Theme](screenshots/desktop-dark.png)
+### Desktop App — Settings
+![Vai - Settings (Dark)](screenshots/vai-dark-settings.png)
 
-### Web Playground
-![Playground - Compare Tab](screenshots/playground-compare.png)
-![Playground - Explore Tab](screenshots/playground-explore.png)
+### Desktop App — Light Theme
+![Vai - Embed Tab (Light)](screenshots/vai-light-embed.png)
 
-### CLI
-![CLI - Pipeline](screenshots/cli-pipeline.png)
-![CLI - Query Results](screenshots/cli-query.png)
--->
+### Search & Reranking
+![Vai - Search Tab](screenshots/vai-dark-search.png)
+
+### Benchmark
+![Vai - Benchmark Tab](screenshots/vai-dark-benchmark.png)
 
 ---
 
