@@ -5859,6 +5859,7 @@ function startVSI(canvas, onExit) {
   let boss = null;
   let frame = 0;
   let lastShot = 0;
+  let waveQueued = false;
 
   const keys = {};
   const keyDown = (e) => { keys[e.key] = true; if (['ArrowLeft','ArrowRight',' ','Escape'].includes(e.key)) e.preventDefault(); if (e.key === 'Escape') { cleanup(); onExit(); } };
@@ -5946,7 +5947,8 @@ function startVSI(canvas, onExit) {
             boss = null;
             bossMode = false;
             wave++;
-            setTimeout(spawnWave, 1000);
+            waveQueued = true;
+            setTimeout(() => { waveQueued = false; spawnWave(); }, 1000);
           }
         }
       }
@@ -5997,9 +5999,10 @@ function startVSI(canvas, onExit) {
     }
 
     // Next wave
-    if (!bossMode && enemies.length === 0 && !gameOver) {
+    if (!bossMode && enemies.length === 0 && !gameOver && !waveQueued) {
       wave++;
-      setTimeout(spawnWave, 800);
+      waveQueued = true;
+      setTimeout(() => { waveQueued = false; spawnWave(); }, 800);
     }
 
     // Particles
@@ -6128,7 +6131,7 @@ function startVSI(canvas, onExit) {
 
       if (keys[' ']) {
         // Restart
-        score = 0; wave = 1; lives = 3; gameOver = false;
+        score = 0; wave = 1; lives = 3; gameOver = false; waveQueued = false;
         enemies = []; bullets.length = 0; particles.length = 0; explosionTexts.length = 0;
         boss = null; bossMode = false; ship.x = W / 2;
         spawnWave();
