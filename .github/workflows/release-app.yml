@@ -54,7 +54,7 @@ jobs:
         shell: bash
         run: |
           EXTRA_ARGS=""
-          if [ "${{ matrix.platform }}" = "mac" ] && [ -z "${{ secrets.CSC_LINK }}" ]; then
+          if [ "${{ matrix.platform }}" = "mac" ] && [ -z "$CSC_LINK" ]; then
             EXTRA_ARGS="--config.mac.identity=null"
           fi
           if [ "${{ matrix.arch }}" = "universal" ]; then
@@ -68,7 +68,7 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           CSC_LINK: ${{ secrets.CSC_LINK }}
           CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
-          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+          CSC_IDENTITY_AUTO_DISCOVERY: "true"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
