@@ -96,7 +96,6 @@ function updateDockIcon() {
 // ── Update Checker ──
 // Checks GitHub Releases for a newer version on launch (non-blocking)
 
-const GITHUB_RELEASES_URL = 'https://api.github.com/repos/mrlynn/voyageai-cli/releases/latest';
 const APP_VERSION = require('./package.json').version;
 function getCliVersion() {
   try {
@@ -111,16 +110,21 @@ function getCliVersion() {
 function checkForUpdates() {
   const https = require('https');
   return new Promise((resolve) => {
+    // Fetch recent releases (not /latest, which may return a CLI release instead
+    // of a desktop app release). We look for the newest release tagged `app-v*`.
     const options = {
       hostname: 'api.github.com',
-      path: '/repos/mrlynn/voyageai-cli/releases/latest',
+      path: '/repos/mrlynn/voyageai-cli/releases?per_page=20',
       headers: { 'User-Agent': `Vai/${APP_VERSION}` },
       timeout: 5000,
     };
     const req = https.get(options, (res) => {
       if (res.statusCode === 302 || res.statusCode === 301) {
-        // Follow redirect
-        https.get(res.headers.location, { headers: options.headers, timeout: 5000 }, handleResponse);
+        const redirectOpts = {
+          headers: options.headers,
+          timeout: 5000,
+        };
+        https.get(res.headers.location, redirectOpts, handleResponse);
         return;
       }
       handleResponse(res);
@@ -131,7 +135,20 @@ function checkForUpdates() {
       res.on('data', (chunk) => data += chunk);
       res.on('end', () => {
         try {
-          const release = JSON.parse(data);
+          const releases = JSON.parse(data);
+          // Find the first (newest) release whose tag starts with "app-v"
+          const appRelease = Array.isArray(releases)
+            ? releases.find(r => r.tag_name && r.tag_name.startsWith('app-v'))
+            : null;
+
+          // Fallback: if no app-v* release found, try the single-object
+          // response (in case the API returned a single release)
+          const release = appRelease || (releases && releases.tag_name ? releases : null);
+          if (!release) {
+            resolve({ hasUpdate: false, currentVersion: APP_VERSION, error: 'no_app_release' });
+            return;
+          }
+
           const latestTag = (release.tag_name || '').replace(/^app-v/, '');
           if (latestTag && compareVersions(latestTag, APP_VERSION) > 0) {
             resolve({
