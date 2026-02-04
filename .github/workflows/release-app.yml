@@ -58,9 +58,9 @@ jobs:
             EXTRA_ARGS="--config.mac.identity=null"
           fi
           if [ "${{ matrix.arch }}" = "universal" ]; then
-            npm run package:${{ matrix.platform }} -- --arm64 --x64 $EXTRA_ARGS
+            npm run package:${{ matrix.platform }} -- --arm64 --x64 --publish never $EXTRA_ARGS
           else
-            npm run package:${{ matrix.platform }} -- --${{ matrix.arch }} $EXTRA_ARGS
+            npm run package:${{ matrix.platform }} -- --${{ matrix.arch }} --publish never $EXTRA_ARGS
           fi
         env:
           APPLE_ID: ${{ secrets.APPLE_ID }}
