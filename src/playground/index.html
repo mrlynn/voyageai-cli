@@ -1982,7 +1982,242 @@ select:focus { outline: none; border-color: var(--accent); }
 .settings-api-key-missing { color: var(--warning); }
 .settings-row .settings-select, .settings-row .settings-input { text-align: right; }
 
+/* ── Multimodal Tab ── */
+.mm-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.mm-drop-zone {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 40px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+  background: var(--bg-input);
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+.mm-drop-zone:hover {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+.mm-drop-zone.drag-active {
+  border-color: var(--accent);
+  background: var(--accent-glow);
+  box-shadow: 0 0 0 4px var(--accent-glow);
+}
+.mm-drop-zone .mm-drop-icon {
+  font-size: 40px;
+  opacity: 0.6;
+}
+.mm-drop-zone .mm-drop-text {
+  color: var(--text-dim);
+  font-size: 14px;
+}
+.mm-drop-zone .mm-drop-hint {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+.mm-preview {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+}
+.mm-preview.visible { display: flex; }
+.mm-preview img {
+  max-height: 300px;
+  max-width: 100%;
+  object-fit: contain;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+.mm-preview .mm-file-info {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-family: var(--mono);
+}
+.mm-preview .mm-clear-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  border-radius: 6px;
+  padding: 4px 14px;
+  font-size: 12px;
+  cursor: pointer;
+  font-family: var(--font);
+  transition: border-color 0.15s, color 0.15s;
+}
+.mm-preview .mm-clear-btn:hover {
+  border-color: var(--error);
+  color: var(--error);
+}
+.mm-gallery-section {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+}
+.mm-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.mm-gallery-slot {
+  aspect-ratio: 1;
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  background: var(--bg-input);
+  position: relative;
+  overflow: hidden;
+}
+.mm-gallery-slot:hover {
+  border-color: var(--accent);
+  background: var(--accent-glow);
+}
+.mm-gallery-slot.filled {
+  border-style: solid;
+  cursor: default;
+  padding: 0;
+}
+.mm-gallery-slot.filled img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: calc(var(--radius) - 2px);
+}
+.mm-gallery-slot .mm-slot-remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: rgba(0,0,0,0.6);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  font-size: 13px;
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+.mm-gallery-slot.filled:hover .mm-slot-remove { display: flex; }
+.mm-gallery-slot .mm-slot-add {
+  font-size: 28px;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+.mm-gallery-slot.query-selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+.mm-result-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.mm-result-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  transition: border-color 0.15s;
+}
+.mm-result-item:first-child {
+  border-color: var(--accent);
+  background: var(--accent-glow);
+}
+.mm-result-item .mm-result-rank {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--text-muted);
+  min-width: 28px;
+  text-align: center;
+}
+.mm-result-item:first-child .mm-result-rank { color: var(--accent); }
+.mm-result-item .mm-result-thumb {
+  width: 48px;
+  height: 48px;
+  border-radius: 6px;
+  object-fit: cover;
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.mm-result-item .mm-result-content {
+  flex: 1;
+  min-width: 0;
+}
+.mm-result-item .mm-result-text {
+  font-size: 14px;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mm-result-item .mm-result-type {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.mm-result-item .mm-result-score {
+  font-family: var(--mono);
+  font-weight: 600;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.mm-search-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.mm-search-row input[type="text"] {
+  flex: 1;
+}
+.mm-search-mode {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.mm-search-mode button {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  font-family: var(--font);
+  transition: all 0.15s;
+}
+.mm-search-mode button.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-glow);
+}
+
 @media (max-width: 768px) {
+  .mm-grid { grid-template-columns: 1fr; }
+  .mm-gallery-grid { grid-template-columns: repeat(3, 1fr); }
   .compare-grid, .search-results { grid-template-columns: 1fr; }
   .sidebar { width: 56px; min-width: 56px; }
   .sidebar-title, .status-label { display: none; }
@@ -2022,6 +2257,9 @@ select:focus { outline: none; border-color: var(--accent); }
   <symbol id="lg-info" viewBox="0 0 16 16">
     <path fill-rule="evenodd" clip-rule="evenodd" d="M8 15C11.866 15 15 11.866 15 8C15 4.13401 11.866 1 8 1C4.13401 1 1 4.13401 1 8C1 11.866 4.13401 15 8 15ZM9 4C9 4.55228 8.55228 5 8 5C7.44772 5 7 4.55228 7 4C7 3.44772 7.44772 3 8 3C8.55228 3 9 3.44772 9 4ZM8 6C8.55228 6 9 6.44772 9 7V11H9.5C9.77614 11 10 11.2239 10 11.5C10 11.7761 9.77614 12 9.5 12H6.5C6.22386 12 6 11.7761 6 11.5C6 11.2239 6.22386 11 6.5 11H7V7H6.5C6.22386 7 6 6.77614 6 6.5C6 6.22386 6.22386 6 6.5 6H8Z" fill="currentColor"/>
   </symbol>
+  <symbol id="lg-image" viewBox="0 0 16 16">
+    <path fill-rule="evenodd" clip-rule="evenodd" d="M2 3C2 2.44772 2.44772 2 3 2H13C13.5523 2 14 2.44772 14 3V13C14 13.5523 13.5523 14 13 14H3C2.44772 14 2 13.5523 2 13V3ZM4 4V9.586L5.793 7.793C6.183 7.403 6.817 7.403 7.207 7.793L8.5 9.086L10.293 7.293C10.683 6.903 11.317 6.903 11.707 7.293L12 7.586V4H4ZM12 10.414L10.5 8.914L8.207 11.207C7.817 11.597 7.183 11.597 6.793 11.207L5.5 9.914L4 11.414V12H12V10.414ZM10 5.5C10 6.328 10.672 7 11.5 7C11.776 7 12 6.776 12 6.5V5C12 4.724 11.776 4.5 11.5 4.5H10.5C10.224 4.5 10 4.724 10 5V5.5Z" fill="currentColor"/>
+  </symbol>
   <symbol id="lg-config" viewBox="0 0 16 16">
     <path d="M12.7 2.56989C12.41 2.56989 12.17 2.80989 12.17 3.09989V4.34989L11.32 3.49989C9.21 1.39989 5.75 1.51989 3.78 3.75989C2.65 5.03989 2.23 6.82989 2.68 8.48989C3.24 10.5299 4.98 12.0099 7.08 12.2299L8.1 12.3399C8.42 13.2799 9.3 13.9499 10.34 13.9499C11.65 13.9499 12.71 12.8899 12.71 11.5799C12.71 10.2699 11.65 9.20989 10.34 9.20989C9.14 9.20989 8.16 10.0999 8 11.2599L7.19 11.1799C5.53 11.0099 4.14 9.82989 3.7 8.21989C3.34 6.90989 3.67 5.48989 4.58 4.46989C6.15 2.68989 8.9 2.59989 10.57 4.26989L11.42 5.11989H10.17C9.88 5.11989 9.64 5.35989 9.64 5.64989C9.64 5.93989 9.88 6.17989 10.17 6.17989H12.71C13 6.17989 13.24 5.93989 13.24 5.64989V3.09989C13.24 2.80989 13 2.56989 12.71 2.56989H12.7ZM10.34 10.3099C11.04 10.3099 11.6 10.8799 11.6 11.5699C11.6 12.2599 11.03 12.8299 10.34 12.8299C9.65 12.8299 9.08 12.2599 9.08 11.5699C9.08 10.8799 9.65 10.3099 10.34 10.3099Z" fill="currentColor"/>
   </symbol>
@@ -2041,6 +2279,7 @@ select:focus { outline: none; border-color: var(--accent); }
       <button class="tab-btn active" data-tab="embed"><span class="tab-btn-icon"><svg><use href="#lg-lightning"/></svg></span><span>Embed</span></button>
       <button class="tab-btn" data-tab="compare"><span class="tab-btn-icon"><svg><use href="#lg-arrows"/></svg></span><span>Compare</span></button>
       <button class="tab-btn" data-tab="search"><span class="tab-btn-icon"><svg><use href="#lg-search"/></svg></span><span>Search</span></button>
+      <button class="tab-btn" data-tab="multimodal"><span class="tab-btn-icon"><svg><use href="#lg-image"/></svg></span><span>Multimodal</span></button>
     </div>
     <div class="sidebar-nav-divider"></div>
     <div class="sidebar-nav-group">
@@ -2244,6 +2483,121 @@ Semantic search understands meaning beyond keyword matching</textarea>
 
   <div class="result-section" id="searchResult">
     <div class="search-results" id="searchResultGrid"></div>
+  </div>
+</div>
+
+<!-- ========== MULTIMODAL TAB ========== -->
+<div class="tab-panel" id="tab-multimodal">
+  <div class="page-header">
+    <h2 class="page-header-title">Multimodal</h2>
+    <p class="page-header-subtitle">Compare images and text in the same vector space</p>
+    <p class="page-header-hint">Voyage AI's multimodal models embed images and text into a unified vector space — so you can compare them directly with cosine similarity.</p>
+  </div>
+
+  <!-- Section A: Image ↔ Text Similarity -->
+  <div class="mm-grid">
+    <div class="card">
+      <div class="card-title">Image</div>
+      <div class="mm-drop-zone" id="mmDropZone">
+        <div class="mm-drop-icon">🖼️</div>
+        <div class="mm-drop-text">Drop an image here or click to browse</div>
+        <div class="mm-drop-hint">PNG, JPEG, WebP, GIF — max 20 MB · Paste from clipboard (⌘V)</div>
+      </div>
+      <input type="file" id="mmFileInput" accept="image/png,image/jpeg,image/webp,image/gif" style="display:none">
+      <div class="mm-preview" id="mmPreview">
+        <img id="mmPreviewImg" src="" alt="Preview">
+        <div class="mm-file-info" id="mmFileInfo"></div>
+        <button class="mm-clear-btn" onclick="clearMultimodalImage()">✕ Clear</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Text</div>
+      <textarea id="mmText" rows="8" placeholder="Describe what you see, or enter any text to compare against the image..."></textarea>
+    </div>
+  </div>
+
+  <div class="options-row">
+    <div class="option-group">
+      <span class="option-label">Model</span>
+      <select id="mmModel">
+        <option value="voyage-multimodal-3.5">voyage-multimodal-3.5</option>
+        <option value="voyage-multimodal-3">voyage-multimodal-3</option>
+      </select>
+    </div>
+    <div class="option-group">
+      <span class="option-label">Dimensions</span>
+      <select id="mmDimensions">
+        <option value="">Default</option>
+        <option value="256">256</option>
+        <option value="512">512</option>
+        <option value="1024">1024</option>
+        <option value="2048">2048</option>
+      </select>
+    </div>
+    <button class="btn" id="mmCompareBtn" onclick="doMultimodalCompare()">🔮 Compare</button>
+  </div>
+
+  <div class="error-msg" id="mmError"></div>
+
+  <div class="result-section" id="mmResult">
+    <div class="card">
+      <div class="similarity-display">
+        <div class="similarity-score" id="mmSimScore">—</div>
+        <div class="similarity-label">Cosine Similarity</div>
+        <div class="similarity-bar-outer">
+          <div class="similarity-bar-inner" id="mmSimBar" style="width:0%"></div>
+        </div>
+      </div>
+      <div id="mmStats" style="text-align:center;margin-top:16px;"></div>
+      <div class="metric-note" id="mmNote" style="margin-top:16px;"></div>
+    </div>
+  </div>
+
+  <!-- Section B: Cross-Modal Gallery -->
+  <div class="mm-gallery-section">
+    <h3 style="color:var(--accent-text);margin-bottom:4px;">Cross-Modal Gallery</h3>
+    <p style="color:var(--text-dim);font-size:13px;margin-bottom:16px;">Build a mini corpus of images and texts, then search across both modalities at once.</p>
+
+    <div class="card">
+      <div class="card-title">Image Corpus (up to 6)</div>
+      <div class="mm-gallery-grid" id="mmGalleryGrid"></div>
+      <input type="file" id="mmGalleryFileInput" accept="image/png,image/jpeg,image/webp,image/gif" style="display:none">
+    </div>
+
+    <div class="card" style="margin-top:12px;">
+      <div class="card-title">Text Corpus (one per line)</div>
+      <textarea id="mmCorpusText" rows="5" placeholder="A sunset over the ocean&#10;A cat sitting on a windowsill&#10;Abstract geometric patterns&#10;A city skyline at night"></textarea>
+    </div>
+
+    <div class="card" style="margin-top:12px;">
+      <div class="card-title">Search Query</div>
+      <div class="mm-search-mode" id="mmSearchMode">
+        <button class="active" data-mode="text" onclick="setMmSearchMode('text')">📝 Text Query</button>
+        <button data-mode="image" onclick="setMmSearchMode('image')">🖼️ Image Query</button>
+      </div>
+      <div id="mmSearchTextWrap">
+        <div class="mm-search-row">
+          <input type="text" id="mmSearchQuery" placeholder="Enter a search query...">
+          <button class="btn" id="mmSearchBtn" onclick="doMultimodalSearch()">🔮 Search Corpus</button>
+        </div>
+      </div>
+      <div id="mmSearchImageWrap" style="display:none;">
+        <p style="font-size:13px;color:var(--text-dim);margin-bottom:8px;">Click an image in the corpus above to use it as the search query, then:</p>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <span id="mmSearchImageLabel" style="font-size:13px;color:var(--text-muted);">No image selected</span>
+          <button class="btn" id="mmSearchImgBtn" onclick="doMultimodalSearch()">🔮 Search Corpus</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="error-msg" id="mmSearchError"></div>
+
+    <div class="result-section" id="mmSearchResult">
+      <div class="card">
+        <div class="card-title">Search Results</div>
+        <div class="mm-result-list" id="mmSearchResultList"></div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -5000,6 +5354,364 @@ function initOnboarding() {
   window.startOnboarding = startOnboarding;
 }
 
+// ── Multimodal Tab ──
+let mmImageData = null; // base64 data URL of the uploaded image
+let mmGalleryImages = []; // array of { dataUrl, name, size }
+let mmSearchMode = 'text';
+let mmSearchImageIndex = -1;
+
+function initMultimodal() {
+  const dropZone = document.getElementById('mmDropZone');
+  const fileInput = document.getElementById('mmFileInput');
+
+  // Click to browse
+  dropZone.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', (e) => {
+    if (e.target.files && e.target.files[0]) handleMultimodalImage(e.target.files[0]);
+  });
+
+  // Drag and drop
+  ['dragenter', 'dragover'].forEach(evt => {
+    dropZone.addEventListener(evt, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dropZone.classList.add('drag-active');
+    });
+  });
+  ['dragleave', 'drop'].forEach(evt => {
+    dropZone.addEventListener(evt, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dropZone.classList.remove('drag-active');
+    });
+  });
+  dropZone.addEventListener('drop', (e) => {
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleMultimodalImage(e.dataTransfer.files[0]);
+    }
+  });
+
+  // Paste from clipboard
+  document.addEventListener('paste', (e) => {
+    // Only handle if multimodal tab is active
+    const panel = document.getElementById('tab-multimodal');
+    if (!panel || !panel.classList.contains('active')) return;
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    for (const item of items) {
+      if (item.type.startsWith('image/')) {
+        e.preventDefault();
+        handleMultimodalImage(item.getAsFile());
+        return;
+      }
+    }
+  });
+
+  // Gallery
+  renderGalleryGrid();
+
+  const galleryInput = document.getElementById('mmGalleryFileInput');
+  galleryInput.addEventListener('change', (e) => {
+    if (e.target.files && e.target.files[0]) {
+      addGalleryImage(e.target.files[0]);
+    }
+    galleryInput.value = '';
+  });
+}
+
+function handleMultimodalImage(file) {
+  const VALID_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/gif'];
+  if (!VALID_TYPES.includes(file.type)) {
+    showError('mmError', 'Unsupported image type. Use PNG, JPEG, WebP, or GIF.');
+    return;
+  }
+  if (file.size > 20 * 1024 * 1024) {
+    showError('mmError', 'Image too large. Maximum size is 20 MB.');
+    return;
+  }
+  hideError('mmError');
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    mmImageData = e.target.result;
+    const img = document.getElementById('mmPreviewImg');
+    img.src = mmImageData;
+
+    img.onload = () => {
+      const info = document.getElementById('mmFileInfo');
+      const sizeStr = file.size > 1024 * 1024
+        ? (file.size / (1024 * 1024)).toFixed(1) + ' MB'
+        : (file.size / 1024).toFixed(0) + ' KB';
+      info.textContent = `${file.name} · ${img.naturalWidth}×${img.naturalHeight} · ${sizeStr}`;
+    };
+
+    document.getElementById('mmDropZone').style.display = 'none';
+    document.getElementById('mmPreview').classList.add('visible');
+  };
+  reader.readAsDataURL(file);
+}
+
+window.clearMultimodalImage = function() {
+  mmImageData = null;
+  document.getElementById('mmPreviewImg').src = '';
+  document.getElementById('mmFileInfo').textContent = '';
+  document.getElementById('mmPreview').classList.remove('visible');
+  document.getElementById('mmDropZone').style.display = '';
+  document.getElementById('mmFileInput').value = '';
+};
+
+window.doMultimodalCompare = async function() {
+  hideError('mmError');
+  const text = document.getElementById('mmText').value.trim();
+  if (!mmImageData) { showError('mmError', 'Upload an image first'); return; }
+  if (!text) { showError('mmError', 'Enter text to compare against the image'); return; }
+
+  setLoading('mmCompareBtn', true);
+  try {
+    const model = document.getElementById('mmModel').value;
+    const dimsVal = document.getElementById('mmDimensions').value;
+    const body = {
+      inputs: [
+        { content: [{ type: 'image_base64', image_base64: mmImageData }] },
+        { content: [{ type: 'text', text: text }] }
+      ],
+      model: model,
+      input_type: 'document'
+    };
+    if (dimsVal) body.output_dimension = parseInt(dimsVal, 10);
+
+    const data = await apiPost('/api/multimodal-embed', body);
+
+    const vecA = data.data[0].embedding;
+    const vecB = data.data[1].embedding;
+    const cosine = cosineSim(vecA, vecB);
+
+    // Hero display
+    const cosinePct = Math.max(0, cosine * 100);
+    let cosineColor;
+    if (cosine > 0.7) cosineColor = 'var(--green)';
+    else if (cosine > 0.4) cosineColor = 'var(--yellow)';
+    else cosineColor = 'var(--red)';
+
+    const scoreEl = document.getElementById('mmSimScore');
+    scoreEl.textContent = cosine.toFixed(4);
+    scoreEl.style.color = cosineColor;
+
+    const barEl = document.getElementById('mmSimBar');
+    barEl.style.width = cosinePct + '%';
+    barEl.style.background = cosineColor;
+
+    // Stats
+    const usage = data.usage || {};
+    const statsEl = document.getElementById('mmStats');
+    statsEl.innerHTML = `
+      <span class="stat"><span class="stat-label">Model</span><span class="stat-value">${data.model || model}</span></span>
+      <span class="stat"><span class="stat-label">Dimensions</span><span class="stat-value">${vecA.length}</span></span>
+      <span class="stat"><span class="stat-label">Text Tokens</span><span class="stat-value">${usage.text_tokens || '—'}</span></span>
+      <span class="stat"><span class="stat-label">Image Pixels</span><span class="stat-value">${usage.image_pixels ? usage.image_pixels.toLocaleString() : '—'}</span></span>
+      <span class="stat"><span class="stat-label">Total Tokens</span><span class="stat-value">${usage.total_tokens || '—'}</span></span>
+    `;
+
+    // Insight note
+    const noteEl = document.getElementById('mmNote');
+    if (cosine > 0.7) {
+      noteEl.innerHTML = '💡 <strong>High similarity!</strong> The image and text are closely related in Voyage AI\'s multimodal embedding space. This means the text is a good semantic description of the image.';
+    } else if (cosine > 0.4) {
+      noteEl.innerHTML = '💡 <strong>Moderate similarity.</strong> The image and text share some semantic overlap. They may be related but not a direct match.';
+    } else {
+      noteEl.innerHTML = '💡 <strong>Low similarity.</strong> The image and text are semantically distant. Try a description that matches the image content more closely.';
+    }
+
+    document.getElementById('mmResult').classList.add('visible');
+  } catch (err) {
+    showError('mmError', err.message);
+  } finally {
+    setLoading('mmCompareBtn', false);
+  }
+};
+
+// Gallery functions
+function renderGalleryGrid() {
+  const grid = document.getElementById('mmGalleryGrid');
+  grid.innerHTML = '';
+
+  mmGalleryImages.forEach((img, i) => {
+    const slot = document.createElement('div');
+    slot.className = 'mm-gallery-slot filled' + (mmSearchMode === 'image' && mmSearchImageIndex === i ? ' query-selected' : '');
+    slot.innerHTML = `<img src="${img.dataUrl}" alt="${img.name}"><button class="mm-slot-remove" title="Remove">×</button>`;
+    slot.querySelector('.mm-slot-remove').addEventListener('click', (e) => {
+      e.stopPropagation();
+      removeGalleryImage(i);
+    });
+    if (mmSearchMode === 'image') {
+      slot.style.cursor = 'pointer';
+      slot.addEventListener('click', () => selectGalleryImageAsQuery(i));
+    }
+    grid.appendChild(slot);
+  });
+
+  // Add empty slot if under 6
+  if (mmGalleryImages.length < 6) {
+    const addSlot = document.createElement('div');
+    addSlot.className = 'mm-gallery-slot';
+    addSlot.innerHTML = '<span class="mm-slot-add">+</span>';
+    addSlot.addEventListener('click', () => {
+      document.getElementById('mmGalleryFileInput').click();
+    });
+    grid.appendChild(addSlot);
+  }
+}
+
+function addGalleryImage(file) {
+  const VALID_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/gif'];
+  if (!VALID_TYPES.includes(file.type)) return;
+  if (file.size > 20 * 1024 * 1024) return;
+  if (mmGalleryImages.length >= 6) return;
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    mmGalleryImages.push({ dataUrl: e.target.result, name: file.name, size: file.size });
+    renderGalleryGrid();
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeGalleryImage(index) {
+  mmGalleryImages.splice(index, 1);
+  if (mmSearchImageIndex === index) mmSearchImageIndex = -1;
+  else if (mmSearchImageIndex > index) mmSearchImageIndex--;
+  renderGalleryGrid();
+  updateSearchImageLabel();
+}
+
+function selectGalleryImageAsQuery(index) {
+  mmSearchImageIndex = (mmSearchImageIndex === index) ? -1 : index;
+  renderGalleryGrid();
+  updateSearchImageLabel();
+}
+
+function updateSearchImageLabel() {
+  const label = document.getElementById('mmSearchImageLabel');
+  if (mmSearchImageIndex >= 0 && mmSearchImageIndex < mmGalleryImages.length) {
+    label.textContent = '✓ Image ' + (mmSearchImageIndex + 1) + ' selected as query';
+    label.style.color = 'var(--accent)';
+  } else {
+    label.textContent = 'No image selected';
+    label.style.color = 'var(--text-muted)';
+  }
+}
+
+window.setMmSearchMode = function(mode) {
+  mmSearchMode = mode;
+  document.querySelectorAll('#mmSearchMode button').forEach(b => {
+    b.classList.toggle('active', b.dataset.mode === mode);
+  });
+  document.getElementById('mmSearchTextWrap').style.display = mode === 'text' ? '' : 'none';
+  document.getElementById('mmSearchImageWrap').style.display = mode === 'image' ? '' : 'none';
+  renderGalleryGrid();
+};
+
+window.doMultimodalSearch = async function() {
+  hideError('mmSearchError');
+
+  const corpusText = document.getElementById('mmCorpusText').value.trim();
+  const textItems = corpusText ? corpusText.split('\n').map(t => t.trim()).filter(Boolean) : [];
+
+  if (mmGalleryImages.length === 0 && textItems.length === 0) {
+    showError('mmSearchError', 'Add at least one image or text to the corpus');
+    return;
+  }
+
+  // Build query input
+  let queryInput;
+  if (mmSearchMode === 'text') {
+    const q = document.getElementById('mmSearchQuery').value.trim();
+    if (!q) { showError('mmSearchError', 'Enter a search query'); return; }
+    queryInput = { content: [{ type: 'text', text: q }] };
+  } else {
+    if (mmSearchImageIndex < 0 || mmSearchImageIndex >= mmGalleryImages.length) {
+      showError('mmSearchError', 'Select an image from the corpus to use as query');
+      return;
+    }
+    queryInput = { content: [{ type: 'image_base64', image_base64: mmGalleryImages[mmSearchImageIndex].dataUrl }] };
+  }
+
+  const btnId = mmSearchMode === 'text' ? 'mmSearchBtn' : 'mmSearchImgBtn';
+  setLoading(btnId, true);
+
+  try {
+    const model = document.getElementById('mmModel').value;
+    const dimsVal = document.getElementById('mmDimensions').value;
+
+    // Build corpus inputs
+    const corpusInputs = [];
+    const corpusMeta = []; // track type/content for display
+
+    mmGalleryImages.forEach((img, i) => {
+      corpusInputs.push({ content: [{ type: 'image_base64', image_base64: img.dataUrl }] });
+      corpusMeta.push({ type: 'image', dataUrl: img.dataUrl, label: img.name || 'Image ' + (i + 1) });
+    });
+
+    textItems.forEach(t => {
+      corpusInputs.push({ content: [{ type: 'text', text: t }] });
+      corpusMeta.push({ type: 'text', label: t });
+    });
+
+    // Embed query + all corpus items in one call
+    const allInputs = [queryInput, ...corpusInputs];
+    const body = {
+      inputs: allInputs,
+      model: model,
+      input_type: 'document'
+    };
+    if (dimsVal) body.output_dimension = parseInt(dimsVal, 10);
+
+    const data = await apiPost('/api/multimodal-embed', body);
+
+    const queryVec = data.data[0].embedding;
+    const results = corpusMeta.map((meta, i) => {
+      const vec = data.data[i + 1].embedding;
+      const sim = cosineSim(queryVec, vec);
+      return { ...meta, similarity: sim };
+    }).sort((a, b) => b.similarity - a.similarity);
+
+    // Render results
+    const listEl = document.getElementById('mmSearchResultList');
+    listEl.innerHTML = '';
+
+    results.forEach((r, i) => {
+      let simColor;
+      if (r.similarity > 0.7) simColor = 'var(--green)';
+      else if (r.similarity > 0.4) simColor = 'var(--yellow)';
+      else simColor = 'var(--red)';
+
+      const item = document.createElement('div');
+      item.className = 'mm-result-item';
+
+      const thumbHtml = r.type === 'image'
+        ? `<img class="mm-result-thumb" src="${r.dataUrl}" alt="${r.label}">`
+        : `<div class="mm-result-thumb" style="display:flex;align-items:center;justify-content:center;background:var(--bg-surface);font-size:18px;">📝</div>`;
+
+      item.innerHTML = `
+        <div class="mm-result-rank">#${i + 1}</div>
+        ${thumbHtml}
+        <div class="mm-result-content">
+          <div class="mm-result-text" title="${r.label.replace(/"/g, '&quot;')}">${r.label}</div>
+          <div class="mm-result-type">${r.type}</div>
+        </div>
+        <div class="mm-result-score" style="color:${simColor}">${r.similarity.toFixed(4)}</div>
+      `;
+      listEl.appendChild(item);
+    });
+
+    document.getElementById('mmSearchResult').classList.add('visible');
+  } catch (err) {
+    showError('mmSearchError', err.message);
+  } finally {
+    setLoading(btnId, false);
+  }
+};
+
 // ── Patch init to include benchmark setup ──
 const _origInit = init;
 init = async function() {
@@ -5011,6 +5723,7 @@ init = async function() {
   initCostCalculator();
   renderHistory();
   initSettings();
+  initMultimodal();
   checkForAppUpdate();
   initOnboarding();
 };

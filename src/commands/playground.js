@@ -202,6 +202,27 @@ function createPlaygroundServer() {
           return;
         }
 
+        // API: Multimodal Embed
+        if (req.url === '/api/multimodal-embed') {
+          const { inputs, model, input_type, output_dimension } = parsed;
+          if (!inputs || !Array.isArray(inputs) || inputs.length === 0) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'inputs must be a non-empty array' }));
+            return;
+          }
+          const { apiRequest } = require('../lib/api');
+          const mmBody = {
+            inputs,
+            model: model || 'voyage-multimodal-3.5',
+          };
+          if (input_type) mmBody.input_type = input_type;
+          if (output_dimension) mmBody.output_dimension = output_dimension;
+          const result = await apiRequest('/multimodalembeddings', mmBody);
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify(result));
+          return;
+        }
+
         // API: Benchmark (single model, single round — UI calls this per model)
         if (req.url === '/api/benchmark/embed') {
           const { texts, model, inputType, dimensions } = parsed;
