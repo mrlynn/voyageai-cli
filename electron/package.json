@@ -1,11 +1,12 @@
 {
   "name": "voyage-ai-playground",
   "version": "1.0.0",
-  "description": "Voyage AI Playground — Desktop app for exploring embeddings, reranking, and vector search",
+  "description": "Vai Playground — Desktop app for exploring embeddings, reranking, and vector search",
   "main": "main.js",
   "author": "Michael Lynn",
   "license": "MIT",
   "scripts": {
+    "postinstall": "node scripts/postinstall.js",
     "start": "electron .",
     "dev": "electron . --dev",
     "package:mac": "electron-builder --mac",
@@ -15,7 +16,7 @@
   },
   "build": {
     "appId": "com.voyageai.playground",
-    "productName": "Voyage AI Playground",
+    "productName": "Vai",
     "directories": {
       "output": "../dist-electron"
     },
@@ -29,18 +30,18 @@
       "target": [
         { "target": "dmg", "arch": ["arm64", "x64"] }
       ],
-      "icon": "icons/icon.icns"
+      "icon": "icons/dark/icon.icns"
     },
     "win": {
       "target": "nsis",
-      "icon": "icons/icon.ico"
+      "icon": "icons/dark/AppIcons/Assets.xcassets/AppIcon.appiconset/256.png"
     },
     "linux": {
       "target": "AppImage",
-      "icon": "icons"
+      "icon": "icons/dark/AppIcons/Assets.xcassets/AppIcon.appiconset"
     },
     "dmg": {
-      "title": "Voyage AI Playground",
+      "title": "Vai Playground",
       "contents": [
         { "x": 130, "y": 220 },
         { "x": 410, "y": 220, "type": "link", "path": "/Applications" }

@@ -1,8 +1,46 @@
 'use strict';
 
 const { execSync, spawn } = require('child_process');
+const https = require('https');
 const path = require('path');
 const fs = require('fs');
+
+/**
+ * Fetch JSON from a URL (Node built-in https).
+ * Returns a Promise that resolves with the parsed JSON.
+ */
+function fetchJSON(url) {
+  return new Promise((resolve, reject) => {
+    const options = {
+      headers: { 'User-Agent': 'voyageai-cli' },
+    };
+    https.get(url, options, (res) => {
+      // Follow redirects
+      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+        return fetchJSON(res.headers.location).then(resolve, reject);
+      }
+      if (res.statusCode !== 200) {
+        return reject(new Error(`GitHub API returned status ${res.statusCode}`));
+      }
+      let data = '';
+      res.on('data', (chunk) => (data += chunk));
+      res.on('end', () => {
+        try { resolve(JSON.parse(data)); }
+        catch (e) { reject(e); }
+      });
+    }).on('error', reject);
+  });
+}
+
+/**
+ * Open a URL in the default browser (cross-platform, no dependencies).
+ */
+function openInBrowser(url) {
+  const plat = process.platform;
+  if (plat === 'darwin') spawn('open', [url], { stdio: 'ignore', detached: true }).unref();
+  else if (plat === 'win32') spawn('cmd', ['/c', 'start', url], { stdio: 'ignore', detached: true }).unref();
+  else spawn('xdg-open', [url], { stdio: 'ignore', detached: true }).unref();
+}
 
 /**
  * Register the app command — launches the Electron desktop app.
@@ -14,7 +52,49 @@ function registerApp(program) {
     .description('Launch the Voyage AI Playground desktop app (Electron)')
     .option('--install', 'Install Electron dependencies first')
     .option('--dev', 'Run in development mode with DevTools')
+    .option('--download', 'Download the latest desktop app release for your platform')
+    .option('--version', 'Print the app/CLI version')
     .action(async (opts) => {
+      // --version: print version and exit
+      if (opts.version) {
+        const pkg = require(path.join(__dirname, '..', '..', 'package.json'));
+        console.log(`voyageai-cli v${pkg.version}`);
+        return;
+      }
+
+      // --download: fetch latest GitHub release and open download URL
+      if (opts.download) {
+        const releaseUrl = 'https://api.github.com/repos/mrlynn/voyageai-cli/releases/latest';
+        try {
+          console.log('🔍 Checking for the latest desktop app release...');
+          const release = await fetchJSON(releaseUrl);
+
+          const extMap = { darwin: '.dmg', win32: '.exe', linux: '.AppImage' };
+          const ext = extMap[process.platform];
+
+          const asset = ext && release.assets
+            ? release.assets.find((a) => a.name.endsWith(ext))
+            : null;
+
+          if (asset) {
+            console.log(`\n✅ Found release: ${release.tag_name || release.name}`);
+            console.log(`📦 Asset: ${asset.name}`);
+            console.log(`🔗 ${asset.browser_download_url}\n`);
+            console.log('Opening download in your browser...');
+            openInBrowser(asset.browser_download_url);
+          } else {
+            console.log(
+              "No desktop app release found for your platform. Run 'vai playground' for the web version."
+            );
+          }
+        } catch (err) {
+          console.error(
+            "No desktop app release found. Run 'vai playground' for the web version."
+          );
+          if (process.env.DEBUG) console.error(err);
+        }
+        return;
+      }
       const electronDir = path.join(__dirname, '..', '..', 'electron');
       const electronPkg = path.join(electronDir, 'package.json');
 
@@ -37,22 +117,26 @@ function registerApp(program) {
 
       // Find the electron binary
       let electronBin;
+      let useNpx = false;
       try {
         electronBin = require(path.join(electronDir, 'node_modules', 'electron'));
       } catch {
         // Fallback: try npx
-        electronBin = 'npx';
+        useNpx = true;
       }
 
       console.log('🧭 Launching Voyage AI Playground...');
 
-      const args = typeof electronBin === 'string'
-        ? ['electron', electronDir]
-        : [electronDir];
+      let bin, args;
+      if (useNpx) {
+        bin = 'npx';
+        args = ['electron', electronDir];
+      } else {
+        bin = electronBin;
+        args = [electronDir];
+      }
 
       if (opts.dev) args.push('--dev');
-
-      const bin = typeof electronBin === 'string' ? electronBin : electronBin;
       const child = spawn(bin, args, {
         cwd: electronDir,
         stdio: 'inherit',

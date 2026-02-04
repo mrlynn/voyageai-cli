@@ -1,8 +1,96 @@
 'use strict';
 
-const { app, BrowserWindow, Menu, shell, dialog, nativeTheme } = require('electron');
+const { app, BrowserWindow, Menu, shell, dialog, nativeTheme, nativeImage, ipcMain, safeStorage } = require('electron');
 const path = require('path');
+const fs = require('fs');
 const http = require('http');
+
+// ── Secure API Key Storage ──
+// Uses Electron safeStorage (OS keychain encryption) + file on disk
+
+function getKeyFilePath() {
+  return path.join(app.getPath('userData'), '.voyage-api-key');
+}
+
+function loadStoredApiKey() {
+  const keyFile = getKeyFilePath();
+  if (!fs.existsSync(keyFile)) return null;
+  try {
+    const encrypted = fs.readFileSync(keyFile);
+    if (!safeStorage.isEncryptionAvailable()) return null;
+    return safeStorage.decryptString(encrypted);
+  } catch {
+    return null;
+  }
+}
+
+function saveApiKey(key) {
+  if (!safeStorage.isEncryptionAvailable()) {
+    throw new Error('OS encryption not available');
+  }
+  const encrypted = safeStorage.encryptString(key);
+  const keyFile = getKeyFilePath();
+  fs.writeFileSync(keyFile, encrypted);
+}
+
+function deleteApiKey() {
+  const keyFile = getKeyFilePath();
+  if (fs.existsSync(keyFile)) fs.unlinkSync(keyFile);
+}
+
+// Register IPC handlers for renderer access
+function registerApiKeyHandlers() {
+  ipcMain.handle('api-key:get', () => {
+    return loadStoredApiKey();
+  });
+
+  ipcMain.handle('api-key:set', (_event, key) => {
+    saveApiKey(key);
+    // Also inject into process.env so the playground server picks it up
+    process.env.VOYAGE_API_KEY = key;
+    return true;
+  });
+
+  ipcMain.handle('api-key:delete', () => {
+    deleteApiKey();
+    delete process.env.VOYAGE_API_KEY;
+    return true;
+  });
+
+  ipcMain.handle('api-key:exists', () => {
+    return !!loadStoredApiKey() || !!process.env.VOYAGE_API_KEY;
+  });
+
+  ipcMain.handle('app:version', () => {
+    return app.getVersion();
+  });
+}
+
+// ── Icon helpers ──
+function getIconPath(isDark) {
+  const variant = isDark ? 'dark' : 'light';
+  const png = path.join(__dirname, 'icons', variant, 'AppIcons', 'Assets.xcassets', 'AppIcon.appiconset', '1024.png');
+  const icns = path.join(__dirname, 'icons', variant, 'icon.icns');
+  return fs.existsSync(png) ? png : icns;
+}
+
+function updateDockIcon() {
+  if (process.platform !== 'darwin') return;
+  const iconPath = getIconPath(nativeTheme.shouldUseDarkColors);
+  try {
+    const icon = nativeImage.createFromPath(iconPath);
+    if (!icon.isEmpty()) app.dock.setIcon(icon);
+  } catch (err) {
+    console.error('Failed to set dock icon:', err.message);
+  }
+}
+
+// ── App name & early dock icon (must be set before 'ready') ──
+if (process.platform === 'darwin') {
+  app.setName('Vai');
+  // Set dock icon as early as possible
+  app.on('ready', () => updateDockIcon());
+}
 
 // ── Configuration ──
 const DEFAULT_PORT = 19878;
@@ -143,27 +231,42 @@ function buildMenu() {
 // ── Window Creation ──
 
 function createWindow() {
+  const isDark = nativeTheme.shouldUseDarkColors;
   mainWindow = new BrowserWindow({
     width: WINDOW_WIDTH,
     height: WINDOW_HEIGHT,
-    minWidth: 900,
+    minWidth: 960,
     minHeight: 600,
     title: 'Voyage AI Playground',
+    icon: getIconPath(isDark),
     titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
-    trafficLightPosition: { x: 16, y: 16 },
-    backgroundColor: nativeTheme.shouldUseDarkColors ? '#001E2B' : '#FFFFFF',
+    trafficLightPosition: { x: 14, y: 14 },
+    backgroundColor: isDark ? '#112733' : '#F9FBFA',
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
       spellcheck: false,
+      preload: path.join(__dirname, 'preload.js'),
     },
     show: false, // Show after ready-to-show to avoid flash
+  });
+
+  // Listen for OS theme changes and update dock icon
+  nativeTheme.on('updated', () => {
+    updateDockIcon();
   });
 
   mainWindow.loadURL(`http://127.0.0.1:${serverPort}`);
 
   mainWindow.once('ready-to-show', () => {
     mainWindow.show();
+    // If no API key was found, switch to settings tab
+    if (global.openSettingsOnLaunch) {
+      mainWindow.webContents.executeJavaScript(`
+        if (typeof switchTab === 'function') switchTab('settings');
+      `).catch(() => {});
+      global.openSettingsOnLaunch = false;
+    }
   });
 
   mainWindow.on('closed', () => {
@@ -180,20 +283,33 @@ function createWindow() {
 // ── App Lifecycle ──
 
 app.whenReady().then(async () => {
-  // Check for API key
+  // Register secure API key IPC handlers
+  registerApiKeyHandlers();
+
+  // Try to load stored API key into env if not already set
+  if (!process.env.VOYAGE_API_KEY) {
+    const stored = loadStoredApiKey();
+    if (stored) {
+      process.env.VOYAGE_API_KEY = stored;
+    }
+  }
+
+  // Check for API key — show warning only if no env var AND no stored key
   if (!process.env.VOYAGE_API_KEY) {
     const result = dialog.showMessageBoxSync({
       type: 'warning',
       title: 'API Key Required',
-      message: 'VOYAGE_API_KEY environment variable is not set.',
-      detail: 'The playground needs a Voyage AI API key to function.\n\nYou can:\n1. Set VOYAGE_API_KEY in your shell profile\n2. Launch from terminal: VOYAGE_API_KEY=your-key vai app\n3. Use "vai config set key YOUR_KEY" to store it',
-      buttons: ['Continue Anyway', 'Quit'],
+      message: 'No Voyage AI API key found.',
+      detail: 'You can add your API key in Settings (⚙️) after launch,\nor set VOYAGE_API_KEY in your shell profile.\n\nGet a key at: https://dash.voyageai.com',
+      buttons: ['Open Settings', 'Quit'],
       defaultId: 0,
     });
     if (result === 1) {
       app.quit();
       return;
     }
+    // Flag to open settings tab on launch
+    global.openSettingsOnLaunch = true;
   }
 
   Menu.setApplicationMenu(buildMenu());

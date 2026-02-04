@@ -3,7 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🧭 Voyage AI Playground</title>
+<title>Voyage AI Playground</title>
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/dark/32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/icons/dark/16.png">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -13,7 +15,8 @@
   --bg-surface: #112733;    /* Gray Dark 4 */
   --bg-card: #1C2D38;       /* Gray Dark 3 */
   --bg-input: #112733;      /* Gray Dark 4 */
-  --accent: #00ED64;        /* Green Base */
+  --accent: #00ED64;        /* Green Base — interactive elements only */
+  --accent-text: #FFFFFF;   /* Bright white — headings/labels in dark mode */
   --accent-dim: #00A35C;    /* Green Dark 1 */
   --accent-glow: rgba(0, 237, 100, 0.12);
   --text: #E8EDEB;          /* Gray Light 2 */
@@ -40,7 +43,8 @@
   --bg-surface: #F9FBFA;    /* Gray Light 3 */
   --bg-card: #FFFFFF;        /* White */
   --bg-input: #F9FBFA;      /* Gray Light 3 */
-  --accent: #00A35C;         /* Green Dark 1 (better contrast on white) */
+  --accent: #00A35C;         /* Green Dark 1 — interactive elements */
+  --accent-text: #001E2B;   /* MDB Black — headings/labels in light mode */
   --accent-dim: #00684A;     /* Green Dark 2 */
   --accent-glow: rgba(0, 163, 92, 0.08);
   --text: #001E2B;           /* MDB Black */
@@ -75,8 +79,8 @@
 [data-theme="light"] .explore-modal-overlay {
   background: rgba(0, 30, 43, 0.4);
 }
-[data-theme="light"] .nav {
-  box-shadow: 0 1px 3px rgba(0, 30, 43, 0.06);
+[data-theme="light"] .sidebar {
+  box-shadow: 1px 0 3px rgba(0, 30, 43, 0.06);
 }
 /* Light mode gradient overrides */
 [data-theme="light"] .quant-bar-fill.storage { background: linear-gradient(90deg, #00A35C, #00ED64); }
@@ -98,36 +102,175 @@ body {
   overflow-x: hidden;
 }
 
-/* Nav */
-.nav {
-  background: var(--bg-surface);
-  border-bottom: 1px solid var(--border);
-  padding: 0 24px;
-  height: 56px;
+/* ── App Shell: sidebar + content layout ── */
+.app-shell {
   display: flex;
-  align-items: center;
-  gap: 16px;
-  position: sticky;
-  top: 0;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ── Sidebar ── */
+.sidebar {
+  width: 220px;
+  min-width: 220px;
+  background: var(--bg-surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   z-index: 100;
 }
 
-.nav-title {
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--accent);
-  white-space: nowrap;
+.sidebar-drag-region {
+  -webkit-app-region: drag;
+  height: 78px;
+  min-height: 78px;
+  padding: 0 16px;
+  padding-top: 52px; /* Clear macOS traffic lights fully */
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
-.nav-spacer { flex: 1; }
+.sidebar-logo {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  flex-shrink: 0;
+  object-fit: contain;
+}
+
+.sidebar-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent-text);
+  white-space: nowrap;
+  letter-spacing: -0.2px;
+}
+
+.sidebar-nav {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.sidebar-nav-group {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.sidebar-nav-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 8px 12px;
+  opacity: 0.5;
+}
+.sidebar-nav-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--text-muted);
+  padding: 10px 12px 4px;
+}
+
+.tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  background: none;
+  border: none;
+  border-left: 3px solid transparent;
+  border-radius: 0 6px 6px 0;
+  color: var(--text-dim);
+  padding: 10px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: var(--font);
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  text-align: left;
+  position: relative;
+}
+.tab-btn:hover {
+  color: var(--text);
+  background: rgba(255,255,255,0.05);
+}
+.tab-btn:hover .tab-btn-icon {
+  transform: scale(1.1);
+}
+.tab-btn.active {
+  color: var(--accent);
+  background: var(--accent-glow);
+  border-left-color: var(--accent);
+  font-weight: 600;
+}
+.tab-btn-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  transition: transform 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.tab-btn-icon svg {
+  width: 16px;
+  height: 16px;
+}
+[data-theme="light"] .tab-btn:hover { background: rgba(0,30,43,0.04); }
+[data-theme="light"] .tab-btn.active { background: rgba(0,163,92,0.08); }
+
+.sidebar-footer {
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sidebar-model-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.sidebar-model-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+}
+.nav-model-select {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 6px 10px;
+  border-radius: var(--radius);
+  font-size: 12px;
+  font-family: var(--mono);
+  cursor: pointer;
+  width: 100%;
+}
+
+.sidebar-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
 
 .theme-toggle {
   background: none;
   border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 5px 10px;
+  border-radius: 16px;
+  padding: 4px 8px;
   cursor: pointer;
-  font-size: 16px;
+  font-size: 14px;
   line-height: 1;
   transition: all 0.2s;
   display: flex;
@@ -149,47 +292,31 @@ body {
 .status-dot.error { background: var(--error); }
 
 .status-label {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--text-dim);
 }
 
-.nav-model-select {
-  background: var(--bg-input);
-  border: 1px solid var(--border);
-  color: var(--text);
-  padding: 6px 12px;
-  border-radius: var(--radius);
-  font-size: 13px;
-  font-family: var(--mono);
-  cursor: pointer;
-}
-
-/* Tabs */
-.tab-bar {
+/* ── Content area ── */
+.content-area {
+  flex: 1;
+  overflow-y: auto;
   display: flex;
-  background: var(--bg-surface);
-  border-bottom: 1px solid var(--border);
-  padding: 0 24px;
-  gap: 0;
+  flex-direction: column;
 }
 
-.tab-btn {
-  background: none;
-  border: none;
-  color: var(--text-dim);
-  padding: 12px 20px;
-  font-size: 14px;
-  font-family: var(--font);
-  cursor: pointer;
-  border-bottom: 2px solid transparent;
-  transition: all 0.2s;
-  white-space: nowrap;
+.content-drag-region {
+  -webkit-app-region: drag;
+  height: 38px;
+  min-height: 38px;
+  flex-shrink: 0;
 }
-.tab-btn:hover { color: var(--text); background: rgba(255,255,255,0.03); }
-.tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
 
 /* Main */
-.main { padding: 24px; max-width: 1200px; margin: 0 auto; }
+.main { padding: 24px; max-width: 1200px; margin: 0 auto; width: 100%; }
+
+/* Legacy compat — hide old horizontal bar (replaced by sidebar) */
+.nav { display: none; }
+.tab-bar-horizontal { display: none; }
 
 .tab-panel { display: none; }
 .tab-panel.active { display: block; }
@@ -206,7 +333,7 @@ body {
 .card-title {
   font-size: 14px;
   font-weight: 600;
-  color: var(--accent);
+  color: var(--accent-text);
   margin-bottom: 12px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -333,7 +460,7 @@ select:focus { outline: none; border-color: var(--accent); }
   margin-bottom: 8px;
 }
 .stat-label { color: var(--text-dim); }
-.stat-value { color: var(--accent); font-weight: 600; font-family: var(--mono); }
+.stat-value { color: var(--accent-text); font-weight: 600; font-family: var(--mono); }
 
 .vector-preview {
   font-family: var(--mono);
@@ -481,7 +608,7 @@ select:focus { outline: none; border-color: var(--accent); }
 .result-rank {
   font-size: 20px;
   font-weight: 700;
-  color: var(--accent);
+  color: var(--accent-text);
   font-family: var(--mono);
   min-width: 30px;
 }
@@ -646,7 +773,7 @@ select:focus { outline: none; border-color: var(--accent); }
 .explore-modal-links-title {
   font-size: 11px;
   font-weight: 600;
-  color: var(--accent);
+  color: var(--accent-text);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: 6px;
@@ -668,7 +795,7 @@ select:focus { outline: none; border-color: var(--accent); }
 .explore-modal-tryit-title {
   font-size: 11px;
   font-weight: 600;
-  color: var(--accent);
+  color: var(--accent-text);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: 8px;
@@ -781,7 +908,7 @@ select:focus { outline: none; border-color: var(--accent); }
 .rank-num {
   font-size: 16px;
   font-weight: 700;
-  color: var(--accent);
+  color: var(--accent-text);
   font-family: var(--mono);
   text-align: center;
 }
@@ -810,7 +937,7 @@ select:focus { outline: none; border-color: var(--accent); }
   display: flex; justify-content: space-between; align-items: baseline;
   margin-bottom: 4px; font-size: 13px;
 }
-.quant-bar-label .dtype-name { color: var(--accent); font-weight: 600; font-family: var(--mono); }
+.quant-bar-label .dtype-name { color: var(--accent-text); font-weight: 600; font-family: var(--mono); }
 .quant-bar-label .dtype-value { color: var(--text-dim); font-family: var(--mono); font-size: 12px; }
 .quant-bar-track {
   height: 32px; background: var(--bg-input); border-radius: 6px;
@@ -835,7 +962,7 @@ select:focus { outline: none; border-color: var(--accent); }
   display: flex; justify-content: space-between; align-items: center;
   margin-bottom: 6px;
 }
-.quant-meter-header .dtype-name { color: var(--accent); font-weight: 600; font-family: var(--mono); font-size: 13px; }
+.quant-meter-header .dtype-name { color: var(--accent-text); font-weight: 600; font-family: var(--mono); font-size: 13px; }
 .quant-meter-header .verdict-badge {
   font-size: 12px; padding: 2px 8px; border-radius: 10px; font-weight: 600;
 }
@@ -858,7 +985,7 @@ select:focus { outline: none; border-color: var(--accent); }
   display: grid; gap: 12px;
 }
 .quant-rank-col-header {
-  font-weight: 600; color: var(--accent); font-size: 13px; font-family: var(--mono);
+  font-weight: 600; color: var(--accent-text); font-size: 13px; font-family: var(--mono);
   margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid var(--border);
 }
 .quant-rank-item {
@@ -873,7 +1000,7 @@ select:focus { outline: none; border-color: var(--accent); }
 .quant-rank-pos {
   display: inline-block; width: 22px; height: 22px; line-height: 22px;
   text-align: center; border-radius: 50%; background: var(--bg-surface);
-  color: var(--accent); font-weight: 700; font-size: 11px; font-family: var(--mono);
+  color: var(--accent-text); font-weight: 700; font-size: 11px; font-family: var(--mono);
   margin-right: 8px;
 }
 .quant-rank-score { color: var(--text-muted); font-size: 11px; font-family: var(--mono); margin-top: 3px; }
@@ -916,7 +1043,7 @@ select:focus { outline: none; border-color: var(--accent); }
 .cost-slider-value {
   font-family: var(--mono);
   font-size: 13px;
-  color: var(--accent);
+  color: var(--accent-text);
   min-width: 70px;
   text-align: right;
   font-weight: 600;
@@ -993,7 +1120,7 @@ select:focus { outline: none; border-color: var(--accent); }
   font-family: var(--mono);
   font-size: 20px;
   font-weight: 700;
-  color: var(--accent);
+  color: var(--accent-text);
 }
 .cost-summary-detail {
   font-size: 11px;
@@ -1056,7 +1183,7 @@ select:focus { outline: none; border-color: var(--accent); }
   align-items: center;
 }
 .cost-strategy-total-label { font-size: 13px; font-weight: 600; color: var(--text); }
-.cost-strategy-total-value { font-family: var(--mono); font-size: 18px; font-weight: 700; color: var(--accent); }
+.cost-strategy-total-value { font-family: var(--mono); font-size: 18px; font-weight: 700; color: var(--accent-text); }
 .cost-savings {
   font-size: 11px;
   color: var(--success);
@@ -1087,7 +1214,7 @@ select:focus { outline: none; border-color: var(--accent); }
 }
 .cost-table tr:hover { background: rgba(0, 237, 100, 0.03); }
 .cost-highlight {
-  color: var(--accent);
+  color: var(--accent-text);
   font-weight: 600;
 }
 .cost-bar-cell { position: relative; }
@@ -1195,7 +1322,7 @@ select:focus { outline: none; border-color: var(--accent); }
 }
 .cost-modal h3 {
   font-size: 14px;
-  color: var(--accent);
+  color: var(--accent-text);
   margin: 22px 0 10px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -1212,7 +1339,7 @@ select:focus { outline: none; border-color: var(--accent); }
   padding: 2px 7px;
   border-radius: 4px;
   font-size: 12px;
-  color: var(--accent);
+  color: var(--accent-text);
   font-family: var(--mono);
 }
 .cost-modal .formula {
@@ -1309,7 +1436,7 @@ select:focus { outline: none; border-color: var(--accent); }
   flex-shrink: 0;
 }
 .about-name { font-size: 24px; font-weight: 700; color: var(--text); }
-.about-role { font-size: 14px; color: var(--accent); margin-top: 4px; }
+.about-role { font-size: 14px; color: var(--accent-text); margin-top: 4px; }
 .about-links { display: flex; gap: 12px; margin-top: 8px; }
 .about-links a {
   color: var(--text-dim);
@@ -1322,7 +1449,7 @@ select:focus { outline: none; border-color: var(--accent); }
 .about-section-title {
   font-size: 13px;
   font-weight: 600;
-  color: var(--accent);
+  color: var(--accent-text);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: 8px;
@@ -1349,42 +1476,327 @@ select:focus { outline: none; border-color: var(--accent); }
   color: var(--text-dim);
 }
 
+/* ── Settings page ── */
+.settings-container { max-width: 640px; margin: 0 auto; }
+.settings-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+[data-theme="light"] .settings-section {
+  box-shadow: 0 1px 4px rgba(0,30,43,0.07);
+  border-color: #DDE4E2;
+}
+.settings-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+/* API key alert banner */
+.settings-api-banner {
+  background: rgba(255,192,16,0.08);
+  border: 1px solid rgba(255,192,16,0.25);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--warning);
+  line-height: 1.5;
+}
+.settings-api-banner.success {
+  background: rgba(0,237,100,0.06);
+  border-color: rgba(0,237,100,0.2);
+  color: var(--success);
+}
+[data-theme="light"] .settings-api-banner {
+  background: rgba(148,79,1,0.06);
+  border-color: rgba(148,79,1,0.2);
+}
+[data-theme="light"] .settings-api-banner.success {
+  background: rgba(0,104,74,0.06);
+  border-color: rgba(0,104,74,0.2);
+}
+.settings-api-banner-icon { font-size: 20px; flex-shrink: 0; }
+/* Heatmap preview swatches */
+.heatmap-preview {
+  display: inline-block;
+  width: 80px;
+  height: 12px;
+  border-radius: 3px;
+  vertical-align: middle;
+  margin-left: 8px;
+  border: 1px solid var(--border);
+}
+.heatmap-opt {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+/* Get a key link as button */
+.settings-key-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--blue);
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  padding: 4px 10px;
+  border: 1px solid var(--blue);
+  border-radius: 4px;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.settings-key-link:hover {
+  background: rgba(4,152,236,0.1);
+  text-decoration: none;
+}
+/* API key field integration */
+.settings-api-field {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-input);
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+.settings-api-field:focus-within { border-color: var(--accent); }
+.settings-api-field input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-family: var(--mono);
+  color: var(--text);
+  min-width: 0;
+}
+.settings-api-field input:focus { outline: none; }
+.settings-api-field button {
+  background: none;
+  border: none;
+  border-left: 1px solid var(--border);
+  padding: 8px 10px;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text-dim);
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.settings-api-field button:hover { color: var(--text); background: rgba(255,255,255,0.05); }
+[data-theme="light"] .settings-api-field button:hover { background: rgba(0,0,0,0.03); }
+.settings-api-field .save-btn {
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--font);
+  padding: 8px 14px;
+}
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.settings-row:last-child { border-bottom: none; }
+[data-theme="light"] .settings-row { border-bottom-color: rgba(0,0,0,0.04); }
+.settings-label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.settings-label-text {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+}
+.settings-label-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.settings-control { flex-shrink: 0; }
+.settings-select {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 8px 12px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-family: var(--mono);
+  cursor: pointer;
+  min-width: 180px;
+}
+.settings-select:focus { outline: none; border-color: var(--accent); }
+.settings-input {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 8px 12px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-family: var(--mono);
+  min-width: 180px;
+}
+.settings-input:focus { outline: none; border-color: var(--accent); }
+.settings-toggle {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  background: var(--border);
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s;
+  padding: 0;
+}
+.settings-toggle.active { background: var(--accent); }
+.settings-toggle::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+.settings-toggle.active::after { transform: translateX(20px); }
+.settings-saved {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--success);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.settings-saved.show { opacity: 1; }
+.settings-reset-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  padding: 8px 16px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.settings-reset-btn:hover { border-color: var(--error); color: var(--error); }
+.settings-toggle-vis {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 6px 8px;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  transition: all 0.2s;
+  color: var(--text-dim);
+}
+.settings-toggle-vis:hover { border-color: var(--accent); }
+.settings-api-key-active { color: var(--success); }
+.settings-api-key-missing { color: var(--warning); }
+.settings-row .settings-select, .settings-row .settings-input { text-align: right; }
+
 @media (max-width: 768px) {
   .compare-grid, .search-results { grid-template-columns: 1fr; }
-  .nav { padding: 0 12px; }
+  .sidebar { width: 56px; min-width: 56px; }
+  .sidebar-title, .status-label { display: none; }
+  .tab-btn { justify-content: center; padding: 10px; }
+  .tab-btn span:not(.tab-btn-icon) { display: none; }
   .main { padding: 16px; }
-  .tab-btn { padding: 10px 14px; font-size: 13px; }
+  .settings-row { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .settings-select, .settings-input { min-width: 100%; }
 }
 </style>
 </head>
 <body>
 
-<!-- Nav -->
-<nav class="nav">
-  <div class="nav-title">🧭 Voyage AI Playground</div>
-  <div class="nav-spacer"></div>
-  <div class="option-group">
-    <span class="option-label">Default Model</span>
-    <select id="globalModel" class="nav-model-select"></select>
-  </div>
-  <button class="theme-toggle" id="themeToggle" title="Toggle light/dark mode">🌙</button>
-  <div style="display:flex;align-items:center;gap:6px;">
-    <div class="status-dot" id="statusDot"></div>
-    <span class="status-label" id="statusLabel">Checking...</span>
-  </div>
-</nav>
+<!-- LeafyGreen Icon Sprites (mongodb.design) -->
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none;">
+  <symbol id="lg-lightning" viewBox="0 0 16 16">
+    <path d="M9.22274 1.99296C9.22274 1.49561 8.56293 1.31233 8.30107 1.73667L4.07384 8.58696C3.87133 8.91513 4.10921 9.33717 4.49748 9.33717H6.77682L6.77682 14.0066C6.77682 14.504 7.43627 14.6879 7.69813 14.2635L11.9262 7.4118C12.1288 7.08363 11.8903 6.66244 11.5021 6.66244H9.22274V1.99296Z" fill="currentColor"/>
+  </symbol>
+  <symbol id="lg-arrows" viewBox="0 0 16 16">
+    <path d="M5 8.57279V13.4272C5 13.9565 4.39241 14.2015 4.0721 13.8014L2.12898 11.3742C1.95701 11.1594 1.95701 10.8406 2.12898 10.6258L4.0721 8.19856C4.39241 7.79846 5 8.04351 5 8.57279Z" fill="currentColor"/>
+    <path d="M5 10H12.5C12.7761 10 13 10.2239 13 10.5V11.5C13 11.7761 12.7761 12 12.5 12H5V10Z" fill="currentColor"/>
+    <path d="M11 7.42721V2.57279C11 2.04351 11.6076 1.79846 11.9279 2.19856L13.871 4.62577C14.043 4.84058 14.043 5.15942 13.871 5.37423L11.9279 7.80144C11.6076 8.20154 11 7.95649 11 7.42721Z" fill="currentColor"/>
+    <path d="M3 4.5C3 4.22386 3.22386 4 3.5 4H11V6H3.5C3.22386 6 3 5.77614 3 5.5V4.5Z" fill="currentColor"/>
+  </symbol>
+  <symbol id="lg-search" viewBox="0 0 16 16">
+    <path fill-rule="evenodd" clip-rule="evenodd" d="M2.3234 9.81874C4.07618 11.5715 6.75062 11.8398 8.78588 10.6244L12.93 14.7685C13.4377 15.2762 14.2608 15.2762 14.7685 14.7685C15.2762 14.2608 15.2762 13.4377 14.7685 12.93L10.6244 8.78588C11.8398 6.75062 11.5715 4.07619 9.81873 2.32341C7.74896 0.253628 4.39318 0.253628 2.3234 2.32341C0.253624 4.39319 0.253624 7.74896 2.3234 9.81874ZM7.98026 4.16188C9.03467 5.2163 9.03467 6.92585 7.98026 7.98026C6.92584 9.03468 5.2163 9.03468 4.16188 7.98026C3.10746 6.92585 3.10746 5.2163 4.16188 4.16188C5.2163 3.10747 6.92584 3.10747 7.98026 4.16188Z" fill="currentColor"/>
+  </symbol>
+  <symbol id="lg-gauge" viewBox="0 0 16 16">
+    <path d="M1.041 10.2514C0.996713 10.6632 1.33666 11 1.75088 11H4.2449C4.65912 11 4.98569 10.6591 5.08798 10.2577C5.22027 9.73864 5.49013 9.25966 5.87533 8.87446C6.43906 8.31073 7.20364 7.99403 8.00088 7.99403C8.27011 7.99403 8.53562 8.03015 8.79093 8.0997L11.7818 5.10887C10.6623 4.39046 9.35172 4 8.00088 4C6.14436 4 4.36388 4.7375 3.05113 6.05025C1.91604 7.18534 1.21104 8.67012 1.041 10.2514Z" fill="currentColor"/>
+    <path d="M13.2967 6.42237L10.455 9.26409C10.6678 9.56493 10.8231 9.90191 10.9138 10.2577C11.0161 10.6591 11.3426 11 11.7568 11L14.2509 11C14.6651 11 15.005 10.6632 14.9608 10.2514C14.8087 8.83759 14.229 7.50093 13.2967 6.42237Z" fill="currentColor"/>
+  </symbol>
+  <symbol id="lg-bulb" viewBox="0 0 16 16">
+    <path d="M12.3311 8.5C12.7565 7.76457 13 6.91072 13 6C13 3.23858 10.7614 1 8 1C5.23858 1 3 3.23858 3 6C3 6.94628 3.26287 7.83117 3.71958 8.58561L5.40749 11.501C5.58628 11.8099 5.91607 12 6.27291 12H6.5V6C6.5 5.17157 7.17157 4.5 8 4.5C8.82843 4.5 9.5 5.17157 9.5 6V12H9.72368C10.0793 12 10.4082 11.8111 10.5874 11.5039L12.34 8.5H12.3311Z" fill="currentColor"/>
+    <path d="M7.5 6V12H8.5V6C8.5 5.72386 8.27614 5.5 8 5.5C7.72386 5.5 7.5 5.72386 7.5 6Z" fill="currentColor"/>
+    <path d="M10 14V13H6V14C6 14.5523 6.44772 15 7 15H9C9.55228 15 10 14.5523 10 14Z" fill="currentColor"/>
+  </symbol>
+  <symbol id="lg-info" viewBox="0 0 16 16">
+    <path fill-rule="evenodd" clip-rule="evenodd" d="M8 15C11.866 15 15 11.866 15 8C15 4.13401 11.866 1 8 1C4.13401 1 1 4.13401 1 8C1 11.866 4.13401 15 8 15ZM9 4C9 4.55228 8.55228 5 8 5C7.44772 5 7 4.55228 7 4C7 3.44772 7.44772 3 8 3C8.55228 3 9 3.44772 9 4ZM8 6C8.55228 6 9 6.44772 9 7V11H9.5C9.77614 11 10 11.2239 10 11.5C10 11.7761 9.77614 12 9.5 12H6.5C6.22386 12 6 11.7761 6 11.5C6 11.2239 6.22386 11 6.5 11H7V7H6.5C6.22386 7 6 6.77614 6 6.5C6 6.22386 6.22386 6 6.5 6H8Z" fill="currentColor"/>
+  </symbol>
+  <symbol id="lg-config" viewBox="0 0 16 16">
+    <path d="M12.7 2.56989C12.41 2.56989 12.17 2.80989 12.17 3.09989V4.34989L11.32 3.49989C9.21 1.39989 5.75 1.51989 3.78 3.75989C2.65 5.03989 2.23 6.82989 2.68 8.48989C3.24 10.5299 4.98 12.0099 7.08 12.2299L8.1 12.3399C8.42 13.2799 9.3 13.9499 10.34 13.9499C11.65 13.9499 12.71 12.8899 12.71 11.5799C12.71 10.2699 11.65 9.20989 10.34 9.20989C9.14 9.20989 8.16 10.0999 8 11.2599L7.19 11.1799C5.53 11.0099 4.14 9.82989 3.7 8.21989C3.34 6.90989 3.67 5.48989 4.58 4.46989C6.15 2.68989 8.9 2.59989 10.57 4.26989L11.42 5.11989H10.17C9.88 5.11989 9.64 5.35989 9.64 5.64989C9.64 5.93989 9.88 6.17989 10.17 6.17989H12.71C13 6.17989 13.24 5.93989 13.24 5.64989V3.09989C13.24 2.80989 13 2.56989 12.71 2.56989H12.7ZM10.34 10.3099C11.04 10.3099 11.6 10.8799 11.6 11.5699C11.6 12.2599 11.03 12.8299 10.34 12.8299C9.65 12.8299 9.08 12.2599 9.08 11.5699C9.08 10.8799 9.65 10.3099 10.34 10.3099Z" fill="currentColor"/>
+  </symbol>
+</svg>
 
-<!-- Tabs -->
-<div class="tab-bar">
-  <button class="tab-btn active" data-tab="embed">⚡ Embed</button>
-  <button class="tab-btn" data-tab="compare">⚖️ Compare</button>
-  <button class="tab-btn" data-tab="search">🔍 Search</button>
-  <button class="tab-btn" data-tab="benchmark">⏱ Benchmark</button>
-  <button class="tab-btn" data-tab="explore">📚 Explore</button>
-  <button class="tab-btn" data-tab="about">ℹ️ About</button>
-</div>
+<div class="app-shell">
 
-<div class="main">
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="sidebar-drag-region">
+    <img class="sidebar-logo" id="sidebarLogo" src="/icons/dark/64.png" alt="Vai">
+    <span class="sidebar-title">Vai</span>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="sidebar-nav-group">
+      <div class="sidebar-nav-label">Tools</div>
+      <button class="tab-btn active" data-tab="embed"><span class="tab-btn-icon"><svg><use href="#lg-lightning"/></svg></span><span>Embed</span></button>
+      <button class="tab-btn" data-tab="compare"><span class="tab-btn-icon"><svg><use href="#lg-arrows"/></svg></span><span>Compare</span></button>
+      <button class="tab-btn" data-tab="search"><span class="tab-btn-icon"><svg><use href="#lg-search"/></svg></span><span>Search</span></button>
+    </div>
+    <div class="sidebar-nav-divider"></div>
+    <div class="sidebar-nav-group">
+      <div class="sidebar-nav-label">Resources</div>
+      <button class="tab-btn" data-tab="benchmark"><span class="tab-btn-icon"><svg><use href="#lg-gauge"/></svg></span><span>Benchmark</span></button>
+      <button class="tab-btn" data-tab="explore"><span class="tab-btn-icon"><svg><use href="#lg-bulb"/></svg></span><span>Explore</span></button>
+      <button class="tab-btn" data-tab="about"><span class="tab-btn-icon"><svg><use href="#lg-info"/></svg></span><span>About</span></button>
+    </div>
+    <div class="sidebar-nav-divider"></div>
+    <button class="tab-btn" data-tab="settings"><span class="tab-btn-icon"><svg><use href="#lg-config"/></svg></span><span>Settings</span></button>
+  </nav>
+  <div class="sidebar-footer">
+    <div style="display:flex;align-items:center;gap:8px;justify-content:space-between;">
+      <div style="display:flex;align-items:center;gap:5px;">
+        <div class="status-dot" id="statusDot"></div>
+        <span class="status-label" id="statusLabel">Checking...</span>
+      </div>
+      <button class="theme-toggle" id="themeToggle" title="Toggle light/dark mode">🌙</button>
+    </div>
+  </div>
+</aside>
+
+<!-- Content -->
+<div class="content-area">
+  <div class="content-drag-region"></div>
+  <div class="main">
 
 <!-- ========== EMBED TAB ========== -->
 <div class="tab-panel active" id="tab-embed">
@@ -1947,13 +2359,183 @@ Reranking models rescore initial search results to improve relevance ordering.</
   </div>
 </div>
 
+<!-- Hidden global model select (used by JS for model sync) -->
+<select id="globalModel" style="display:none;"></select>
+
+<!-- ========== SETTINGS TAB ========== -->
+<div class="tab-panel" id="tab-settings">
+  <div class="settings-container">
+
+    <div class="settings-section">
+      <div class="settings-section-title">Appearance</div>
+      <div class="settings-row">
+        <div class="settings-label">
+          <span class="settings-label-text">Theme</span>
+          <span class="settings-label-hint">Controls the color scheme of the interface</span>
+        </div>
+        <div class="settings-control">
+          <select class="settings-select" id="settingsTheme">
+            <option value="dark">Dark</option>
+            <option value="light">Light</option>
+          </select>
+        </div>
+      </div>
+      <div class="settings-row">
+        <div class="settings-label">
+          <span class="settings-label-text">Vector Heatmap Colors</span>
+          <span class="settings-label-hint">Color palette for embedding visualizations</span>
+        </div>
+        <div class="settings-control" style="display:flex;align-items:center;gap:8px;">
+          <select class="settings-select" id="settingsHeatmap">
+            <option value="viridis">Viridis</option>
+            <option value="plasma">Plasma</option>
+            <option value="inferno">Inferno</option>
+            <option value="magma">Magma</option>
+            <option value="cividis">Cividis</option>
+            <option value="turbo">Turbo</option>
+          </select>
+          <span class="heatmap-preview" id="heatmapPreview"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-section-title">Models</div>
+      <div class="settings-row">
+        <div class="settings-label">
+          <span class="settings-label-text">Default Embedding Model</span>
+          <span class="settings-label-hint">Pre-selected model for Embed and Compare tabs</span>
+        </div>
+        <div class="settings-control">
+          <select class="settings-select" id="settingsDefaultModel"></select>
+        </div>
+      </div>
+      <div class="settings-row">
+        <div class="settings-label">
+          <span class="settings-label-text">Default Input Type</span>
+          <span class="settings-label-hint">Pre-selected input type for embedding requests</span>
+        </div>
+        <div class="settings-control">
+          <select class="settings-select" id="settingsInputType">
+            <option value="document">document</option>
+            <option value="query">query</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-section-title">API</div>
+      <div class="settings-api-banner" id="settingsApiBanner">
+        <span class="settings-api-banner-icon" id="settingsApiBannerIcon">⚠️</span>
+        <span id="settingsApiKeyMsg">No API key configured — add your key below to get started.</span>
+      </div>
+      <div class="settings-row">
+        <div class="settings-label">
+          <span class="settings-label-text">API Key</span>
+          <span class="settings-label-hint">Encrypted via OS keychain · <a href="https://dash.voyageai.com" target="_blank" class="settings-key-link">🔑 Get a key</a></span>
+        </div>
+        <div class="settings-control" style="min-width:260px;">
+          <div class="settings-api-field">
+            <input type="password" id="settingsApiKey" placeholder="pa-..." autocomplete="off" spellcheck="false">
+            <button type="button" id="settingsApiKeyToggle" title="Show/hide key">👁</button>
+            <button type="button" id="settingsApiKeySave" class="save-btn" title="Save key">Save</button>
+          </div>
+        </div>
+      </div>
+      <div class="settings-row">
+        <div class="settings-label">
+          <span class="settings-label-text">API Base URL</span>
+          <span class="settings-label-hint">Override the default endpoint (leave empty for default)</span>
+        </div>
+        <div class="settings-control">
+          <input type="text" class="settings-input" id="settingsApiBase" placeholder="https://api.voyageai.com/v1">
+        </div>
+      </div>
+      <div class="settings-row">
+        <div class="settings-label">
+          <span class="settings-label-text">Request Timeout</span>
+          <span class="settings-label-hint">Max seconds to wait for API responses</span>
+        </div>
+        <div class="settings-control">
+          <select class="settings-select" id="settingsTimeout">
+            <option value="15">15 seconds</option>
+            <option value="30" selected>30 seconds</option>
+            <option value="60">60 seconds</option>
+            <option value="120">120 seconds</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-section-title">Benchmark Defaults</div>
+      <div class="settings-row">
+        <div class="settings-label">
+          <span class="settings-label-text">Iterations per Model</span>
+          <span class="settings-label-hint">Number of runs when benchmarking latency</span>
+        </div>
+        <div class="settings-control">
+          <select class="settings-select" id="settingsBenchIter">
+            <option value="3">3 runs</option>
+            <option value="5" selected>5 runs</option>
+            <option value="10">10 runs</option>
+            <option value="20">20 runs</option>
+          </select>
+        </div>
+      </div>
+      <div class="settings-row">
+        <div class="settings-label">
+          <span class="settings-label-text">Show Detailed Timings</span>
+          <span class="settings-label-hint">Display p50/p95/p99 in benchmark results</span>
+        </div>
+        <div class="settings-control">
+          <button class="settings-toggle" id="settingsDetailedTimings" type="button"></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-section-title">Data &amp; Privacy</div>
+      <div class="settings-row">
+        <div class="settings-label">
+          <span class="settings-label-text">Persist Embeddings Locally</span>
+          <span class="settings-label-hint">Cache embedding results in browser storage to avoid re-fetching</span>
+        </div>
+        <div class="settings-control">
+          <button class="settings-toggle active" id="settingsCacheEmbeddings" type="button"></button>
+        </div>
+      </div>
+      <div class="settings-row">
+        <div class="settings-label">
+          <span class="settings-label-text">Clear Cached Data</span>
+          <span class="settings-label-hint">Remove all locally stored embeddings and preferences</span>
+        </div>
+        <div class="settings-control">
+          <button class="settings-reset-btn" id="settingsClearCache">Clear All Data</button>
+        </div>
+      </div>
+    </div>
+
+    <div style="text-align:center;padding:8px 0;">
+      <span class="settings-saved" id="settingsSavedMsg">✓ Saved</span>
+    </div>
+
+  </div>
+</div>
+
 </div><!-- .main -->
+</div><!-- .content-area -->
+</div><!-- .app-shell -->
 
 <script>
 // Apply saved theme immediately to prevent flash
 (function() {
   var t = localStorage.getItem('vai-theme') || 'dark';
   if (t === 'light') document.documentElement.setAttribute('data-theme', 'light');
+  // Set correct logo immediately
+  var logo = document.getElementById('sidebarLogo');
+  if (logo) logo.src = '/icons/' + (t === 'light' ? 'light' : 'dark') + '/64.png';
 })();
 </script>
 <script>
@@ -1968,21 +2550,28 @@ function initThemeToggle() {
 
   function applyTheme(theme) {
     current = theme;
+    const logo = document.getElementById('sidebarLogo');
     if (theme === 'light') {
       document.documentElement.setAttribute('data-theme', 'light');
       toggle.textContent = '☀️';
       toggle.title = 'Switch to dark mode';
+      if (logo) logo.src = '/icons/light/64.png';
     } else {
       document.documentElement.removeAttribute('data-theme');
       toggle.textContent = '🌙';
       toggle.title = 'Switch to light mode';
+      if (logo) logo.src = '/icons/dark/64.png';
     }
     localStorage.setItem('vai-theme', theme);
   }
 
   applyTheme(current);
   toggle.addEventListener('click', () => {
-    applyTheme(current === 'dark' ? 'light' : 'dark');
+    const next = current === 'dark' ? 'light' : 'dark';
+    applyTheme(next);
+    // Sync settings panel dropdown
+    const themeSel = document.getElementById('settingsTheme');
+    if (themeSel) themeSel.value = next;
   });
 }
 
@@ -2021,6 +2610,8 @@ function switchTab(tab) {
     p.classList.toggle('active', p.id === 'tab-' + tab);
   });
 }
+// Expose globally so Electron main process can call it
+window.switchTab = switchTab;
 
 // ── Config ──
 async function loadConfig() {
@@ -3506,6 +4097,262 @@ window.clearHistory = function() {
   renderHistory();
 };
 
+// ── Settings ──
+const SETTINGS_KEY = 'vai-settings';
+
+function getSettings() {
+  try {
+    return JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
+  } catch { return {}; }
+}
+
+function saveSetting(key, value) {
+  const s = getSettings();
+  s[key] = value;
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
+  flashSaved();
+}
+
+function flashSaved() {
+  const el = document.getElementById('settingsSavedMsg');
+  if (!el) return;
+  el.classList.add('show');
+  clearTimeout(el._timer);
+  el._timer = setTimeout(() => el.classList.remove('show'), 1500);
+}
+
+function initSettings() {
+  const s = getSettings();
+
+  // Theme sync
+  const themeSelect = document.getElementById('settingsTheme');
+  const currentTheme = localStorage.getItem('vai-theme') || 'dark';
+  if (themeSelect) {
+    themeSelect.value = currentTheme;
+    themeSelect.addEventListener('change', () => {
+      const t = themeSelect.value;
+      saveSetting('theme', t);
+      localStorage.setItem('vai-theme', t);
+      // Reuse existing applyTheme by clicking the toggle if needed
+      const toggle = document.getElementById('themeToggle');
+      const cur = localStorage.getItem('vai-theme');
+      if (cur === 'light') {
+        document.documentElement.setAttribute('data-theme', 'light');
+        if (toggle) { toggle.textContent = '☀️'; toggle.title = 'Switch to dark mode'; }
+      } else {
+        document.documentElement.removeAttribute('data-theme');
+        if (toggle) { toggle.textContent = '🌙'; toggle.title = 'Switch to light mode'; }
+      }
+      const logo = document.getElementById('sidebarLogo');
+      if (logo) logo.src = '/icons/' + (t === 'light' ? 'light' : 'dark') + '/64.png';
+    });
+  }
+
+  // Heatmap palette — handled below with preview swatch
+
+  // Default model — populate from global model select
+  const settingsModel = document.getElementById('settingsDefaultModel');
+  const globalModel = document.getElementById('globalModel');
+  if (settingsModel && globalModel) {
+    // Clone options from globalModel
+    settingsModel.innerHTML = globalModel.innerHTML;
+    const savedModel = s.defaultModel || globalModel.value;
+    settingsModel.value = savedModel;
+    settingsModel.addEventListener('change', () => {
+      saveSetting('defaultModel', settingsModel.value);
+      globalModel.value = settingsModel.value;
+      // Update individual tab selects too
+      ['embedModel', 'compareModel', 'searchEmbedModel'].forEach(id => {
+        const sel = document.getElementById(id);
+        if (sel) sel.value = settingsModel.value;
+      });
+    });
+  }
+
+  // Default input type
+  const inputTypeSel = document.getElementById('settingsInputType');
+  if (inputTypeSel) {
+    inputTypeSel.value = s.inputType || 'document';
+    inputTypeSel.addEventListener('change', () => {
+      saveSetting('inputType', inputTypeSel.value);
+      const embedType = document.getElementById('embedInputType');
+      if (embedType) embedType.value = inputTypeSel.value;
+    });
+  }
+
+  // API base URL
+  const apiBaseInput = document.getElementById('settingsApiBase');
+  if (apiBaseInput) {
+    apiBaseInput.value = s.apiBase || '';
+    apiBaseInput.addEventListener('change', () => saveSetting('apiBase', apiBaseInput.value));
+  }
+
+  // Timeout
+  const timeoutSel = document.getElementById('settingsTimeout');
+  if (timeoutSel) {
+    timeoutSel.value = s.timeout || '30';
+    timeoutSel.addEventListener('change', () => saveSetting('timeout', timeoutSel.value));
+  }
+
+  // Benchmark iterations
+  const benchIterSel = document.getElementById('settingsBenchIter');
+  if (benchIterSel) {
+    benchIterSel.value = s.benchIter || '5';
+    benchIterSel.addEventListener('change', () => saveSetting('benchIter', benchIterSel.value));
+  }
+
+  // Toggle buttons
+  function initToggle(id, settingKey, defaultVal) {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    const val = s[settingKey] !== undefined ? s[settingKey] : defaultVal;
+    btn.classList.toggle('active', val);
+    btn.addEventListener('click', () => {
+      const isActive = btn.classList.toggle('active');
+      saveSetting(settingKey, isActive);
+    });
+  }
+  initToggle('settingsDetailedTimings', 'detailedTimings', false);
+  initToggle('settingsCacheEmbeddings', 'cacheEmbeddings', true);
+
+  // API Key (Electron only — uses safeStorage via preload bridge)
+  const apiKeyInput = document.getElementById('settingsApiKey');
+  const apiKeyToggle = document.getElementById('settingsApiKeyToggle');
+  const apiKeySave = document.getElementById('settingsApiKeySave');
+  const apiKeyMsg = document.getElementById('settingsApiKeyMsg');
+  const apiBanner = document.getElementById('settingsApiBanner');
+  const apiBannerIcon = document.getElementById('settingsApiBannerIcon');
+
+  function updateApiBanner(hasKey, key) {
+    if (hasKey) {
+      apiBanner.className = 'settings-api-banner success';
+      apiBannerIcon.textContent = '🔐';
+      apiKeyMsg.textContent = 'API key stored securely in OS keychain';
+      apiKeyInput.placeholder = window.vai ? window.vai.apiKey.mask(key) : '••••••••';
+    } else {
+      apiBanner.className = 'settings-api-banner';
+      apiBannerIcon.textContent = '⚠️';
+      apiKeyMsg.textContent = 'No API key configured — add your key below to get started.';
+      apiKeyInput.placeholder = 'pa-...';
+    }
+  }
+
+  if (window.vai && window.vai.isElectron) {
+    // Load existing key status
+    window.vai.apiKey.get().then(key => updateApiBanner(!!key, key));
+
+    // Show/hide toggle
+    let keyVisible = false;
+    apiKeyToggle.addEventListener('click', async () => {
+      if (!keyVisible && !apiKeyInput.value) {
+        const key = await window.vai.apiKey.get();
+        if (key) {
+          apiKeyInput.value = key;
+          apiKeyInput.type = 'text';
+          apiKeyToggle.textContent = '🙈';
+          keyVisible = true;
+        }
+      } else if (keyVisible) {
+        apiKeyInput.type = 'password';
+        apiKeyToggle.textContent = '👁';
+        keyVisible = false;
+        if (!apiKeyInput.value) {
+          const key = await window.vai.apiKey.get();
+          if (key) apiKeyInput.placeholder = window.vai.apiKey.mask(key);
+        }
+      } else {
+        apiKeyInput.type = apiKeyInput.type === 'password' ? 'text' : 'password';
+        apiKeyToggle.textContent = apiKeyInput.type === 'password' ? '👁' : '🙈';
+        keyVisible = apiKeyInput.type === 'text';
+      }
+    });
+
+    // Save button
+    apiKeySave.addEventListener('click', async () => {
+      const key = apiKeyInput.value.trim();
+      if (!key) {
+        await window.vai.apiKey.delete();
+        updateApiBanner(false);
+        flashSaved();
+        return;
+      }
+      try {
+        await window.vai.apiKey.set(key);
+        apiKeyInput.value = '';
+        apiKeyInput.type = 'password';
+        apiKeyToggle.textContent = '👁';
+        keyVisible = false;
+        updateApiBanner(true, key);
+        flashSaved();
+        loadConfig();
+      } catch (err) {
+        apiBanner.className = 'settings-api-banner';
+        apiBannerIcon.textContent = '❌';
+        apiKeyMsg.textContent = 'Failed to save: ' + err.message;
+      }
+    });
+
+    apiKeyInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') apiKeySave.click();
+    });
+  } else {
+    apiBanner.className = 'settings-api-banner';
+    apiBannerIcon.textContent = '💡';
+    apiKeyMsg.textContent = 'Set VOYAGE_API_KEY environment variable, or use "vai config set key YOUR_KEY"';
+    apiKeySave.style.display = 'none';
+    apiKeyToggle.style.display = 'none';
+    apiKeyInput.disabled = true;
+    apiKeyInput.placeholder = 'Secure storage available in desktop app';
+  }
+
+  // Heatmap palette preview
+  const HEATMAP_GRADIENTS = {
+    viridis:  'linear-gradient(90deg, #440154, #31688e, #35b779, #fde725)',
+    plasma:   'linear-gradient(90deg, #0d0887, #7e03a8, #cc4778, #f89540, #f0f921)',
+    inferno:  'linear-gradient(90deg, #000004, #420a68, #932667, #dd513a, #fca50a, #fcffa4)',
+    magma:    'linear-gradient(90deg, #000004, #3b0f70, #8c2981, #de4968, #fea16e, #fcfdbf)',
+    cividis:  'linear-gradient(90deg, #00224e, #123570, #3b496c, #575d6d, #707173, #a5a88f, #fee838)',
+    turbo:    'linear-gradient(90deg, #30123b, #4662d7, #36aaf9, #1ae4b6, #72fe5e, #c8ef34, #faba39, #f66b19, #d93806, #7a0403)',
+  };
+  const heatmapSel = document.getElementById('settingsHeatmap');
+  const heatmapPreview = document.getElementById('heatmapPreview');
+  function updateHeatmapPreview() {
+    if (heatmapPreview && heatmapSel) {
+      heatmapPreview.style.background = HEATMAP_GRADIENTS[heatmapSel.value] || HEATMAP_GRADIENTS.viridis;
+    }
+  }
+  if (heatmapSel) {
+    heatmapSel.value = s.heatmap || 'viridis';
+    heatmapSel.addEventListener('change', () => {
+      saveSetting('heatmap', heatmapSel.value);
+      updateHeatmapPreview();
+    });
+    updateHeatmapPreview();
+  }
+
+  // Clear cache
+  const clearBtn = document.getElementById('settingsClearCache');
+  if (clearBtn) {
+    clearBtn.addEventListener('click', () => {
+      if (confirm('Clear all cached data and reset settings to defaults?')) {
+        localStorage.removeItem(SETTINGS_KEY);
+        localStorage.removeItem('vai-theme');
+        localStorage.removeItem('vai-embed-cache');
+        location.reload();
+      }
+    });
+  }
+
+  // Apply saved defaults on load
+  if (s.defaultModel && globalModel) {
+    globalModel.value = s.defaultModel;
+  }
+  if (s.inputType) {
+    const embedType = document.getElementById('embedInputType');
+    if (embedType) embedType.value = s.inputType;
+  }
+}
+
 // ── Patch init to include benchmark setup ──
 const _origInit = init;
 init = async function() {
@@ -3516,6 +4363,7 @@ init = async function() {
   populateQuantModelSelect();
   initCostCalculator();
   renderHistory();
+  initSettings();
 };
 
 // ── Start ──

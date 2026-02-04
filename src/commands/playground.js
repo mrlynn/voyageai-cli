@@ -82,6 +82,30 @@ function createPlaygroundServer() {
         return;
       }
 
+      // Serve icon assets: /icons/{dark|light}/{size}.png
+      const iconMatch = req.url.match(/^\/icons\/(dark|light)\/(\d+)\.png$/);
+      if (req.method === 'GET' && iconMatch) {
+        const variant = iconMatch[1];
+        const size = iconMatch[2];
+        // Try portable path first (src/playground/icons/), then electron/icons/
+        const portablePath = path.join(__dirname, '..', 'playground', 'icons', variant, `${size}.png`);
+        const electronPath = path.join(__dirname, '..', '..', 'electron', 'icons', variant,
+          'AppIcons', 'Assets.xcassets', 'AppIcon.appiconset', `${size}.png`);
+        const iconPath = fs.existsSync(portablePath) ? portablePath : electronPath;
+        if (fs.existsSync(iconPath)) {
+          const data = fs.readFileSync(iconPath);
+          res.writeHead(200, {
+            'Content-Type': 'image/png',
+            'Cache-Control': 'public, max-age=86400',
+          });
+          res.end(data);
+        } else {
+          res.writeHead(404);
+          res.end('Icon not found');
+        }
+        return;
+      }
+
       // API: Models
       if (req.method === 'GET' && req.url === '/api/models') {
         const models = MODEL_CATALOG.filter(m => !m.legacy && !m.local && !m.unreleased);

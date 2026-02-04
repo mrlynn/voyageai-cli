@@ -4,21 +4,130 @@
   <img src="https://raw.githubusercontent.com/mrlynn/voyageai-cli/main/demo-readme.gif" alt="voyageai-cli demo" width="800" />
 </p>
 
-[![CI](https://github.com/mrlynn/voyageai-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/mrlynn/voyageai-cli/actions/workflows/ci.yml) [![npm version](https://img.shields.io/npm/v/voyageai-cli.svg)](https://www.npmjs.com/package/voyageai-cli) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT) [![Node.js](https://img.shields.io/node/v/voyageai-cli.svg)](https://nodejs.org)
+[![CI](https://github.com/mrlynn/voyageai-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/mrlynn/voyageai-cli/actions/workflows/ci.yml) [![npm version](https://img.shields.io/npm/v/voyageai-cli.svg)](https://www.npmjs.com/package/voyageai-cli) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT) [![Node.js](https://img.shields.io/node/v/voyageai-cli.svg)](https://nodejs.org) [![GitHub release](https://img.shields.io/github/v/release/mrlynn/voyageai-cli?label=Desktop%20App)](https://github.com/mrlynn/voyageai-cli/releases)
 
-The fastest path from documents to semantic search. Chunk files, generate [Voyage AI](https://www.mongodb.com/docs/voyageai/) embeddings, store in [MongoDB Atlas](https://www.mongodb.com/docs/atlas/atlas-vector-search/), and query with two-stage retrieval — all from the terminal.
-
-**21 commands · 312 tests · 5 chunking strategies · End-to-end RAG pipeline**
+The fastest path from documents to semantic search. Chunk files, generate [Voyage AI](https://www.mongodb.com/docs/voyageai/) embeddings, store in [MongoDB Atlas](https://www.mongodb.com/docs/atlas/atlas-vector-search/), and query with two-stage retrieval — from the terminal, your browser, or a desktop app.
 
 > **⚠️ Disclaimer:** This is an independent, community-built tool — **not** an official product of MongoDB, Inc. or Voyage AI. See [Disclaimer](#disclaimer) for details.
 
-## Install
+---
+
+## Three Ways to Use It
+
+<table>
+<tr>
+<td align="center" width="33%">
+<h3>🖥️ CLI</h3>
+<code>vai</code><br/><br/>
+22 commands · 5 chunking strategies<br/>
+End-to-end RAG pipeline from your terminal<br/><br/>
+<code>npm install -g voyageai-cli</code>
+</td>
+<td align="center" width="33%">
+<h3>🌐 Web Playground</h3>
+<code>vai playground</code><br/><br/>
+7 interactive tabs for embedding,<br/>
+comparing, searching, and benchmarking<br/><br/>
+<em>Launches in your browser</em>
+</td>
+<td align="center" width="33%">
+<h3>💻 Desktop App</h3>
+Standalone Electron app<br/><br/>
+Secure keychain storage, dark/light themes,<br/>
+MongoDB LeafyGreen design system<br/><br/>
+<a href="https://github.com/mrlynn/voyageai-cli/releases">Download from GitHub Releases</a>
+</td>
+</tr>
+</table>
+
+---
+
+## Table of Contents
+
+- [Desktop App](#desktop-app)
+- [Web Playground](#web-playground)
+- [CLI — Quick Start](#cli--quick-start)
+  - [Install](#install)
+  - [5-Minute RAG Pipeline](#5-minute-rag-pipeline)
+  - [Project Config](#project-config)
+  - [Core Workflow](#core-workflow)
+  - [Individual Commands](#individual-commands)
+  - [Models & Benchmarks](#models--benchmarks)
+  - [Benchmarking Your Data](#benchmarking-your-data)
+  - [Learn](#learn)
+  - [Environment & Auth](#environment--auth)
+  - [Shell Completions](#shell-completions)
+  - [All Commands](#all-commands)
+- [Screenshots](#screenshots)
+- [Requirements](#requirements)
+- [Author](#author)
+- [Disclaimer](#disclaimer)
+- [License](#license)
+
+---
+
+## Desktop App
+
+A standalone desktop application built with Electron and the MongoDB LeafyGreen design system. Everything the CLI and playground can do — in a native app experience.
+
+[![Download Latest Release](https://img.shields.io/github/v/release/mrlynn/voyageai-cli?label=Download&style=for-the-badge)](https://github.com/mrlynn/voyageai-cli/releases)
+
+### Key Features
+
+- **🔐 Secure API Key Storage** — Stores your Voyage AI API key and MongoDB URI in the OS keychain (macOS Keychain, Windows Credential Vault, Linux Secret Service). No plaintext config files.
+- **🎨 Dark & Light Themes** — Full theme support with automatic system detection, built on MongoDB's LeafyGreen design tokens.
+- **🍃 MongoDB LeafyGreen UI** — Native MongoDB look & feel with LeafyGreen components and iconography throughout.
+- **📱 Sidebar Navigation** — Clean, collapsible sidebar for quick access to all features: Embed, Compare, Search, Benchmark, Explore, Settings, and more.
+- **⚡ All Playground Features** — Every tab from the web playground, plus desktop-native conveniences like system tray integration.
+
+### Installation
+
+Download the latest release for your platform from [GitHub Releases](https://github.com/mrlynn/voyageai-cli/releases):
+
+| Platform | Download |
+|----------|----------|
+| macOS (Apple Silicon) | `.dmg` |
+| macOS (Intel) | `.dmg` |
+| Windows | `.exe` installer |
+| Linux | `.AppImage` / `.deb` |
+
+---
+
+## Web Playground
+
+An interactive, browser-based interface for exploring Voyage AI embeddings without writing code. Ships with the CLI — just run:
+
+```bash
+vai playground
+```
+
+Your default browser opens with a full-featured UI organized into **7 tabs**:
+
+| Tab | What It Does |
+|-----|-------------|
+| **Embed** | Generate embeddings for any text, inspect vectors, adjust dimensions and models |
+| **Compare** | Side-by-side similarity comparison of two or more texts with cosine similarity scores |
+| **Search** | Connect to MongoDB Atlas and run vector similarity searches with filters and reranking |
+| **Benchmark** | Compare model latency, cost, and quality across the Voyage 4 family on your own data |
+| **Explore** | Visualize embedding spaces with dimensionality reduction (PCA/t-SNE) and clustering |
+| **About** | Project info, links, and version details |
+| **Settings** | Configure API keys, MongoDB URI, default model, and preferences |
+
+The playground connects to the same backend as the CLI. Any API keys or MongoDB URIs you've configured via `vai config` are available automatically.
+
+---
+
+## CLI — Quick Start
+
+**22 commands · 312 tests · 5 chunking strategies · End-to-end RAG pipeline**
+
+### Install
 
 ```bash
 npm install -g voyageai-cli
 ```
 
-## 5-Minute RAG Pipeline
+### 5-Minute RAG Pipeline
 
 Go from a folder of documents to a searchable vector database:
 
@@ -39,7 +148,7 @@ vai query "How do I configure replica sets?" --db myapp --collection knowledge
 
 That's it. Documents chunked, embedded with `voyage-4-large`, stored in Atlas with metadata, vector index created, and searchable with reranking.
 
-## Project Config
+### Project Config
 
 Stop typing `--db myapp --collection docs` on every command:
 
@@ -64,9 +173,9 @@ Creates `.vai.json` with your defaults — model, database, collection, chunking
 }
 ```
 
-## Core Workflow
+### Core Workflow
 
-### `vai pipeline` — Chunk → embed → store
+#### `vai pipeline` — Chunk → embed → store
 
 The end-to-end command. Takes files or directories, chunks them, embeds in batches, stores in MongoDB Atlas.
 
@@ -86,7 +195,7 @@ vai pipeline ./docs/ --strategy markdown --chunk-size 1024 --overlap 100
 
 Supports: `.txt`, `.md`, `.html`, `.json`, `.jsonl`, `.pdf` (optional `pdf-parse` dependency). Auto-detects markdown files for heading-aware chunking.
 
-### `vai query` — Search + rerank
+#### `vai query` — Search + rerank
 
 Two-stage retrieval in one command: embed query → vector search → rerank → results.
 
@@ -101,7 +210,7 @@ vai query "auth setup" --no-rerank
 vai query "performance tuning" --filter '{"category": "guides"}' --top-k 10
 ```
 
-### `vai chunk` — Document chunking
+#### `vai chunk` — Document chunking
 
 Standalone chunking for when you need control over the pipeline.
 
@@ -118,7 +227,7 @@ vai chunk ./docs/ --dry-run
 
 Five strategies: `fixed`, `sentence`, `paragraph`, `recursive` (default), `markdown`.
 
-### `vai estimate` — Cost estimator
+#### `vai estimate` — Cost estimator
 
 Compare symmetric vs. asymmetric embedding strategies before committing.
 
@@ -128,7 +237,7 @@ vai estimate --docs 10M --queries 100M --months 12
 
 Shows cost breakdown for every Voyage 4 model combination, including asymmetric retrieval (embed docs with `voyage-4-large`, query with `voyage-4-lite` — same quality, fraction of the cost).
 
-## Individual Commands
+### Individual Commands
 
 For when you need fine-grained control:
 
@@ -158,7 +267,7 @@ vai index create --db myapp --collection docs --field embedding
 vai index list --db myapp --collection docs
 ```
 
-## Models & Benchmarks
+### Models & Benchmarks
 
 ```bash
 # List models with architecture and shared space info
@@ -168,7 +277,7 @@ vai models --wide
 vai models --benchmarks
 ```
 
-### Voyage 4 Family
+#### Voyage 4 Family
 
 | Model | Architecture | Price/1M tokens | RTEB Score | Best For |
 |-------|-------------|----------------|------------|----------|
@@ -179,7 +288,7 @@ vai models --benchmarks
 
 **Shared embedding space:** All Voyage 4 models produce compatible embeddings. Embed docs with `voyage-4-large`, query with `voyage-4-lite` — no re-vectorization needed.
 
-### Competitive Landscape (RTEB NDCG@10)
+#### Competitive Landscape (RTEB NDCG@10)
 
 | Model | Score |
 |-------|-------|
@@ -192,7 +301,7 @@ vai models --benchmarks
 
 Also available: `voyage-code-3` (code), `voyage-finance-2` (finance), `voyage-law-2` (legal), `rerank-2.5` / `rerank-2.5-lite`.
 
-## Benchmarking Your Data
+### Benchmarking Your Data
 
 Published benchmarks measure average quality across standardized datasets. `vai benchmark` measures what matters for **your** use case:
 
@@ -213,7 +322,7 @@ vai benchmark quantization --model voyage-4-large --dtypes float,int8,ubinary
 vai benchmark cost --tokens 500 --volumes 100,1000,10000,100000
 ```
 
-## Learn
+### Learn
 
 Interactive explanations of key concepts:
 
@@ -230,7 +339,7 @@ vai explain models            # How to choose the right model
 
 17 topics covering embeddings, reranking, vector search, RAG, and more.
 
-## Environment & Auth
+### Environment & Auth
 
 | Variable | Required For | Description |
 |----------|-------------|-------------|
@@ -245,7 +354,7 @@ echo "your-key" | vai config set api-key --stdin
 vai config set mongodb-uri "mongodb+srv://..."
 ```
 
-## Shell Completions
+### Shell Completions
 
 ```bash
 # Bash
@@ -256,9 +365,9 @@ mkdir -p ~/.zsh/completions
 vai completions zsh > ~/.zsh/completions/_vai
 ```
 
-Covers all 21 commands, subcommands, flags, model names, and explain topics.
+Covers all 22 commands, subcommands, flags, model names, and explain topics.
 
-## All Commands
+### All Commands
 
 | Command | Description |
 |---------|-------------|
@@ -283,12 +392,39 @@ Covers all 21 commands, subcommands, flags, model names, and explain topics.
 | `vai demo` | Guided walkthrough |
 | `vai completions` | Shell completion scripts |
 | `vai about` | About this tool |
+| `vai version` | Print version |
+
+---
+
+## Screenshots
+
+> 📸 **Coming soon** — Screenshots of the Desktop App, Web Playground, and CLI in action will be added here.
+
+<!-- 
+### Desktop App
+![Desktop App - Embed Tab](screenshots/desktop-embed.png)
+![Desktop App - Dark Theme](screenshots/desktop-dark.png)
+
+### Web Playground
+![Playground - Compare Tab](screenshots/playground-compare.png)
+![Playground - Explore Tab](screenshots/playground-explore.png)
+
+### CLI
+![CLI - Pipeline](screenshots/cli-pipeline.png)
+![CLI - Query Results](screenshots/cli-query.png)
+-->
+
+---
 
 ## Requirements
 
 - Node.js 18+
 - [MongoDB Atlas](https://www.mongodb.com/atlas) account (free tier works)
 - [Voyage AI model API key](https://www.mongodb.com/docs/voyageai/management/api-keys/) (created in Atlas)
+
+## Author
+
+Built by [Michael Lynn](https://github.com/mrlynn), Principal Staff Developer Advocate at [MongoDB](https://www.mongodb.com).
 
 ## Disclaimer
 
@@ -300,4 +436,4 @@ For official documentation and support:
 
 ## License
 
-MIT
+[MIT](LICENSE) © [Michael Lynn](https://github.com/mrlynn)
