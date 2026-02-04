@@ -8,26 +8,30 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg: #1a1a2e;
-  --bg-surface: #16213e;
-  --bg-card: #1e2a47;
-  --bg-input: #0f1629;
-  --accent: #00d4aa;
-  --accent-dim: #00a88a;
-  --accent-glow: rgba(0, 212, 170, 0.15);
-  --text: #e0e0e0;
-  --text-dim: #8892a4;
-  --text-muted: #5a6478;
-  --border: #2a3550;
-  --error: #ff6b6b;
-  --warning: #ffd93d;
-  --success: #00d4aa;
-  --red: #ff6b6b;
-  --yellow: #ffd93d;
-  --green: #00d4aa;
+  /* MongoDB Design System — Dark Mode Palette */
+  --bg: #001E2B;            /* MDB Black */
+  --bg-surface: #112733;    /* Gray Dark 4 */
+  --bg-card: #1C2D38;       /* Gray Dark 3 */
+  --bg-input: #112733;      /* Gray Dark 4 */
+  --accent: #00ED64;        /* Green Base */
+  --accent-dim: #00A35C;    /* Green Dark 1 */
+  --accent-glow: rgba(0, 237, 100, 0.12);
+  --text: #E8EDEB;          /* Gray Light 2 */
+  --text-dim: #C1C7C6;      /* Gray Light 1 */
+  --text-muted: #889397;    /* Gray Base */
+  --border: #3D4F58;        /* Gray Dark 2 */
+  --error: #FF6960;         /* Red Light 1 */
+  --warning: #FFC010;       /* Yellow Base */
+  --success: #00ED64;       /* Green Base */
+  --red: #FF6960;           /* Red Light 1 */
+  --yellow: #FFC010;        /* Yellow Base */
+  --green: #00ED64;         /* Green Base */
+  --blue: #0498EC;          /* Blue Light 1 (links) */
+  --purple: #B45AF2;        /* Purple Base */
+  --green-dark: #023430;    /* Green Dark 3 */
   --radius: 8px;
-  --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-  --mono: 'SF Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+  --font: 'Euclid Circular A', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+  --mono: 'Source Code Pro', 'SF Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
 }
 
 html, body { height: 100%; }
@@ -168,7 +172,7 @@ select:focus { outline: none; border-color: var(--accent); }
 
 .btn {
   background: var(--accent);
-  color: #0a0a1a;
+  color: var(--green-dark);
   border: none;
   padding: 10px 24px;
   border-radius: var(--radius);
@@ -181,12 +185,12 @@ select:focus { outline: none; border-color: var(--accent); }
   align-items: center;
   gap: 8px;
 }
-.btn:hover { background: #00eabb; transform: translateY(-1px); }
+.btn:hover { background: #71F6BA; transform: translateY(-1px); }
 .btn:active { transform: translateY(0); }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
 .btn-secondary {
-  background: var(--bg-input);
+  background: transparent;
   color: var(--accent);
   border: 1px solid var(--accent-dim);
 }
@@ -400,7 +404,7 @@ select:focus { outline: none; border-color: var(--accent); }
 .explore-card:hover {
   border-color: var(--accent);
   transform: translateY(-2px);
-  box-shadow: 0 4px 20px rgba(0, 212, 170, 0.1);
+  box-shadow: 0 4px 20px rgba(0, 237, 100, 0.1);
 }
 .explore-card.expanded {
   border-color: var(--accent);
@@ -518,7 +522,7 @@ select:focus { outline: none; border-color: var(--accent); }
 }
 .explore-modal-links a {
   display: block;
-  color: var(--accent);
+  color: var(--blue);
   font-size: 12px;
   word-break: break-all;
   margin-bottom: 4px;
@@ -605,7 +609,7 @@ select:focus { outline: none; border-color: var(--accent); }
   padding: 0 10px;
   font-family: var(--mono);
   font-size: 12px;
-  color: #0a0a1a;
+  color: var(--green-dark);
   font-weight: 600;
   white-space: nowrap;
 }
@@ -686,10 +690,10 @@ select:focus { outline: none; border-color: var(--accent); }
   transition: width 0.8s cubic-bezier(0.22, 1, 0.36, 1);
   display: flex; align-items: center; padding: 0 10px;
   font-family: var(--mono); font-size: 12px; font-weight: 600;
-  color: #0a0a1a; white-space: nowrap; min-width: fit-content;
+  color: var(--green-dark); white-space: nowrap; min-width: fit-content;
 }
-.quant-bar-fill.storage { background: linear-gradient(90deg, #00d4aa, #4ecdc4); }
-.quant-bar-fill.latency { background: linear-gradient(90deg, #45b7d1, #82aaff); }
+.quant-bar-fill.storage { background: linear-gradient(90deg, #00ED64, #71F6BA); }
+.quant-bar-fill.latency { background: linear-gradient(90deg, #0498EC, #016BF8); }
 .quant-bar-badge {
   position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
   font-size: 12px; color: var(--text-dim); font-family: var(--mono);
@@ -714,9 +718,9 @@ select:focus { outline: none; border-color: var(--accent); }
   height: 100%; border-radius: 5px;
   transition: width 0.8s cubic-bezier(0.22, 1, 0.36, 1);
 }
-.quant-meter-fill.perfect { background: linear-gradient(90deg, #00d4aa, #00e4ba); }
-.quant-meter-fill.good { background: linear-gradient(90deg, #ffd93d, #ffe066); }
-.quant-meter-fill.degraded { background: linear-gradient(90deg, #ff6b6b, #ff8e8e); }
+.quant-meter-fill.perfect { background: linear-gradient(90deg, #00ED64, #71F6BA); }
+.quant-meter-fill.good { background: linear-gradient(90deg, #FFC010, #FFEC9E); }
+.quant-meter-fill.degraded { background: linear-gradient(90deg, #FF6960, #FFCDC7); }
 .quant-meter-detail { font-size: 11px; color: var(--text-muted); margin-top: 4px; font-family: var(--mono); }
 
 .quant-rank-cols {
@@ -810,7 +814,7 @@ select:focus { outline: none; border-color: var(--accent); }
   font-weight: 600;
 }
 .cost-mode-btn:hover:not(.active) {
-  background: rgba(0, 212, 170, 0.1);
+  background: rgba(0, 237, 100, 0.1);
   color: var(--text);
 }
 .cost-select {
@@ -924,7 +928,7 @@ select:focus { outline: none; border-color: var(--accent); }
 .cost-strategy-total-value { font-family: var(--mono); font-size: 18px; font-weight: 700; color: var(--accent); }
 .cost-savings {
   font-size: 11px;
-  color: #4ade80;
+  color: #71F6BA;
   font-weight: 600;
   margin-top: 6px;
   text-align: right;
@@ -950,7 +954,7 @@ select:focus { outline: none; border-color: var(--accent); }
   border-bottom: 1px solid rgba(42, 53, 80, 0.3);
   font-family: var(--mono);
 }
-.cost-table tr:hover { background: rgba(0, 212, 170, 0.03); }
+.cost-table tr:hover { background: rgba(0, 237, 100, 0.03); }
 .cost-highlight {
   color: var(--accent);
   font-weight: 600;
@@ -977,7 +981,7 @@ select:focus { outline: none; border-color: var(--accent); }
 .cost-tip {
   font-size: 12px;
   color: var(--text-muted);
-  background: rgba(0, 212, 170, 0.05);
+  background: rgba(0, 237, 100, 0.05);
   border-left: 3px solid var(--accent);
   padding: 10px 14px;
   border-radius: 0 6px 6px 0;
@@ -1097,7 +1101,7 @@ select:focus { outline: none; border-color: var(--accent); }
 }
 .cost-modal .formula .accent { color: var(--accent); font-weight: 600; }
 .cost-modal .example {
-  background: rgba(0, 212, 170, 0.05);
+  background: rgba(0, 237, 100, 0.05);
   border-left: 3px solid var(--accent);
   border-radius: 0 8px 8px 0;
   padding: 12px 16px;
@@ -1193,7 +1197,7 @@ select:focus { outline: none; border-color: var(--accent); }
   margin-bottom: 8px;
 }
 .about-text { font-size: 14px; line-height: 1.8; color: var(--text); }
-.about-text a { color: var(--accent); text-decoration: none; }
+.about-text a { color: var(--blue); text-decoration: none; }
 .about-text a:hover { text-decoration: underline; }
 .about-disclaimer {
   background: rgba(255, 215, 61, 0.08);
@@ -2390,8 +2394,8 @@ const BENCH_SAMPLE_TEXTS = [
 ];
 
 const MODEL_COLORS = [
-  '#00d4aa', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffd93d',
-  '#ff6b6b', '#c792ea', '#f78c6c', '#82aaff', '#c3e88d',
+  '#00ED64', '#71F6BA', '#0498EC', '#B45AF2', '#FFC010',
+  '#FF6960', '#B45AF2', '#FFC010', '#016BF8', '#C0FAE6',
 ];
 
 window.doBenchLatency = async function() {
@@ -2732,7 +2736,7 @@ window.doBenchQuantization = async function() {
     const baseline = completed.find(r => r.dtype === 'float') || completed[0];
     const maxBytes = Math.max(...completed.map(r => r.bytesPerVec));
     const maxLatency = Math.max(...completed.map(r => r.latency));
-    const DTYPE_COLORS = { float: '#00d4aa', int8: '#4ecdc4', uint8: '#45b7d1', ubinary: '#ffd93d', binary: '#ff6b6b' };
+    const DTYPE_COLORS = { float: '#00ED64', int8: '#71F6BA', uint8: '#0498EC', ubinary: '#FFC010', binary: '#FF6960' };
 
     // ── Storage Bar Chart ──
     let storageHTML = '';
@@ -2743,7 +2747,7 @@ window.doBenchQuantization = async function() {
       const savings = r.bytesPerVec < baseline.bytesPerVec
         ? `${(baseline.bytesPerVec / r.bytesPerVec).toFixed(0)}× smaller`
         : 'baseline';
-      const color = DTYPE_COLORS[r.dtype] || '#82aaff';
+      const color = DTYPE_COLORS[r.dtype] || '#0498EC';
       storageHTML += `<div class="quant-bar-group">
         <div class="quant-bar-label">
           <span class="dtype-name">${r.dtype}</span>
@@ -2761,7 +2765,7 @@ window.doBenchQuantization = async function() {
     const minLatency = Math.min(...completed.map(r => r.latency));
     for (const r of completed) {
       const pct = Math.max(8, (r.latency / maxLatency) * 100);
-      const color = DTYPE_COLORS[r.dtype] || '#82aaff';
+      const color = DTYPE_COLORS[r.dtype] || '#0498EC';
       const badge = r.latency === minLatency ? ' ⚡' : '';
       latencyHTML += `<div class="quant-bar-group">
         <div class="quant-bar-label">
@@ -3120,7 +3124,7 @@ function updateRagCalculator() {
     </div>
     <div class="cost-summary-card">
       <div class="cost-summary-label">Max potential savings</div>
-      <div class="cost-summary-value" style="color:#4ade80">${maxCost > 0 ? ((1 - strategies[0].totalCost / maxCost) * 100).toFixed(0) + '%' : '0%'}</div>
+      <div class="cost-summary-value" style="color:#71F6BA">${maxCost > 0 ? ((1 - strategies[0].totalCost / maxCost) * 100).toFixed(0) + '%' : '0%'}</div>
       <div class="cost-summary-detail">vs ${strategies[strategies.length - 1].name.split(':')[1]?.trim() || 'most expensive'}</div>
     </div>
   `;
