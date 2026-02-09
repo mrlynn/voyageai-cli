@@ -12,6 +12,28 @@ The fastest path from documents to semantic search. Chunk files, generate [Voyag
 
 ---
 
+## Why Voyage AI?
+
+Voyage AI provides **state-of-the-art embedding models** with the best quality-to-cost ratio in the industry. Here's why developers choose Voyage AI:
+
+| Advantage | What It Means |
+|-----------|---------------|
+| **🎯 #1 on MTEB** | Voyage-3 ranks first on retrieval benchmarks, outperforming OpenAI, Cohere, and other providers |
+| **💰 Up to 83% Cost Savings** | Asymmetric retrieval: embed docs with `voyage-3-lite`, query with `voyage-3-large` — same quality, fraction of the cost |
+| **🔗 Shared Embedding Space** | All Voyage-3 models produce compatible embeddings — mix and match for optimal cost-quality tradeoffs |
+| **🏢 Domain-Specific Models** | Specialized models for code, finance, law, and multilingual content that beat general-purpose alternatives |
+| **⚡ Two-Stage Retrieval** | Rerank-2 boosts search precision by re-scoring candidates with a powerful cross-encoder |
+
+**Get started:**
+```bash
+# Get a free API key at https://dash.voyageai.com
+vai quickstart    # Interactive tutorial — zero to semantic search in 2 minutes
+```
+
+**Learn more:** [Voyage AI Docs](https://docs.voyageai.com) · [Pricing](https://voyageai.com/pricing) · [Blog](https://blog.voyageai.com)
+
+---
+
 ## Three Ways to Use It
 
 <table>
@@ -44,6 +66,7 @@ MongoDB LeafyGreen design system<br/><br/>
 
 ## Table of Contents
 
+- [Why Voyage AI?](#why-voyage-ai)
 - [Desktop App](#desktop-app)
 - [Web Playground](#web-playground)
 - [CLI — Quick Start](#cli--quick-start)
