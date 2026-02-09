@@ -53,23 +53,58 @@ function registerAbout(program) {
       console.log(`  into their applications — right from the terminal.`);
       console.log('');
 
+      // Why Voyage AI?
+      console.log(`  ${pc.bold(pc.green('Why Voyage AI?'))}`);
+      console.log(`  Voyage AI provides state-of-the-art embedding models with`);
+      console.log(`  the best quality-to-cost ratio in the industry.`);
+      console.log('');
+      console.log(`  ${pc.cyan('🎯 SOTA Quality')}`);
+      console.log(`     Voyage-3 ranks #1 on MTEB retrieval benchmarks, outperforming`);
+      console.log(`     OpenAI, Cohere, and other providers on real-world tasks.`);
+      console.log('');
+      console.log(`  ${pc.cyan('💰 Best Value')}`);
+      console.log(`     Up to 83% cost reduction with asymmetric retrieval: embed`);
+      console.log(`     documents with voyage-3-lite, query with voyage-3-large.`);
+      console.log('');
+      console.log(`  ${pc.cyan('🔗 Shared Embedding Space')}`);
+      console.log(`     All Voyage-3 models share the same embedding space — mix`);
+      console.log(`     and match models for optimal cost-quality tradeoffs.`);
+      console.log('');
+      console.log(`  ${pc.cyan('🏢 Domain-Specific Models')}`);
+      console.log(`     Specialized models for code, finance, law, and multilingual`);
+      console.log(`     content that outperform general-purpose alternatives.`);
+      console.log('');
+      console.log(`  ${pc.cyan('⚡ Reranking')}`);
+      console.log(`     Two-stage retrieval with rerank-2 boosts precision by`);
+      console.log(`     re-scoring candidates with a powerful cross-encoder.`);
+      console.log('');
+
       // Features
       console.log(`  ${pc.bold('What You Can Do')}`);
+      console.log(`  ${pc.cyan('vai quickstart')}   Zero-to-search tutorial (start here!)`);
       console.log(`  ${pc.cyan('vai embed')}        Generate vector embeddings for text`);
       console.log(`  ${pc.cyan('vai similarity')}   Compare texts with cosine similarity`);
       console.log(`  ${pc.cyan('vai rerank')}       Rerank documents against a query`);
       console.log(`  ${pc.cyan('vai search')}       Vector search against Atlas collections`);
       console.log(`  ${pc.cyan('vai store')}        Embed and store documents in Atlas`);
       console.log(`  ${pc.cyan('vai benchmark')}    Compare model latency, ranking & costs`);
+      console.log(`  ${pc.cyan('vai doctor')}       Health-check your setup`);
       console.log(`  ${pc.cyan('vai explain')}      Learn about embeddings, vector search & more`);
       console.log(`  ${pc.cyan('vai playground')}   Launch interactive web playground`);
       console.log('');
 
-      // Links
-      console.log(`  ${pc.bold('Links')}`);
+      // Voyage AI Links
+      console.log(`  ${pc.bold('Voyage AI Resources')}`);
+      console.log(`  ${pc.dim('Docs:')}      https://docs.voyageai.com`);
+      console.log(`  ${pc.dim('Dashboard:')} https://dash.voyageai.com`);
+      console.log(`  ${pc.dim('Pricing:')}   https://voyageai.com/pricing`);
+      console.log(`  ${pc.dim('Blog:')}      https://blog.voyageai.com`);
+      console.log('');
+
+      // Tool Links
+      console.log(`  ${pc.bold('This Tool')}`);
       console.log(`  ${pc.dim('npm:')}     https://www.npmjs.com/package/voyageai-cli`);
       console.log(`  ${pc.dim('GitHub:')}  https://github.com/mrlynn/voyageai-cli`);
-      console.log(`  ${pc.dim('Docs:')}    https://www.mongodb.com/docs/voyageai/`);
       console.log(`  ${pc.dim('Author:')}  https://mlynn.org`);
       console.log('');
 
