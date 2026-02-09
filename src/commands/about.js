@@ -20,6 +20,7 @@ function registerAbout(program) {
             name: 'Michael Lynn',
             role: 'Principal Staff Developer Advocate, MongoDB',
             github: 'https://github.com/mrlynn',
+            vai_website: 'https://vai.mlynn.org',
             website: 'https://mlynn.org',
           },
           links: {

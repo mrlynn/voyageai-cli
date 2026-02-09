@@ -28,6 +28,8 @@ const { registerPipeline } = require('./commands/pipeline');
 const { registerEval } = require('./commands/eval');
 const { registerApp } = require('./commands/app');
 const { registerAbout } = require('./commands/about');
+const { register: registerDoctor } = require('./commands/doctor');
+const { register: registerQuickstart } = require('./commands/quickstart');
 const { showBanner, showQuickStart, getVersion } = require('./lib/banner');
 
 const version = getVersion();
@@ -60,6 +62,8 @@ registerPipeline(program);
 registerEval(program);
 registerApp(program);
 registerAbout(program);
+registerDoctor(program);
+registerQuickstart(program);
 
 // Append disclaimer to all help output
 program.addHelpText('after', `
