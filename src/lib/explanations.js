@@ -1,6 +1,13 @@
 'use strict';
 
-const pc = require('picocolors');
+// Gracefully handle missing picocolors (e.g., in packaged Electron app)
+let pc;
+try {
+  pc = require('picocolors');
+} catch {
+  // Fallback: no-op functions that return input unchanged
+  pc = new Proxy({}, { get: () => (s) => s });
+}
 
 /**
  * Map of concept key → explanation object.
