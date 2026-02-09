@@ -2651,6 +2651,7 @@ Semantic search understands meaning beyond keyword matching</textarea>
   <div class="bench-panels">
     <button class="bench-panel-btn active" data-bench="latency">⚡ Latency</button>
     <button class="bench-panel-btn" data-bench="ranking">🏆 Ranking</button>
+    <button class="bench-panel-btn" data-bench="competitors">⚔️ vs Competitors</button>
     <button class="bench-panel-btn" data-bench="quantization">⚗️ Quantization</button>
     <button class="bench-panel-btn" data-bench="cost">💰 Cost</button>
     <button class="bench-panel-btn" data-bench="history">📊 History</button>
@@ -2741,6 +2742,168 @@ Reranking models rescore initial search results to improve relevance ordering.</
         <div id="benchRankVerdict" style="margin-bottom:12px;font-size:14px;"></div>
         <div class="rank-comparison" id="benchRankGrid"></div>
       </div>
+    </div>
+  </div>
+
+  <!-- ── Competitors Panel ── -->
+  <div class="bench-view" id="bench-competitors">
+    <div class="card">
+      <div class="card-title">Why Voyage AI? — Competitive Comparison</div>
+      <p style="color:var(--text-dim);font-size:13px;margin-bottom:16px;">
+        See how Voyage AI compares to other embedding providers on quality, cost, and features.
+      </p>
+    </div>
+
+    <!-- MTEB Retrieval Benchmark -->
+    <div class="card" style="margin-top:16px;">
+      <div class="card-title">🏆 MTEB Retrieval Benchmark (nDCG@10)</div>
+      <p style="color:var(--text-dim);font-size:13px;margin-bottom:16px;">
+        Industry-standard benchmark for retrieval quality. Higher is better.
+      </p>
+      <div id="mtebChart" style="display:flex;flex-direction:column;gap:8px;">
+        <!-- Voyage AI -->
+        <div style="display:flex;align-items:center;gap:12px;">
+          <span style="min-width:140px;font-weight:600;color:var(--accent);">Voyage-3</span>
+          <div style="flex:1;height:24px;background:var(--surface);border-radius:4px;overflow:hidden;">
+            <div style="width:67.4%;height:100%;background:var(--accent);border-radius:4px;"></div>
+          </div>
+          <span style="min-width:50px;text-align:right;font-family:var(--mono);color:var(--accent);font-weight:600;">67.4</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <span style="min-width:140px;font-weight:600;color:var(--accent);">Voyage-3-lite</span>
+          <div style="flex:1;height:24px;background:var(--surface);border-radius:4px;overflow:hidden;">
+            <div style="width:64.3%;height:100%;background:var(--accent);opacity:0.7;border-radius:4px;"></div>
+          </div>
+          <span style="min-width:50px;text-align:right;font-family:var(--mono);color:var(--accent);">64.3</span>
+        </div>
+        <!-- Competitors -->
+        <div style="display:flex;align-items:center;gap:12px;">
+          <span style="min-width:140px;color:var(--text-dim);">OpenAI text-3-large</span>
+          <div style="flex:1;height:24px;background:var(--surface);border-radius:4px;overflow:hidden;">
+            <div style="width:64.6%;height:100%;background:#666;border-radius:4px;"></div>
+          </div>
+          <span style="min-width:50px;text-align:right;font-family:var(--mono);color:var(--text-dim);">64.6</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <span style="min-width:140px;color:var(--text-dim);">OpenAI text-3-small</span>
+          <div style="flex:1;height:24px;background:var(--surface);border-radius:4px;overflow:hidden;">
+            <div style="width:62.3%;height:100%;background:#666;border-radius:4px;"></div>
+          </div>
+          <span style="min-width:50px;text-align:right;font-family:var(--mono);color:var(--text-dim);">62.3</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <span style="min-width:140px;color:var(--text-dim);">Cohere embed-v3</span>
+          <div style="flex:1;height:24px;background:var(--surface);border-radius:4px;overflow:hidden;">
+            <div style="width:64.1%;height:100%;background:#666;border-radius:4px;"></div>
+          </div>
+          <span style="min-width:50px;text-align:right;font-family:var(--mono);color:var(--text-dim);">64.1</span>
+        </div>
+      </div>
+      <p style="color:var(--text-dim);font-size:11px;margin-top:12px;">
+        Source: <a href="https://huggingface.co/spaces/mteb/leaderboard" target="_blank" style="color:var(--accent);">MTEB Leaderboard</a> (Retrieval Average, Jan 2025)
+      </p>
+    </div>
+
+    <!-- Cost Comparison -->
+    <div class="card" style="margin-top:16px;">
+      <div class="card-title">💰 Cost per Million Tokens</div>
+      <p style="color:var(--text-dim);font-size:13px;margin-bottom:16px;">
+        Voyage AI offers significant cost savings, especially with asymmetric retrieval strategies.
+      </p>
+      <table style="width:100%;border-collapse:collapse;font-size:13px;">
+        <thead>
+          <tr style="border-bottom:1px solid var(--border);">
+            <th style="text-align:left;padding:8px 12px;color:var(--text-dim);">Provider / Model</th>
+            <th style="text-align:right;padding:8px 12px;color:var(--text-dim);">Price</th>
+            <th style="text-align:right;padding:8px 12px;color:var(--text-dim);">vs Voyage-3</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:8px 12px;font-weight:600;color:var(--accent);">Voyage-3-lite</td>
+            <td style="text-align:right;padding:8px 12px;font-family:var(--mono);color:var(--accent);">$0.02</td>
+            <td style="text-align:right;padding:8px 12px;color:var(--success);font-weight:600;">83% cheaper</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:8px 12px;font-weight:600;color:var(--accent);">Voyage-3</td>
+            <td style="text-align:right;padding:8px 12px;font-family:var(--mono);color:var(--accent);">$0.06</td>
+            <td style="text-align:right;padding:8px 12px;color:var(--text-dim);">baseline</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:8px 12px;color:var(--text-dim);">OpenAI text-3-large</td>
+            <td style="text-align:right;padding:8px 12px;font-family:var(--mono);">$0.13</td>
+            <td style="text-align:right;padding:8px 12px;color:var(--error);">2.2x more</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:8px 12px;color:var(--text-dim);">OpenAI text-3-small</td>
+            <td style="text-align:right;padding:8px 12px;font-family:var(--mono);">$0.02</td>
+            <td style="text-align:right;padding:8px 12px;color:var(--text-dim);">same</td>
+          </tr>
+          <tr>
+            <td style="padding:8px 12px;color:var(--text-dim);">Cohere embed-v3</td>
+            <td style="text-align:right;padding:8px 12px;font-family:var(--mono);">$0.10</td>
+            <td style="text-align:right;padding:8px 12px;color:var(--error);">1.7x more</td>
+          </tr>
+        </tbody>
+      </table>
+      <div style="margin-top:16px;padding:12px;background:var(--accent-glow);border-radius:8px;border-left:3px solid var(--accent);">
+        <strong style="color:var(--accent);">💡 Pro Tip: Asymmetric Retrieval</strong>
+        <p style="margin:8px 0 0 0;font-size:13px;color:var(--text);">
+          Embed your document corpus with <code style="background:var(--surface);padding:2px 6px;border-radius:4px;">voyage-3-lite</code> ($0.02/M) and 
+          query with <code style="background:var(--surface);padding:2px 6px;border-radius:4px;">voyage-3</code> ($0.06/M). 
+          Because all Voyage-3 models share the same embedding space, you get top-tier retrieval quality at a fraction of the cost.
+        </p>
+      </div>
+    </div>
+
+    <!-- Key Differentiators -->
+    <div class="card" style="margin-top:16px;">
+      <div class="card-title">🚀 Voyage AI Advantages</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:16px;margin-top:12px;">
+        <div style="padding:16px;background:var(--surface);border-radius:8px;border:1px solid var(--border);">
+          <div style="font-size:20px;margin-bottom:8px;">🔗</div>
+          <div style="font-weight:600;margin-bottom:4px;">Shared Embedding Space</div>
+          <div style="font-size:13px;color:var(--text-dim);">
+            All Voyage-3 models produce compatible embeddings. Mix <code>voyage-3-large</code> for queries 
+            with <code>voyage-3-lite</code> for documents — they work together seamlessly.
+          </div>
+        </div>
+        <div style="padding:16px;background:var(--surface);border-radius:8px;border:1px solid var(--border);">
+          <div style="font-size:20px;margin-bottom:8px;">🏢</div>
+          <div style="font-weight:600;margin-bottom:4px;">Domain-Specific Models</div>
+          <div style="font-size:13px;color:var(--text-dim);">
+            Specialized models for code (<code>voyage-code-3</code>), finance, law, and multilingual content 
+            that outperform general-purpose alternatives.
+          </div>
+        </div>
+        <div style="padding:16px;background:var(--surface);border-radius:8px;border:1px solid var(--border);">
+          <div style="font-size:20px;margin-bottom:8px;">⚡</div>
+          <div style="font-weight:600;margin-bottom:4px;">Two-Stage Retrieval</div>
+          <div style="font-size:13px;color:var(--text-dim);">
+            Combine embedding search with <code>rerank-2</code> to dramatically boost precision. 
+            The cross-encoder re-scores candidates for better relevance.
+          </div>
+        </div>
+        <div style="padding:16px;background:var(--surface);border-radius:8px;border:1px solid var(--border);">
+          <div style="font-size:20px;margin-bottom:8px;">🖼️</div>
+          <div style="font-weight:600;margin-bottom:4px;">Multimodal Embeddings</div>
+          <div style="font-size:13px;color:var(--text-dim);">
+            <code>voyage-multimodal-3</code> embeds both text and images in the same space, 
+            enabling cross-modal search (find images with text queries and vice versa).
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CTA -->
+    <div class="card" style="margin-top:16px;text-align:center;padding:24px;">
+      <div style="font-size:18px;font-weight:600;margin-bottom:8px;">Ready to try Voyage AI?</div>
+      <p style="color:var(--text-dim);margin-bottom:16px;">Get a free API key and start building in minutes.</p>
+      <a href="https://dash.voyageai.com" target="_blank" class="btn" style="display:inline-block;text-decoration:none;">
+        Get API Key →
+      </a>
+      <span style="margin:0 12px;color:var(--text-dim);">or</span>
+      <a href="https://docs.voyageai.com" target="_blank" style="color:var(--accent);">Read the Docs</a>
     </div>
   </div>
 
