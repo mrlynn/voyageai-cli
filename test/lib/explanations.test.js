@@ -23,6 +23,7 @@ describe('explanations', () => {
     'shared-embedding-space',
     'rteb-benchmarks',
     'voyage-4-nano',
+    'provider-comparison',
     'rerank-eval',
     'multimodal-embeddings',
     'cross-modal-search',
