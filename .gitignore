@@ -7,3 +7,4 @@ video
 # Electron
 electron/node_modules/
 dist-electron/
+VoyageAI-CLI-Assessment-Report.*

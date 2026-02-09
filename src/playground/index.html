@@ -5936,13 +5936,12 @@ init = async function() {
   initMultimodal();
   checkForAppUpdate();
   initOnboarding();
-};
+};  
 
 // ── Start ──
 init();
-
-// ── 🕹️ Vector Space Invaders (Easter Egg) ──
-// Trigger: Konami code (↑↑↓↓←→←→BA) or 7 rapid clicks on sidebar logo
+ 
+// ──  Vector Space Invaders (Easter Egg) ──    
 (function initEasterEgg() {
   const KONAMI = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'];
   let konamiIdx = 0;
