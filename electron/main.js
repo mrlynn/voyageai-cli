@@ -17,11 +17,32 @@ function loadStoredApiKey() {
   if (!fs.existsSync(keyFile)) return null;
   try {
     const encrypted = fs.readFileSync(keyFile);
-    if (!safeStorage.isEncryptionAvailable()) return null;
+    if (!safeStorage.isEncryptionAvailable()) {
+      console.log('[API Key] safeStorage not yet available');
+      return null;
+    }
     return safeStorage.decryptString(encrypted);
-  } catch {
+  } catch (err) {
+    console.error('[API Key] Failed to decrypt:', err.message);
     return null;
   }
+}
+
+// Async version with retry for startup timing issues
+async function loadStoredApiKeyWithRetry(maxRetries = 3, delayMs = 200) {
+  for (let i = 0; i < maxRetries; i++) {
+    const key = loadStoredApiKey();
+    if (key) return key;
+    // Key file exists but safeStorage not ready - wait and retry
+    const keyFile = getKeyFilePath();
+    if (fs.existsSync(keyFile) && !safeStorage.isEncryptionAvailable()) {
+      console.log(`[API Key] Retry ${i + 1}/${maxRetries} - waiting for safeStorage...`);
+      await new Promise(r => setTimeout(r, delayMs));
+    } else {
+      break; // No key file or other error, don't retry
+    }
+  }
+  return loadStoredApiKey();
 }
 
 function saveApiKey(key) {
@@ -472,8 +493,9 @@ app.whenReady().then(async () => {
   registerApiKeyHandlers();
 
   // Try to load stored API key into env if not already set
+  // Use retry version to handle safeStorage timing on macOS
   if (!process.env.VOYAGE_API_KEY) {
-    const stored = loadStoredApiKey();
+    const stored = await loadStoredApiKeyWithRetry();
     if (stored) {
       process.env.VOYAGE_API_KEY = stored;
     }
