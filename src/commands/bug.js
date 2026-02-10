@@ -2,8 +2,8 @@
 
 const os = require('os');
 const pc = require('picocolors');
-const { ui } = require('../lib/ui');
-const { sendTelemetry } = require('../lib/telemetry');
+const ui = require('../lib/ui');
+const { send: sendTelemetry } = require('../lib/telemetry');
 
 // Try to get package version safely
 function getVersion() {
