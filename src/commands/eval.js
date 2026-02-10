@@ -1,12 +1,112 @@
 'use strict';
 
 const fs = require('fs');
+const path = require('path');
 const { getDefaultModel, DEFAULT_RERANK_MODEL, MODEL_CATALOG } = require('../lib/catalog');
 const { generateEmbeddings, apiRequest } = require('../lib/api');
 const { getMongoCollection } = require('../lib/mongo');
 const { loadProject } = require('../lib/project');
 const { computeMetrics, aggregateMetrics } = require('../lib/metrics');
 const ui = require('../lib/ui');
+
+/**
+ * Save evaluation results to a JSON file.
+ * @param {string} filePath - Output path
+ * @param {object} results - Results object to save
+ */
+function saveResults(filePath, results) {
+  const output = {
+    ...results,
+    savedAt: new Date().toISOString(),
+    vaiVersion: require('../../package.json').version,
+  };
+  fs.writeFileSync(filePath, JSON.stringify(output, null, 2), 'utf8');
+}
+
+/**
+ * Load baseline results from a JSON file.
+ * @param {string} filePath - Input path
+ * @returns {object} Loaded results
+ */
+function loadBaseline(filePath) {
+  if (!fs.existsSync(filePath)) {
+    throw new Error(`Baseline file not found: ${filePath}`);
+  }
+  const content = fs.readFileSync(filePath, 'utf8');
+  return JSON.parse(content);
+}
+
+/**
+ * Compute deltas between current and baseline results.
+ * @param {object} current - Current aggregated metrics
+ * @param {object} baseline - Baseline aggregated metrics
+ * @returns {object} Deltas with direction indicators
+ */
+function computeDeltas(current, baseline) {
+  const deltas = {};
+  for (const key of Object.keys(current)) {
+    if (baseline[key] !== undefined) {
+      const diff = current[key] - baseline[key];
+      const pctChange = baseline[key] !== 0 
+        ? ((diff / baseline[key]) * 100).toFixed(1)
+        : (diff > 0 ? '+∞' : diff < 0 ? '-∞' : '0');
+      deltas[key] = {
+        current: current[key],
+        baseline: baseline[key],
+        diff,
+        pctChange,
+        improved: diff > 0.001,
+        regressed: diff < -0.001,
+      };
+    }
+  }
+  return deltas;
+}
+
+/**
+ * Print comparison between current and baseline results.
+ * @param {object} deltas - Delta object from computeDeltas
+ */
+function printBaselineComparison(deltas) {
+  console.log('');
+  console.log(ui.bold('Comparison with baseline:'));
+  console.log('');
+
+  const metricKeys = Object.keys(deltas);
+  const maxKeyLen = Math.max(...metricKeys.map(k => k.length));
+
+  for (const key of metricKeys) {
+    const d = deltas[key];
+    const label = key.toUpperCase().padEnd(maxKeyLen + 1);
+    const currentStr = d.current.toFixed(4);
+    const baselineStr = d.baseline.toFixed(4);
+    
+    let diffStr;
+    if (d.improved) {
+      diffStr = ui.green(`+${d.diff.toFixed(4)} (${d.pctChange}%)`);
+    } else if (d.regressed) {
+      diffStr = ui.red(`${d.diff.toFixed(4)} (${d.pctChange}%)`);
+    } else {
+      diffStr = ui.dim(`${d.diff >= 0 ? '+' : ''}${d.diff.toFixed(4)} (${d.pctChange}%)`);
+    }
+
+    console.log(`  ${label} ${currentStr} vs ${baselineStr}  ${diffStr}`);
+  }
+
+  // Summary
+  const improved = Object.values(deltas).filter(d => d.improved).length;
+  const regressed = Object.values(deltas).filter(d => d.regressed).length;
+  const unchanged = metricKeys.length - improved - regressed;
+
+  console.log('');
+  if (improved > regressed) {
+    console.log(ui.success(`  Overall: ${improved} improved, ${regressed} regressed, ${unchanged} unchanged`));
+  } else if (regressed > improved) {
+    console.log(ui.warn(`  Overall: ${improved} improved, ${regressed} regressed, ${unchanged} unchanged`));
+  } else {
+    console.log(ui.dim(`  Overall: ${improved} improved, ${regressed} regressed, ${unchanged} unchanged`));
+  }
+}
 
 /**
  * Load a test set from a JSONL file.
@@ -61,9 +161,14 @@ function loadTestSet(filePath, mode = 'retrieval') {
  * @param {import('commander').Command} program
  */
 function registerEval(program) {
-  program
+  const evalCmd = program
     .command('eval')
-    .description('Evaluate retrieval & reranking quality — MRR, NDCG, Recall on your data')
+    .description('Evaluate retrieval & reranking quality — MRR, NDCG, Recall on your data');
+  
+  // Register compare subcommand
+  registerEvalCompare(evalCmd);
+  
+  evalCmd
     .requiredOption('--test-set <path>', 'JSONL file with queries and expected results')
     .option('--mode <mode>', 'Evaluation mode: "retrieval" (default) or "rerank"', 'retrieval')
     .option('--db <database>', 'Database name (retrieval mode)')
@@ -82,6 +187,8 @@ function registerEval(program) {
     .option('--text-field <name>', 'Document text field', 'text')
     .option('--id-field <name>', 'Document ID field for matching (default: _id)', '_id')
     .option('--compare <configs>', 'Compare configs: "model1,model2" or "rerank,no-rerank"')
+    .option('--save <path>', 'Save results to JSON file for later comparison')
+    .option('--baseline <path>', 'Compare against baseline results from previous run')
     .option('--json', 'Machine-readable JSON output')
     .option('-q, --quiet', 'Suppress non-essential output')
     .action(async (opts) => {
@@ -241,14 +348,43 @@ function registerEval(program) {
         const sorted = [...perQueryResults].sort((a, b) => a.metrics.mrr - b.metrics.mrr);
         const worstQueries = sorted.slice(0, Math.min(3, sorted.length));
 
+        // Build results object for saving/comparison
+        const resultsObj = {
+          mode: 'retrieval',
+          config: { model, rerank: doRerank, rerankModel: doRerank ? rerankModel : null, db, collection, kValues },
+          summary: aggregated,
+          tokens: { embed: totalEmbedTokens, rerank: totalRerankTokens },
+          queries: perQueryResults.length,
+          perQuery: perQueryResults,
+        };
+
+        // Save results if --save specified
+        if (opts.save) {
+          saveResults(opts.save, resultsObj);
+          if (verbose) {
+            console.log(ui.success(`Results saved to ${opts.save}`));
+            console.log('');
+          }
+        }
+
+        // Load and compare with baseline if --baseline specified
+        let baseline = null;
+        let deltas = null;
+        if (opts.baseline) {
+          try {
+            baseline = loadBaseline(opts.baseline);
+            deltas = computeDeltas(aggregated, baseline.summary);
+          } catch (err) {
+            console.error(ui.warn(`Could not load baseline: ${err.message}`));
+          }
+        }
+
         if (opts.json) {
-          console.log(JSON.stringify({
-            config: { model, rerank: doRerank, rerankModel: doRerank ? rerankModel : null, db, collection, kValues },
-            summary: aggregated,
-            tokens: { embed: totalEmbedTokens, rerank: totalRerankTokens },
-            queries: perQueryResults.length,
-            perQuery: perQueryResults,
-          }, null, 2));
+          if (deltas) {
+            resultsObj.baseline = { path: opts.baseline, savedAt: baseline.savedAt };
+            resultsObj.deltas = deltas;
+          }
+          console.log(JSON.stringify(resultsObj, null, 2));
           return;
         }
 
@@ -284,6 +420,11 @@ function registerEval(program) {
 
         console.log('');
         console.log(ui.dim(`  ${testSet.length} queries evaluated | Tokens: embed ${totalEmbedTokens}${totalRerankTokens ? `, rerank ${totalRerankTokens}` : ''}`));
+
+        // Print baseline comparison if available
+        if (deltas) {
+          printBaselineComparison(deltas);
+        }
 
         // Suggestions
         const mrr = aggregated.mrr;
@@ -618,4 +759,273 @@ function renderBar(value, width) {
   return '█'.repeat(filled) + '░'.repeat(empty);
 }
 
-module.exports = { registerEval };
+/**
+ * Register the eval compare subcommand.
+ * Compares multiple configurations side-by-side on the same test set.
+ * 
+ * @param {import('commander').Command} evalCmd - The eval command to add compare to
+ */
+function registerEvalCompare(evalCmd) {
+  evalCmd
+    .command('compare')
+    .description('Compare multiple configurations on the same test set')
+    .requiredOption('--test-set <path>', 'JSONL file with queries and expected results')
+    .requiredOption('--configs <paths>', 'Comma-separated paths to config JSON files')
+    .option('--mode <mode>', 'Evaluation mode: "retrieval" (default) or "rerank"', 'retrieval')
+    .option('-k, --k-values <values>', 'Comma-separated K values for @K metrics', '1,3,5,10')
+    .option('--save <path>', 'Save comparison results to JSON file')
+    .option('--json', 'Machine-readable JSON output')
+    .option('-q, --quiet', 'Suppress non-essential output')
+    .action(async (opts) => {
+      try {
+        const configPaths = opts.configs.split(',').map(p => p.trim());
+        const kValues = opts.kValues.split(',').map(v => parseInt(v.trim(), 10)).filter(v => !isNaN(v));
+        const verbose = !opts.json && !opts.quiet;
+
+        // Load config files
+        const configs = [];
+        for (const configPath of configPaths) {
+          if (!fs.existsSync(configPath)) {
+            console.error(ui.error(`Config file not found: ${configPath}`));
+            process.exit(1);
+          }
+          const content = fs.readFileSync(configPath, 'utf8');
+          const config = JSON.parse(content);
+          config._path = configPath;
+          configs.push(config);
+        }
+
+        // Load test set
+        let testSet;
+        try {
+          testSet = loadTestSet(opts.testSet, opts.mode);
+        } catch (err) {
+          console.error(ui.error(`Failed to load test set: ${err.message}`));
+          process.exit(1);
+        }
+
+        if (testSet.length === 0) {
+          console.error(ui.error('Test set is empty.'));
+          process.exit(1);
+        }
+
+        if (verbose) {
+          console.log('');
+          console.log(ui.bold('📊 Configuration Comparison'));
+          console.log(ui.dim(`  Test set: ${testSet.length} queries`));
+          console.log(ui.dim(`  Configs: ${configs.map(c => c.name || c._path).join(', ')}`));
+          console.log(ui.dim(`  Mode: ${opts.mode}`));
+          console.log('');
+        }
+
+        // Run eval for each config
+        const results = [];
+
+        for (const config of configs) {
+          const configName = config.name || path.basename(config._path, '.json');
+          
+          if (verbose) {
+            console.log(ui.dim(`  Evaluating: ${configName}...`));
+          }
+
+          if (opts.mode === 'rerank') {
+            // Rerank mode
+            const model = config.model || config.rerankModel || DEFAULT_RERANK_MODEL;
+            const topK = config.topK;
+            
+            const perQueryResults = [];
+            let totalTokens = 0;
+
+            for (const testCase of testSet) {
+              const rerankResult = await apiRequest('/rerank', {
+                query: testCase.query,
+                documents: testCase.documents,
+                model,
+                ...(topK ? { top_k: topK } : {}),
+              });
+              totalTokens += rerankResult.usage?.total_tokens || 0;
+
+              const relevantIdSet = new Set(testCase.relevant.map(idx => `doc_${idx}`));
+              const rerankedItems = rerankResult.data || [];
+              const retrievedIds = rerankedItems.map(item => `doc_${item.index}`);
+              const metrics = computeMetrics(retrievedIds, [...relevantIdSet], kValues);
+
+              perQueryResults.push({ metrics });
+            }
+
+            const aggregated = aggregateMetrics(perQueryResults.map(r => r.metrics));
+            results.push({
+              name: configName,
+              config,
+              summary: aggregated,
+              tokens: totalTokens,
+              queries: testSet.length,
+            });
+
+          } else {
+            // Retrieval mode
+            const { config: proj } = loadProject();
+            const model = config.model || proj.model || getDefaultModel();
+            const db = config.db || proj.db;
+            const collection = config.collection || proj.collection;
+            const index = config.index || proj.index || 'vector_index';
+            const field = config.field || proj.field || 'embedding';
+            const doRerank = config.rerank !== false;
+            const rerankModel = config.rerankModel || DEFAULT_RERANK_MODEL;
+            const dimensions = config.dimensions || proj.dimensions;
+            const limit = config.limit || 20;
+
+            if (!db || !collection) {
+              console.error(ui.error(`Config ${configName} missing db/collection.`));
+              process.exit(1);
+            }
+
+            const { client, collection: coll } = await getMongoCollection(db, collection);
+            const perQueryResults = [];
+            let totalEmbedTokens = 0;
+            let totalRerankTokens = 0;
+
+            try {
+              for (const testCase of testSet) {
+                const embedOpts = { model, inputType: 'query' };
+                if (dimensions) embedOpts.dimensions = dimensions;
+                const embedResult = await generateEmbeddings([testCase.query], embedOpts);
+                const queryVector = embedResult.data[0].embedding;
+                totalEmbedTokens += embedResult.usage?.total_tokens || 0;
+
+                const numCandidates = Math.min(limit * 15, 10000);
+                const pipeline = [
+                  { $vectorSearch: { index, path: field, queryVector, numCandidates, limit } },
+                  { $addFields: { _vsScore: { $meta: 'vectorSearchScore' } } },
+                ];
+
+                let searchResults = await coll.aggregate(pipeline).toArray();
+
+                if (doRerank && searchResults.length > 1) {
+                  const documents = searchResults.map(doc => String(doc.text || doc));
+                  const rerankResult = await apiRequest('/rerank', {
+                    query: testCase.query,
+                    documents,
+                    model: rerankModel,
+                  });
+                  totalRerankTokens += rerankResult.usage?.total_tokens || 0;
+                  searchResults = (rerankResult.data || []).map(item => searchResults[item.index]);
+                }
+
+                const retrievedIds = searchResults.map(doc => String(doc._id));
+                const metrics = computeMetrics(retrievedIds, testCase.relevant, kValues);
+                perQueryResults.push({ metrics });
+              }
+            } finally {
+              await client.close();
+            }
+
+            const aggregated = aggregateMetrics(perQueryResults.map(r => r.metrics));
+            results.push({
+              name: configName,
+              config,
+              summary: aggregated,
+              tokens: { embed: totalEmbedTokens, rerank: totalRerankTokens },
+              queries: testSet.length,
+            });
+          }
+        }
+
+        // Save if requested
+        if (opts.save) {
+          const output = {
+            mode: opts.mode,
+            testSet: opts.testSet,
+            kValues,
+            configs: results,
+            comparedAt: new Date().toISOString(),
+            vaiVersion: require('../../package.json').version,
+          };
+          fs.writeFileSync(opts.save, JSON.stringify(output, null, 2), 'utf8');
+          if (verbose) {
+            console.log(ui.success(`Comparison saved to ${opts.save}`));
+          }
+        }
+
+        // JSON output
+        if (opts.json) {
+          console.log(JSON.stringify({
+            mode: opts.mode,
+            testSet: opts.testSet,
+            kValues,
+            configs: results,
+          }, null, 2));
+          return;
+        }
+
+        // Pretty output - comparison table
+        console.log('');
+        console.log(ui.bold('Configuration Comparison'));
+        console.log('');
+
+        const keyMetrics = ['mrr', 'ndcg@5', 'ndcg@10', 'r@5', 'r@10'];
+        const availableMetrics = keyMetrics.filter(k => results[0].summary[k] !== undefined);
+
+        // Find best per metric
+        const bestPerMetric = {};
+        for (const m of availableMetrics) {
+          bestPerMetric[m] = Math.max(...results.map(r => r.summary[m]));
+        }
+
+        // Header
+        const nameColW = Math.max(20, ...results.map(r => r.name.length + 2));
+        const header = `  ${'Config'.padEnd(nameColW)} ${availableMetrics.map(m => m.toUpperCase().padStart(10)).join('')}`;
+        console.log(ui.dim(header));
+        console.log(ui.dim('  ' + '─'.repeat(header.length - 2)));
+
+        // Rows
+        for (const result of results) {
+          const cols = availableMetrics.map(m => {
+            const val = result.summary[m];
+            const str = val.toFixed(4);
+            return val === bestPerMetric[m] ? ui.green(str.padStart(10)) : str.padStart(10);
+          }).join('');
+          console.log(`  ${result.name.padEnd(nameColW)} ${cols}`);
+        }
+
+        console.log('');
+
+        // Visual comparison for key metrics
+        for (const m of ['ndcg@5', 'mrr']) {
+          if (!results[0].summary[m]) continue;
+          console.log(ui.bold(`  ${m.toUpperCase()}`));
+          for (const result of results) {
+            const val = result.summary[m];
+            const bar = renderBar(val, 30);
+            const color = val === bestPerMetric[m] ? ui.green(val.toFixed(4)) : ui.cyan(val.toFixed(4));
+            console.log(`    ${result.name.padEnd(nameColW - 2)} ${bar} ${color}`);
+          }
+          console.log('');
+        }
+
+        // Winner summary
+        const scores = results.map(r => ({
+          name: r.name,
+          score: availableMetrics.reduce((sum, m) => sum + (r.summary[m] === bestPerMetric[m] ? 1 : 0), 0),
+        }));
+        scores.sort((a, b) => b.score - a.score);
+        
+        if (scores[0].score > scores[1]?.score) {
+          console.log(ui.success(`  Winner: ${scores[0].name} (best in ${scores[0].score}/${availableMetrics.length} metrics)`));
+        } else {
+          console.log(ui.dim(`  Tie between configs - consider other factors (cost, latency)`));
+        }
+
+        console.log('');
+        console.log(ui.dim(`  ${testSet.length} queries × ${configs.length} configs evaluated`));
+        console.log('');
+
+      } catch (err) {
+        console.error(ui.error(err.message));
+        if (process.env.DEBUG) console.error(err.stack);
+        process.exit(1);
+      }
+    });
+}
+
+module.exports = { registerEval, registerEvalCompare };
