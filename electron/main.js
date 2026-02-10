@@ -101,6 +101,153 @@ function registerApiKeyHandlers() {
   ipcMain.handle('app:install-update', () => {
     autoUpdater.quitAndInstall(false, true);
   });
+
+  // ── Generate & Scaffold handlers ──
+  
+  // Import codegen from the CLI package
+  let codegen, scaffoldStructure;
+  try {
+    const cliPath = path.dirname(require.resolve('voyageai-cli/package.json'));
+    codegen = require(path.join(cliPath, 'src/lib/codegen'));
+    const scaffoldModule = require(path.join(cliPath, 'src/commands/scaffold'));
+    scaffoldStructure = scaffoldModule.PROJECT_STRUCTURE;
+  } catch (err) {
+    console.error('[Generate] Failed to load codegen:', err.message);
+  }
+
+  // Generate code for a component
+  ipcMain.handle('generate:code', async (_event, { target, component, config }) => {
+    if (!codegen) return { error: 'Codegen module not available' };
+    try {
+      const context = codegen.buildContext(config || {}, { projectName: 'my-app' });
+      
+      // Map component to template name
+      const templateMap = {
+        vanilla: { client: 'client.js', connection: 'connection.js', retrieval: 'retrieval.js', ingest: 'ingest.js', 'search-api': 'search-api.js' },
+        nextjs: { client: 'lib-voyage.js', connection: 'lib-mongo.js', retrieval: 'route-search.js', ingest: 'route-ingest.js', 'search-page': 'page-search.jsx' },
+        python: { client: 'voyage_client.py', connection: 'mongo_client.py', retrieval: 'app.py', ingest: 'chunker.py' },
+      };
+      
+      const templateName = (templateMap[target] || {})[component];
+      if (!templateName) return { error: `Unknown component: ${component}` };
+      
+      const code = codegen.renderTemplate(target, templateName.replace(/\.(js|jsx|py)$/, ''), context);
+      return { code, filename: templateName };
+    } catch (err) {
+      return { error: err.message };
+    }
+  });
+
+  // List available components for a target
+  ipcMain.handle('generate:components', async (_event, { target }) => {
+    const components = {
+      vanilla: ['client', 'connection', 'retrieval', 'ingest', 'search-api'],
+      nextjs: ['client', 'connection', 'retrieval', 'ingest', 'search-page'],
+      python: ['client', 'connection', 'retrieval', 'ingest'],
+    };
+    return components[target] || [];
+  });
+
+  // Pick a directory for scaffold output
+  ipcMain.handle('scaffold:pick-directory', async () => {
+    const result = await dialog.showOpenDialog({
+      title: 'Choose location for new project',
+      properties: ['openDirectory', 'createDirectory'],
+      buttonLabel: 'Select Folder',
+    });
+    if (result.canceled || result.filePaths.length === 0) return { canceled: true };
+    return { path: result.filePaths[0] };
+  });
+
+  // Check if a directory already has files
+  ipcMain.handle('scaffold:check-directory', async (_event, { dirPath, projectName }) => {
+    const targetPath = path.join(dirPath, projectName);
+    if (!fs.existsSync(targetPath)) return { exists: false };
+    const files = fs.readdirSync(targetPath);
+    return { exists: true, fileCount: files.length };
+  });
+
+  // Confirm overwrite dialog
+  ipcMain.handle('scaffold:confirm-overwrite', async (_event, { projectName }) => {
+    const result = await dialog.showMessageBox({
+      type: 'warning',
+      title: 'Directory exists',
+      message: `The folder "${projectName}" already exists and contains files.`,
+      detail: 'Do you want to overwrite the existing files?',
+      buttons: ['Cancel', 'Overwrite'],
+      defaultId: 0,
+      cancelId: 0,
+    });
+    return { confirmed: result.response === 1 };
+  });
+
+  // Create scaffold project
+  ipcMain.handle('scaffold:create', async (event, { dirPath, projectName, target, config }) => {
+    if (!codegen || !scaffoldStructure) return { error: 'Scaffold module not available' };
+    
+    const structure = scaffoldStructure[target];
+    if (!structure) return { error: `Unknown target: ${target}` };
+    
+    const projectDir = path.join(dirPath, projectName);
+    const context = codegen.buildContext(config || {}, { projectName });
+    const createdFiles = [];
+
+    try {
+      // Create project directory
+      if (!fs.existsSync(projectDir)) {
+        fs.mkdirSync(projectDir, { recursive: true });
+      }
+
+      // Render and write template files
+      for (const file of structure.files) {
+        const content = codegen.renderTemplate(target, file.template.replace(/\.(js|jsx|py|json|md|txt)$/, ''), context);
+        const outputPath = path.join(projectDir, file.output);
+        const outputDir = path.dirname(outputPath);
+        
+        if (!fs.existsSync(outputDir)) {
+          fs.mkdirSync(outputDir, { recursive: true });
+        }
+        
+        fs.writeFileSync(outputPath, content, 'utf8');
+        createdFiles.push(file.output);
+        
+        // Send progress update
+        event.sender.send('scaffold:progress', { file: file.output, total: structure.files.length, current: createdFiles.length });
+      }
+
+      // Write extra static files
+      if (structure.extraFiles) {
+        for (const file of structure.extraFiles) {
+          const content = typeof file.content === 'function' ? file.content(context) : file.content;
+          const outputPath = path.join(projectDir, file.output);
+          const outputDir = path.dirname(outputPath);
+          
+          if (!fs.existsSync(outputDir)) {
+            fs.mkdirSync(outputDir, { recursive: true });
+          }
+          
+          fs.writeFileSync(outputPath, content, 'utf8');
+          createdFiles.push(file.output);
+        }
+      }
+
+      return {
+        success: true,
+        projectDir,
+        files: createdFiles,
+        postInstall: structure.postInstall,
+        startCommand: structure.startCommand,
+      };
+    } catch (err) {
+      return { error: err.message };
+    }
+  });
+
+  // Open directory in Finder/Explorer
+  ipcMain.handle('scaffold:open-directory', async (_event, { dirPath }) => {
+    shell.openPath(dirPath);
+    return { success: true };
+  });
 }
 
 // ── Icon helpers ──

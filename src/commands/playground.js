@@ -114,6 +114,41 @@ function createPlaygroundServer() {
         return;
       }
 
+      // API: Generate code
+      if (req.method === 'POST' && req.url === '/api/generate') {
+        let body = '';
+        req.on('data', chunk => { body += chunk; });
+        req.on('end', () => {
+          try {
+            const { target, component, config } = JSON.parse(body);
+            const codegen = require('../lib/codegen');
+            
+            const templateMap = {
+              vanilla: { client: 'client.js', connection: 'connection.js', retrieval: 'retrieval.js', ingest: 'ingest.js', 'search-api': 'search-api.js' },
+              nextjs: { client: 'lib-voyage.js', connection: 'lib-mongo.js', retrieval: 'route-search.js', ingest: 'route-ingest.js', 'search-page': 'page-search.jsx' },
+              python: { client: 'voyage_client.py', connection: 'mongo_client.py', retrieval: 'app.py', ingest: 'chunker.py' },
+            };
+            
+            const templateName = (templateMap[target] || {})[component];
+            if (!templateName) {
+              res.writeHead(400, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ error: `Unknown component: ${component}` }));
+              return;
+            }
+            
+            const context = codegen.buildContext(config || {}, { projectName: 'my-app' });
+            const code = codegen.renderTemplate(target, templateName.replace(/\.(js|jsx|py)$/, ''), context);
+            
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ code, filename: templateName }));
+          } catch (err) {
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: err.message }));
+          }
+        });
+        return;
+      }
+
       // API: Concepts (from vai explain)
       if (req.method === 'GET' && req.url === '/api/concepts') {
         const { concepts } = require('../lib/explanations');
