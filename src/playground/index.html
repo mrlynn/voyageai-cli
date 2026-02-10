@@ -7123,5 +7123,194 @@ init();
   <canvas id="vsiCanvas" width="600" height="500" style="border:1px solid #3D4F58;border-radius:8px;image-rendering:pixelated;"></canvas>
   <div style="color:#889397;font-size:11px;font-family:monospace;text-align:center;">← → move &nbsp;|&nbsp; SPACE shoot &nbsp;|&nbsp; ESC exit</div>
 </div>
+
+<!-- 🐛 Bug Reporter -->
+<style>
+.bug-floating-button{position:fixed;bottom:20px;right:20px;width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#ff6b6b,#ee5a5a);border:none;cursor:pointer;font-size:24px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(238,90,90,0.4);transition:all .2s;z-index:9998}
+.bug-floating-button:hover{transform:scale(1.1);box-shadow:0 6px 16px rgba(238,90,90,0.5)}
+.bug-reporter-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:9999}
+.bug-reporter-modal{background:var(--bg-surface);border-radius:12px;width:90%;max-width:500px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.5)}
+.bug-reporter-header{display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid var(--border)}
+.bug-reporter-header h2{flex:1;margin:0;font-size:18px;font-weight:600;color:var(--accent-text)}
+.bug-reporter-header .close-btn{background:none;border:none;color:var(--text-muted);font-size:24px;cursor:pointer;padding:4px 8px;border-radius:4px}
+.bug-reporter-header .close-btn:hover{background:rgba(255,255,255,0.1);color:var(--text)}
+.bug-reporter-form{padding:20px}
+.bug-reporter-form .form-group{margin-bottom:16px}
+.bug-reporter-form label{display:block;font-size:13px;font-weight:500;color:var(--text-muted);margin-bottom:6px}
+.bug-reporter-form input,.bug-reporter-form textarea{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg-input);color:var(--text);font-size:14px;font-family:inherit}
+.bug-reporter-form input:focus,.bug-reporter-form textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow)}
+.bug-reporter-form textarea{resize:vertical;min-height:80px}
+.bug-env-info{padding:12px;background:var(--accent-glow);border-radius:8px;font-size:12px;margin-bottom:16px;color:var(--accent)}
+.bug-env-info code{color:var(--text-muted);font-size:11px}
+.bug-error{padding:10px 12px;background:rgba(255,107,107,0.15);border:1px solid rgba(255,107,107,0.3);border-radius:8px;color:var(--error);font-size:13px;margin-bottom:16px}
+.bug-actions{display:flex;gap:12px}
+.bug-actions button{flex:1;padding:12px 16px;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;transition:all .2s;border:none}
+.bug-actions .primary{background:linear-gradient(135deg,var(--accent),#00c853);color:#000}
+.bug-actions .primary:hover{box-shadow:0 4px 12px rgba(0,237,100,0.4)}
+.bug-actions .primary:disabled{opacity:0.6;cursor:not-allowed}
+.bug-actions .secondary{background:rgba(255,255,255,0.1);color:var(--text);border:1px solid var(--border)}
+.bug-actions .secondary:hover{background:rgba(255,255,255,0.15)}
+.bug-success{padding:40px 20px;text-align:center}
+.bug-success .icon{width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#00c853);color:#000;font-size:32px;display:flex;align-items:center;justify-content:center;margin:0 auto 20px}
+.bug-success h3{margin:0 0 12px;color:var(--accent-text);font-size:20px}
+.bug-success p{margin:8px 0;color:var(--text-muted)}
+.bug-success code{background:rgba(255,255,255,0.1);padding:4px 8px;border-radius:4px;font-size:12px;color:var(--accent)}
+</style>
+
+<button class="bug-floating-button" id="bugButton" title="Report a Bug">🐛</button>
+
+<div class="bug-reporter-overlay" id="bugOverlay" style="display:none">
+  <div class="bug-reporter-modal">
+    <div class="bug-reporter-header">
+      <span style="font-size:28px">🐛</span>
+      <h2>Report a Bug</h2>
+      <button class="close-btn" id="bugClose">×</button>
+    </div>
+    <div class="bug-reporter-form" id="bugForm">
+      <div class="form-group">
+        <label>Title *</label>
+        <input type="text" id="bugTitle" placeholder="Brief description of the bug" maxlength="200">
+      </div>
+      <div class="form-group">
+        <label>Description *</label>
+        <textarea id="bugDescription" placeholder="What happened? What did you expect?" rows="4" maxlength="5000"></textarea>
+      </div>
+      <div class="form-group">
+        <label>Steps to Reproduce</label>
+        <textarea id="bugSteps" placeholder="1. Go to...&#10;2. Click on...&#10;3. See error" rows="3" maxlength="2000"></textarea>
+      </div>
+      <div class="form-group">
+        <label>Email (optional, for follow-up)</label>
+        <input type="email" id="bugEmail" placeholder="your@email.com">
+      </div>
+      <div class="bug-env-info">
+        <span>📋 Environment will be included:</span><br>
+        <code id="bugEnvInfo">Loading...</code>
+      </div>
+      <div class="bug-error" id="bugError" style="display:none"></div>
+      <div class="bug-actions">
+        <button class="primary" id="bugSubmit">Submit Bug Report</button>
+        <button class="secondary" id="bugGithub">Open GitHub Issue</button>
+      </div>
+    </div>
+    <div class="bug-success" id="bugSuccess" style="display:none">
+      <div class="icon">✓</div>
+      <h3>Bug Reported!</h3>
+      <p>Bug ID: <code id="bugResultId"></code></p>
+      <p>Thank you for helping improve Vai!</p>
+      <div class="bug-actions" style="justify-content:center;margin-top:24px">
+        <button class="primary" id="bugSuccessClose">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  const BUG_API = 'https://vai.mlynn.org/api/bugs';
+  const GITHUB_URL = 'https://github.com/mrlynn/voyageai-cli/issues/new';
+  
+  function getEnv() {
+    const env = { platform: navigator.platform, source: 'desktop-app' };
+    if (window.electronAPI) {
+      env.appVersion = window.electronAPI.appVersion || 'unknown';
+      env.cliVersion = window.electronAPI.cliVersion || 'unknown';
+      env.electronVersion = window.electronAPI.electronVersion || 'unknown';
+    }
+    env.currentScreen = document.querySelector('.tab-btn.active')?.textContent || 'unknown';
+    return env;
+  }
+  
+  function showBugReporter() {
+    const env = getEnv();
+    document.getElementById('bugEnvInfo').textContent = 
+      `${env.platform} • App v${env.appVersion || '?'} • ${env.currentScreen}`;
+    document.getElementById('bugOverlay').style.display = 'flex';
+    document.getElementById('bugForm').style.display = 'block';
+    document.getElementById('bugSuccess').style.display = 'none';
+    document.getElementById('bugError').style.display = 'none';
+    document.getElementById('bugTitle').value = '';
+    document.getElementById('bugDescription').value = '';
+    document.getElementById('bugSteps').value = '';
+    document.getElementById('bugEmail').value = '';
+  }
+  
+  function hideBugReporter() {
+    document.getElementById('bugOverlay').style.display = 'none';
+  }
+  
+  async function submitBug() {
+    const title = document.getElementById('bugTitle').value.trim();
+    const description = document.getElementById('bugDescription').value.trim();
+    const steps = document.getElementById('bugSteps').value.trim();
+    const email = document.getElementById('bugEmail').value.trim();
+    
+    if (!title || title.length < 5) {
+      document.getElementById('bugError').textContent = 'Title is required (min 5 characters)';
+      document.getElementById('bugError').style.display = 'block';
+      return;
+    }
+    if (!description || description.length < 10) {
+      document.getElementById('bugError').textContent = 'Description is required (min 10 characters)';
+      document.getElementById('bugError').style.display = 'block';
+      return;
+    }
+    
+    document.getElementById('bugSubmit').disabled = true;
+    document.getElementById('bugSubmit').textContent = 'Submitting...';
+    document.getElementById('bugError').style.display = 'none';
+    
+    try {
+      const env = getEnv();
+      const res = await fetch(BUG_API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title, description, stepsToReproduce: steps || null, email: email || null,
+          ...env
+        })
+      });
+      
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `HTTP ${res.status}`);
+      }
+      
+      const data = await res.json();
+      document.getElementById('bugResultId').textContent = data.bugId;
+      document.getElementById('bugForm').style.display = 'none';
+      document.getElementById('bugSuccess').style.display = 'block';
+    } catch (err) {
+      document.getElementById('bugError').textContent = err.message;
+      document.getElementById('bugError').style.display = 'block';
+    } finally {
+      document.getElementById('bugSubmit').disabled = false;
+      document.getElementById('bugSubmit').textContent = 'Submit Bug Report';
+    }
+  }
+  
+  function openGithub() {
+    const title = document.getElementById('bugTitle').value.trim() || 'Bug Report';
+    const description = document.getElementById('bugDescription').value.trim();
+    const steps = document.getElementById('bugSteps').value.trim();
+    const env = getEnv();
+    
+    const body = `## Description\n${description}\n\n## Steps to Reproduce\n${steps || '1. \\n2. \\n3. '}\n\n## Environment\n- **App Version:** ${env.appVersion || 'N/A'}\n- **Platform:** ${env.platform}\n- **Screen:** ${env.currentScreen}`;
+    const url = `${GITHUB_URL}?title=${encodeURIComponent('[Bug] ' + title)}&body=${encodeURIComponent(body)}&labels=bug`;
+    window.open(url, '_blank');
+  }
+  
+  // Event listeners
+  document.getElementById('bugButton').addEventListener('click', showBugReporter);
+  document.getElementById('bugClose').addEventListener('click', hideBugReporter);
+  document.getElementById('bugOverlay').addEventListener('click', (e) => {
+    if (e.target.id === 'bugOverlay') hideBugReporter();
+  });
+  document.getElementById('bugSubmit').addEventListener('click', submitBug);
+  document.getElementById('bugGithub').addEventListener('click', openGithub);
+  document.getElementById('bugSuccessClose').addEventListener('click', hideBugReporter);
+})();
+</script>
+
 </body>
 </html>
