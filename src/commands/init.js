@@ -14,21 +14,24 @@ const ui = require('../lib/ui');
 function getModelOptions() {
   const models = MODEL_CATALOG.filter(m => m.type === 'embedding' && !m.legacy && !m.unreleased);
   
-  const hints = {
-    'voyage-3-large': 'highest quality, 1024d',
-    'voyage-3': 'balanced quality/speed',
-    'voyage-3-lite': 'fastest, cost-effective',
-    'voyage-code-3': 'optimized for code',
-    'voyage-finance-2': 'financial documents',
-    'voyage-law-2': 'legal documents',
-    'voyage-multilingual-2': '100+ languages',
-  };
-
-  return models.map(m => ({
-    value: m.name,
-    label: m.name,
-    hint: hints[m.name] || `${m.dimensions[0]}d`,
-  }));
+  return models.map(m => {
+    // Use shortFor or bestFor from catalog, or build a fallback hint
+    let hint = m.shortFor || m.bestFor;
+    if (!hint) {
+      // Extract first dimension from string or array
+      if (Array.isArray(m.dimensions)) {
+        hint = `${m.dimensions[0]}d`;
+      } else if (typeof m.dimensions === 'string') {
+        const match = m.dimensions.match(/^(\d+)/);
+        hint = match ? `${match[1]}d` : undefined;
+      }
+    }
+    return {
+      value: m.name,
+      label: m.name,
+      hint,
+    };
+  });
 }
 
 /**
@@ -36,12 +39,25 @@ function getModelOptions() {
  */
 function getDimensionOptions(modelName) {
   const model = MODEL_CATALOG.find(m => m.name === modelName);
-  if (!model) return [{ value: 1024, label: '1024' }];
+  if (!model || !model.dimensions) return [{ value: 1024, label: '1024' }];
   
-  return model.dimensions.map(d => ({
+  // Handle both array and string formats
+  // String format: "1024 (default), 256, 512, 2048"
+  // Array format: ["1024", "512", "256"]
+  let dims;
+  if (Array.isArray(model.dimensions)) {
+    dims = model.dimensions.map(d => String(d));
+  } else if (typeof model.dimensions === 'string') {
+    // Parse "1024 (default), 256, 512, 2048" format
+    dims = model.dimensions.split(',').map(s => s.replace(/\(default\)/i, '').trim());
+  } else {
+    return [{ value: 1024, label: '1024' }];
+  }
+
+  return dims.map((d, i) => ({
     value: parseInt(d, 10),
     label: d,
-    hint: d === model.dimensions[0] ? 'default' : undefined,
+    hint: i === 0 ? 'default' : undefined,
   }));
 }
 
