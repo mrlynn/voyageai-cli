@@ -4,6 +4,32 @@ const fs = require('fs');
 const path = require('path');
 
 /**
+ * Safely get the CLI version, handling both development and packaged Electron app.
+ * @returns {string} The version string or 'unknown'
+ */
+function getCliVersion() {
+  // Try multiple paths to find package.json
+  const possiblePaths = [
+    path.join(__dirname, '..', '..', 'package.json'),  // Development: src/lib -> root
+    path.join(process.resourcesPath || '', 'cli-package.json'),  // Packaged Electron app
+    path.join(__dirname, '..', 'package.json'),  // Alternative structure
+  ];
+  
+  for (const pkgPath of possiblePaths) {
+    try {
+      if (fs.existsSync(pkgPath)) {
+        const pkg = require(pkgPath);
+        if (pkg.version) return pkg.version;
+      }
+    } catch {
+      // Try next path
+    }
+  }
+  
+  return 'unknown';
+}
+
+/**
  * Lightweight template engine for code generation.
  * 
  * Syntax:
@@ -295,7 +321,7 @@ function buildContext(project, options = {}) {
 
     // Metadata
     generatedAt: new Date().toISOString(),
-    vaiVersion: require('../../package.json').version,
+    vaiVersion: getCliVersion(),
   };
 
   return context;
