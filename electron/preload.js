@@ -24,6 +24,24 @@ contextBridge.exposeInMainWorld('vai', {
       return () => ipcRenderer.removeListener('update-event', handler);
     },
   },
+  // Code generation
+  generate: {
+    code:       (opts) => ipcRenderer.invoke('generate:code', opts),
+    components: (opts) => ipcRenderer.invoke('generate:components', opts),
+  },
+  // Project scaffolding
+  scaffold: {
+    pickDirectory:    ()     => ipcRenderer.invoke('scaffold:pick-directory'),
+    checkDirectory:   (opts) => ipcRenderer.invoke('scaffold:check-directory', opts),
+    confirmOverwrite: (opts) => ipcRenderer.invoke('scaffold:confirm-overwrite', opts),
+    create:           (opts) => ipcRenderer.invoke('scaffold:create', opts),
+    openDirectory:    (opts) => ipcRenderer.invoke('scaffold:open-directory', opts),
+    onProgress:       (cb)   => {
+      const handler = (_event, data) => cb(data);
+      ipcRenderer.on('scaffold:progress', handler);
+      return () => ipcRenderer.removeListener('scaffold:progress', handler);
+    },
+  },
   // App info — returns { app, cli }
   getVersion: () => ipcRenderer.invoke('app:version'),
   isElectron: true,

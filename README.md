@@ -196,6 +196,91 @@ Creates `.vai.json` with your defaults — model, database, collection, chunking
 }
 ```
 
+### Code Generation & Scaffolding
+
+#### `vai generate` — Production code snippets
+
+Generate ready-to-use code from your `.vai.json` config:
+
+```bash
+# List available components
+vai generate --list
+
+# Generate and pipe to files
+vai generate client > lib/voyage.js
+vai generate retrieval > lib/retrieval.js
+vai generate search-api > routes/search.js
+
+# Different targets
+vai generate client --target python    # Flask
+vai generate retrieval --target nextjs # Next.js + MUI
+```
+
+Components: `client`, `connection`, `retrieval`, `ingest`, `search-api`
+
+Targets: `vanilla` (Node.js/Express), `nextjs` (Next.js + MUI), `python` (Flask)
+
+#### `vai scaffold` — Complete starter projects
+
+Create a full project directory with all files pre-configured:
+
+```bash
+# Node.js + Express API (9 files)
+vai scaffold my-rag-api
+
+# Next.js + Material UI (13 files)
+vai scaffold my-app --target nextjs
+
+# Python + Flask (8 files)
+vai scaffold flask-api --target python
+
+# Preview without creating files
+vai scaffold my-app --dry-run
+```
+
+Each project includes: server, API routes, Voyage AI client, MongoDB connection, retrieval module, ingestion pipeline, `.env.example`, and README.
+
+### Data Lifecycle
+
+#### `vai purge` — Remove stale embeddings
+
+Remove embeddings from MongoDB based on criteria:
+
+```bash
+# Remove docs embedded with an old model
+vai purge --model voyage-3.5
+
+# Remove docs whose source files no longer exist
+vai purge --stale
+
+# Remove docs older than a date
+vai purge --before 2026-01-01
+
+# Filter by source pattern
+vai purge --source "docs/old/*.md"
+
+# Preview before deleting
+vai purge --model voyage-3.5 --dry-run
+```
+
+#### `vai refresh` — Re-embed with new settings
+
+Re-embed documents in-place with a new model, dimensions, or chunk settings:
+
+```bash
+# Upgrade to a new model
+vai refresh --model voyage-4-large
+
+# Change dimensions for cost savings
+vai refresh --model voyage-4-large --dimensions 256
+
+# Re-chunk with a better strategy, then re-embed
+vai refresh --rechunk --strategy markdown --chunk-size 1024
+
+# Preview what would change
+vai refresh --model voyage-4-large --dry-run
+```
+
 ### Core Workflow
 
 #### `vai pipeline` — Chunk → embed → store
@@ -345,6 +430,37 @@ vai benchmark quantization --model voyage-4-large --dtypes float,int8,ubinary
 vai benchmark cost --tokens 500 --volumes 100,1000,10000,100000
 ```
 
+### Evaluation
+
+Measure and compare your retrieval quality:
+
+```bash
+# Evaluate retrieval pipeline
+vai eval --test-set test.jsonl --db myapp --collection docs
+
+# Save results for later comparison
+vai eval --test-set test.jsonl --save baseline.json
+
+# Compare against a baseline (shows deltas)
+vai eval --test-set test.jsonl --baseline baseline.json
+
+# Compare multiple configurations
+vai eval compare --test-set test.jsonl --configs baseline.json,experiment.json
+
+# Evaluate reranking in isolation
+vai eval --mode rerank --test-set rerank-test.jsonl
+
+# Compare rerank models
+vai eval --mode rerank --models "rerank-2.5,rerank-2.5-lite" --test-set test.jsonl
+```
+
+**Metrics:** MRR, nDCG@K, Recall@K, MAP, Precision@K
+
+**Test set format (JSONL):**
+```json
+{"query": "What is vector search?", "relevant": ["doc_id_1", "doc_id_2"]}
+```
+
 ### Learn
 
 Interactive explanations of key concepts:
@@ -394,21 +510,33 @@ Covers all 22 commands, subcommands, flags, model names, and explain topics.
 
 | Command | Description |
 |---------|-------------|
+| **Project Setup** | |
 | `vai init` | Initialize project with `.vai.json` |
+| `vai generate` | Generate code snippets (retrieval, ingest, client) |
+| `vai scaffold` | Create complete starter projects |
+| **RAG Pipeline** | |
 | `vai pipeline` | Chunk → embed → store (end-to-end) |
 | `vai query` | Search + rerank (two-stage retrieval) |
 | `vai chunk` | Chunk documents (5 strategies) |
 | `vai estimate` | Cost estimator (symmetric vs asymmetric) |
+| **Embeddings** | |
 | `vai embed` | Generate embeddings |
 | `vai rerank` | Rerank documents by relevance |
 | `vai similarity` | Compare text similarity |
+| **Data Management** | |
 | `vai store` | Embed and store single documents |
 | `vai ingest` | Bulk import with progress |
 | `vai search` | Vector similarity search |
 | `vai index` | Manage Atlas Vector Search indexes |
-| `vai models` | List models, benchmarks, architecture |
+| `vai purge` | Remove embeddings by criteria |
+| `vai refresh` | Re-embed with new model/settings |
+| **Evaluation** | |
+| `vai eval` | Evaluate retrieval quality (MRR, nDCG, Recall) |
+| `vai eval compare` | Compare configurations side-by-side |
 | `vai benchmark` | 8 subcommands for model comparison |
-| `vai explain` | 17 interactive concept explainers |
+| **Tools & Learning** | |
+| `vai models` | List models, benchmarks, architecture |
+| `vai explain` | 25 interactive concept explainers |
 | `vai config` | Manage persistent configuration |
 | `vai ping` | Test API and MongoDB connectivity |
 | `vai playground` | Interactive web playground |
