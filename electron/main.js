@@ -101,6 +101,165 @@ function registerApiKeyHandlers() {
   ipcMain.handle('app:install-update', () => {
     autoUpdater.quitAndInstall(false, true);
   });
+
+  // ── Generate & Scaffold handlers ──
+  
+  // Import codegen and scaffold structure from the CLI package
+  let codegen, scaffoldStructure;
+  // In dev: use local src path; in packaged: use extraResources or resolved package
+  const srcBase = app.isPackaged
+    ? path.join(process.resourcesPath, 'src')
+    : path.join(__dirname, '..', 'src');
+  
+  try {
+    codegen = require(path.join(srcBase, 'lib', 'codegen'));
+    console.log('[Generate] Loaded codegen from', path.join(srcBase, 'lib', 'codegen'));
+  } catch (err) {
+    console.error('[Generate] Failed to load codegen:', err.message);
+  }
+  
+  try {
+    // Load scaffold structure from separate file (no @clack/prompts dependency)
+    const scaffoldModule = require(path.join(srcBase, 'lib', 'scaffold-structure'));
+    scaffoldStructure = scaffoldModule.PROJECT_STRUCTURE;
+    console.log('[Scaffold] Loaded scaffold-structure from', path.join(srcBase, 'lib', 'scaffold-structure'));
+  } catch (err) {
+    console.error('[Scaffold] Failed to load scaffold-structure:', err.message);
+  }
+
+  // Generate code for a component
+  ipcMain.handle('generate:code', async (_event, { target, component, config }) => {
+    if (!codegen) return { error: 'Codegen module not available' };
+    try {
+      const context = codegen.buildContext(config || {}, { projectName: 'my-app' });
+      
+      // Map component to template name
+      const templateMap = {
+        vanilla: { client: 'client.js', connection: 'connection.js', retrieval: 'retrieval.js', ingest: 'ingest.js', 'search-api': 'search-api.js' },
+        nextjs: { client: 'lib-voyage.js', connection: 'lib-mongo.js', retrieval: 'route-search.js', ingest: 'route-ingest.js', 'search-page': 'page-search.jsx' },
+        python: { client: 'voyage_client.py', connection: 'mongo_client.py', retrieval: 'app.py', ingest: 'chunker.py' },
+      };
+      
+      const templateName = (templateMap[target] || {})[component];
+      if (!templateName) return { error: `Unknown component: ${component}` };
+      
+      const code = codegen.renderTemplate(target, templateName.replace(/\.(js|jsx|py)$/, ''), context);
+      return { code, filename: templateName };
+    } catch (err) {
+      return { error: err.message };
+    }
+  });
+
+  // List available components for a target
+  ipcMain.handle('generate:components', async (_event, { target }) => {
+    const components = {
+      vanilla: ['client', 'connection', 'retrieval', 'ingest', 'search-api'],
+      nextjs: ['client', 'connection', 'retrieval', 'ingest', 'search-page'],
+      python: ['client', 'connection', 'retrieval', 'ingest'],
+    };
+    return components[target] || [];
+  });
+
+  // Pick a directory for scaffold output
+  ipcMain.handle('scaffold:pick-directory', async () => {
+    const result = await dialog.showOpenDialog({
+      title: 'Choose location for new project',
+      properties: ['openDirectory', 'createDirectory'],
+      buttonLabel: 'Select Folder',
+    });
+    if (result.canceled || result.filePaths.length === 0) return { canceled: true };
+    return { path: result.filePaths[0] };
+  });
+
+  // Check if a directory already has files
+  ipcMain.handle('scaffold:check-directory', async (_event, { dirPath, projectName }) => {
+    const targetPath = path.join(dirPath, projectName);
+    if (!fs.existsSync(targetPath)) return { exists: false };
+    const files = fs.readdirSync(targetPath);
+    return { exists: true, fileCount: files.length };
+  });
+
+  // Confirm overwrite dialog
+  ipcMain.handle('scaffold:confirm-overwrite', async (_event, { projectName }) => {
+    const result = await dialog.showMessageBox({
+      type: 'warning',
+      title: 'Directory exists',
+      message: `The folder "${projectName}" already exists and contains files.`,
+      detail: 'Do you want to overwrite the existing files?',
+      buttons: ['Cancel', 'Overwrite'],
+      defaultId: 0,
+      cancelId: 0,
+    });
+    return { confirmed: result.response === 1 };
+  });
+
+  // Create scaffold project
+  ipcMain.handle('scaffold:create', async (event, { dirPath, projectName, target, config }) => {
+    if (!codegen || !scaffoldStructure) return { error: 'Scaffold module not available' };
+    
+    const structure = scaffoldStructure[target];
+    if (!structure) return { error: `Unknown target: ${target}` };
+    
+    const projectDir = path.join(dirPath, projectName);
+    const context = codegen.buildContext(config || {}, { projectName });
+    const createdFiles = [];
+
+    try {
+      // Create project directory
+      if (!fs.existsSync(projectDir)) {
+        fs.mkdirSync(projectDir, { recursive: true });
+      }
+
+      // Render and write template files
+      for (const file of structure.files) {
+        const content = codegen.renderTemplate(target, file.template.replace(/\.(js|jsx|py|json|md|txt)$/, ''), context);
+        const outputPath = path.join(projectDir, file.output);
+        const outputDir = path.dirname(outputPath);
+        
+        if (!fs.existsSync(outputDir)) {
+          fs.mkdirSync(outputDir, { recursive: true });
+        }
+        
+        fs.writeFileSync(outputPath, content, 'utf8');
+        createdFiles.push(file.output);
+        
+        // Send progress update
+        event.sender.send('scaffold:progress', { file: file.output, total: structure.files.length, current: createdFiles.length });
+      }
+
+      // Write extra static files
+      if (structure.extraFiles) {
+        for (const file of structure.extraFiles) {
+          const content = typeof file.content === 'function' ? file.content(context) : file.content;
+          const outputPath = path.join(projectDir, file.output);
+          const outputDir = path.dirname(outputPath);
+          
+          if (!fs.existsSync(outputDir)) {
+            fs.mkdirSync(outputDir, { recursive: true });
+          }
+          
+          fs.writeFileSync(outputPath, content, 'utf8');
+          createdFiles.push(file.output);
+        }
+      }
+
+      return {
+        success: true,
+        projectDir,
+        files: createdFiles,
+        postInstall: structure.postInstall,
+        startCommand: structure.startCommand,
+      };
+    } catch (err) {
+      return { error: err.message };
+    }
+  });
+
+  // Open directory in Finder/Explorer
+  ipcMain.handle('scaffold:open-directory', async (_event, { dirPath }) => {
+    shell.openPath(dirPath);
+    return { success: true };
+  });
 }
 
 // ── Icon helpers ──
@@ -344,6 +503,58 @@ async function startPlaygroundServer() {
 
 // ── Application Menu ──
 
+// Manual update check with user feedback dialog
+async function checkForUpdatesWithFeedback() {
+  const result = await checkForUpdates();
+  
+  if (result.error) {
+    dialog.showMessageBox(mainWindow, {
+      type: 'error',
+      title: 'Update Check Failed',
+      message: 'Could not check for updates.',
+      detail: result.error === 'network_error' 
+        ? 'Please check your internet connection and try again.'
+        : result.error === 'timeout'
+        ? 'The request timed out. Please try again.'
+        : 'An error occurred while checking for updates.',
+      buttons: ['OK'],
+    });
+    return;
+  }
+  
+  if (result.hasUpdate) {
+    const response = await dialog.showMessageBox(mainWindow, {
+      type: 'info',
+      title: 'Update Available',
+      message: `A new version is available: ${result.releaseName || 'v' + result.latestVersion}`,
+      detail: `You are currently running v${result.currentVersion}.\n\nWould you like to download the update?`,
+      buttons: ['Download Update', 'View Release', 'Later'],
+      defaultId: 0,
+      cancelId: 2,
+    });
+    
+    if (response.response === 0) {
+      // Download update
+      if (app.isPackaged) {
+        downloadUpdate();
+      } else {
+        shell.openExternal(result.releaseUrl);
+      }
+    } else if (response.response === 1) {
+      // View release
+      shell.openExternal(result.releaseUrl);
+    }
+  } else {
+    dialog.showMessageBox(mainWindow, {
+      type: 'info',
+      title: 'No Updates Available',
+      message: "You're up to date!",
+      detail: `Version ${result.currentVersion} is the latest version.`,
+      buttons: ['OK'],
+    });
+  }
+}
+
 function buildMenu() {
   const isMac = process.platform === 'darwin';
 
@@ -352,6 +563,10 @@ function buildMenu() {
       label: app.name,
       submenu: [
         { role: 'about' },
+        {
+          label: 'Check for Updates...',
+          click: () => checkForUpdatesWithFeedback(),
+        },
         { type: 'separator' },
         { role: 'services' },
         { type: 'separator' },
@@ -427,6 +642,14 @@ function buildMenu() {
           label: 'MongoDB Atlas Vector Search',
           click: () => shell.openExternal('https://www.mongodb.com/products/platform/atlas-vector-search'),
         },
+        // On Windows/Linux, add Check for Updates here (macOS has it in app menu)
+        ...(!isMac ? [
+          { type: 'separator' },
+          {
+            label: 'Check for Updates...',
+            click: () => checkForUpdatesWithFeedback(),
+          },
+        ] : []),
       ],
     },
   ];

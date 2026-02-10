@@ -29,6 +29,9 @@ describe('explanations', () => {
     'cross-modal-search',
     'modality-gap',
     'multimodal-rag',
+    'code-generation',
+    'scaffolding',
+    'eval-comparison',
   ];
 
   it('has all expected concepts', () => {

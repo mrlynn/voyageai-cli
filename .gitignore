@@ -8,3 +8,5 @@ video
 electron/node_modules/
 dist-electron/
 VoyageAI-CLI-Assessment-Report.*
+CLAUDE.md
+VaiSite-Marketing-Assessment.md
