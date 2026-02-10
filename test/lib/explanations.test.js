@@ -29,6 +29,8 @@ describe('explanations', () => {
     'cross-modal-search',
     'modality-gap',
     'multimodal-rag',
+    'auto-embedding',
+    'vai-vs-auto-embedding',
     'code-generation',
     'scaffolding',
     'eval-comparison',
