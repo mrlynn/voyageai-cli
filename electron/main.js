@@ -104,15 +104,27 @@ function registerApiKeyHandlers() {
 
   // ── Generate & Scaffold handlers ──
   
-  // Import codegen from the CLI package
+  // Import codegen and scaffold structure from the CLI package
   let codegen, scaffoldStructure;
+  // In dev: use local src path; in packaged: use extraResources or resolved package
+  const srcBase = app.isPackaged
+    ? path.join(process.resourcesPath, 'src')
+    : path.join(__dirname, '..', 'src');
+  
   try {
-    const cliPath = path.dirname(require.resolve('voyageai-cli/package.json'));
-    codegen = require(path.join(cliPath, 'src/lib/codegen'));
-    const scaffoldModule = require(path.join(cliPath, 'src/commands/scaffold'));
-    scaffoldStructure = scaffoldModule.PROJECT_STRUCTURE;
+    codegen = require(path.join(srcBase, 'lib', 'codegen'));
+    console.log('[Generate] Loaded codegen from', path.join(srcBase, 'lib', 'codegen'));
   } catch (err) {
     console.error('[Generate] Failed to load codegen:', err.message);
+  }
+  
+  try {
+    // Load scaffold structure from separate file (no @clack/prompts dependency)
+    const scaffoldModule = require(path.join(srcBase, 'lib', 'scaffold-structure'));
+    scaffoldStructure = scaffoldModule.PROJECT_STRUCTURE;
+    console.log('[Scaffold] Loaded scaffold-structure from', path.join(srcBase, 'lib', 'scaffold-structure'));
+  } catch (err) {
+    console.error('[Scaffold] Failed to load scaffold-structure:', err.message);
   }
 
   // Generate code for a component
@@ -491,6 +503,58 @@ async function startPlaygroundServer() {
 
 // ── Application Menu ──
 
+// Manual update check with user feedback dialog
+async function checkForUpdatesWithFeedback() {
+  const result = await checkForUpdates();
+  
+  if (result.error) {
+    dialog.showMessageBox(mainWindow, {
+      type: 'error',
+      title: 'Update Check Failed',
+      message: 'Could not check for updates.',
+      detail: result.error === 'network_error' 
+        ? 'Please check your internet connection and try again.'
+        : result.error === 'timeout'
+        ? 'The request timed out. Please try again.'
+        : 'An error occurred while checking for updates.',
+      buttons: ['OK'],
+    });
+    return;
+  }
+  
+  if (result.hasUpdate) {
+    const response = await dialog.showMessageBox(mainWindow, {
+      type: 'info',
+      title: 'Update Available',
+      message: `A new version is available: ${result.releaseName || 'v' + result.latestVersion}`,
+      detail: `You are currently running v${result.currentVersion}.\n\nWould you like to download the update?`,
+      buttons: ['Download Update', 'View Release', 'Later'],
+      defaultId: 0,
+      cancelId: 2,
+    });
+    
+    if (response.response === 0) {
+      // Download update
+      if (app.isPackaged) {
+        downloadUpdate();
+      } else {
+        shell.openExternal(result.releaseUrl);
+      }
+    } else if (response.response === 1) {
+      // View release
+      shell.openExternal(result.releaseUrl);
+    }
+  } else {
+    dialog.showMessageBox(mainWindow, {
+      type: 'info',
+      title: 'No Updates Available',
+      message: "You're up to date!",
+      detail: `Version ${result.currentVersion} is the latest version.`,
+      buttons: ['OK'],
+    });
+  }
+}
+
 function buildMenu() {
   const isMac = process.platform === 'darwin';
 
@@ -499,6 +563,10 @@ function buildMenu() {
       label: app.name,
       submenu: [
         { role: 'about' },
+        {
+          label: 'Check for Updates...',
+          click: () => checkForUpdatesWithFeedback(),
+        },
         { type: 'separator' },
         { role: 'services' },
         { type: 'separator' },
@@ -574,6 +642,14 @@ function buildMenu() {
           label: 'MongoDB Atlas Vector Search',
           click: () => shell.openExternal('https://www.mongodb.com/products/platform/atlas-vector-search'),
         },
+        // On Windows/Linux, add Check for Updates here (macOS has it in app menu)
+        ...(!isMac ? [
+          { type: 'separator' },
+          {
+            label: 'Check for Updates...',
+            click: () => checkForUpdatesWithFeedback(),
+          },
+        ] : []),
       ],
     },
   ];
