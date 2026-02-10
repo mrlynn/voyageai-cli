@@ -660,6 +660,48 @@ select:focus { outline: none; border-color: var(--accent); }
   font-size: 12px;
 }
 
+/* Subtabs - segmented control style */
+.subtabs {
+  display: flex;
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 4px;
+  gap: 4px;
+  margin-bottom: 20px;
+  border: 1px solid var(--accent-dim);
+}
+.subtab {
+  flex: 1;
+  background: transparent;
+  color: var(--text-secondary);
+  border: none;
+  padding: 10px 20px;
+  border-radius: calc(var(--radius) - 2px);
+  font-size: 14px;
+  font-weight: 500;
+  font-family: var(--font);
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.subtab:hover {
+  color: var(--text);
+  background: rgba(0, 237, 100, 0.05);
+}
+.subtab.active {
+  background: var(--accent);
+  color: var(--green-dark);
+  font-weight: 600;
+}
+.subtab svg {
+  width: 16px;
+  height: 16px;
+}
+[data-theme="light"] .subtab.active { color: #FFFFFF; }
+
 .options-row {
   display: flex;
   gap: 12px;
@@ -2318,12 +2360,12 @@ select:focus { outline: none; border-color: var(--accent); }
       <button class="tab-btn" data-tab="compare" role="tab" aria-selected="false" aria-controls="tab-compare" id="tab-btn-compare"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-arrows"/></svg></span><span>Compare</span></button>
       <button class="tab-btn" data-tab="search" role="tab" aria-selected="false" aria-controls="tab-search" id="tab-btn-search"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-search"/></svg></span><span>Search</span></button>
       <button class="tab-btn" data-tab="multimodal" role="tab" aria-selected="false" aria-controls="tab-multimodal" id="tab-btn-multimodal"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-image"/></svg></span><span>Multimodal</span></button>
+      <button class="tab-btn" data-tab="generate" role="tab" aria-selected="false" aria-controls="tab-generate" id="tab-btn-generate"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-code"/></svg></span><span>Generate</span></button>
     </div>
     <div class="sidebar-nav-divider"></div>
-    <div class="sidebar-nav-group" role="tablist" aria-label="Resources">
-      <div class="sidebar-nav-label" id="nav-resources-label">Resources</div>
+    <div class="sidebar-nav-group" role="tablist" aria-label="Learn">
+      <div class="sidebar-nav-label" id="nav-learn-label">Learn</div>
       <button class="tab-btn" data-tab="benchmark" role="tab" aria-selected="false" aria-controls="tab-benchmark" id="tab-btn-benchmark"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-gauge"/></svg></span><span>Benchmark</span></button>
-      <button class="tab-btn" data-tab="generate" role="tab" aria-selected="false" aria-controls="tab-generate" id="tab-btn-generate"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-code"/></svg></span><span>Generate</span></button>
       <button class="tab-btn" data-tab="explore" role="tab" aria-selected="false" aria-controls="tab-explore" id="tab-btn-explore"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-bulb"/></svg></span><span>Explore</span></button>
       <button class="tab-btn" data-tab="about" role="tab" aria-selected="false" aria-controls="tab-about" id="tab-btn-about"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-info"/></svg></span><span>About</span></button>
     </div>
@@ -3226,9 +3268,15 @@ Reranking models rescore initial search results to improve relevance ordering.</
   </div>
 
   <!-- Mode Toggle -->
-  <div style="display:flex;gap:8px;margin-bottom:20px;">
-    <button class="btn btn-outline" id="genModeCode" onclick="setGenerateMode('code')" style="flex:1;">Generate Code</button>
-    <button class="btn btn-outline" id="genModeScaffold" onclick="setGenerateMode('scaffold')" style="flex:1;">Scaffold Project</button>
+  <div class="subtabs" role="tablist">
+    <button class="subtab active" id="genModeCode" onclick="setGenerateMode('code')" role="tab" aria-selected="true">
+      <svg viewBox="0 0 16 16"><path fill="currentColor" d="M5.854 4.854a.5.5 0 1 0-.708-.708l-3.5 3.5a.5.5 0 0 0 0 .708l3.5 3.5a.5.5 0 0 0 .708-.708L2.707 8l3.147-3.146zm4.292 0a.5.5 0 0 1 .708-.708l3.5 3.5a.5.5 0 0 1 0 .708l-3.5 3.5a.5.5 0 0 1-.708-.708L13.293 8l-3.147-3.146z"/></svg>
+      Generate Code
+    </button>
+    <button class="subtab" id="genModeScaffold" onclick="setGenerateMode('scaffold')" role="tab" aria-selected="false">
+      <svg viewBox="0 0 16 16"><path fill="currentColor" d="M14.5 3a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h13zm-13-1A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 2h-13z"/><path fill="currentColor" d="M5 8a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7A.5.5 0 0 1 5 8zm0-2.5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm0 5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm-1-5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zM4 8a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm0 2.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0z"/></svg>
+      Scaffold Project
+    </button>
   </div>
 
   <!-- Generate Code Panel -->
@@ -3350,18 +3398,28 @@ Reranking models rescore initial search results to improve relevance ordering.</
           </div>
         </div>
 
-        <!-- Web Fallback -->
-        <div id="scaffoldWebNotice" style="margin-bottom:16px;padding:12px;background:var(--surface-darker);border-radius:8px;">
-          <p style="margin:0;font-size:14px;">💡 <strong>Desktop App Required</strong></p>
-          <p style="margin:8px 0 0;font-size:13px;color:var(--text-dim);">
-            To create files on disk, use the desktop app or run from CLI:
-            <code style="display:block;margin-top:8px;padding:8px;background:var(--surface);border-radius:4px;">vai scaffold <span id="scaffoldCliName">my-rag-app</span> --target <span id="scaffoldCliTarget">vanilla</span></code>
-          </p>
+        <!-- Web Mode: Download ZIP -->
+        <div id="scaffoldWebSection" style="margin-bottom:16px;display:none;">
+          <div style="padding:12px;background:var(--surface-darker);border-radius:8px;margin-bottom:12px;">
+            <p style="margin:0;font-size:14px;">📦 <strong>Web Mode</strong> — Download as ZIP or use CLI</p>
+            <p style="margin:8px 0 0;font-size:13px;color:var(--text-dim);">
+              CLI: <code style="padding:4px 8px;background:var(--surface);border-radius:4px;">vai scaffold <span id="scaffoldCliName">my-rag-app</span> --target <span id="scaffoldCliTarget">vanilla</span></code>
+            </p>
+          </div>
         </div>
 
-        <button class="btn btn-primary" onclick="createScaffold()" id="scaffoldBtn" disabled>
-          Create Project
-        </button>
+        <!-- Buttons: different for Electron vs Web -->
+        <div id="scaffoldElectronButtons" style="display:none;">
+          <button class="btn btn-primary" onclick="createScaffold()" id="scaffoldBtn" disabled>
+            Create Project
+          </button>
+        </div>
+        <div id="scaffoldWebButtons" style="display:none;">
+          <button class="btn btn-primary" onclick="downloadScaffoldZip()" id="scaffoldDownloadBtn">
+            <svg width="16" height="16" viewBox="0 0 16 16" style="margin-right:6px;"><path fill="currentColor" d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path fill="currentColor" d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/></svg>
+            Download ZIP
+          </button>
+        </div>
       </div>
     </div>
 
@@ -4281,10 +4339,12 @@ let generateMode = 'code';
 
 function setGenerateMode(mode) {
   generateMode = mode;
-  document.getElementById('genModeCode').classList.toggle('btn-primary', mode === 'code');
-  document.getElementById('genModeCode').classList.toggle('btn-outline', mode !== 'code');
-  document.getElementById('genModeScaffold').classList.toggle('btn-primary', mode === 'scaffold');
-  document.getElementById('genModeScaffold').classList.toggle('btn-outline', mode !== 'scaffold');
+  const codeBtn = document.getElementById('genModeCode');
+  const scaffoldBtn = document.getElementById('genModeScaffold');
+  codeBtn.classList.toggle('active', mode === 'code');
+  codeBtn.setAttribute('aria-selected', mode === 'code');
+  scaffoldBtn.classList.toggle('active', mode === 'scaffold');
+  scaffoldBtn.setAttribute('aria-selected', mode === 'scaffold');
   document.getElementById('generateCodePanel').style.display = mode === 'code' ? 'block' : 'none';
   document.getElementById('scaffoldPanel').style.display = mode === 'scaffold' ? 'block' : 'none';
 }
@@ -4370,12 +4430,16 @@ function copyGeneratedCode() {
 // Scaffold functions
 function initScaffold() {
   const isElectron = window.vai && window.vai.scaffold;
-  document.getElementById('scaffoldLocationSection').style.display = isElectron ? 'block' : 'none';
-  document.getElementById('scaffoldWebNotice').style.display = isElectron ? 'none' : 'block';
-  document.getElementById('scaffoldBtn').disabled = !isElectron;
   
-  // Update CLI command preview
+  // Show/hide mode-specific sections
+  document.getElementById('scaffoldLocationSection').style.display = isElectron ? 'block' : 'none';
+  document.getElementById('scaffoldWebSection').style.display = isElectron ? 'none' : 'block';
+  document.getElementById('scaffoldElectronButtons').style.display = isElectron ? 'block' : 'none';
+  document.getElementById('scaffoldWebButtons').style.display = isElectron ? 'none' : 'block';
+  
+  // Update CLI command preview on input
   document.getElementById('scaffoldName').addEventListener('input', updateScaffoldPreview);
+  document.getElementById('scaffoldTarget').addEventListener('change', updateScaffoldPreview);
 }
 
 function updateScaffoldPreview() {
@@ -4383,6 +4447,55 @@ function updateScaffoldPreview() {
   const target = document.getElementById('scaffoldTarget').value;
   document.getElementById('scaffoldCliName').textContent = name;
   document.getElementById('scaffoldCliTarget').textContent = target;
+}
+
+async function downloadScaffoldZip() {
+  const btn = document.getElementById('scaffoldDownloadBtn');
+  const projectName = document.getElementById('scaffoldName').value || 'my-rag-app';
+  const target = document.getElementById('scaffoldTarget').value;
+  const config = {
+    model: document.getElementById('scaffoldModel').value,
+    db: document.getElementById('scaffoldDb').value,
+    collection: document.getElementById('scaffoldCollection').value,
+  };
+  
+  btn.disabled = true;
+  btn.innerHTML = '<span style="margin-right:6px;">⏳</span> Generating...';
+  
+  try {
+    const res = await fetch('/api/scaffold', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ projectName, target, config }),
+    });
+    
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || 'Failed to generate scaffold');
+    }
+    
+    // Download the ZIP
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${projectName}.zip`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    // Show success
+    btn.innerHTML = '<span style="margin-right:6px;">✓</span> Downloaded!';
+    setTimeout(() => {
+      btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 16 16" style="margin-right:6px;"><path fill="currentColor" d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path fill="currentColor" d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/></svg> Download ZIP';
+      btn.disabled = false;
+    }, 2000);
+  } catch (err) {
+    alert('Error: ' + err.message);
+    btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 16 16" style="margin-right:6px;"><path fill="currentColor" d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path fill="currentColor" d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/></svg> Download ZIP';
+    btn.disabled = false;
+  }
 }
 
 async function pickScaffoldDirectory() {
@@ -5963,7 +6076,7 @@ function initOnboarding() {
       target: null, // welcome card, no spotlight
       icon: '🚀',
       title: 'Welcome to Vai',
-      body: 'Explore embeddings, compare text similarity, and search with vector models — all from one playground.',
+      body: 'Explore embeddings, build RAG pipelines, generate production code — all from one playground.',
     },
     {
       target: '[data-tab="settings"]',
@@ -5992,6 +6105,35 @@ function initOnboarding() {
       icon: '🔍',
       title: 'Search & Rerank',
       body: 'Run <strong>vector search</strong> against a set of documents and optionally <strong>rerank</strong> results for higher precision. Great for building RAG pipelines.',
+      arrow: 'left',
+    },
+    {
+      target: '[data-tab="multimodal"]',
+      icon: '🖼️',
+      title: 'Multimodal',
+      body: 'Embed <strong>images and text</strong> in the same vector space. Search images with text queries, or find similar images across your collection.',
+      arrow: 'left',
+    },
+    {
+      target: '[data-tab="generate"]',
+      icon: '💻',
+      title: 'Generate & Scaffold',
+      body: '<strong>Generate code snippets</strong> for retrieval, ingestion, and API routes — or <strong>scaffold entire projects</strong> with Next.js, Express, or Flask.' +
+        (isElectron ? ' Create projects directly on disk.' : ' Download as ZIP.'),
+      arrow: 'left',
+    },
+    {
+      target: '[data-tab="benchmark"]',
+      icon: '⏱️',
+      title: 'Benchmark',
+      body: 'Compare model <strong>latency, throughput, and cost</strong>. Test embedding speeds, reranking quality, and quantization trade-offs.',
+      arrow: 'left',
+    },
+    {
+      target: '[data-tab="explore"]',
+      icon: '💡',
+      title: 'Explore & Learn',
+      body: 'Dive into <strong>25 interactive explainers</strong> covering embeddings, vector search, RAG, reranking, and more. Each topic links to live demos.',
       arrow: 'left',
     },
   ];
@@ -6883,6 +7025,15 @@ function startVSI(canvas, onExit) {
   spawnWave();
   loop();
 }
+
+// ── Expose functions to global scope for onclick handlers ──
+window.setGenerateMode = setGenerateMode;
+window.copyGeneratedCode = copyGeneratedCode;
+window.generateCode = generateCode;
+window.updateGenComponents = updateGenComponents;
+window.createScaffold = createScaffold;
+window.pickScaffoldDirectory = pickScaffoldDirectory;
+window.downloadScaffoldZip = downloadScaffoldZip;
 
 // ── Start ──
 init();

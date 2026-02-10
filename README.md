@@ -240,6 +240,47 @@ vai scaffold my-app --dry-run
 
 Each project includes: server, API routes, Voyage AI client, MongoDB connection, retrieval module, ingestion pipeline, `.env.example`, and README.
 
+### Data Lifecycle
+
+#### `vai purge` — Remove stale embeddings
+
+Remove embeddings from MongoDB based on criteria:
+
+```bash
+# Remove docs embedded with an old model
+vai purge --model voyage-3.5
+
+# Remove docs whose source files no longer exist
+vai purge --stale
+
+# Remove docs older than a date
+vai purge --before 2026-01-01
+
+# Filter by source pattern
+vai purge --source "docs/old/*.md"
+
+# Preview before deleting
+vai purge --model voyage-3.5 --dry-run
+```
+
+#### `vai refresh` — Re-embed with new settings
+
+Re-embed documents in-place with a new model, dimensions, or chunk settings:
+
+```bash
+# Upgrade to a new model
+vai refresh --model voyage-4-large
+
+# Change dimensions for cost savings
+vai refresh --model voyage-4-large --dimensions 256
+
+# Re-chunk with a better strategy, then re-embed
+vai refresh --rechunk --strategy markdown --chunk-size 1024
+
+# Preview what would change
+vai refresh --model voyage-4-large --dry-run
+```
+
 ### Core Workflow
 
 #### `vai pipeline` — Chunk → embed → store
@@ -487,6 +528,8 @@ Covers all 22 commands, subcommands, flags, model names, and explain topics.
 | `vai ingest` | Bulk import with progress |
 | `vai search` | Vector similarity search |
 | `vai index` | Manage Atlas Vector Search indexes |
+| `vai purge` | Remove embeddings by criteria |
+| `vai refresh` | Re-embed with new model/settings |
 | **Evaluation** | |
 | `vai eval` | Evaluate retrieval quality (MRR, nDCG, Recall) |
 | `vai eval compare` | Compare configurations side-by-side |

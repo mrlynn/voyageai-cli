@@ -4,6 +4,52 @@
 **Branch:** `feat/generate-scaffold`
 **Author:** Michael Lynn
 **Date:** 2026-02-10
+**Status:** In Progress
+
+---
+
+## Progress Summary
+
+### ✅ Completed (2026-02-10)
+
+#### Phase 1: Template Engine + Generate
+- [x] **Story 1.1**: Built `src/lib/codegen.js` template engine with `{{var}}`, `{{#if}}`, `{{#each}}` support
+- [x] **Story 1.2**: Created 26 template files across vanilla/nextjs/python targets
+- [x] **Story 1.3**: Implemented `vai generate` command with auto-detect target
+
+#### Phase 2: Scaffold
+- [x] **Story 2.1**: Implemented `vai scaffold` command for all three targets
+- [x] **Story 2.2**: Fixed scaffold issues (path aliases, module paths, jsconfig.json)
+
+#### Phase 3: Eval Enhancements  
+- [x] **Story 3.1**: Added `vai eval compare` subcommand for multi-config comparison
+- [x] **Story 3.2**: Added `--save` and `--baseline` options to `vai eval`
+
+#### Documentation & Polish
+- [x] Added 3 new explanation topics: `code-generation`, `scaffolding`, `eval-comparison`
+- [x] Updated README.md with new command documentation
+- [x] Reorganized README "All Commands" table with categories
+
+#### Bonus: Desktop App Enhancements
+- [x] Added "Check for Updates..." menu item (macOS app menu + Windows/Linux Help menu)
+- [x] Added Generate tab to playground with code generation and scaffold UI
+- [x] Reorganized sidebar: **Tools** (Embed, Compare, Search, Multimodal, Generate) / **Learn** (Benchmark, Explore, About)
+- [x] Fixed codegen module loading for Electron (separated `scaffold-structure.js`)
+
+#### Bonus: CLI Improvements
+- [x] Modernized `vai init` with `@clack/prompts` and back navigation (PR #9)
+
+#### Phase 4: Data Lifecycle
+- [x] **Story 4.1**: Implemented `vai purge` command with filter criteria (source, before, model, stale)
+- [x] **Story 4.2**: Implemented `vai refresh` command with batch processing and rechunk support
+
+### 📊 Test Status
+- All 370 tests passing (10 new tests for purge/refresh)
+- No new npm dependencies added
+
+### 🎉 Sprint Complete!
+
+---
 
 ## Overview
 
@@ -471,17 +517,17 @@ Phases 3 and 4 are independent of each other and of 1-2.
 
 ## Acceptance Criteria
 
-- [ ] `vai generate retrieval` outputs working Node.js code that uses the developer's `.vai.json` config
-- [ ] `vai generate retrieval --target python` outputs equivalent Flask code
-- [ ] `vai scaffold myapp --target nextjs` creates a working Next.js project with MUI components
-- [ ] `vai scaffold myapp --target python` creates a working Flask project
-- [ ] `vai eval --save results.json` persists results; `vai eval --baseline results.json` shows deltas
-- [ ] `vai eval compare --configs a.json,b.json` shows side-by-side metric comparison
-- [ ] `vai purge --model voyage-3.5 --dry-run` shows count of old-model documents
-- [ ] `vai purge --stale` identifies documents whose source files no longer exist
-- [ ] `vai refresh --model voyage-4-large` re-embeds all documents with the new model
-- [ ] `vai refresh --rechunk --strategy markdown` re-chunks then re-embeds
-- [ ] All new commands support `--json`, `--quiet`, and `--dry-run` where applicable
-- [ ] All new commands read `.vai.json` via `loadProject()` with CLI option overrides
-- [ ] Zero new npm dependencies added
-- [ ] All existing tests continue to pass
+- [x] `vai generate retrieval` outputs working Node.js code that uses the developer's `.vai.json` config
+- [x] `vai generate retrieval --target python` outputs equivalent Flask code
+- [x] `vai scaffold myapp --target nextjs` creates a working Next.js project with MUI components
+- [x] `vai scaffold myapp --target python` creates a working Flask project
+- [x] `vai eval --save results.json` persists results; `vai eval --baseline results.json` shows deltas
+- [x] `vai eval compare --configs a.json,b.json` shows side-by-side metric comparison
+- [x] `vai purge --model voyage-3.5 --dry-run` shows count of old-model documents
+- [x] `vai purge --stale` identifies documents whose source files no longer exist
+- [x] `vai refresh --model voyage-4-large` re-embeds all documents with the new model
+- [x] `vai refresh --rechunk --strategy markdown` re-chunks then re-embeds
+- [x] All new commands support `--json`, `--quiet`, and `--dry-run` where applicable
+- [x] All new commands read `.vai.json` via `loadProject()` with CLI option overrides
+- [x] Zero new npm dependencies added
+- [x] All existing tests continue to pass
