@@ -50,7 +50,7 @@ function registerUtilityTools(server, schemas) {
           const queryCostPerMonth = queries > 0 ? (queries * avgTokensPerDoc / 1_000_000) * m.pricePerMToken : 0;
           const totalCost = embedCost + (queryCostPerMonth * months);
           return {
-            model: m.id,
+            model: m.name,
             pricePerMToken: m.pricePerMToken,
             embeddingCost: Math.round(embedCost * 100) / 100,
             monthlyCost: Math.round(queryCostPerMonth * 100) / 100,
