@@ -169,7 +169,7 @@ function estimateCostComparison(tokens, selectedModel) {
 }
 
 /**
- * Format a cost estimate for terminal display — clean and minimal.
+ * Format a cost estimate for terminal display with model comparison.
  * @param {object} estimate - from estimateCost()
  * @returns {string}
  */
@@ -179,18 +179,28 @@ function formatCostEstimate(estimate) {
 
   const comparison = estimateCostComparison(estimate.tokens, estimate.model);
 
-  lines.push(`  ${estimate.tokens.toLocaleString()} tokens`);
+  lines.push(pc.bold(`  Cost Estimate — ${estimate.tokens.toLocaleString()} tokens`));
   lines.push('');
 
   if (comparison.length > 1) {
+    // Table header
+    lines.push(`  ${pc.dim(padRight('Model', 22))} ${pc.dim(padRight('Quality', 14))} ${pc.dim(padRight('Price/1M', 10))} ${pc.dim('Est. Cost')}`);
+    lines.push(`  ${pc.dim('─'.repeat(60))}`);
+
     for (const row of comparison) {
-      const costStr = row.cost < 0.001 ? '< $0.001' : `$${row.cost.toFixed(2)}`;
-      const marker = row.selected ? pc.green('  ← current') : '';
-      const nameStr = row.selected ? pc.bold(padRight(row.model, 20)) : pc.dim(padRight(row.model, 20));
-      lines.push(`  ${nameStr} ${pc.cyan(costStr)}${marker}`);
+      const costStr = row.cost < 0.001 ? '< $0.001' : `$${row.cost.toFixed(4)}`;
+      const marker = row.selected ? pc.green(' ← selected') : '';
+      const nameStr = row.selected ? pc.bold(row.model) : row.model;
+      lines.push(`  ${padRight(nameStr, 22)} ${padRight(row.shortFor, 14)} $${padRight(row.pricePerMToken.toFixed(2), 9)} ${pc.cyan(costStr)}${marker}`);
     }
   } else {
-    lines.push(`  ${estimate.model}  ${estimate.cost != null ? pc.cyan(`$${estimate.cost.toFixed(2)}`) : 'unknown'}`);
+    // Single model fallback
+    lines.push(`  Model:   ${estimate.model}`);
+    if (estimate.cost != null) {
+      lines.push(`  Cost:    ${pc.cyan(`$${estimate.cost.toFixed(4)}`)}`);
+    } else {
+      lines.push(`  Cost:    unknown pricing`);
+    }
   }
 
   return lines.join('\n');
@@ -279,20 +289,21 @@ async function confirmOrSwitchModel(tokens, selectedModel, opts = {}) {
   // Current model first
   const currentRow = comparison.find(r => r.selected);
   if (currentRow) {
-    const costStr = currentRow.cost < 0.001 ? '< $0.001' : `$${currentRow.cost.toFixed(2)}`;
+    const costStr = currentRow.cost < 0.001 ? '< $0.001' : `$${currentRow.cost.toFixed(4)}`;
     options.push({
       value: currentRow.model,
-      label: `Yes (${costStr})`,
+      label: `Proceed with ${currentRow.model} (${costStr})`,
     });
   }
 
-  // Alternatives — just name and price
+  // Alternatives
   for (const row of comparison) {
     if (row.selected) continue;
-    const costStr = row.cost < 0.001 ? '< $0.001' : `$${row.cost.toFixed(2)}`;
+    const costStr = row.cost < 0.001 ? '< $0.001' : `$${row.cost.toFixed(4)}`;
     options.push({
       value: row.model,
-      label: `${row.model} (${costStr})`,
+      label: `Switch to ${row.model} (${costStr})`,
+      hint: row.shortFor,
     });
   }
 
@@ -303,7 +314,7 @@ async function confirmOrSwitchModel(tokens, selectedModel, opts = {}) {
   });
 
   const choice = await p.select({
-    message: `Proceed with ${selectedModel}?`,
+    message: 'Choose a model',
     options,
     initialValue: selectedModel,
   });
