@@ -2483,13 +2483,13 @@ select:focus { outline: none; border-color: var(--accent); }
       <button class="tab-btn" data-tab="search" role="tab" aria-selected="false" aria-controls="tab-search" id="tab-btn-search"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-search"/></svg></span><span>Search</span></button>
       <button class="tab-btn" data-tab="multimodal" role="tab" aria-selected="false" aria-controls="tab-multimodal" id="tab-btn-multimodal"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-image"/></svg></span><span>Multimodal</span></button>
       <button class="tab-btn" data-tab="generate" role="tab" aria-selected="false" aria-controls="tab-generate" id="tab-btn-generate"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-code"/></svg></span><span>Generate</span></button>
+      <button class="tab-btn" data-tab="chat" role="tab" aria-selected="false" aria-controls="tab-chat" id="tab-btn-chat"><span class="tab-btn-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16"><path d="M2 2h12v9H5l-3 3V2z" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></span><span>Chat</span></button>
     </div>
     <div class="sidebar-nav-divider"></div>
     <div class="sidebar-nav-group" role="tablist" aria-label="Learn">
       <div class="sidebar-nav-label" id="nav-learn-label">Learn</div>
       <button class="tab-btn" data-tab="benchmark" role="tab" aria-selected="false" aria-controls="tab-benchmark" id="tab-btn-benchmark"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-gauge"/></svg></span><span>Benchmark</span></button>
       <button class="tab-btn" data-tab="explore" role="tab" aria-selected="false" aria-controls="tab-explore" id="tab-btn-explore"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-bulb"/></svg></span><span>Explore</span></button>
-      <button class="tab-btn" data-tab="chat" role="tab" aria-selected="false" aria-controls="tab-chat" id="tab-btn-chat"><span class="tab-btn-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16"><path d="M2 2h12v9H5l-3 3V2z" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></span><span>Chat</span></button>
       <button class="tab-btn" data-tab="about" role="tab" aria-selected="false" aria-controls="tab-about" id="tab-btn-about"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-info"/></svg></span><span>About</span></button>
     </div>
   </nav>
@@ -6281,6 +6281,13 @@ function initOnboarding() {
       arrow: 'left',
     },
     {
+      target: '[data-tab="chat"]',
+      icon: '💬',
+      title: 'RAG Chat',
+      body: '<strong>Chat with your knowledge base</strong> using retrieval-augmented generation. Voyage AI finds relevant documents, then your chosen LLM generates grounded answers with source citations.',
+      arrow: 'left',
+    },
+    {
       target: '[data-tab="benchmark"]',
       icon: '⏱️',
       title: 'Benchmark',
@@ -6865,6 +6872,26 @@ function startVSI(canvas, onExit) {
   const W = canvas.width = 600;
   const H = canvas.height = 500;
 
+  // Helper function to draw a leaf shape
+  function drawLeaf(ctx, x, y, size, color) {
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    // Leaf shape using bezier curves
+    ctx.moveTo(x, y - size);
+    ctx.quadraticCurveTo(x + size * 0.6, y - size * 0.3, x + size * 0.3, y + size * 0.5);
+    ctx.quadraticCurveTo(x, y + size * 0.3, x, y + size);
+    ctx.quadraticCurveTo(x, y + size * 0.3, x - size * 0.3, y + size * 0.5);
+    ctx.quadraticCurveTo(x - size * 0.6, y - size * 0.3, x, y - size);
+    ctx.fill();
+    // Central vein
+    ctx.strokeStyle = color === '#00ED64' ? '#00A35C' : color;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(x, y - size);
+    ctx.lineTo(x, y + size);
+    ctx.stroke();
+  }
+
   // Ship
   const ship = { x: W / 2, w: 40, h: 16, speed: 5 };
   const bullets = [];
@@ -6937,7 +6964,8 @@ function startVSI(canvas, onExit) {
     for (let i = 0; i < 8; i++) {
       const angle = (Math.PI * 2 / 8) * i + Math.random() * 0.5;
       const speed = 1.5 + Math.random() * 2;
-      particles.push({ x, y, dx: Math.cos(angle) * speed, dy: Math.sin(angle) * speed, life: 30, color });
+      const isLeaf = i % 3 === 0; // Every 3rd particle is a leaf
+      particles.push({ x, y, dx: Math.cos(angle) * speed, dy: Math.sin(angle) * speed, life: 30, color, isLeaf });
     }
     explosionTexts.push({ x, y, text: sim.toFixed(2), life: 40, color });
   }
@@ -7060,24 +7088,17 @@ function startVSI(canvas, onExit) {
       ctx.fillRect(sx, sy, 1, 1);
     }
 
-    // Ship (triangle)
-    ctx.fillStyle = '#00ED64';
-    ctx.beginPath();
-    ctx.moveTo(ship.x, H - 40);
-    ctx.lineTo(ship.x - ship.w / 2, H - 24);
-    ctx.lineTo(ship.x + ship.w / 2, H - 24);
-    ctx.closePath();
-    ctx.fill();
+    // Ship (Voyage AI leaf)
+    drawLeaf(ctx, ship.x, H - 32, 12, '#00ED64');
     // Ship label
     ctx.fillStyle = '#00ED64';
     ctx.font = '9px monospace';
     ctx.textAlign = 'center';
-    ctx.fillText('query', ship.x, H - 14);
+    ctx.fillText('voyage', ship.x, H - 14);
 
-    // Bullets
-    ctx.fillStyle = '#00ED64';
+    // Bullets (small leaf shapes)
     for (const b of bullets) {
-      ctx.fillRect(b.x - 1, b.y, 2, 8);
+      drawLeaf(ctx, b.x, b.y, 3, '#00ED64');
     }
 
     // Boss
@@ -7111,11 +7132,15 @@ function startVSI(canvas, onExit) {
       ctx.fillText(e.text, e.x, e.y + 3);
     }
 
-    // Particles
+    // Particles (with occasional leaf shapes)
     for (const p of particles) {
       ctx.globalAlpha = p.life / 30;
-      ctx.fillStyle = p.color;
-      ctx.fillRect(p.x - 2, p.y - 2, 4, 4);
+      if (p.isLeaf) {
+        drawLeaf(ctx, p.x, p.y, 2, p.color);
+      } else {
+        ctx.fillStyle = p.color;
+        ctx.fillRect(p.x - 2, p.y - 2, 4, 4);
+      }
     }
     ctx.globalAlpha = 1;
 
@@ -7135,14 +7160,26 @@ function startVSI(canvas, onExit) {
     ctx.textAlign = 'left';
     ctx.fillText(`SCORE: ${score}`, 12, 20);
     ctx.fillText(`WAVE: ${wave}`, 12, 38);
-    ctx.textAlign = 'right';
-    ctx.fillText('❤️'.repeat(lives), W - 12, 20);
 
-    // Title
+    // Lives (leaf icons)
+    for (let i = 0; i < lives; i++) {
+      drawLeaf(ctx, W - 20 - (i * 18), 15, 6, '#00ED64');
+    }
+
+    // Title with Voyage AI branding
     ctx.fillStyle = '#00ED64';
     ctx.font = 'bold 10px monospace';
     ctx.textAlign = 'center';
     ctx.fillText('VECTOR SPACE INVADERS', W / 2, H - 4);
+
+    // Voyage AI watermark (top right corner)
+    ctx.globalAlpha = 0.3;
+    drawLeaf(ctx, W - 25, 25, 8, '#00ED64');
+    ctx.fillStyle = '#00ED64';
+    ctx.font = 'bold 9px monospace';
+    ctx.textAlign = 'right';
+    ctx.fillText('VOYAGE AI', W - 38, 28);
+    ctx.globalAlpha = 1;
 
     // Game over
     if (gameOver) {
