@@ -3304,7 +3304,11 @@ Reranking models rescore initial search results to improve relevance ordering.</
           <option value="ollama">Ollama</option>
         </select>
       </label>
-      <label>Model: <input type="text" id="chatModel" placeholder="auto" style="width:180px"></label>
+      <label>Model:
+        <select id="chatModel" style="width:200px">
+          <option value="">Loading...</option>
+        </select>
+      </label>
       <label>DB: <input type="text" id="chatDb" placeholder="database" style="width:120px"></label>
       <label>Collection: <input type="text" id="chatCollection" placeholder="collection" style="width:120px"></label>
       <label>Max docs: <input type="number" id="chatMaxDocs" value="5" min="1" max="20" style="width:50px"></label>
@@ -7187,22 +7191,97 @@ async function loadChatConfig() {
   try {
     const res = await fetch('/api/chat/config');
     const data = await res.json();
-    if (data.provider) document.getElementById('chatProvider').value = data.provider;
-    if (data.model) document.getElementById('chatModel').value = data.model;
+    if (data.provider) {
+      document.getElementById('chatProvider').value = data.provider;
+      await chatProviderChanged(); // Populate model dropdown
+      // After models load, select the configured model
+      if (data.model) {
+        const modelSelect = document.getElementById('chatModel');
+        const exists = Array.from(modelSelect.options).some(o => o.value === data.model);
+        if (exists) {
+          modelSelect.value = data.model;
+        }
+      }
+    }
     if (data.db) document.getElementById('chatDb').value = data.db;
     if (data.collection) document.getElementById('chatCollection').value = data.collection;
     if (data.chat?.maxContextDocs) document.getElementById('chatMaxDocs').value = data.chat.maxContextDocs;
   } catch { /* ignore */ }
 }
 
-function chatProviderChanged() {
-  const p = document.getElementById('chatProvider').value;
-  const modelInput = document.getElementById('chatModel');
-  if (!modelInput.value || modelInput.value === 'auto') {
-    const defaults = { anthropic: 'claude-sonnet-4-5-20250929', openai: 'gpt-4o', ollama: 'llama3.1' };
-    modelInput.placeholder = defaults[p] || 'auto';
+async function chatProviderChanged() {
+  const provider = document.getElementById('chatProvider').value;
+  const modelSelect = document.getElementById('chatModel');
+  
+  if (!provider) {
+    modelSelect.innerHTML = '<option value="">Select provider first</option>';
+    return;
   }
+
+  modelSelect.innerHTML = '<option value="">Loading models...</option>';
+  modelSelect.disabled = true;
+
+  try {
+    const res = await fetch(`/api/chat/models?provider=${provider}`);
+    const data = await res.json();
+    const models = data.models || [];
+    const defaults = { anthropic: 'claude-sonnet-4-5-20250929', openai: 'gpt-4o', ollama: 'llama3.1' };
+    const defaultModel = defaults[provider];
+
+    modelSelect.innerHTML = '';
+
+    if (models.length === 0) {
+      if (provider === 'ollama') {
+        modelSelect.innerHTML = '<option value="">No models found — is Ollama running?</option>';
+      } else {
+        // Fallback to default
+        modelSelect.innerHTML = `<option value="${defaultModel}">${defaultModel}</option>`;
+      }
+    } else {
+      models.forEach(m => {
+        const opt = document.createElement('option');
+        opt.value = m.id;
+        let label = m.name || m.id;
+        if (m.context) label += ` (${m.context})`;
+        if (m.size) label += ` — ${m.size}`;
+        if (m.parameterSize) label += ` [${m.parameterSize}]`;
+        if (m.quantization) label += ` ${m.quantization}`;
+        opt.textContent = label;
+        if (m.id === defaultModel) opt.selected = true;
+        modelSelect.appendChild(opt);
+      });
+    }
+
+    // Always add a custom option
+    const customOpt = document.createElement('option');
+    customOpt.value = '__custom__';
+    customOpt.textContent = '✏️ Custom model...';
+    modelSelect.appendChild(customOpt);
+
+  } catch {
+    const defaults = { anthropic: 'claude-sonnet-4-5-20250929', openai: 'gpt-4o', ollama: 'llama3.1' };
+    modelSelect.innerHTML = `<option value="${defaults[provider] || ''}">${defaults[provider] || 'default'}</option>`;
+  }
+
+  modelSelect.disabled = false;
 }
+
+// Handle custom model selection
+document.getElementById('chatModel')?.addEventListener('change', function() {
+  if (this.value === '__custom__') {
+    const custom = prompt('Enter model name:');
+    if (custom) {
+      const opt = document.createElement('option');
+      opt.value = custom;
+      opt.textContent = custom;
+      // Insert before the custom option
+      this.insertBefore(opt, this.lastChild);
+      this.value = custom;
+    } else {
+      this.selectedIndex = 0;
+    }
+  }
+});
 
 function chatInputKeydown(e) {
   if (e.key === 'Enter' && !e.shiftKey) {
@@ -7244,7 +7323,8 @@ async function sendChatMessage() {
   if (!query) return;
 
   const provider = document.getElementById('chatProvider').value;
-  const model = document.getElementById('chatModel').value;
+  const modelVal = document.getElementById('chatModel').value;
+  const model = (modelVal && modelVal !== '__custom__') ? modelVal : undefined;
   const db = document.getElementById('chatDb').value;
   const collection = document.getElementById('chatCollection').value;
   const maxDocs = parseInt(document.getElementById('chatMaxDocs').value) || 5;
@@ -7279,7 +7359,7 @@ async function sendChatMessage() {
     const res = await fetch('/api/chat/message', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query, db, collection, provider, model: model || undefined, maxDocs, rerank }),
+      body: JSON.stringify({ query, db, collection, provider, model, maxDocs, rerank }),
     });
 
     if (!res.ok) {
