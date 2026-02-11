@@ -2620,7 +2620,7 @@ select:focus { outline: none; border-color: var(--accent); }
   .mm-gallery-grid { grid-template-columns: repeat(3, 1fr); }
   .compare-grid, .search-results { grid-template-columns: 1fr; }
   .sidebar { width: 56px; min-width: 56px; }
-  .sidebar-title, .status-label { display: none; }
+  .sidebar-title, .status-label, .sidebar-bug-label { display: none; }
   .tab-btn { justify-content: center; padding: 10px; }
   .tab-btn span:not(.tab-btn-icon) { display: none; }
   .main { padding: 16px; }
@@ -2715,7 +2715,13 @@ select:focus { outline: none; border-color: var(--accent); }
       </div>
       <button class="theme-toggle" id="themeToggle" title="Toggle light/dark mode">🌙</button>
     </div>
-    <div id="appVersionLabel" style="font-size:10px;color:var(--text-muted);text-align:center;"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <div id="appVersionLabel" style="font-size:10px;color:var(--text-muted);"></div>
+      <button class="sidebar-bug-link" id="bugButton" title="Report a Bug">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="9" r="4.5"/><path d="M5.5 5.5L3 3M10.5 5.5L13 3M3 9H1M15 9h-2M5.5 12.5L4 15M10.5 12.5L12 15"/></svg>
+        <span class="sidebar-bug-label">Bug</span>
+      </button>
+    </div>
   </div>
 </aside>
 
@@ -8108,8 +8114,16 @@ init();
 
 <!-- 🐛 Bug Reporter -->
 <style>
-.bug-floating-button{position:fixed;bottom:20px;right:20px;width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#ff6b6b,#ee5a5a);border:none;cursor:pointer;font-size:24px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(238,90,90,0.4);transition:all .2s;z-index:9998}
-.bug-floating-button:hover{transform:scale(1.1);box-shadow:0 6px 16px rgba(238,90,90,0.5)}
+.sidebar-bug-link{
+  display:flex;align-items:center;gap:6px;
+  background:none;border:none;cursor:pointer;
+  font-size:11px;color:var(--text-muted);
+  padding:4px 0;font-family:inherit;
+  transition:color .15s;
+}
+.sidebar-bug-link:hover{color:var(--text);}
+.sidebar-bug-link svg{width:12px;height:12px;flex-shrink:0;opacity:0.6;}
+.sidebar-bug-link:hover svg{opacity:1;}
 .bug-reporter-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:9999}
 .bug-reporter-modal{background:var(--bg-surface);border-radius:12px;width:90%;max-width:500px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.5)}
 .bug-reporter-header{display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid var(--border)}
@@ -8139,7 +8153,7 @@ init();
 .bug-success code{background:rgba(255,255,255,0.1);padding:4px 8px;border-radius:4px;font-size:12px;color:var(--accent)}
 </style>
 
-<button class="bug-floating-button" id="bugButton" title="Report a Bug">🐛</button>
+<!-- Bug button moved to sidebar footer -->
 
 <div class="bug-reporter-overlay" id="bugOverlay" style="display:none">
   <div class="bug-reporter-modal">
