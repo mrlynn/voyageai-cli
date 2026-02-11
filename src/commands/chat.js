@@ -108,6 +108,28 @@ async function runChat(opts) {
 
   const llm = createLLMProvider(opts);
 
+  // Preflight: verify the RAG pipeline is ready
+  if (!opts.json) {
+    const { runPreflight, formatPreflight } = require('../lib/preflight');
+    const { checks, ready } = await runPreflight({
+      db, collection,
+      field: proj.field || 'embedding',
+      llmConfig,
+      textField,
+    });
+
+    console.log('');
+    console.log(formatPreflight(checks));
+    console.log('');
+
+    if (!ready) {
+      const failedCritical = checks.filter(c => !c.ok && c.id !== 'llm');
+      if (failedCritical.length > 0) {
+        process.exit(1);
+      }
+    }
+  }
+
   // Initialize history
   let historyMongo = null;
   if (opts.history !== false) {
