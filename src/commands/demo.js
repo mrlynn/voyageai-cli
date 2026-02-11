@@ -337,6 +337,76 @@ function registerDemo(program) {
         }
       }
 
+      // ── Step 6: Chat (optional) ──
+      const { resolveLLMConfig } = require('../lib/llm');
+      const llmConfig = resolveLLMConfig();
+      const hasLLM = !!llmConfig.provider;
+      const hasCollection = !skipPipeline;
+
+      if (hasLLM && hasCollection) {
+        stepHeader(skipPipeline ? 5 : 6, 'RAG Chat');
+        console.log('  Now the grand finale — let\'s chat with the documents we just stored.');
+        console.log('  This combines everything: embed the question → vector search → rerank → LLM answers.');
+        console.log('');
+        console.log(`  Provider: ${pc.cyan(llmConfig.provider)} (${llmConfig.model})`);
+        console.log('');
+
+        await waitForEnter(noPause);
+
+        // Run a single non-interactive chat turn
+        const db = 'test';
+        const collection = 'demo_voyage_test';
+        const chatQuery = 'What cloud database options are available for AI applications?';
+
+        console.log(`  ${pc.bold('Question:')} ${chatQuery}`);
+        console.log('');
+
+        // Run chat non-interactively by piping the question via stdin
+        const chatResult = spawnSync(process.execPath, [
+          CLI_PATH, 'chat',
+          '--db', db, '--collection', collection,
+          '--no-history', '--quiet',
+        ], {
+          input: chatQuery + '\n/quit\n',
+          stdio: ['pipe', 'inherit', 'inherit'],
+          env: process.env,
+          timeout: 60000,
+        });
+
+        ok = chatResult.status === 0;
+
+        if (!ok) {
+          console.log('');
+          console.log(pc.dim('  Chat step had an issue — this requires an LLM provider and'));
+          console.log(pc.dim('  the demo collection to still exist with a vector index.'));
+        }
+
+        console.log('');
+        console.log('  That\'s the complete RAG pipeline: documents → embeddings → vector search');
+        console.log('  → reranking → LLM generation — all in one tool.');
+
+        await waitForEnter(noPause);
+
+      } else {
+        // Show what they're missing
+        const stepNum = skipPipeline ? 5 : 6;
+        stepHeader(stepNum, 'RAG Chat (skipped)');
+        if (!hasLLM) {
+          console.log(pc.dim('  Skipping chat demo — no LLM provider configured.'));
+          console.log(pc.dim('  Set one up to try it:'));
+          console.log('');
+          console.log(`    ${pc.cyan('vai config set llm-provider anthropic')}`);
+          console.log(`    ${pc.cyan('vai config set llm-api-key YOUR_KEY')}`);
+          console.log('');
+          console.log(pc.dim('  Or use Ollama for free local inference:'));
+          console.log(`    ${pc.cyan('vai config set llm-provider ollama')}`);
+        } else {
+          console.log(pc.dim('  Skipping chat demo — pipeline step was skipped (no MongoDB URI).'));
+          console.log(pc.dim('  Set MONGODB_URI to try the full flow including chat.'));
+        }
+        console.log('');
+      }
+
       // ── Done ──
       console.log('');
       console.log('─'.repeat(60));
@@ -347,6 +417,11 @@ function registerDemo(program) {
       console.log(`    • Explore models: ${pc.cyan('vai models')}`);
       console.log(`    • Configure: ${pc.cyan('vai config set api-key <your-key>')}`);
       console.log(`    • Full pipeline: ${pc.cyan('vai store → vai index create → vai search')}`);
+      if (!hasLLM) {
+        console.log(`    • Enable chat: ${pc.cyan('vai config set llm-provider anthropic')}`);
+      } else {
+        console.log(`    • Chat: ${pc.cyan('vai chat --db myapp --collection knowledge')}`);
+      }
       console.log('');
       console.log('  Happy searching! 🚀');
       console.log('');
