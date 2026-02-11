@@ -7331,7 +7331,10 @@ function addChatMessage(role, content, sources) {
   const container = document.getElementById('chatMessages');
   const div = document.createElement('div');
   div.className = `chat-message ${role}`;
-  div.textContent = content;
+  const contentSpan = document.createElement('span');
+  contentSpan.className = 'chat-message-content';
+  contentSpan.textContent = content;
+  div.appendChild(contentSpan);
 
   if (sources && sources.length > 0) {
     const details = document.createElement('details');
@@ -7441,7 +7444,7 @@ async function sendChatMessage() {
               assistantDiv = addChatMessage('assistant', '');
             }
             fullText += data.text;
-            assistantDiv.childNodes[0].textContent = fullText;
+            assistantDiv.querySelector('.chat-message-content').textContent = fullText;
             document.getElementById('chatMessages').scrollTop = document.getElementById('chatMessages').scrollHeight;
           }
 
