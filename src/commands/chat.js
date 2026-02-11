@@ -150,7 +150,7 @@ async function runChat(opts) {
 
     // Handle slash commands
     if (input.startsWith('/')) {
-      const handled = await handleSlashCommand(input, { history, opts, db, collection, llm, rl });
+      const handled = await handleSlashCommand(input, { history, opts, db, collection, llm, rl, historyMongo });
       if (handled === 'quit') {
         await cleanup(historyMongo);
         process.exit(0);
@@ -268,6 +268,7 @@ async function handleSlashCommand(input, ctx) {
       console.log(pc.bold('Commands:'));
       console.log('  /sources    Show sources from last response');
       console.log('  /session    Display current session ID');
+      console.log('  /history    List recent chat sessions');
       console.log('  /context    Show retrieved context from last query');
       console.log('  /clear      Clear conversation history');
       console.log('  /model      Show or switch LLM model (/model <name>)');
@@ -308,6 +309,34 @@ async function handleSlashCommand(input, ctx) {
           console.log(`  ${preview}${doc.text?.length > 300 ? '...' : ''}`);
           console.log('');
         }
+      }
+      return true;
+    }
+
+    case '/history': {
+      if (!ctx.historyMongo) {
+        console.log(pc.dim('  History persistence is disabled (--no-history or no MongoDB).'));
+        return true;
+      }
+      try {
+        const { listSessions } = require('../lib/history');
+        const sessions = await listSessions(ctx.historyMongo.collection, 10);
+        if (sessions.length === 0) {
+          console.log(pc.dim('  No previous sessions found.'));
+        } else {
+          console.log('');
+          for (const s of sessions) {
+            const active = s.sessionId === history.sessionId ? pc.green(' ← current') : '';
+            const date = s.lastActivity ? new Date(s.lastActivity).toLocaleString() : 'unknown';
+            const preview = (s.firstMessage || '').substring(0, 60);
+            console.log(`  ${pc.bold(s.sessionId.slice(0, 8))}  ${pc.dim(date)}  ${s.turnCount} turns${active}`);
+            if (preview) console.log(`    ${pc.dim(preview)}${s.firstMessage?.length > 60 ? '...' : ''}`);
+          }
+          console.log('');
+          console.log(pc.dim('  Resume with: vai chat --session <id>'));
+        }
+      } catch (err) {
+        console.log(pc.dim(`  Error listing sessions: ${err.message}`));
       }
       return true;
     }

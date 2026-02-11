@@ -98,6 +98,29 @@ describe('history', () => {
       assert.ok(md.includes('auth.md'));
     });
 
+    it('getMessagesWithBudget trims old turns', async () => {
+      const h = new ChatHistory({ maxTurns: 100 });
+      // Add lots of turns with long content
+      for (let i = 0; i < 20; i++) {
+        await h.addTurn({ role: 'user', content: 'x'.repeat(2000) });
+        await h.addTurn({ role: 'assistant', content: 'y'.repeat(2000) });
+      }
+      // With small budget, should get fewer messages
+      const msgs = h.getMessagesWithBudget(1000); // ~4000 chars
+      assert.ok(msgs.length < 40); // Less than all 40 turns
+      assert.ok(msgs.length >= 2); // At least one exchange
+      // Most recent should be last
+      assert.equal(msgs[msgs.length - 1].content, 'y'.repeat(2000));
+    });
+
+    it('getMessagesWithBudget returns all if within budget', async () => {
+      const h = new ChatHistory();
+      await h.addTurn({ role: 'user', content: 'short' });
+      await h.addTurn({ role: 'assistant', content: 'reply' });
+      const msgs = h.getMessagesWithBudget(8000);
+      assert.equal(msgs.length, 2);
+    });
+
     it('exportJSON includes all data', async () => {
       const h = new ChatHistory({ sessionId: 'test-json' });
       await h.addTurn({ role: 'user', content: 'q' });

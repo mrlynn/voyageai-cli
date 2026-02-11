@@ -139,6 +139,31 @@ class ChatHistory {
   }
 
   /**
+   * Get conversation history trimmed to fit a token budget.
+   * Uses ~4 chars per token estimate. Prioritizes recent turns.
+   * @param {number} [maxTokens=8000] - Token budget for history
+   * @returns {Array<{role: string, content: string}>}
+   */
+  getMessagesWithBudget(maxTokens = 8000) {
+    const messages = this.getMessages();
+    if (messages.length === 0) return [];
+
+    let totalChars = 0;
+    const maxChars = maxTokens * 4;
+    const result = [];
+
+    // Work backwards from most recent
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const charCount = messages[i].content.length;
+      if (totalChars + charCount > maxChars && result.length > 0) break;
+      result.unshift(messages[i]);
+      totalChars += charCount;
+    }
+
+    return result;
+  }
+
+  /**
    * Export conversation to markdown.
    * @returns {string}
    */
