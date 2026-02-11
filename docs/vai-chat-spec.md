@@ -250,6 +250,7 @@ Same priority chain as all vai commands: environment variables override .env, wh
 | `llm-api-key` | `VAI_LLM_API_KEY` | `--llm-api-key` | (none) | Yes (except Ollama) |
 | `llm-model` | `VAI_LLM_MODEL` | `--llm-model` | Provider default | No |
 | `llm-base-url` | `VAI_LLM_BASE_URL` | `--llm-base-url` | Provider default | No (Ollama only) |
+| `chat-history-db` | `VAI_CHAT_HISTORY_DB` | `--history-db` | Value of `--db` | No |
 | `chat-history-collection` | `VAI_CHAT_HISTORY` | `--history-collection` | `vai_chat_history` | No |
 | `chat-max-context-docs` | `VAI_CHAT_MAX_DOCS` | `--max-context-docs` | 5 | No |
 | `chat-max-turns` | `VAI_CHAT_MAX_TURNS` | `--max-turns` | 20 | No |
@@ -285,6 +286,7 @@ The project configuration file gains an optional `chat` block. This is safe to c
   "chat": {
     "provider": "anthropic",
     "model": "claude-sonnet-4-5-20250929",
+    "historyDb": "myapp",
     "historyCollection": "vai_chat_history",
     "maxContextDocs": 5,
     "maxConversationTurns": 20,
@@ -294,6 +296,8 @@ The project configuration file gains an optional `chat` block. This is safe to c
   }
 }
 ```
+
+Note: `historyDb` defaults to the value of `db` when omitted. Most users will never need to set it explicitly.
 
 ---
 
@@ -503,7 +507,52 @@ Sources:
 
 Chat history is stored in the user's MongoDB Atlas instance — the same database they're already using for their embedded knowledge base. No new infrastructure is required.
 
-### 7.1 Chat History Collection Schema
+### 7.1 Chat History Storage Strategy
+
+**Default to the same database, same connection. Make it overridable with a single config key.**
+
+The user has already configured `mongodb-uri` and `--db` for their knowledge base. Chat history is lightweight metadata — it doesn't compete for resources with the vector-indexed knowledge base, and co-locating it means zero additional configuration for the common case. A user running `vai chat --db myapp --collection knowledge` should just work, with chat history appearing in `myapp.vai_chat_history` without them thinking about it.
+
+For users who need separation — perhaps their knowledge base is in a shared production database and they want chat sessions isolated, or they're working with multiple knowledge bases across databases and want a single place for all chat history — a single `chat-history-db` config key (defaulting to the value of `--db`) gives them control without burdening everyone else.
+
+**What we explicitly avoid:** a separate `chat-mongodb-uri`. A second connection string implies a second cluster, which implies connection management complexity, latency considerations, and a configuration surface that is disproportionate to the problem. Chat history reuses the existing MongoDB connection. If someone truly needs a different cluster, they can reconfigure their primary connection — but that's an edge case that doesn't need first-class support.
+
+**Resolution order for the chat history database:**
+
+```
+--history-db flag  →  VAI_CHAT_HISTORY_DB env  →  .vai.json chat.historyDb
+    →  --db flag  →  .vai.json db  →  (error: no database configured)
+```
+
+In other words: if you don't set `chat-history-db`, it falls through to whatever database you're already using. This is the zero-configuration path.
+
+**Auto-creation behavior:**
+
+On first `vai chat` invocation, the history module should:
+
+1. Check if the `vai_chat_history` collection exists in the target database
+2. If not, create it silently along with the required indexes
+3. Log the creation at debug level (`--verbose`) so it's discoverable if someone is looking, but do not surface it in normal output
+4. Never prompt the user for confirmation — this is internal bookkeeping, not user data
+
+This is consistent with how vai already handles vector search index creation in `vai pipeline --create-index`: infrastructure is provisioned automatically when needed, with no manual setup steps.
+
+**What gets auto-created:**
+
+| Resource | Created When | Purpose |
+|----------|-------------|---------|
+| `vai_chat_history` collection | First `vai chat` invocation | Stores all conversation turns |
+| `{ sessionId: 1, timestamp: 1 }` compound index | First write to collection | Efficient session retrieval and chronological ordering |
+| `{ timestamp: 1 }` TTL index (optional) | Only if `chat-history-ttl` is configured | Auto-expire old sessions (e.g., 30-day retention) |
+
+**What the user never has to do:**
+
+- Create a collection manually
+- Run any index creation commands
+- Configure a separate database (unless they want to)
+- Think about chat storage at all in the default case
+
+### 7.2 Chat History Collection Schema
 
 Each document represents a single conversation turn (one user message or one assistant response):
 
@@ -533,7 +582,7 @@ Each document represents a single conversation turn (one user message or one ass
 }
 ```
 
-### 7.2 Session Index
+### 7.3 Session Index
 
 A compound index on `sessionId` + `timestamp` ensures efficient session retrieval and chronological ordering:
 
@@ -547,7 +596,7 @@ This index is automatically created when `vai chat` writes its first turn. A TTL
 { "timestamp": 1 }, { expireAfterSeconds: 2592000 }   // 30-day retention
 ```
 
-### 7.3 Context Window Management
+### 7.4 Context Window Management
 
 As conversations grow, the full history may exceed the LLM's context window. The history module implements a sliding window strategy:
 

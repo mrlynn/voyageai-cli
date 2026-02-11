@@ -6,6 +6,10 @@ const { ChatHistory } = require('../lib/history');
 const { chatTurn } = require('../lib/chat');
 const { loadProject } = require('../lib/project');
 const { getMongoCollection } = require('../lib/mongo');
+const { setConfigValue } = require('../lib/config');
+const { runWizard } = require('../lib/wizard');
+const { createCLIRenderer } = require('../lib/wizard-cli');
+const { chatSetupSteps } = require('../lib/wizard-steps-chat');
 const ui = require('../lib/ui');
 const pc = require('picocolors');
 const fs = require('fs');
@@ -68,25 +72,38 @@ async function runChat(opts) {
     process.exit(1);
   }
 
-  // Validate LLM provider
-  const llmConfig = resolveLLMConfig(opts);
+  // Resolve LLM config — run interactive setup if missing
+  let llmConfig = resolveLLMConfig(opts);
   if (!llmConfig.provider) {
-    console.error(ui.error('No LLM provider configured.'));
-    console.error('');
-    console.error('  vai chat requires a language model to generate responses.');
-    console.error('  Choose a provider and configure it:');
-    console.error('');
-    console.error(`  ${pc.bold('Anthropic:')}  vai config set llm-provider anthropic`);
-    console.error('              vai config set llm-api-key YOUR_KEY');
-    console.error('');
-    console.error(`  ${pc.bold('OpenAI:')}     vai config set llm-provider openai`);
-    console.error('              vai config set llm-api-key YOUR_KEY');
-    console.error('');
-    console.error(`  ${pc.bold('Ollama:')}     vai config set llm-provider ollama`);
-    console.error('              (free, runs locally — requires ollama installed)');
-    console.error('');
-    console.error('  Learn more: vai explain chat');
-    process.exit(1);
+    if (opts.json) {
+      // Non-interactive mode — can't run wizard
+      console.error(JSON.stringify({ error: 'No LLM provider configured. Run vai chat interactively to set up.' }));
+      process.exit(1);
+    }
+
+    const { answers, cancelled } = await runWizard({
+      steps: chatSetupSteps,
+      config: llmConfig,
+      renderer: createCLIRenderer({
+        title: 'vai chat — LLM Setup',
+        doneMessage: 'Configuration saved. Starting chat...',
+      }),
+    });
+
+    if (cancelled) {
+      process.exit(0);
+    }
+
+    // Persist to ~/.vai/config.json
+    if (answers.provider) setConfigValue('llmProvider', answers.provider);
+    if (answers.apiKey) setConfigValue('llmApiKey', answers.apiKey);
+    if (answers.model) setConfigValue('llmModel', answers.model);
+    if (answers.ollamaBaseUrl && answers.ollamaBaseUrl !== 'http://localhost:11434') {
+      setConfigValue('llmBaseUrl', answers.ollamaBaseUrl);
+    }
+
+    // Re-resolve with new config
+    llmConfig = resolveLLMConfig(opts);
   }
 
   const llm = createLLMProvider(opts);
