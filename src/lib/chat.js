@@ -171,7 +171,7 @@ async function* chatTurn({ query, db, collection, llm, history, opts = {} }) {
   const messages = buildMessages({
     query,
     contextDocs: docs,
-    history: history.getMessages(),
+    history: history.getMessagesWithBudget(8000),
     systemPrompt: opts.systemPrompt,
   });
 

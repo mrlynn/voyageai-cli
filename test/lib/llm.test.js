@@ -3,6 +3,7 @@
 const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
 const { resolveLLMConfig, PROVIDER_DEFAULTS, PROVIDER_BASE_URLS } = require('../../src/lib/llm');
+const { resolveConcept, getConcept } = require('../../src/lib/explanations');
 
 describe('llm', () => {
   describe('resolveLLMConfig', () => {
@@ -59,6 +60,24 @@ describe('llm', () => {
       assert.ok(PROVIDER_BASE_URLS.anthropic.startsWith('https://'));
       assert.ok(PROVIDER_BASE_URLS.openai.startsWith('https://'));
       assert.ok(PROVIDER_BASE_URLS.ollama.startsWith('http://'));
+    });
+  });
+
+  describe('vai explain chat', () => {
+    it('resolves chat aliases', () => {
+      assert.equal(resolveConcept('chat'), 'chat');
+      assert.equal(resolveConcept('rag-chat'), 'chat');
+      assert.equal(resolveConcept('llm'), 'chat');
+      assert.equal(resolveConcept('conversation'), 'chat');
+    });
+
+    it('has chat concept with content', () => {
+      const concept = getConcept('chat');
+      assert.ok(concept);
+      assert.equal(concept.title, 'RAG Chat');
+      assert.ok(concept.content.includes('RETRIEVAL'));
+      assert.ok(concept.content.includes('GENERATION'));
+      assert.ok(concept.tryIt.length > 0);
     });
   });
 });
