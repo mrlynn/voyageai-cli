@@ -103,7 +103,7 @@ function render(template, context = {}) {
   result = processUnlessBlocks(result, context);
 
   // Process simple variable substitutions {{variable}} and {{variable.nested}}
-  result = result.replace(/\{\{([a-zA-Z_][\w.]*)\}\}/g, (match, varPath) => {
+  result = result.replace(/\{\{(@?[a-zA-Z_][\w.]*)\}\}/g, (match, varPath) => {
     const value = getPath(context, varPath);
     if (value === undefined || value === null) return '';
     if (typeof value === 'object') return JSON.stringify(value);
@@ -181,7 +181,7 @@ function processIfBlocks(template, context) {
 
     // Match if-else blocks that don't contain nested {{#if (innermost first)
     // This regex ensures we don't have another {{#if inside the captured groups
-    const ifElseRegex = /\{\{#if\s+(\w+(?:\.\w+)*)\}\}((?:(?!\{\{#if)[\s\S])*?)\{\{else\}\}((?:(?!\{\{#if)[\s\S])*?)\{\{\/if\}\}/;
+    const ifElseRegex = /\{\{#if\s+(@?\w+(?:\.\w+)*)\}\}((?:(?!\{\{#if)[\s\S])*?)\{\{else\}\}((?:(?!\{\{#if)[\s\S])*?)\{\{\/if\}\}/;
     
     let match = result.match(ifElseRegex);
     if (match) {
@@ -194,7 +194,7 @@ function processIfBlocks(template, context) {
     }
 
     // Match simple if blocks that don't contain nested {{#if
-    const ifRegex = /\{\{#if\s+(\w+(?:\.\w+)*)\}\}((?:(?!\{\{#if)[\s\S])*?)\{\{\/if\}\}/;
+    const ifRegex = /\{\{#if\s+(@?\w+(?:\.\w+)*)\}\}((?:(?!\{\{#if)[\s\S])*?)\{\{\/if\}\}/;
     
     match = result.match(ifRegex);
     if (match) {
@@ -213,7 +213,7 @@ function processIfBlocks(template, context) {
  * Process {{#unless condition}}...{{/unless}} blocks.
  */
 function processUnlessBlocks(template, context) {
-  const unlessRegex = /\{\{#unless\s+(\w+(?:\.\w+)*)\}\}([\s\S]*?)\{\{\/unless\}\}/g;
+  const unlessRegex = /\{\{#unless\s+(@?\w+(?:\.\w+)*)\}\}([\s\S]*?)\{\{\/unless\}\}/g;
 
   return template.replace(unlessRegex, (match, varPath, blockContent) => {
     const value = getPath(context, varPath);

@@ -138,11 +138,15 @@ describe('codegen', () => {
       assert.equal(result, 'a,b,c,');
     });
 
-    it('sets @index, @first, @last in loop context (not substituted by variable regex)', () => {
-      // Note: {{@index}} isn't matched by the variable regex ([a-zA-Z_][\w.]*)
-      // These special vars work when accessed via object spread in nested templates
-      const result = render('{{#each items}}{{this}},{{/each}}', { items: ['a', 'b'] });
-      assert.equal(result, 'a,b,');
+    it('provides @index in #each', () => {
+      const result = render('{{#each items}}{{@index}}{{/each}}', { items: ['a', 'b'] });
+      assert.equal(result, '01');
+    });
+
+    it('provides @first and @last in #each', () => {
+      const tpl = '{{#each items}}{{#if @first}}F{{/if}}{{#if @last}}L{{/if}}{{/each}}';
+      const result = render(tpl, { items: ['a', 'b', 'c'] });
+      assert.equal(result, 'FL');
     });
 
     it('spreads object items in #each', () => {
