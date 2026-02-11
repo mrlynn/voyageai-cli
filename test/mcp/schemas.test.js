@@ -6,12 +6,12 @@ const { z } = require('zod');
 const schemas = require('../../src/mcp/schemas');
 
 describe('MCP schemas', () => {
-  it('exports all 9 schemas', () => {
+  it('exports all 10 schemas', () => {
     const expected = [
       'querySchema', 'searchSchema', 'rerankSchema',
       'embedSchema', 'similaritySchema',
       'collectionsSchema', 'modelsSchema',
-      'explainSchema', 'estimateSchema',
+      'explainSchema', 'estimateSchema', 'ingestSchema',
     ];
     for (const name of expected) {
       assert.ok(schemas[name], `missing schema: ${name}`);
@@ -161,6 +161,44 @@ describe('MCP schemas', () => {
 
     it('accepts any topic string', () => {
       assert.ok(schema.safeParse({ topic: 'embeddings' }).success);
+    });
+  });
+
+  describe('ingestSchema', () => {
+    const schema = z.object(schemas.ingestSchema);
+
+    it('requires text', () => {
+      assert.ok(!schema.safeParse({}).success);
+    });
+
+    it('accepts valid ingest input', () => {
+      assert.ok(schema.safeParse({ text: 'Hello world document' }).success);
+    });
+
+    it('defaults chunkStrategy to recursive', () => {
+      assert.equal(schema.parse({ text: 'test' }).chunkStrategy, 'recursive');
+    });
+
+    it('defaults chunkSize to 512', () => {
+      assert.equal(schema.parse({ text: 'test' }).chunkSize, 512);
+    });
+
+    it('defaults model to voyage-4-large', () => {
+      assert.equal(schema.parse({ text: 'test' }).model, 'voyage-4-large');
+    });
+
+    it('accepts optional source and metadata', () => {
+      const result = schema.parse({ text: 'test', source: 'notes.md', metadata: { type: 'notes' } });
+      assert.equal(result.source, 'notes.md');
+      assert.deepEqual(result.metadata, { type: 'notes' });
+    });
+
+    it('rejects invalid chunk strategy', () => {
+      assert.ok(!schema.safeParse({ text: 'test', chunkStrategy: 'invalid' }).success);
+    });
+
+    it('rejects chunkSize below 100', () => {
+      assert.ok(!schema.safeParse({ text: 'test', chunkSize: 50 }).success);
     });
   });
 

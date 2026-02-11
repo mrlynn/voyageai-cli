@@ -64,4 +64,11 @@ describe('mcp-server command', () => {
     const cmd = setup();
     assert.ok(cmd.options.find(o => o.long === '--verbose'));
   });
+
+  it('has generate-key subcommand', () => {
+    const cmd = setup();
+    const sub = cmd.commands.find(c => c.name() === 'generate-key');
+    assert.ok(sub);
+    assert.ok(sub.description().includes('API key'));
+  });
 });
