@@ -61,6 +61,9 @@ function createPlaygroundServer() {
 
   const htmlPath = path.join(__dirname, '..', 'playground', 'index.html');
 
+  // Chat history — scoped to the server lifetime (in-memory, no persistence)
+  let _chatHistory = null;
+
   const server = http.createServer(async (req, res) => {
     // CORS headers for local dev
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -334,8 +337,8 @@ function createPlaygroundServer() {
           }
 
           // Use in-memory history for playground (no session persistence)
-          if (!this._chatHistory) this._chatHistory = new ChatHistory({ maxTurns: 20 });
-          const history = this._chatHistory;
+          if (!_chatHistory) _chatHistory = new ChatHistory({ maxTurns: 20 });
+          const history = _chatHistory;
 
           // Stream response as SSE
           res.writeHead(200, {
@@ -372,7 +375,7 @@ function createPlaygroundServer() {
 
         // API: Chat clear
         if (req.url === '/api/chat/clear') {
-          if (this._chatHistory) this._chatHistory.clear();
+          if (_chatHistory) _chatHistory.clear();
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ ok: true }));
           return;
