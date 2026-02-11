@@ -174,8 +174,8 @@ function registerPipeline(program) {
           console.log('');
         }
 
-        // Dry run / estimate — stop here
-        if (opts.dryRun || opts.estimate) {
+        // Dry run — stop here
+        if (opts.dryRun) {
           const { estimateCost, formatCostEstimate } = require('../lib/cost');
           const est = estimateCost(totalTokens, model);
           if (opts.json) {
@@ -189,12 +189,20 @@ function registerPipeline(program) {
               strategy, chunkSize, overlap, model, db, collection, field,
             }, null, 2));
           } else {
-            console.log(ui.success(`${opts.estimate ? 'Estimate' : 'Dry run'} complete: ${fmtNum(allChunks.length)} chunks from ${files.length} files.`));
+            console.log(ui.success(`Dry run complete: ${fmtNum(allChunks.length)} chunks from ${files.length} files.`));
             console.log('');
             console.log(formatCostEstimate(est));
             console.log('');
           }
           return;
+        }
+
+        // Estimate — show comparison table, let user confirm or switch model, then continue
+        if (opts.estimate) {
+          const { confirmOrSwitchModel } = require('../lib/cost');
+          const chosenModel = await confirmOrSwitchModel(totalTokens, model, { json: opts.json });
+          if (!chosenModel) return; // cancelled
+          model = chosenModel;
         }
 
         // Step 3: Embed in batches

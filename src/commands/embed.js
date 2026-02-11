@@ -28,19 +28,13 @@ function registerEmbed(program) {
       try {
         const texts = await resolveTextInput(text, opts.file);
 
-        // --estimate: show cost and exit
+        // --estimate: show cost comparison, optionally switch model
         if (opts.estimate) {
-          const { estimateTokensForTexts, estimateCost, formatCostEstimate } = require('../lib/cost');
+          const { estimateTokensForTexts, confirmOrSwitchModel } = require('../lib/cost');
           const tokens = estimateTokensForTexts(texts);
-          const est = estimateCost(tokens, opts.model);
-          if (opts.json) {
-            console.log(JSON.stringify(est));
-          } else {
-            console.log('');
-            console.log(formatCostEstimate(est));
-            console.log('');
-          }
-          return;
+          const chosenModel = await confirmOrSwitchModel(tokens, opts.model, { json: opts.json });
+          if (!chosenModel) return; // cancelled
+          opts.model = chosenModel;
         }
 
         const useColor = !opts.json;

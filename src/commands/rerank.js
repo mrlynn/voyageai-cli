@@ -72,19 +72,13 @@ function registerRerank(program) {
           process.exit(1);
         }
 
-        // --estimate: show cost and exit
+        // --estimate: show cost comparison, optionally switch model
         if (opts.estimate) {
-          const { estimateTokens, estimateCost, formatCostEstimate } = require('../lib/cost');
+          const { estimateTokens, confirmOrSwitchModel } = require('../lib/cost');
           const tokens = estimateTokens(opts.query) + documents.reduce((s, d) => s + estimateTokens(d), 0);
-          const est = estimateCost(tokens, opts.model);
-          if (opts.json) {
-            console.log(JSON.stringify(est));
-          } else {
-            console.log('');
-            console.log(formatCostEstimate(est));
-            console.log('');
-          }
-          return;
+          const chosenModel = await confirmOrSwitchModel(tokens, opts.model, { json: opts.json });
+          if (!chosenModel) return; // cancelled
+          opts.model = chosenModel;
         }
 
         const body = {
