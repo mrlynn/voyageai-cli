@@ -2058,6 +2058,128 @@ select:focus { outline: none; border-color: var(--accent); }
 .settings-api-key-missing { color: var(--warning); }
 .settings-row .settings-select, .settings-row .settings-input { text-align: right; }
 
+/* ── Chat Tab ── */
+.chat-container {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 140px);
+  max-width: 900px;
+  margin: 0 auto;
+}
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.chat-message {
+  max-width: 85%;
+  padding: 12px 16px;
+  border-radius: 12px;
+  line-height: 1.6;
+  font-size: 14px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.chat-message.user {
+  align-self: flex-end;
+  background: var(--accent);
+  color: #fff;
+  border-bottom-right-radius: 4px;
+}
+.chat-message.assistant {
+  align-self: flex-start;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-bottom-left-radius: 4px;
+}
+.chat-message.system-msg {
+  align-self: center;
+  background: none;
+  color: var(--text-muted);
+  font-size: 12px;
+  padding: 4px 8px;
+}
+.chat-sources {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.chat-sources summary { cursor: pointer; }
+.chat-sources ul { margin: 4px 0 0 16px; padding: 0; }
+.chat-sources li { margin: 2px 0; }
+.chat-input-area {
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+}
+.chat-input {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-input);
+  color: var(--text);
+  font-size: 14px;
+  font-family: inherit;
+  resize: none;
+  min-height: 40px;
+  max-height: 120px;
+  outline: none;
+}
+.chat-input:focus { border-color: var(--accent); }
+.chat-send-btn {
+  padding: 10px 20px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+}
+.chat-send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.chat-config-bar {
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  font-size: 12px;
+  color: var(--text-muted);
+  flex-wrap: wrap;
+}
+.chat-config-bar select, .chat-config-bar input {
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg-input);
+  color: var(--text);
+  font-size: 12px;
+}
+.chat-config-bar label { display: flex; align-items: center; gap: 4px; }
+.chat-typing {
+  align-self: flex-start;
+  color: var(--text-muted);
+  font-size: 13px;
+  padding: 8px 16px;
+}
+.chat-typing::after {
+  content: '';
+  animation: chatDots 1.4s infinite;
+}
+@keyframes chatDots {
+  0%, 20% { content: '.'; }
+  40% { content: '..'; }
+  60%, 100% { content: '...'; }
+}
+
 /* ── Multimodal Tab ── */
 .mm-grid {
   display: grid;
@@ -2367,6 +2489,7 @@ select:focus { outline: none; border-color: var(--accent); }
       <div class="sidebar-nav-label" id="nav-learn-label">Learn</div>
       <button class="tab-btn" data-tab="benchmark" role="tab" aria-selected="false" aria-controls="tab-benchmark" id="tab-btn-benchmark"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-gauge"/></svg></span><span>Benchmark</span></button>
       <button class="tab-btn" data-tab="explore" role="tab" aria-selected="false" aria-controls="tab-explore" id="tab-btn-explore"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-bulb"/></svg></span><span>Explore</span></button>
+      <button class="tab-btn" data-tab="chat" role="tab" aria-selected="false" aria-controls="tab-chat" id="tab-btn-chat"><span class="tab-btn-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16"><path d="M2 2h12v9H5l-3 3V2z" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></span><span>Chat</span></button>
       <button class="tab-btn" data-tab="about" role="tab" aria-selected="false" aria-controls="tab-about" id="tab-btn-about"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-info"/></svg></span><span>About</span></button>
     </div>
   </nav>
@@ -3167,6 +3290,34 @@ Reranking models rescore initial search results to improve relevance ordering.</
     </div>
   </div>
 
+</div>
+
+<!-- ========== CHAT TAB ========== -->
+<div class="tab-panel" id="tab-chat" role="tabpanel" aria-labelledby="tab-btn-chat" tabindex="0">
+  <div class="chat-container">
+    <div class="chat-config-bar">
+      <label>Provider:
+        <select id="chatProvider" onchange="chatProviderChanged()">
+          <option value="">Not configured</option>
+          <option value="anthropic">Anthropic</option>
+          <option value="openai">OpenAI</option>
+          <option value="ollama">Ollama</option>
+        </select>
+      </label>
+      <label>Model: <input type="text" id="chatModel" placeholder="auto" style="width:180px"></label>
+      <label>DB: <input type="text" id="chatDb" placeholder="database" style="width:120px"></label>
+      <label>Collection: <input type="text" id="chatCollection" placeholder="collection" style="width:120px"></label>
+      <label>Max docs: <input type="number" id="chatMaxDocs" value="5" min="1" max="20" style="width:50px"></label>
+      <label><input type="checkbox" id="chatRerank" checked> Rerank</label>
+    </div>
+    <div class="chat-messages" id="chatMessages">
+      <div class="chat-message system-msg">Configure your LLM provider and knowledge base above, then start chatting. Your documents are retrieved via Voyage AI + MongoDB Atlas, then an LLM generates grounded answers with citations.</div>
+    </div>
+    <div class="chat-input-area">
+      <textarea class="chat-input" id="chatInput" placeholder="Ask a question about your documents..." rows="1" onkeydown="chatInputKeydown(event)"></textarea>
+      <button class="chat-send-btn" id="chatSendBtn" onclick="sendChatMessage()">Send</button>
+    </div>
+  </div>
 </div>
 
 <!-- ========== ABOUT TAB ========== -->
@@ -7029,6 +7180,205 @@ function startVSI(canvas, onExit) {
   loop();
 }
 
+// ── Chat Tab ──
+let chatSessionId = null;
+
+async function loadChatConfig() {
+  try {
+    const res = await fetch('/api/chat/config');
+    const data = await res.json();
+    if (data.provider) document.getElementById('chatProvider').value = data.provider;
+    if (data.model) document.getElementById('chatModel').value = data.model;
+    if (data.db) document.getElementById('chatDb').value = data.db;
+    if (data.collection) document.getElementById('chatCollection').value = data.collection;
+    if (data.chat?.maxContextDocs) document.getElementById('chatMaxDocs').value = data.chat.maxContextDocs;
+  } catch { /* ignore */ }
+}
+
+function chatProviderChanged() {
+  const p = document.getElementById('chatProvider').value;
+  const modelInput = document.getElementById('chatModel');
+  if (!modelInput.value || modelInput.value === 'auto') {
+    const defaults = { anthropic: 'claude-sonnet-4-5-20250929', openai: 'gpt-4o', ollama: 'llama3.1' };
+    modelInput.placeholder = defaults[p] || 'auto';
+  }
+}
+
+function chatInputKeydown(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendChatMessage();
+  }
+}
+
+function addChatMessage(role, content, sources) {
+  const container = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  div.className = `chat-message ${role}`;
+  div.textContent = content;
+
+  if (sources && sources.length > 0) {
+    const details = document.createElement('details');
+    details.className = 'chat-sources';
+    const summary = document.createElement('summary');
+    summary.textContent = `${sources.length} source${sources.length > 1 ? 's' : ''}`;
+    details.appendChild(summary);
+    const ul = document.createElement('ul');
+    sources.forEach(s => {
+      const li = document.createElement('li');
+      li.textContent = `${s.source} (${s.score?.toFixed(2) || 'N/A'})`;
+      ul.appendChild(li);
+    });
+    details.appendChild(ul);
+    div.appendChild(details);
+  }
+
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+  return div;
+}
+
+async function sendChatMessage() {
+  const input = document.getElementById('chatInput');
+  const query = input.value.trim();
+  if (!query) return;
+
+  const provider = document.getElementById('chatProvider').value;
+  const model = document.getElementById('chatModel').value;
+  const db = document.getElementById('chatDb').value;
+  const collection = document.getElementById('chatCollection').value;
+  const maxDocs = parseInt(document.getElementById('chatMaxDocs').value) || 5;
+  const rerank = document.getElementById('chatRerank').checked;
+
+  if (!provider) {
+    addChatMessage('system-msg', 'Please select an LLM provider above.');
+    return;
+  }
+  if (!db || !collection) {
+    addChatMessage('system-msg', 'Please enter a database and collection name.');
+    return;
+  }
+
+  // Show user message
+  addChatMessage('user', query);
+  input.value = '';
+  input.style.height = 'auto';
+
+  // Show typing indicator
+  const typing = document.createElement('div');
+  typing.className = 'chat-typing';
+  typing.textContent = 'Thinking';
+  document.getElementById('chatMessages').appendChild(typing);
+
+  // Disable input
+  const sendBtn = document.getElementById('chatSendBtn');
+  sendBtn.disabled = true;
+  input.disabled = true;
+
+  try {
+    const res = await fetch('/api/chat/message', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query, db, collection, provider, model: model || undefined, maxDocs, rerank }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      typing.remove();
+      addChatMessage('system-msg', `Error: ${err.error || 'Request failed'}`);
+      return;
+    }
+
+    // Parse SSE stream
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let assistantDiv = null;
+    let fullText = '';
+    let sources = [];
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      let currentEvent = null;
+      for (const line of lines) {
+        if (line.startsWith('event: ')) {
+          currentEvent = line.slice(7).trim();
+          continue;
+        }
+        if (line.startsWith('data: ')) {
+          const data = JSON.parse(line.slice(6));
+
+          if (currentEvent === 'retrieval') {
+            typing.textContent = `Retrieved ${data.docs?.length || 0} docs (${data.timeMs}ms)`;
+          }
+
+          if (currentEvent === 'chunk') {
+            if (!assistantDiv) {
+              typing.remove();
+              assistantDiv = addChatMessage('assistant', '');
+            }
+            fullText += data.text;
+            assistantDiv.childNodes[0].textContent = fullText;
+            document.getElementById('chatMessages').scrollTop = document.getElementById('chatMessages').scrollHeight;
+          }
+
+          if (currentEvent === 'done') {
+            sources = data.sources || [];
+            if (sources.length > 0 && assistantDiv) {
+              const details = document.createElement('details');
+              details.className = 'chat-sources';
+              const summary = document.createElement('summary');
+              summary.textContent = `${sources.length} source${sources.length > 1 ? 's' : ''}`;
+              details.appendChild(summary);
+              const ul = document.createElement('ul');
+              sources.forEach(s => {
+                const li = document.createElement('li');
+                li.textContent = `${s.source} (${s.score?.toFixed(2) || 'N/A'})`;
+                ul.appendChild(li);
+              });
+              details.appendChild(ul);
+              assistantDiv.appendChild(details);
+            }
+          }
+
+          if (currentEvent === 'error') {
+            typing.remove();
+            addChatMessage('system-msg', `Error: ${data.error}`);
+          }
+
+          currentEvent = null;
+        }
+      }
+    }
+
+    // Remove typing if still present
+    if (typing.parentNode) typing.remove();
+
+  } catch (err) {
+    if (typing.parentNode) typing.remove();
+    addChatMessage('system-msg', `Error: ${err.message}`);
+  } finally {
+    sendBtn.disabled = false;
+    input.disabled = false;
+    input.focus();
+  }
+}
+
+// Auto-resize chat input
+document.getElementById('chatInput')?.addEventListener('input', function() {
+  this.style.height = 'auto';
+  this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+});
+
+// Load chat config on init
+loadChatConfig();
+
 // ── Expose functions to global scope for onclick handlers ──
 window.setGenerateMode = setGenerateMode;
 window.copyGeneratedCode = copyGeneratedCode;
@@ -7037,6 +7387,9 @@ window.updateGenComponents = updateGenComponents;
 window.createScaffold = createScaffold;
 window.pickScaffoldDirectory = pickScaffoldDirectory;
 window.downloadScaffoldZip = downloadScaffoldZip;
+window.sendChatMessage = sendChatMessage;
+window.chatInputKeydown = chatInputKeydown;
+window.chatProviderChanged = chatProviderChanged;
 
 // ── Start ──
 init();

@@ -42,6 +42,13 @@ contextBridge.exposeInMainWorld('vai', {
       return () => ipcRenderer.removeListener('scaffold:progress', handler);
     },
   },
+  // LLM API key management (encrypted via OS keychain, for chat)
+  llmKey: {
+    get:    ()      => ipcRenderer.invoke('llm-key:get'),
+    set:    (key)   => ipcRenderer.invoke('llm-key:set', key),
+    delete: ()      => ipcRenderer.invoke('llm-key:delete'),
+    exists: ()      => ipcRenderer.invoke('llm-key:exists'),
+  },
   // App info — returns { app, cli }
   getVersion: () => ipcRenderer.invoke('app:version'),
   isElectron: true,

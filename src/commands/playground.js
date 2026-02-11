@@ -229,6 +229,24 @@ function createPlaygroundServer() {
         return;
       }
 
+      // API: Chat config (GET)
+      if (req.method === 'GET' && req.url === '/api/chat/config') {
+        const { resolveLLMConfig } = require('../lib/llm');
+        const { loadProject } = require('../lib/project');
+        const llmConfig = resolveLLMConfig();
+        const { config: proj } = loadProject();
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          provider: llmConfig.provider || null,
+          model: llmConfig.model || null,
+          hasLLMKey: !!llmConfig.apiKey || llmConfig.provider === 'ollama',
+          db: proj.db || null,
+          collection: proj.collection || null,
+          chat: proj.chat || {},
+        }));
+        return;
+      }
+
       // API: Config
       if (req.method === 'GET' && req.url === '/api/config') {
         const key = process.env.VOYAGE_API_KEY || getConfigValue('apiKey');
@@ -260,6 +278,87 @@ function createPlaygroundServer() {
         } catch {
           res.writeHead(400, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: 'Invalid JSON body' }));
+          return;
+        }
+
+        // API: Chat message (streaming SSE)
+        if (req.url === '/api/chat/message') {
+          const { query, db, collection, provider, model, maxDocs, rerank, systemPrompt } = parsed;
+          if (!query) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'query is required' }));
+            return;
+          }
+          if (!db || !collection) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'db and collection are required' }));
+            return;
+          }
+
+          const { createLLMProvider } = require('../lib/llm');
+          const { chatTurn } = require('../lib/chat');
+          const { ChatHistory } = require('../lib/history');
+
+          let llm;
+          try {
+            llm = createLLMProvider({
+              llmProvider: provider || undefined,
+              llmModel: model || undefined,
+            });
+          } catch (err) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: err.message }));
+            return;
+          }
+
+          if (!llm) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'No LLM provider configured. Use vai config set llm-provider <name>' }));
+            return;
+          }
+
+          // Use in-memory history for playground (no session persistence)
+          if (!this._chatHistory) this._chatHistory = new ChatHistory({ maxTurns: 20 });
+          const history = this._chatHistory;
+
+          // Stream response as SSE
+          res.writeHead(200, {
+            'Content-Type': 'text/event-stream',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+          });
+
+          try {
+            for await (const event of chatTurn({
+              query, db, collection, llm, history,
+              opts: {
+                maxDocs: maxDocs || 5,
+                rerank: rerank !== false,
+                stream: true,
+                systemPrompt,
+              },
+            })) {
+              if (event.type === 'retrieval') {
+                res.write(`event: retrieval\ndata: ${JSON.stringify(event.data)}\n\n`);
+              } else if (event.type === 'chunk') {
+                res.write(`event: chunk\ndata: ${JSON.stringify({ text: event.data })}\n\n`);
+              } else if (event.type === 'done') {
+                res.write(`event: done\ndata: ${JSON.stringify(event.data)}\n\n`);
+              }
+            }
+          } catch (err) {
+            res.write(`event: error\ndata: ${JSON.stringify({ error: err.message })}\n\n`);
+          }
+
+          res.end();
+          return;
+        }
+
+        // API: Chat clear
+        if (req.url === '/api/chat/clear') {
+          if (this._chatHistory) this._chatHistory.clear();
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ ok: true }));
           return;
         }
 
