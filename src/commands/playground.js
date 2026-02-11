@@ -277,6 +277,74 @@ function createPlaygroundServer() {
         return;
       }
 
+      // API: Settings origins — where each config value comes from
+      if (req.method === 'GET' && req.url === '/api/settings/origins') {
+        const { resolveLLMConfig } = require('../lib/llm');
+        const { loadProject } = require('../lib/project');
+        const { config: proj } = loadProject();
+        const chatConf = proj.chat || {};
+
+        function resolveOrigin(envVar, configKey, projectValue) {
+          if (envVar && process.env[envVar]) return 'env';
+          if (configKey && getConfigValue(configKey)) return 'config';
+          if (projectValue) return 'project';
+          return 'default';
+        }
+
+        const origins = {
+          apiKey: resolveOrigin('VOYAGE_API_KEY', 'apiKey'),
+          apiBase: resolveOrigin('VOYAGE_API_BASE', 'baseUrl'),
+          provider: resolveOrigin('VAI_LLM_PROVIDER', 'llmProvider', chatConf.provider),
+          model: resolveOrigin('VAI_LLM_MODEL', 'llmModel', chatConf.model),
+          llmApiKey: resolveOrigin('VAI_LLM_API_KEY', 'llmApiKey'),
+          db: proj.db ? 'project' : 'default',
+          collection: proj.collection ? 'project' : 'default',
+        };
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(origins));
+        return;
+      }
+
+      // API: Save chat config (POST) — persists to .vai.json
+      // Placed before generic POST handler so it doesn't require Voyage API key
+      if (req.method === 'POST' && req.url === '/api/chat/config') {
+        const { loadProject, saveProject } = require('../lib/project');
+        const body = await readBody(req);
+        let parsed;
+        try {
+          parsed = JSON.parse(body);
+        } catch {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Invalid JSON' }));
+          return;
+        }
+
+        const { config: proj, filePath } = loadProject();
+
+        // Update top-level project fields
+        if (parsed.db !== undefined) proj.db = parsed.db;
+        if (parsed.collection !== undefined) proj.collection = parsed.collection;
+
+        // Update chat-specific settings
+        proj.chat = proj.chat || {};
+        if (parsed.provider !== undefined) proj.chat.provider = parsed.provider;
+        if (parsed.model !== undefined) proj.chat.model = parsed.model;
+        if (parsed.maxDocs !== undefined) proj.chat.maxContextDocs = parsed.maxDocs;
+        if (parsed.rerank !== undefined) proj.chat.rerank = parsed.rerank;
+        if (parsed.systemPrompt !== undefined) proj.chat.systemPrompt = parsed.systemPrompt;
+
+        try {
+          saveProject(proj, filePath || undefined);
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ ok: true }));
+        } catch (err) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: err.message }));
+        }
+        return;
+      }
+
       // Parse JSON body for POST routes
       if (req.method === 'POST') {
         // Check for API key before processing any API calls
