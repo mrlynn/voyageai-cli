@@ -25,8 +25,8 @@ function registerPing(program) {
       let apiKey;
       try {
         apiKey = requireApiKey();
-      } catch {
-        // requireApiKey calls process.exit, but just in case
+      } catch (err) {
+        console.error(err.message);
         process.exit(1);
       }
 

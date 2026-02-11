@@ -36,14 +36,12 @@ function requireApiKey() {
   const { getConfigValue } = require('./config');
   const key = process.env.VOYAGE_API_KEY || getConfigValue('apiKey');
   if (!key) {
-    console.error('Error: VOYAGE_API_KEY is not set.');
-    console.error('');
-    console.error('Option 1: export VOYAGE_API_KEY="your-key-here"');
-    console.error('Option 2: vai config set api-key <your-key>');
-    console.error('');
-    console.error('Get one from MongoDB Atlas → AI Models → Create model API key');
-    console.error('       or Voyage AI platform → Dashboard → API Keys');
-    process.exit(1);
+    const msg = 'VOYAGE_API_KEY is not set.\n\n' +
+      'Option 1: export VOYAGE_API_KEY="your-key-here"\n' +
+      'Option 2: vai config set api-key <your-key>\n\n' +
+      'Get one from MongoDB Atlas > AI Models > Create model API key\n' +
+      '       or Voyage AI platform > Dashboard > API Keys';
+    throw new Error(msg);
   }
   return key;
 }

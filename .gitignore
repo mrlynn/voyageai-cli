@@ -10,3 +10,4 @@ dist-electron/
 VoyageAI-CLI-Assessment-Report.*
 CLAUDE.md
 VaiSite-Marketing-Assessment.md
+.claude/
