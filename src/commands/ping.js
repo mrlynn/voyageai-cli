@@ -190,6 +190,58 @@ function registerPing(program) {
         }
       }
 
+      // ── LLM provider ping (optional) ──
+      const { createLLMProvider, resolveLLMConfig } = require('../lib/llm');
+      const llmConfig = resolveLLMConfig();
+      if (llmConfig.provider) {
+        const llmStart = Date.now();
+        let llmSpin;
+        if (useSpinner) {
+          llmSpin = ui.spinner(`Testing LLM provider (${llmConfig.provider})...`);
+          llmSpin.start();
+        }
+
+        try {
+          const llm = createLLMProvider();
+          const pingResult = await llm.ping();
+          const llmElapsed = Date.now() - llmStart;
+
+          results.llm = { ok: pingResult.ok, elapsed: llmElapsed, provider: llmConfig.provider, model: pingResult.model };
+          if (pingResult.error) results.llm.error = pingResult.error;
+
+          if (llmSpin) llmSpin.stop();
+
+          if (!opts.json && !opts.quiet) {
+            console.log('');
+            if (pingResult.ok) {
+              console.log(ui.success(`LLM Provider connected ${ui.dim('(' + llmElapsed + 'ms)')}`));
+              console.log(ui.label('Provider', llmConfig.provider));
+              console.log(ui.label('Model', pingResult.model));
+            } else {
+              console.log(ui.error(`LLM Provider failed: ${pingResult.error}`));
+            }
+          }
+        } catch (err) {
+          if (llmSpin) llmSpin.stop();
+          const llmElapsed = Date.now() - llmStart;
+          results.llm = { ok: false, elapsed: llmElapsed, provider: llmConfig.provider, error: err.message };
+          if (!opts.json && !opts.quiet) {
+            console.log('');
+            console.log(ui.error(`LLM Provider error: ${err.message}`));
+          }
+        }
+      }
+
+      // ── Chat readiness summary ──
+      if (!opts.json && !opts.quiet && llmConfig.provider) {
+        console.log('');
+        if (results.voyage?.ok && results.llm?.ok) {
+          console.log(ui.success('Chat is ready. Run: vai chat'));
+        } else if (!results.llm?.ok) {
+          console.log(ui.warn('Chat requires a working LLM provider. Check your configuration.'));
+        }
+      }
+
       // Emit JSON at the end with all results
       if (opts.json) {
         console.log(JSON.stringify({ ok: true, ...results }, null, 2));

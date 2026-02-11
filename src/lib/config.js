@@ -14,10 +14,14 @@ const KEY_MAP = {
   'default-model': 'defaultModel',
   'default-dimensions': 'defaultDimensions',
   'base-url': 'baseUrl',
+  'llm-provider': 'llmProvider',
+  'llm-api-key': 'llmApiKey',
+  'llm-model': 'llmModel',
+  'llm-base-url': 'llmBaseUrl',
 };
 
 // Keys whose values should be masked in output
-const SECRET_KEYS = new Set(['apiKey', 'mongodbUri']);
+const SECRET_KEYS = new Set(['apiKey', 'mongodbUri', 'llmApiKey']);
 
 /**
  * Load config from disk. Returns {} if file doesn't exist.
