@@ -139,7 +139,7 @@ describe('cost estimation', () => {
       assert.ok(output.includes('2,550,058'));
       assert.ok(output.includes('voyage-4-large'));
       assert.ok(output.includes('voyage-4-lite'));
-      assert.ok(output.includes('current'));
+      assert.ok(output.includes('selected'));
     });
   });
 
