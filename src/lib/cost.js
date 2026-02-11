@@ -155,8 +155,19 @@ function estimateCostComparison(tokens, selectedModel) {
   const selected = MODEL_CATALOG.find(m => m.name === selectedModel);
   const type = selected?.type || 'embedding';
 
+  // For embeddings, only show general-purpose models (voyage-4 family)
+  // plus the selected model. Skip domain-specific (finance, law, code)
+  // unless the user explicitly selected one of those.
+  const isGeneralPurpose = (m) => {
+    if (m.name === selectedModel) return true; // always include selected
+    if (type !== 'embedding') return true; // no filtering for rerank etc.
+    // Domain-specific models have specific bestFor keywords
+    const dominated = ['finance', 'legal', 'code', 'context'];
+    return !dominated.some(d => (m.bestFor || '').toLowerCase().includes(d));
+  };
+
   return MODEL_CATALOG
-    .filter(m => m.type === type && !m.legacy && !m.unreleased && m.pricePerMToken != null)
+    .filter(m => m.type === type && !m.legacy && !m.unreleased && m.pricePerMToken != null && isGeneralPurpose(m))
     .map(m => ({
       model: m.name,
       tokens,

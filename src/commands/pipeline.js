@@ -76,7 +76,7 @@ function registerPipeline(program) {
         const collection = opts.collection || proj.collection;
         const field = opts.field || proj.field || 'embedding';
         const index = opts.index || proj.index || 'vector_index';
-        const model = opts.model || proj.model || getDefaultModel();
+        let model = opts.model || proj.model || getDefaultModel();
         const dimensions = opts.dimensions || proj.dimensions;
         const strategy = opts.strategy || projChunk.strategy || 'recursive';
         const chunkSize = opts.chunkSize || projChunk.size || 512;
