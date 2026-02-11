@@ -108,12 +108,38 @@ describe('cost estimation', () => {
     });
   });
 
+  describe('estimateCostComparison', () => {
+    const { estimateCostComparison } = require('../../src/lib/cost');
+
+    it('returns multiple models for embedding type', () => {
+      const rows = estimateCostComparison(1_000_000, 'voyage-4-large');
+      assert.ok(rows.length >= 3);
+      assert.ok(rows.some(r => r.model === 'voyage-4-large' && r.selected));
+      assert.ok(rows.some(r => r.model === 'voyage-4' && !r.selected));
+      assert.ok(rows.some(r => r.model === 'voyage-4-lite' && !r.selected));
+    });
+
+    it('compares only same-type models', () => {
+      const rows = estimateCostComparison(1000, 'rerank-2.5');
+      assert.ok(rows.every(r => r.model.startsWith('rerank')));
+    });
+
+    it('sorts by price descending', () => {
+      const rows = estimateCostComparison(1000, 'voyage-4');
+      for (let i = 1; i < rows.length; i++) {
+        assert.ok(rows[i - 1].pricePerMToken >= rows[i].pricePerMToken);
+      }
+    });
+  });
+
   describe('formatCostEstimate', () => {
-    it('produces formatted string', () => {
-      const est = estimateCost(10000, 'voyage-4-large');
+    it('produces comparison table for known models', () => {
+      const est = estimateCost(2_550_058, 'voyage-4-large');
       const output = formatCostEstimate(est);
-      assert.ok(output.includes('10,000'));
+      assert.ok(output.includes('2,550,058'));
       assert.ok(output.includes('voyage-4-large'));
+      assert.ok(output.includes('voyage-4-lite'));
+      assert.ok(output.includes('selected'));
     });
   });
 

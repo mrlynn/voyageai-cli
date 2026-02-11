@@ -145,7 +145,31 @@ function estimateLLMCost(provider, model, inputTokens, outputTokens) {
 }
 
 /**
- * Format a cost estimate for terminal display.
+ * Estimate cost across all comparable Voyage models.
+ * @param {number} tokens - estimated token count
+ * @param {string} selectedModel - the user's chosen model
+ * @returns {Array<{ model: string, tokens: number, cost: number, pricePerMToken: number, selected: boolean, shortFor: string }>}
+ */
+function estimateCostComparison(tokens, selectedModel) {
+  // Find the type of the selected model to compare apples-to-apples
+  const selected = MODEL_CATALOG.find(m => m.name === selectedModel);
+  const type = selected?.type || 'embedding';
+
+  return MODEL_CATALOG
+    .filter(m => m.type === type && !m.legacy && !m.unreleased && m.pricePerMToken != null)
+    .map(m => ({
+      model: m.name,
+      tokens,
+      cost: (tokens / 1_000_000) * m.pricePerMToken,
+      pricePerMToken: m.pricePerMToken,
+      selected: m.name === selectedModel,
+      shortFor: m.shortFor || m.bestFor || '',
+    }))
+    .sort((a, b) => b.pricePerMToken - a.pricePerMToken); // highest price first
+}
+
+/**
+ * Format a cost estimate for terminal display with model comparison.
  * @param {object} estimate - from estimateCost()
  * @returns {string}
  */
@@ -153,21 +177,40 @@ function formatCostEstimate(estimate) {
   const pc = require('picocolors');
   const lines = [];
 
-  lines.push(pc.bold('  Cost Estimate'));
-  lines.push(pc.dim('  ─'.repeat(20)));
-  lines.push(`  Tokens:  ${estimate.tokens.toLocaleString()}`);
+  const comparison = estimateCostComparison(estimate.tokens, estimate.model);
 
-  if (estimate.cost != null) {
-    const costStr = estimate.cost < 0.001
-      ? `< $0.001`
-      : `$${estimate.cost.toFixed(4)}`;
-    lines.push(`  Model:   ${estimate.model} ($${estimate.pricePerMToken}/1M tokens)`);
-    lines.push(`  Cost:    ${pc.cyan(costStr)}`);
+  lines.push(pc.bold(`  Cost Estimate — ${estimate.tokens.toLocaleString()} tokens`));
+  lines.push('');
+
+  if (comparison.length > 1) {
+    // Table header
+    lines.push(`  ${pc.dim(padRight('Model', 22))} ${pc.dim(padRight('Quality', 14))} ${pc.dim(padRight('Price/1M', 10))} ${pc.dim('Est. Cost')}`);
+    lines.push(`  ${pc.dim('─'.repeat(60))}`);
+
+    for (const row of comparison) {
+      const costStr = row.cost < 0.001 ? '< $0.001' : `$${row.cost.toFixed(4)}`;
+      const marker = row.selected ? pc.green(' ← selected') : '';
+      const nameStr = row.selected ? pc.bold(row.model) : row.model;
+      lines.push(`  ${padRight(nameStr, 22)} ${padRight(row.shortFor, 14)} $${padRight(row.pricePerMToken.toFixed(2), 9)} ${pc.cyan(costStr)}${marker}`);
+    }
   } else {
-    lines.push(`  Model:   ${estimate.model} (pricing unknown)`);
+    // Single model fallback
+    lines.push(`  Model:   ${estimate.model}`);
+    if (estimate.cost != null) {
+      lines.push(`  Cost:    ${pc.cyan(`$${estimate.cost.toFixed(4)}`)}`);
+    } else {
+      lines.push(`  Cost:    unknown pricing`);
+    }
   }
 
   return lines.join('\n');
+}
+
+function padRight(str, len) {
+  // Strip ANSI for length calculation
+  const stripped = str.replace(/\x1b\[[0-9;]*m/g, '');
+  const pad = Math.max(0, len - stripped.length);
+  return str + ' '.repeat(pad);
 }
 
 /**
@@ -218,6 +261,7 @@ module.exports = {
   estimateTokensForTexts,
   getModelPrice,
   estimateCost,
+  estimateCostComparison,
   estimateChatCost,
   estimateLLMCost,
   formatCostEstimate,
