@@ -133,13 +133,13 @@ describe('cost estimation', () => {
   });
 
   describe('formatCostEstimate', () => {
-    it('produces comparison table for known models', () => {
+    it('produces clean comparison for known models', () => {
       const est = estimateCost(2_550_058, 'voyage-4-large');
       const output = formatCostEstimate(est);
       assert.ok(output.includes('2,550,058'));
       assert.ok(output.includes('voyage-4-large'));
       assert.ok(output.includes('voyage-4-lite'));
-      assert.ok(output.includes('selected'));
+      assert.ok(output.includes('current'));
     });
   });
 
