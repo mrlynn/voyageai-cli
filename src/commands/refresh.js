@@ -1,6 +1,7 @@
 'use strict';
 
-const p = require('@clack/prompts');
+let p;
+function clack() { if (!p) p = require('@clack/prompts'); return p; }
 const { loadProject, saveProject } = require('../lib/project');
 const { connect, close } = require('../lib/mongo');
 const { generateEmbeddings } = require('../lib/api');
@@ -53,6 +54,7 @@ function rechunkDocument(doc, options) {
  * Execute the refresh command.
  */
 async function refresh(options = {}) {
+  clack(); // lazy-load @clack/prompts
   const quiet = options.quiet || options.json;
 
   // Load project config

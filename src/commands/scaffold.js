@@ -2,7 +2,6 @@
 
 const fs = require('fs');
 const path = require('path');
-const p = require('@clack/prompts');
 const { loadProject } = require('../lib/project');
 const { renderTemplate, buildContext, listTemplates } = require('../lib/codegen');
 const { PROJECT_STRUCTURE } = require('../lib/scaffold-structure');
@@ -193,7 +192,7 @@ function registerScaffold(program) {
             structure.startCommand,
           ];
           
-          p.note(steps.join('\n'), 'Next steps');
+          require('@clack/prompts').note(steps.join('\n'), 'Next steps');
           
           console.log('');
           console.log(ui.dim('Configuration:'));

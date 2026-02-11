@@ -7,8 +7,14 @@
  * back-navigation support (type "back" or "<" at any prompt).
  */
 
-const p = require('@clack/prompts');
-const pc = require('picocolors');
+// Lazy-loaded — @clack/prompts is ESM-only in some versions,
+// and eager require crashes on Node <22. Only loaded when actually used.
+let p;
+let pc;
+function ensureDeps() {
+  if (!p) p = require('@clack/prompts');
+  if (!pc) pc = require('picocolors');
+}
 
 const BACK = Symbol.for('back');
 const CANCEL = Symbol.for('cancel');
@@ -23,6 +29,7 @@ const CANCEL = Symbol.for('cancel');
  * @returns {object} renderer compatible with runWizard
  */
 function createCLIRenderer(opts = {}) {
+  ensureDeps();
   const showBackHint = opts.showBackHint !== false;
 
   return {
