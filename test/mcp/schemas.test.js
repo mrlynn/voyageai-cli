@@ -6,12 +6,12 @@ const { z } = require('zod');
 const schemas = require('../../src/mcp/schemas');
 
 describe('MCP schemas', () => {
-  it('exports all 10 schemas', () => {
+  it('exports all 11 schemas', () => {
     const expected = [
       'querySchema', 'searchSchema', 'rerankSchema',
       'embedSchema', 'similaritySchema',
       'collectionsSchema', 'modelsSchema',
-      'explainSchema', 'estimateSchema', 'ingestSchema',
+      'topicsSchema', 'explainSchema', 'estimateSchema', 'ingestSchema',
     ];
     for (const name of expected) {
       assert.ok(schemas[name], `missing schema: ${name}`);
@@ -149,6 +149,19 @@ describe('MCP schemas', () => {
 
     it('rejects invalid category', () => {
       assert.ok(!schema.safeParse({ category: 'invalid' }).success);
+    });
+  });
+
+  describe('topicsSchema', () => {
+    const schema = z.object(schemas.topicsSchema);
+
+    it('accepts empty input (all optional)', () => {
+      assert.ok(schema.safeParse({}).success);
+    });
+
+    it('accepts search parameter', () => {
+      const result = schema.parse({ search: 'embeddings' });
+      assert.equal(result.search, 'embeddings');
     });
   });
 

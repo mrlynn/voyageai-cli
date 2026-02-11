@@ -57,9 +57,14 @@ const modelsSchema = {
   category: z.enum(['embedding', 'rerank', 'all']).default('all').describe('Filter by model category'),
 };
 
+/** vai_topics input schema */
+const topicsSchema = {
+  search: z.string().optional().describe('Optional search term to filter topics. Omit to list all topics.'),
+};
+
 /** vai_explain input schema */
 const explainSchema = {
-  topic: z.string().describe('Topic to explain. Available: embeddings, moe, shared-space, rteb, quantization, two-stage, nano, models, chat, and more.'),
+  topic: z.string().describe('Topic to explain — supports fuzzy matching. Use vai_topics to discover all available topics.'),
 };
 
 /** vai_estimate input schema */
@@ -90,6 +95,7 @@ module.exports = {
   similaritySchema,
   collectionsSchema,
   modelsSchema,
+  topicsSchema,
   explainSchema,
   estimateSchema,
   ingestSchema,
