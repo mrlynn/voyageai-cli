@@ -256,6 +256,81 @@ function formatChatCostBreakdown(breakdown) {
   return lines.join('\n');
 }
 
+/**
+ * Show cost estimate and let user confirm or switch models interactively.
+ * Returns the chosen model name, or null if cancelled.
+ *
+ * @param {number} tokens - estimated token count
+ * @param {string} selectedModel - current model
+ * @param {object} [opts]
+ * @param {boolean} [opts.json] - if true, skip interactive and return selected
+ * @param {boolean} [opts.nonInteractive] - if true, just display and return selected
+ * @returns {Promise<string|null>} chosen model name, or null if cancelled
+ */
+async function confirmOrSwitchModel(tokens, selectedModel, opts = {}) {
+  const pc = require('picocolors');
+  const est = estimateCost(tokens, selectedModel);
+
+  // Display the comparison table
+  console.log('');
+  console.log(formatCostEstimate(est));
+  console.log('');
+
+  if (opts.json || opts.nonInteractive) {
+    return selectedModel;
+  }
+
+  // Build choices: proceed with current, switch to each alternative, cancel
+  const comparison = estimateCostComparison(tokens, selectedModel);
+  const p = require('@clack/prompts');
+
+  const options = [];
+
+  // Current model first
+  const currentRow = comparison.find(r => r.selected);
+  if (currentRow) {
+    const costStr = currentRow.cost < 0.001 ? '< $0.001' : `$${currentRow.cost.toFixed(4)}`;
+    options.push({
+      value: currentRow.model,
+      label: `Proceed with ${currentRow.model} (${costStr})`,
+    });
+  }
+
+  // Alternatives
+  for (const row of comparison) {
+    if (row.selected) continue;
+    const costStr = row.cost < 0.001 ? '< $0.001' : `$${row.cost.toFixed(4)}`;
+    options.push({
+      value: row.model,
+      label: `Switch to ${row.model} (${costStr})`,
+      hint: row.shortFor,
+    });
+  }
+
+  // Cancel
+  options.push({
+    value: '__cancel__',
+    label: pc.dim('Cancel'),
+  });
+
+  const choice = await p.select({
+    message: 'Choose a model',
+    options,
+    initialValue: selectedModel,
+  });
+
+  if (p.isCancel(choice) || choice === '__cancel__') {
+    p.cancel('Cancelled.');
+    return null;
+  }
+
+  if (choice !== selectedModel) {
+    p.log.info(`Switched to ${pc.bold(choice)}`);
+  }
+
+  return choice;
+}
+
 module.exports = {
   estimateTokens,
   estimateTokensForTexts,
@@ -266,4 +341,5 @@ module.exports = {
   estimateLLMCost,
   formatCostEstimate,
   formatChatCostBreakdown,
+  confirmOrSwitchModel,
 };
