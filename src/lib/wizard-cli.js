@@ -77,8 +77,9 @@ function createCLIRenderer(opts = {}) {
             placeholder: step.placeholder || '',
             defaultValue: defaultValue != null ? String(defaultValue) : undefined,
             validate: (val) => {
+              if (val == null) return undefined;
               // Handle back navigation
-              if (val === '<' || val.toLowerCase() === 'back') return undefined; // allow it through
+              if (val === '<' || (typeof val === 'string' && val.toLowerCase() === 'back')) return undefined;
               if (step.required && !val) return `${step.label} is required`;
               if (step.validate) {
                 const v = step.validate(val, ctx.answers);
