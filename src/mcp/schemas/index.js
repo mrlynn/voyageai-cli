@@ -69,6 +69,19 @@ const estimateSchema = {
   months: z.number().int().min(1).max(60).default(12).describe('Time horizon in months'),
 };
 
+/** vai_ingest input schema */
+const ingestSchema = {
+  text: z.string().min(1).describe('Document text to ingest'),
+  db: z.string().optional().describe('MongoDB database name'),
+  collection: z.string().optional().describe('Collection to store documents in'),
+  source: z.string().optional().describe('Source identifier (e.g., filename, URL) for citation purposes'),
+  metadata: z.record(z.string(), z.unknown()).optional().describe('Additional metadata to store with the document'),
+  chunkStrategy: z.enum(['fixed', 'sentence', 'paragraph', 'recursive', 'markdown']).default('recursive')
+    .describe('Text chunking strategy'),
+  chunkSize: z.number().int().min(100).max(8000).default(512).describe('Target chunk size in characters'),
+  model: z.string().default('voyage-4-large').describe('Voyage AI embedding model'),
+};
+
 module.exports = {
   querySchema,
   searchSchema,
@@ -79,4 +92,5 @@ module.exports = {
   modelsSchema,
   explainSchema,
   estimateSchema,
+  ingestSchema,
 };

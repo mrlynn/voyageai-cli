@@ -19,6 +19,18 @@ describe('MCP server', () => {
   });
 });
 
+describe('MCP server exports', () => {
+  const server = require('../../src/mcp/server');
+
+  it('exports generateKey function', () => {
+    assert.equal(typeof server.generateKey, 'function');
+  });
+
+  it('exports runHttpServer function', () => {
+    assert.equal(typeof server.runHttpServer, 'function');
+  });
+});
+
 describe('MCP tool modules', () => {
   it('retrieval module exports registerRetrievalTools', () => {
     const { registerRetrievalTools } = require('../../src/mcp/tools/retrieval');
@@ -43,5 +55,10 @@ describe('MCP tool modules', () => {
   it('utility module exports registerUtilityTools', () => {
     const { registerUtilityTools } = require('../../src/mcp/tools/utility');
     assert.equal(typeof registerUtilityTools, 'function');
+  });
+
+  it('ingest module exports registerIngestTool', () => {
+    const { registerIngestTool } = require('../../src/mcp/tools/ingest');
+    assert.equal(typeof registerIngestTool, 'function');
   });
 });

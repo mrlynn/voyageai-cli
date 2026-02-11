@@ -7,6 +7,7 @@ const { registerRetrievalTools } = require('./tools/retrieval');
 const { registerEmbeddingTools } = require('./tools/embedding');
 const { registerManagementTools } = require('./tools/management');
 const { registerUtilityTools } = require('./tools/utility');
+const { registerIngestTool } = require('./tools/ingest');
 
 const VERSION = require('../../package.json').version;
 
@@ -25,6 +26,7 @@ function createServer() {
   registerEmbeddingTools(server, schemas);
   registerManagementTools(server, schemas);
   registerUtilityTools(server, schemas);
+  registerIngestTool(server, schemas);
 
   return server;
 }
@@ -44,14 +46,117 @@ async function runStdioServer() {
 }
 
 /**
- * Run the MCP server with HTTP transport.
+ * Run the MCP server with HTTP transport (Streamable HTTP).
  * @param {object} options
  * @param {number} options.port
  * @param {string} options.host
  */
 async function runHttpServer({ port = 3100, host = '127.0.0.1' } = {}) {
-  // Phase 2 — HTTP transport will be implemented here
-  throw new Error('HTTP transport is not yet implemented. Use --transport stdio (default).');
+  const express = require('express');
+  const { StreamableHTTPServerTransport } = require('@modelcontextprotocol/sdk/server/streamableHttp.js');
+  const { getConfigValue } = require('../lib/config');
+  const crypto = require('crypto');
+
+  const app = express();
+  app.use(express.json({ limit: '5mb' }));
+
+  // Load server API keys
+  const serverKeys = getConfigValue('mcp-server-keys') || [];
+  const envKey = process.env.VAI_MCP_SERVER_KEY;
+  const allKeys = envKey ? [...serverKeys, envKey] : serverKeys;
+  const requireAuth = allKeys.length > 0;
+
+  /** Bearer token authentication middleware */
+  function authenticateRequest(req, res, next) {
+    if (!requireAuth) return next();
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Missing or invalid Authorization header' });
+    }
+    const token = authHeader.slice(7);
+    if (!allKeys.includes(token)) {
+      return res.status(401).json({ error: 'Invalid API key' });
+    }
+    next();
+  }
+
+  // Health endpoint (unauthenticated)
+  const startTime = Date.now();
+  app.get('/health', async (_req, res) => {
+    const health = {
+      status: 'ok',
+      version: VERSION,
+      uptime: Math.floor((Date.now() - startTime) / 1000),
+      voyageAi: 'unknown',
+      mongodb: 'unknown',
+    };
+
+    // Check Voyage AI connectivity
+    try {
+      const { getConfigValue } = require('../lib/config');
+      const hasKey = !!(process.env.VOYAGE_API_KEY || getConfigValue('apiKey'));
+      health.voyageAi = hasKey ? 'configured' : 'not configured';
+    } catch {
+      health.voyageAi = 'not configured';
+    }
+
+    // Check MongoDB connectivity
+    try {
+      const { getConfigValue } = require('../lib/config');
+      const hasUri = !!(process.env.MONGODB_URI || getConfigValue('mongodbUri'));
+      health.mongodb = hasUri ? 'configured' : 'not configured';
+    } catch {
+      health.mongodb = 'not configured';
+    }
+
+    res.json(health);
+  });
+
+  // MCP endpoint — stateless per-request transport
+  app.post('/mcp', authenticateRequest, async (req, res) => {
+    const server = createServer();
+    const transport = new StreamableHTTPServerTransport({
+      sessionIdGenerator: undefined, // stateless
+    });
+    res.on('close', () => transport.close());
+    await server.connect(transport);
+    await transport.handleRequest(req, res, req.body);
+  });
+
+  // Handle GET/DELETE for SSE (required by MCP spec for session management)
+  app.get('/mcp', (_req, res) => {
+    res.status(405).json({ error: 'Method not allowed. Use POST for MCP requests.' });
+  });
+  app.delete('/mcp', (_req, res) => {
+    res.status(405).json({ error: 'Method not allowed. Stateless server — no sessions to delete.' });
+  });
+
+  app.listen(port, host, () => {
+    const msg = `vai MCP server v${VERSION} running on http://${host}:${port}/mcp`;
+    if (process.env.VAI_MCP_VERBOSE) {
+      process.stderr.write(msg + '\n');
+      process.stderr.write(`Authentication: ${requireAuth ? 'enabled' : 'disabled (no keys configured)'}\n`);
+      process.stderr.write(`Health check: http://${host}:${port}/health\n`);
+    }
+    console.log(msg);
+  });
 }
 
-module.exports = { createServer, runStdioServer, runHttpServer };
+/**
+ * Generate a new MCP server API key and store it in config.
+ */
+function generateKey() {
+  const crypto = require('crypto');
+  const { getConfigValue, setConfigValue } = require('../lib/config');
+
+  const key = 'vai-mcp-key-' + crypto.randomBytes(24).toString('hex');
+  const keys = getConfigValue('mcp-server-keys') || [];
+  keys.push(key);
+  setConfigValue('mcp-server-keys', keys);
+
+  console.log(key);
+  console.log(`\nStored in ~/.vai/config.json. Total keys: ${keys.length}`);
+  console.log('Set as VAI_MCP_SERVER_KEY env var or use in client Authorization header.');
+}
+
+module.exports = { createServer, runStdioServer, runHttpServer, generateKey };

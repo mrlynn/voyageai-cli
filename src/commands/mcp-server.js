@@ -5,7 +5,7 @@
  * @param {import('commander').Command} program
  */
 function registerMcpServer(program) {
-  program
+  const cmd = program
     .command('mcp-server')
     .alias('mcp')
     .description('Start the MCP (Model Context Protocol) server — expose vai tools to AI agents')
@@ -34,6 +34,15 @@ function registerMcpServer(program) {
         console.error(`Unknown transport: ${opts.transport}. Use "stdio" or "http".`);
         process.exit(1);
       }
+    });
+
+  // Subcommand: generate-key
+  cmd
+    .command('generate-key')
+    .description('Generate a new API key for remote MCP server authentication')
+    .action(() => {
+      const { generateKey } = require('../mcp/server');
+      generateKey();
     });
 }
 
