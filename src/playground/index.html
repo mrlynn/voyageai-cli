@@ -2145,9 +2145,37 @@ select:focus { outline: none; border-color: var(--accent); }
   font-weight: 600;
 }
 .chat-send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-.chat-config-bar {
+.chat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   padding: 8px 16px;
   border-bottom: 1px solid var(--border);
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.chat-header-status { display: flex; gap: 8px; align-items: center; }
+.chat-header-status span { opacity: 0.7; }
+.chat-config-toggle {
+  background: none; border: none; color: var(--text-muted);
+  cursor: pointer; padding: 4px 8px; border-radius: 4px; font-size: 14px;
+  display: flex; align-items: center; gap: 4px;
+}
+.chat-config-toggle:hover { background: rgba(255,255,255,0.06); color: var(--text); }
+[data-theme="light"] .chat-config-toggle:hover { background: rgba(0,0,0,0.04); }
+.chat-config-toggle.active { color: var(--accent); }
+.chat-config-panel {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.2s ease-out;
+  border-bottom: 1px solid transparent;
+}
+.chat-config-panel.open {
+  max-height: 300px;
+  border-bottom-color: var(--border);
+}
+.chat-config-bar {
+  padding: 8px 16px;
   display: flex;
   gap: 12px;
   align-items: center;
@@ -3295,30 +3323,45 @@ Reranking models rescore initial search results to improve relevance ordering.</
 <!-- ========== CHAT TAB ========== -->
 <div class="tab-panel" id="tab-chat" role="tabpanel" aria-labelledby="tab-btn-chat" tabindex="0">
   <div class="chat-container">
-    <div class="chat-config-bar">
-      <label>Provider:
-        <select id="chatProvider" onchange="chatProviderChanged()">
-          <option value="">Not configured</option>
-          <option value="anthropic">Anthropic</option>
-          <option value="openai">OpenAI</option>
-          <option value="ollama">Ollama</option>
-        </select>
-      </label>
-      <label>Model:
-        <select id="chatModel" style="width:200px">
-          <option value="">Loading...</option>
-        </select>
-      </label>
-      <label>DB: <input type="text" id="chatDb" placeholder="database" style="width:120px"></label>
-      <label>Collection: <input type="text" id="chatCollection" placeholder="collection" style="width:120px"></label>
-      <label>Max docs: <input type="number" id="chatMaxDocs" value="5" min="1" max="20" style="width:50px"></label>
-      <label><input type="checkbox" id="chatRerank" checked> Rerank</label>
+    <div class="chat-header">
+      <div class="chat-header-status" id="chatHeaderStatus">
+        <span id="chatStatusProvider">No provider</span>
+        <span>·</span>
+        <span id="chatStatusDb">No database</span>
+      </div>
+      <button class="chat-config-toggle" id="chatConfigToggle" onclick="toggleChatConfig()" title="Chat settings">
+        <svg width="14" height="14" viewBox="0 0 16 16"><use href="#lg-config"/></svg>
+        Settings
+      </button>
     </div>
-    <div class="chat-config-bar" style="padding-top:0">
-      <label style="flex:1">Custom instructions: <input type="text" id="chatSystemPrompt" placeholder="e.g. You are a movie expert. Be enthusiastic." style="flex:1;width:100%"></label>
+    <div class="chat-config-panel" id="chatConfigPanel">
+      <div class="chat-config-bar">
+        <label>Provider:
+          <select id="chatProvider" onchange="chatProviderChanged()">
+            <option value="">Not configured</option>
+            <option value="anthropic">Anthropic</option>
+            <option value="openai">OpenAI</option>
+            <option value="ollama">Ollama</option>
+          </select>
+        </label>
+        <label>Model:
+          <select id="chatModel" style="width:200px">
+            <option value="">Loading...</option>
+          </select>
+        </label>
+        <label>DB: <input type="text" id="chatDb" placeholder="database" style="width:120px" oninput="updateChatStatus()"></label>
+        <label>Collection: <input type="text" id="chatCollection" placeholder="collection" style="width:120px" oninput="updateChatStatus()"></label>
+      </div>
+      <div class="chat-config-bar" style="padding-top:0">
+        <label>Max docs: <input type="number" id="chatMaxDocs" value="5" min="1" max="20" style="width:50px"></label>
+        <label><input type="checkbox" id="chatRerank" checked> Rerank</label>
+      </div>
+      <div class="chat-config-bar" style="padding-top:0">
+        <label style="flex:1">Custom instructions: <input type="text" id="chatSystemPrompt" placeholder="e.g. You are a movie expert. Be enthusiastic." style="flex:1;width:100%"></label>
+      </div>
     </div>
     <div class="chat-messages" id="chatMessages">
-      <div class="chat-message system-msg">Configure your LLM provider and knowledge base above, then start chatting. Your documents are retrieved via Voyage AI + MongoDB Atlas, then an LLM generates grounded answers with citations.</div>
+      <div class="chat-message system-msg">Chat with your knowledge base. Click <strong>Settings</strong> above to configure your LLM provider and database.</div>
     </div>
     <div class="chat-input-area">
       <textarea class="chat-input" id="chatInput" placeholder="Ask a question about your documents..." rows="1" onkeydown="chatInputKeydown(event)"></textarea>
@@ -7246,10 +7289,41 @@ async function loadChatConfig() {
     if (data.db) document.getElementById('chatDb').value = data.db;
     if (data.collection) document.getElementById('chatCollection').value = data.collection;
     if (data.chat?.maxContextDocs) document.getElementById('chatMaxDocs').value = data.chat.maxContextDocs;
-  } catch { /* ignore */ }
+    if (data.chat?.systemPrompt) document.getElementById('chatSystemPrompt').value = data.chat.systemPrompt;
+    updateChatStatus();
+    // Auto-open settings panel if not fully configured
+    if (!data.provider || !data.db) {
+      document.getElementById('chatConfigPanel').classList.add('open');
+      document.getElementById('chatConfigToggle').classList.add('active');
+    }
+  } catch {
+    // No config — open settings panel
+    document.getElementById('chatConfigPanel').classList.add('open');
+    document.getElementById('chatConfigToggle').classList.add('active');
+  }
+}
+
+function toggleChatConfig() {
+  const panel = document.getElementById('chatConfigPanel');
+  const toggle = document.getElementById('chatConfigToggle');
+  panel.classList.toggle('open');
+  toggle.classList.toggle('active');
+}
+
+function updateChatStatus() {
+  const provider = document.getElementById('chatProvider');
+  const db = document.getElementById('chatDb').value;
+  const collection = document.getElementById('chatCollection').value;
+  const providerLabel = provider.value
+    ? provider.options[provider.selectedIndex].text
+    : 'No provider';
+  document.getElementById('chatStatusProvider').textContent = providerLabel;
+  document.getElementById('chatStatusDb').textContent =
+    (db && collection) ? `${db}.${collection}` : 'No database';
 }
 
 async function chatProviderChanged() {
+  updateChatStatus();
   const provider = document.getElementById('chatProvider').value;
   const modelSelect = document.getElementById('chatModel');
   
@@ -7512,6 +7586,8 @@ window.createScaffold = createScaffold;
 window.pickScaffoldDirectory = pickScaffoldDirectory;
 window.downloadScaffoldZip = downloadScaffoldZip;
 window.sendChatMessage = sendChatMessage;
+window.toggleChatConfig = toggleChatConfig;
+window.updateChatStatus = updateChatStatus;
 window.chatInputKeydown = chatInputKeydown;
 window.chatProviderChanged = chatProviderChanged;
 
