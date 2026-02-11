@@ -81,6 +81,7 @@ MongoDB LeafyGreen design system<br/><br/>
   - [Environment & Auth](#environment--auth)
   - [Shell Completions](#shell-completions)
   - [All Commands](#all-commands)
+- [MCP Server](#mcp-server)
 - [Screenshots](#screenshots)
 - [Requirements](#requirements)
 - [Author](#author)
@@ -534,6 +535,12 @@ Covers all 22 commands, subcommands, flags, model names, and explain topics.
 | `vai eval` | Evaluate retrieval quality (MRR, nDCG, Recall) |
 | `vai eval compare` | Compare configurations side-by-side |
 | `vai benchmark` | 8 subcommands for model comparison |
+| **MCP Server** | |
+| `vai mcp` | Start the MCP server (expose vai tools to AI agents) |
+| `vai mcp install` | Install vai into AI tool configs (Claude, Cursor, etc.) |
+| `vai mcp uninstall` | Remove vai from AI tool configs |
+| `vai mcp status` | Show installation status across all tools |
+| `vai mcp generate-key` | Generate API key for HTTP server auth |
 | **Tools & Learning** | |
 | `vai models` | List models, benchmarks, architecture |
 | `vai explain` | 25 interactive concept explainers |
@@ -544,6 +551,63 @@ Covers all 22 commands, subcommands, flags, model names, and explain topics.
 | `vai completions` | Shell completion scripts |
 | `vai about` | About this tool |
 | `vai version` | Print version |
+
+---
+
+## MCP Server
+
+Expose vai's RAG tools to any MCP-compatible AI agent — Claude Desktop, Claude Code, Cursor, Windsurf, VS Code, and more. **11 tools** for embedding, retrieval, reranking, ingestion, and learning — all accessible without writing code.
+
+### One-Command Setup
+
+```bash
+# Install into your AI tool of choice
+vai mcp install claude
+vai mcp install cursor
+vai mcp install all          # all supported tools at once
+
+# Check what's configured
+vai mcp status
+```
+
+The install command **merges** into existing configs — it won't touch your other MCP servers.
+
+### Supported Tools
+
+| Target | AI Tool |
+|--------|---------|
+| `claude` | Claude Desktop |
+| `claude-code` | Claude Code |
+| `cursor` | Cursor |
+| `windsurf` | Windsurf |
+| `vscode` | VS Code |
+
+### What Your Agent Gets
+
+Once installed, your AI agent can use these tools:
+
+| Tool | What It Does |
+|------|-------------|
+| `vai_query` | Full RAG: embed → vector search → rerank |
+| `vai_search` | Raw vector similarity search |
+| `vai_rerank` | Rerank documents against a query |
+| `vai_embed` | Generate embedding vectors |
+| `vai_similarity` | Cosine similarity between texts |
+| `vai_ingest` | Chunk, embed, and store documents |
+| `vai_collections` | List MongoDB collections with vector indexes |
+| `vai_models` | List models with pricing and benchmarks |
+| `vai_topics` | Browse educational topics |
+| `vai_explain` | Get detailed concept explanations |
+| `vai_estimate` | Estimate embedding costs |
+
+### Transport Modes
+
+```bash
+vai mcp                                    # stdio (default, local)
+vai mcp --transport http --port 3100       # HTTP (remote, multi-client)
+```
+
+📖 **Full documentation:** [docs/mcp-server.md](docs/mcp-server.md)
 
 ---
 
