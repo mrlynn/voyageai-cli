@@ -34,15 +34,8 @@ describe('api', () => {
 
       const { requireApiKey } = require('../../src/lib/api');
 
-      let exitCode = null;
-      process.exit = (code) => {
-        exitCode = code;
-        throw new Error('process.exit called');
-      };
-
       try {
-        assert.throws(() => requireApiKey(), /process\.exit called/);
-        assert.equal(exitCode, 1);
+        assert.throws(() => requireApiKey(), /VOYAGE_API_KEY is not set/);
       } finally {
         config.getConfigValue = originalGetConfigValue;
       }
@@ -76,16 +69,10 @@ describe('api', () => {
       assert.deepEqual(result, { data: [{ embedding: [1, 2, 3] }] });
     });
 
-    it('exits on non-200 response', async () => {
+    it('throws on non-200 response', async () => {
       process.env.VOYAGE_API_KEY = 'test-key';
       delete require.cache[require.resolve('../../src/lib/api')];
       const { apiRequest } = require('../../src/lib/api');
-
-      let exitCode = null;
-      process.exit = (code) => {
-        exitCode = code;
-        throw new Error('process.exit called');
-      };
 
       const mockResponse = {
         ok: false,
