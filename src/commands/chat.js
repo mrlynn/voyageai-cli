@@ -346,12 +346,32 @@ async function handleSlashCommand(input, ctx) {
       console.log(pc.dim('  Conversation cleared.'));
       return true;
 
-    case '/model': {
+    case '/model':
+    case '/models': {
       if (parts.length > 1) {
         llm.model = parts[1];
         console.log(`  Model switched to: ${parts[1]}`);
       } else {
-        console.log(`  Current model: ${llm.model}`);
+        console.log(`  Current model: ${pc.bold(llm.model)}`);
+        console.log(`  Provider: ${llm.name}`);
+        try {
+          const { listModels } = require('../lib/llm');
+          const models = await listModels(llm.name);
+          if (models.length > 0) {
+            console.log('');
+            console.log(`  Available models:`);
+            for (const m of models) {
+              const current = m.id === llm.model ? pc.green(' ← current') : '';
+              let info = m.name || m.id;
+              if (m.size) info += pc.dim(` (${m.size})`);
+              if (m.parameterSize) info += pc.dim(` [${m.parameterSize}]`);
+              if (m.context) info += pc.dim(` ctx:${m.context}`);
+              console.log(`    ${info}${current}`);
+            }
+            console.log('');
+            console.log(pc.dim('  Switch with: /model <name>'));
+          }
+        } catch { /* ignore */ }
       }
       return true;
     }

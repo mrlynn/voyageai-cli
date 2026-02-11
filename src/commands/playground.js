@@ -247,6 +247,22 @@ function createPlaygroundServer() {
         return;
       }
 
+      // API: Chat models — list available models for a provider
+      if (req.method === 'GET' && req.url?.startsWith('/api/chat/models')) {
+        const url = new URL(req.url, 'http://localhost');
+        const provider = url.searchParams.get('provider');
+        if (!provider) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'provider query param required' }));
+          return;
+        }
+        const { listModels } = require('../lib/llm');
+        const models = await listModels(provider);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ provider, models }));
+        return;
+      }
+
       // API: Config
       if (req.method === 'GET' && req.url === '/api/config') {
         const key = process.env.VOYAGE_API_KEY || getConfigValue('apiKey');

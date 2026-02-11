@@ -2,7 +2,7 @@
 
 const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
-const { resolveLLMConfig, PROVIDER_DEFAULTS, PROVIDER_BASE_URLS } = require('../../src/lib/llm');
+const { resolveLLMConfig, PROVIDER_DEFAULTS, PROVIDER_BASE_URLS, PROVIDER_MODELS, listModels } = require('../../src/lib/llm');
 const { resolveConcept, getConcept } = require('../../src/lib/explanations');
 
 describe('llm', () => {
@@ -60,6 +60,43 @@ describe('llm', () => {
       assert.ok(PROVIDER_BASE_URLS.anthropic.startsWith('https://'));
       assert.ok(PROVIDER_BASE_URLS.openai.startsWith('https://'));
       assert.ok(PROVIDER_BASE_URLS.ollama.startsWith('http://'));
+    });
+  });
+
+  describe('PROVIDER_MODELS', () => {
+    it('has curated models for anthropic', () => {
+      assert.ok(PROVIDER_MODELS.anthropic.length >= 2);
+      assert.ok(PROVIDER_MODELS.anthropic.some(m => m.id.includes('claude')));
+      assert.ok(PROVIDER_MODELS.anthropic.every(m => m.id && m.name && m.context));
+    });
+
+    it('has curated models for openai', () => {
+      assert.ok(PROVIDER_MODELS.openai.length >= 3);
+      assert.ok(PROVIDER_MODELS.openai.some(m => m.id === 'gpt-4o'));
+    });
+  });
+
+  describe('listModels', () => {
+    it('returns curated list for anthropic', async () => {
+      const models = await listModels('anthropic');
+      assert.ok(models.length > 0);
+      assert.ok(models[0].id);
+    });
+
+    it('returns curated list for openai', async () => {
+      const models = await listModels('openai');
+      assert.ok(models.length > 0);
+    });
+
+    it('returns empty array for unknown provider', async () => {
+      const models = await listModels('unknown');
+      assert.deepEqual(models, []);
+    });
+
+    it('returns empty array for ollama when not running', async () => {
+      // Use a port that's definitely not Ollama
+      const models = await listModels('ollama', { baseUrl: 'http://localhost:1', timeoutMs: 500 });
+      assert.deepEqual(models, []);
     });
   });
 

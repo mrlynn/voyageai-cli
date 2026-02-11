@@ -381,9 +381,105 @@ async function* parseSSE(body, extractor) {
   }
 }
 
+// ============================================
+// Model Discovery
+// ============================================
+
+/**
+ * Known cloud provider models (curated, updated periodically).
+ * These don't require an API call to discover.
+ */
+const PROVIDER_MODELS = {
+  anthropic: [
+    { id: 'claude-sonnet-4-5-20250929', name: 'Claude Sonnet 4.5', context: '200K' },
+    { id: 'claude-opus-4-20250514', name: 'Claude Opus 4', context: '200K' },
+    { id: 'claude-3-5-haiku-20241022', name: 'Claude 3.5 Haiku', context: '200K' },
+  ],
+  openai: [
+    { id: 'gpt-4o', name: 'GPT-4o', context: '128K' },
+    { id: 'gpt-4o-mini', name: 'GPT-4o Mini', context: '128K' },
+    { id: 'gpt-4-turbo', name: 'GPT-4 Turbo', context: '128K' },
+    { id: 'o1', name: 'o1', context: '200K' },
+    { id: 'o1-mini', name: 'o1 Mini', context: '128K' },
+    { id: 'o3-mini', name: 'o3 Mini', context: '200K' },
+  ],
+};
+
+/**
+ * List available models for a provider.
+ * - For Ollama: queries the local API for installed models
+ * - For cloud providers: returns the curated list
+ *
+ * @param {string} provider - 'anthropic' | 'openai' | 'ollama'
+ * @param {object} [opts]
+ * @param {string} [opts.baseUrl] - Ollama base URL override
+ * @param {number} [opts.timeoutMs] - Timeout for Ollama discovery (default 3000)
+ * @returns {Promise<Array<{id: string, name: string, size?: string, context?: string}>>}
+ */
+async function listModels(provider, opts = {}) {
+  if (provider === 'ollama') {
+    return listOllamaModels(opts);
+  }
+  return PROVIDER_MODELS[provider] || [];
+}
+
+/**
+ * Query Ollama for locally installed models.
+ * @param {object} [opts]
+ * @returns {Promise<Array<{id: string, name: string, size: string, modified: string}>>}
+ */
+async function listOllamaModels(opts = {}) {
+  const baseUrl = opts.baseUrl || resolveLLMConfig({ llmProvider: 'ollama' }).baseUrl || 'http://localhost:11434';
+  const timeoutMs = opts.timeoutMs || 3000;
+
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+    const res = await fetch(`${baseUrl}/api/tags`, {
+      signal: controller.signal,
+    });
+    clearTimeout(timer);
+
+    if (!res.ok) return [];
+
+    const data = await res.json();
+    const models = (data.models || []).map(m => ({
+      id: m.name,
+      name: m.name.split(':')[0],
+      size: formatBytes(m.size),
+      modified: m.modified_at,
+      parameterSize: m.details?.parameter_size || null,
+      family: m.details?.family || null,
+      quantization: m.details?.quantization_level || null,
+    }));
+
+    // Sort by name, with latest tags first
+    models.sort((a, b) => a.name.localeCompare(b.name));
+    return models;
+  } catch {
+    return []; // Ollama not running or unreachable
+  }
+}
+
+/**
+ * Format bytes to human-readable string.
+ * @param {number} bytes
+ * @returns {string}
+ */
+function formatBytes(bytes) {
+  if (!bytes) return '';
+  if (bytes >= 1e9) return (bytes / 1e9).toFixed(1) + ' GB';
+  if (bytes >= 1e6) return (bytes / 1e6).toFixed(1) + ' MB';
+  return (bytes / 1e3).toFixed(0) + ' KB';
+}
+
 module.exports = {
   createLLMProvider,
   resolveLLMConfig,
+  listModels,
+  listOllamaModels,
   PROVIDER_DEFAULTS,
   PROVIDER_BASE_URLS,
+  PROVIDER_MODELS,
 };
