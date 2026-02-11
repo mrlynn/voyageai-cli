@@ -133,7 +133,7 @@ async function runChat(opts) {
 
   // Preflight: verify the RAG pipeline is ready
   if (!opts.json) {
-    const { runPreflight, formatPreflight } = require('../lib/preflight');
+    const { runPreflight, formatPreflight, waitForIndex } = require('../lib/preflight');
     const { checks, ready } = await runPreflight({
       db, collection,
       field: proj.field || 'embedding',
@@ -146,8 +146,33 @@ async function runChat(opts) {
     console.log('');
 
     if (!ready) {
-      const failedCritical = checks.filter(c => !c.ok && c.id !== 'llm');
-      if (failedCritical.length > 0) {
+      // Check if the only blocker is an index that's building
+      const indexCheck = checks.find(c => c.id === 'vectorIndex');
+      const otherFailures = checks.filter(c => !c.ok && c.id !== 'vectorIndex');
+
+      if (indexCheck?.building && otherFailures.length === 0) {
+        // Wait for it with a spinner
+        const p = require('@clack/prompts');
+        const spinner = p.spinner();
+        spinner.start(`Index '${indexCheck.indexName}' is building — waiting for it to be ready...`);
+
+        const result = await waitForIndex({
+          db, collection,
+          indexName: indexCheck.indexName,
+          timeoutMs: 300000, // 5 minutes
+        });
+
+        if (result.ready) {
+          const secs = Math.round(result.elapsed / 1000);
+          spinner.stop(`Index ready (${secs}s)`);
+        } else {
+          spinner.stop(`Index not ready after ${Math.round(result.elapsed / 1000)}s (status: ${result.status})`);
+          console.log('');
+          console.log(pc.dim('  The index may need more time. Try again in a few minutes.'));
+          console.log('');
+          process.exit(1);
+        }
+      } else if (otherFailures.length > 0) {
         process.exit(1);
       }
     }
