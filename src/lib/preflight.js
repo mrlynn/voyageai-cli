@@ -135,15 +135,19 @@ async function runPreflight({ db, collection, field = 'embedding', llmConfig, te
 
       if (vectorIndex) {
         const status = vectorIndex.status || 'READY';
+        const building = status !== 'READY' && status !== 'FAILED';
         checks.push({
           id: 'vectorIndex',
           label: 'Vector Search Index',
           ok: status === 'READY',
+          building,
+          indexName: vectorIndex.name,
+          status,
           detail: status === 'READY'
             ? `'${vectorIndex.name}' (${status})`
             : undefined,
           error: status !== 'READY'
-            ? `Index '${vectorIndex.name}' status: ${status} (not ready yet)`
+            ? `Index '${vectorIndex.name}' status: ${status}`
             : undefined,
         });
       } else {
@@ -233,7 +237,45 @@ function padRight(str, len) {
   return str + ' '.repeat(Math.max(0, len - str.length));
 }
 
+/**
+ * Poll a vector search index until it's READY or timeout.
+ *
+ * @param {object} params
+ * @param {string} params.db
+ * @param {string} params.collection
+ * @param {string} params.indexName
+ * @param {number} [params.timeoutMs] - max wait time (default 5 min)
+ * @param {number} [params.pollMs] - poll interval (default 5s)
+ * @returns {Promise<{ ready: boolean, status: string, elapsed: number }>}
+ */
+async function waitForIndex({ db, collection, indexName, timeoutMs = 300000, pollMs = 5000 }) {
+  const { getMongoCollection } = require('./mongo');
+  let client;
+  try {
+    const result = await getMongoCollection(db, collection);
+    client = result.client;
+    const coll = result.collection;
+
+    const start = Date.now();
+    while (Date.now() - start < timeoutMs) {
+      const indexes = await coll.listSearchIndexes().toArray();
+      const idx = indexes.find(i => i.name === indexName);
+      if (!idx) return { ready: false, status: 'NOT_FOUND', elapsed: Date.now() - start };
+      if (idx.status === 'READY') return { ready: true, status: 'READY', elapsed: Date.now() - start };
+      if (idx.status === 'FAILED') return { ready: false, status: 'FAILED', elapsed: Date.now() - start };
+
+      await new Promise(r => setTimeout(r, pollMs));
+    }
+    return { ready: false, status: 'TIMEOUT', elapsed: Date.now() - start };
+  } finally {
+    if (client) {
+      try { await client.close(); } catch { /* ignore */ }
+    }
+  }
+}
+
 module.exports = {
   runPreflight,
   formatPreflight,
+  waitForIndex,
 };
