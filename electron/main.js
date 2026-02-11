@@ -82,6 +82,36 @@ function registerApiKeyHandlers() {
     return !!loadStoredApiKey() || !!process.env.VOYAGE_API_KEY;
   });
 
+  // ── LLM API Key Storage (for chat) ──
+  ipcMain.handle('llm-key:get', () => {
+    const keyFile = path.join(app.getPath('userData'), '.llm-api-key');
+    if (!fs.existsSync(keyFile)) return null;
+    try {
+      if (!safeStorage.isEncryptionAvailable()) return null;
+      return safeStorage.decryptString(fs.readFileSync(keyFile));
+    } catch { return null; }
+  });
+
+  ipcMain.handle('llm-key:set', (_event, key) => {
+    if (!safeStorage.isEncryptionAvailable()) throw new Error('OS encryption not available');
+    const encrypted = safeStorage.encryptString(key);
+    fs.writeFileSync(path.join(app.getPath('userData'), '.llm-api-key'), encrypted);
+    process.env.VAI_LLM_API_KEY = key;
+    return true;
+  });
+
+  ipcMain.handle('llm-key:delete', () => {
+    const keyFile = path.join(app.getPath('userData'), '.llm-api-key');
+    if (fs.existsSync(keyFile)) fs.unlinkSync(keyFile);
+    delete process.env.VAI_LLM_API_KEY;
+    return true;
+  });
+
+  ipcMain.handle('llm-key:exists', () => {
+    const keyFile = path.join(app.getPath('userData'), '.llm-api-key');
+    return fs.existsSync(keyFile) || !!process.env.VAI_LLM_API_KEY;
+  });
+
   ipcMain.handle('app:version', () => {
     return { app: APP_VERSION, cli: getCliVersion() };
   });
