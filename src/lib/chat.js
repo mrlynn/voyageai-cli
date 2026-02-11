@@ -8,6 +8,29 @@
  */
 
 const { generateEmbeddings, apiRequest } = require('./api');
+
+/**
+ * Build a human-readable source label from a document.
+ * Tries metadata fields that identify the document (title, name, etc.)
+ * before falling back to the raw source filename.
+ */
+function resolveSourceLabel(doc) {
+  const meta = doc.metadata || {};
+
+  // Try common identifying fields from the document metadata
+  const identifiers = ['title', 'name', 'subject', 'heading', 'filename'];
+  for (const key of identifiers) {
+    if (meta[key] && typeof meta[key] === 'string') {
+      const label = meta[key];
+      // Append year if available (common for movies/articles)
+      if (meta.year) return `${label} (${meta.year})`;
+      return label;
+    }
+  }
+
+  // Fall back to source path / _id
+  return doc.source || meta.source || doc._id?.toString() || 'unknown';
+}
 const { getMongoCollection } = require('./mongo');
 const { buildMessages } = require('./prompt');
 const { getDefaultModel, DEFAULT_RERANK_MODEL } = require('./catalog');
@@ -107,7 +130,7 @@ async function retrieve({ query, db, collection, opts = {} }) {
       const doc = searchResults[item.index];
       return {
         text: doc[textField] || '',
-        source: doc.source || doc.metadata?.source || doc._id?.toString() || 'unknown',
+        source: resolveSourceLabel(doc),
         score: item.relevance_score,
         vectorScore: doc._vsScore,
         metadata: doc.metadata || {},
@@ -116,7 +139,7 @@ async function retrieve({ query, db, collection, opts = {} }) {
   } else {
     finalDocs = searchResults.slice(0, maxDocs).map(doc => ({
       text: doc[textField] || '',
-      source: doc.source || doc.metadata?.source || doc._id?.toString() || 'unknown',
+      source: resolveSourceLabel(doc),
       score: doc._vsScore,
       metadata: doc.metadata || {},
     }));
