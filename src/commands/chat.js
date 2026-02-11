@@ -37,6 +37,7 @@ function registerChat(program) {
     .option('--system-prompt <text>', 'Override the system prompt')
     .option('--text-field <name>', 'Document text field name', 'text')
     .option('--filter <json>', 'MongoDB pre-filter for vector search')
+    .option('--estimate', 'Show estimated per-turn cost breakdown and exit')
     .option('--json', 'Output JSON per turn (for scripting)')
     .option('-q, --quiet', 'Suppress decorative output')
     .action(async (opts) => {
@@ -104,6 +105,28 @@ async function runChat(opts) {
 
     // Re-resolve with new config
     llmConfig = resolveLLMConfig(opts);
+  }
+
+  // --estimate: show per-turn cost breakdown and exit
+  if (opts.estimate) {
+    const { estimateChatCost, formatChatCostBreakdown } = require('../lib/cost');
+    const breakdown = estimateChatCost({
+      query: 'How does authentication work?', // sample question
+      contextDocs: maxDocs,
+      embeddingModel: proj.model || 'voyage-4-large',
+      rerankModel: doRerank ? 'rerank-2.5' : null,
+      llmProvider: llmConfig.provider,
+      llmModel: llmConfig.model,
+      historyTurns: 0,
+    });
+    if (opts.json) {
+      console.log(JSON.stringify(breakdown, null, 2));
+    } else {
+      console.log('');
+      console.log(formatChatCostBreakdown(breakdown));
+      console.log('');
+    }
+    return;
   }
 
   const llm = createLLMProvider(opts);
