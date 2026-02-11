@@ -62,6 +62,7 @@ function registerPipeline(program) {
     .option('--ignore <dirs>', 'Directory names to skip', 'node_modules,.git,__pycache__')
     .option('--create-index', 'Auto-create vector search index if it doesn\'t exist')
     .option('--dry-run', 'Show what would happen without executing')
+    .option('--estimate', 'Show estimated tokens and cost without executing')
     .option('--json', 'Machine-readable JSON output')
     .option('-q, --quiet', 'Suppress non-essential output')
     .action(async (input, opts) => {
@@ -173,20 +174,25 @@ function registerPipeline(program) {
           console.log('');
         }
 
-        // Dry run — stop here
-        if (opts.dryRun) {
+        // Dry run / estimate — stop here
+        if (opts.dryRun || opts.estimate) {
+          const { estimateCost, formatCostEstimate } = require('../lib/cost');
+          const est = estimateCost(totalTokens, model);
           if (opts.json) {
             console.log(JSON.stringify({
               dryRun: true,
               files: files.length,
               chunks: allChunks.length,
               estimatedTokens: totalTokens,
+              estimatedCost: est.cost,
+              pricePerMToken: est.pricePerMToken,
               strategy, chunkSize, overlap, model, db, collection, field,
             }, null, 2));
           } else {
-            console.log(ui.success(`Dry run complete: ${fmtNum(allChunks.length)} chunks from ${files.length} files.`));
-            const cost = (totalTokens / 1e6) * 0.12;
-            console.log(ui.dim(`  Estimated embedding cost: ~$${cost.toFixed(4)} with ${model}`));
+            console.log(ui.success(`${opts.estimate ? 'Estimate' : 'Dry run'} complete: ${fmtNum(allChunks.length)} chunks from ${files.length} files.`));
+            console.log('');
+            console.log(formatCostEstimate(est));
+            console.log('');
           }
           return;
         }
