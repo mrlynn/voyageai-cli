@@ -22,7 +22,7 @@ function registerIndex(program) {
     .requiredOption('--field <name>', 'Embedding field name')
     .option('-d, --dimensions <n>', 'Vector dimensions', (v) => parseInt(v, 10), getDefaultDimensions())
     .option('-s, --similarity <type>', 'Similarity function: cosine, dotProduct, euclidean', 'cosine')
-    .option('-n, --index-name <name>', 'Index name', 'default')
+    .option('-n, --index-name <name>', 'Index name', 'vector_index')
     .option('--json', 'Machine-readable JSON output')
     .option('-q, --quiet', 'Suppress non-essential output')
     .action(async (opts) => {

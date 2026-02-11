@@ -61,6 +61,9 @@ function createPlaygroundServer() {
 
   const htmlPath = path.join(__dirname, '..', 'playground', 'index.html');
 
+  // Chat history — scoped to the server lifetime (in-memory, no persistence)
+  let _chatHistory = null;
+
   const server = http.createServer(async (req, res) => {
     // CORS headers for local dev
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -229,6 +232,40 @@ function createPlaygroundServer() {
         return;
       }
 
+      // API: Chat config (GET)
+      if (req.method === 'GET' && req.url === '/api/chat/config') {
+        const { resolveLLMConfig } = require('../lib/llm');
+        const { loadProject } = require('../lib/project');
+        const llmConfig = resolveLLMConfig();
+        const { config: proj } = loadProject();
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          provider: llmConfig.provider || null,
+          model: llmConfig.model || null,
+          hasLLMKey: !!llmConfig.apiKey || llmConfig.provider === 'ollama',
+          db: proj.db || null,
+          collection: proj.collection || null,
+          chat: proj.chat || {},
+        }));
+        return;
+      }
+
+      // API: Chat models — list available models for a provider
+      if (req.method === 'GET' && req.url?.startsWith('/api/chat/models')) {
+        const url = new URL(req.url, 'http://localhost');
+        const provider = url.searchParams.get('provider');
+        if (!provider) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'provider query param required' }));
+          return;
+        }
+        const { listModels } = require('../lib/llm');
+        const models = await listModels(provider);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ provider, models }));
+        return;
+      }
+
       // API: Config
       if (req.method === 'GET' && req.url === '/api/config') {
         const key = process.env.VOYAGE_API_KEY || getConfigValue('apiKey');
@@ -237,6 +274,74 @@ function createPlaygroundServer() {
           baseUrl: getApiBase(),
           hasKey: !!key,
         }));
+        return;
+      }
+
+      // API: Settings origins — where each config value comes from
+      if (req.method === 'GET' && req.url === '/api/settings/origins') {
+        const { resolveLLMConfig } = require('../lib/llm');
+        const { loadProject } = require('../lib/project');
+        const { config: proj } = loadProject();
+        const chatConf = proj.chat || {};
+
+        function resolveOrigin(envVar, configKey, projectValue) {
+          if (envVar && process.env[envVar]) return 'env';
+          if (configKey && getConfigValue(configKey)) return 'config';
+          if (projectValue) return 'project';
+          return 'default';
+        }
+
+        const origins = {
+          apiKey: resolveOrigin('VOYAGE_API_KEY', 'apiKey'),
+          apiBase: resolveOrigin('VOYAGE_API_BASE', 'baseUrl'),
+          provider: resolveOrigin('VAI_LLM_PROVIDER', 'llmProvider', chatConf.provider),
+          model: resolveOrigin('VAI_LLM_MODEL', 'llmModel', chatConf.model),
+          llmApiKey: resolveOrigin('VAI_LLM_API_KEY', 'llmApiKey'),
+          db: proj.db ? 'project' : 'default',
+          collection: proj.collection ? 'project' : 'default',
+        };
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(origins));
+        return;
+      }
+
+      // API: Save chat config (POST) — persists to .vai.json
+      // Placed before generic POST handler so it doesn't require Voyage API key
+      if (req.method === 'POST' && req.url === '/api/chat/config') {
+        const { loadProject, saveProject } = require('../lib/project');
+        const body = await readBody(req);
+        let parsed;
+        try {
+          parsed = JSON.parse(body);
+        } catch {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Invalid JSON' }));
+          return;
+        }
+
+        const { config: proj, filePath } = loadProject();
+
+        // Update top-level project fields
+        if (parsed.db !== undefined) proj.db = parsed.db;
+        if (parsed.collection !== undefined) proj.collection = parsed.collection;
+
+        // Update chat-specific settings
+        proj.chat = proj.chat || {};
+        if (parsed.provider !== undefined) proj.chat.provider = parsed.provider;
+        if (parsed.model !== undefined) proj.chat.model = parsed.model;
+        if (parsed.maxDocs !== undefined) proj.chat.maxContextDocs = parsed.maxDocs;
+        if (parsed.rerank !== undefined) proj.chat.rerank = parsed.rerank;
+        if (parsed.systemPrompt !== undefined) proj.chat.systemPrompt = parsed.systemPrompt;
+
+        try {
+          saveProject(proj, filePath || undefined);
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ ok: true }));
+        } catch (err) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: err.message }));
+        }
         return;
       }
 
@@ -260,6 +365,87 @@ function createPlaygroundServer() {
         } catch {
           res.writeHead(400, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: 'Invalid JSON body' }));
+          return;
+        }
+
+        // API: Chat message (streaming SSE)
+        if (req.url === '/api/chat/message') {
+          const { query, db, collection, provider, model, maxDocs, rerank, systemPrompt } = parsed;
+          if (!query) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'query is required' }));
+            return;
+          }
+          if (!db || !collection) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'db and collection are required' }));
+            return;
+          }
+
+          const { createLLMProvider } = require('../lib/llm');
+          const { chatTurn } = require('../lib/chat');
+          const { ChatHistory } = require('../lib/history');
+
+          let llm;
+          try {
+            llm = createLLMProvider({
+              llmProvider: provider || undefined,
+              llmModel: model || undefined,
+            });
+          } catch (err) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: err.message }));
+            return;
+          }
+
+          if (!llm) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'No LLM provider configured. Use vai config set llm-provider <name>' }));
+            return;
+          }
+
+          // Use in-memory history for playground (no session persistence)
+          if (!_chatHistory) _chatHistory = new ChatHistory({ maxTurns: 20 });
+          const history = _chatHistory;
+
+          // Stream response as SSE
+          res.writeHead(200, {
+            'Content-Type': 'text/event-stream',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+          });
+
+          try {
+            for await (const event of chatTurn({
+              query, db, collection, llm, history,
+              opts: {
+                maxDocs: maxDocs || 5,
+                rerank: rerank !== false,
+                stream: true,
+                systemPrompt,
+              },
+            })) {
+              if (event.type === 'retrieval') {
+                res.write(`event: retrieval\ndata: ${JSON.stringify(event.data)}\n\n`);
+              } else if (event.type === 'chunk') {
+                res.write(`event: chunk\ndata: ${JSON.stringify({ text: event.data })}\n\n`);
+              } else if (event.type === 'done') {
+                res.write(`event: done\ndata: ${JSON.stringify(event.data)}\n\n`);
+              }
+            }
+          } catch (err) {
+            res.write(`event: error\ndata: ${JSON.stringify({ error: err.message })}\n\n`);
+          }
+
+          res.end();
+          return;
+        }
+
+        // API: Chat clear
+        if (req.url === '/api/chat/clear') {
+          if (_chatHistory) _chatHistory.clear();
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ ok: true }));
           return;
         }
 

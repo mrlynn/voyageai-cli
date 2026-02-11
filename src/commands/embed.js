@@ -21,11 +21,21 @@ function registerEmbed(program) {
     .option('--no-truncation', 'Disable truncation')
     .option('--output-dtype <type>', 'Output data type: float, int8, uint8, binary, ubinary', 'float')
     .option('-o, --output-format <format>', 'Output format: json or array', 'json')
+    .option('--estimate', 'Show estimated tokens and cost without calling the API')
     .option('--json', 'Machine-readable JSON output')
     .option('-q, --quiet', 'Suppress non-essential output')
     .action(async (text, opts) => {
       try {
         const texts = await resolveTextInput(text, opts.file);
+
+        // --estimate: show cost comparison, optionally switch model
+        if (opts.estimate) {
+          const { estimateTokensForTexts, confirmOrSwitchModel } = require('../lib/cost');
+          const tokens = estimateTokensForTexts(texts);
+          const chosenModel = await confirmOrSwitchModel(tokens, opts.model, { json: opts.json });
+          if (!chosenModel) return; // cancelled
+          opts.model = chosenModel;
+        }
 
         const useColor = !opts.json;
         const useSpinner = useColor && !opts.quiet;
