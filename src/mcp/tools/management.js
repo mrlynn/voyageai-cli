@@ -106,7 +106,7 @@ function registerManagementTools(server, schemas) {
       }
 
       const mapped = models.map(m => ({
-        id: m.id,
+        id: m.name,
         name: m.name,
         type: m.type,
         dimensions: m.dimensions,
@@ -121,7 +121,7 @@ function registerManagementTools(server, schemas) {
         content: [{
           type: 'text',
           text: `Available ${input.category === 'all' ? '' : input.category + ' '}models:\n\n${mapped.map(m =>
-            `• ${m.id} (${m.type}) — ${m.dimensions}d, $${m.pricePerMToken}/M tokens`
+            `• ${m.name} (${m.type}) — ${m.dimensions}d, $${m.pricePerMToken}/M tokens`
           ).join('\n')}`,
         }],
       };
