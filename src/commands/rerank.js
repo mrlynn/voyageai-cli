@@ -21,6 +21,7 @@ function registerRerank(program) {
     .option('--truncation', 'Enable truncation for long inputs')
     .option('--no-truncation', 'Disable truncation')
     .option('--return-documents', 'Return document text in results')
+    .option('--estimate', 'Show estimated tokens and cost without calling the API')
     .option('--json', 'Machine-readable JSON output')
     .option('-q, --quiet', 'Suppress non-essential output')
     .action(async (opts) => {
@@ -69,6 +70,15 @@ function registerRerank(program) {
         if (!documents || documents.length === 0) {
           console.error(ui.error('No documents provided. Use --documents, --documents-file, or pipe via stdin.'));
           process.exit(1);
+        }
+
+        // --estimate: show cost comparison, optionally switch model
+        if (opts.estimate) {
+          const { estimateTokens, confirmOrSwitchModel } = require('../lib/cost');
+          const tokens = estimateTokens(opts.query) + documents.reduce((s, d) => s + estimateTokens(d), 0);
+          const chosenModel = await confirmOrSwitchModel(tokens, opts.model, { json: opts.json });
+          if (!chosenModel) return; // cancelled
+          opts.model = chosenModel;
         }
 
         const body = {

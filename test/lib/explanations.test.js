@@ -34,6 +34,7 @@ describe('explanations', () => {
     'code-generation',
     'scaffolding',
     'eval-comparison',
+    'chat',
   ];
 
   it('has all expected concepts', () => {
