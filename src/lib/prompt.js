@@ -46,22 +46,42 @@ function formatContextBlock(docs) {
 }
 
 /**
+ * Build the full system prompt.
+ *
+ * The base prompt (grounding rules, citation format, safety guardrails)
+ * is always included. Users can append custom instructions via
+ * `systemPrompt` — these are added after the base, not replacing it.
+ *
+ * @param {string} [customPrompt] - User's custom instructions (appended, not replacing)
+ * @returns {string}
+ */
+function buildSystemPrompt(customPrompt) {
+  if (!customPrompt) return DEFAULT_SYSTEM_PROMPT;
+
+  return `${DEFAULT_SYSTEM_PROMPT}
+
+## Additional Instructions
+
+${customPrompt}`;
+}
+
+/**
  * Build the message array for the LLM.
  *
  * @param {object} params
  * @param {string} params.query - Current user question
  * @param {Array} params.contextDocs - Retrieved + reranked documents
  * @param {Array} [params.history] - Previous conversation turns [{role, content}]
- * @param {string} [params.systemPrompt] - Custom system prompt override
+ * @param {string} [params.systemPrompt] - Custom instructions (appended to base prompt)
  * @returns {Array<{role: string, content: string}>}
  */
 function buildMessages({ query, contextDocs = [], history = [], systemPrompt }) {
   const messages = [];
 
-  // 1. System prompt
+  // 1. System prompt (base + custom instructions)
   messages.push({
     role: 'system',
-    content: systemPrompt || DEFAULT_SYSTEM_PROMPT,
+    content: buildSystemPrompt(systemPrompt),
   });
 
   // 2. Conversation history (previous turns)
@@ -85,6 +105,7 @@ function buildMessages({ query, contextDocs = [], history = [], systemPrompt }) 
 
 module.exports = {
   DEFAULT_SYSTEM_PROMPT,
+  buildSystemPrompt,
   formatContextBlock,
   buildMessages,
 };

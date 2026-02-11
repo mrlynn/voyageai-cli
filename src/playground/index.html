@@ -3314,6 +3314,9 @@ Reranking models rescore initial search results to improve relevance ordering.</
       <label>Max docs: <input type="number" id="chatMaxDocs" value="5" min="1" max="20" style="width:50px"></label>
       <label><input type="checkbox" id="chatRerank" checked> Rerank</label>
     </div>
+    <div class="chat-config-bar" style="padding-top:0">
+      <label style="flex:1">Custom instructions: <input type="text" id="chatSystemPrompt" placeholder="e.g. You are a movie expert. Be enthusiastic." style="flex:1;width:100%"></label>
+    </div>
     <div class="chat-messages" id="chatMessages">
       <div class="chat-message system-msg">Configure your LLM provider and knowledge base above, then start chatting. Your documents are retrieved via Voyage AI + MongoDB Atlas, then an LLM generates grounded answers with citations.</div>
     </div>
@@ -7369,6 +7372,7 @@ async function sendChatMessage() {
   const collection = document.getElementById('chatCollection').value;
   const maxDocs = parseInt(document.getElementById('chatMaxDocs').value) || 5;
   const rerank = document.getElementById('chatRerank').checked;
+  const systemPrompt = document.getElementById('chatSystemPrompt').value.trim() || undefined;
 
   if (!provider) {
     addChatMessage('system-msg', 'Please select an LLM provider above.');
@@ -7399,7 +7403,7 @@ async function sendChatMessage() {
     const res = await fetch('/api/chat/message', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query, db, collection, provider, model, maxDocs, rerank }),
+      body: JSON.stringify({ query, db, collection, provider, model, maxDocs, rerank, systemPrompt }),
     });
 
     if (!res.ok) {

@@ -68,9 +68,11 @@ describe('prompt', () => {
       assert.equal(msgs[2].content, 'Hi there!');
     });
 
-    it('allows custom system prompt', () => {
+    it('appends custom instructions to base prompt', () => {
       const msgs = buildMessages({ query: 'Q', contextDocs: [], systemPrompt: 'Be brief.' });
-      assert.equal(msgs[0].content, 'Be brief.');
+      assert.ok(msgs[0].content.includes(DEFAULT_SYSTEM_PROMPT));
+      assert.ok(msgs[0].content.includes('Be brief.'));
+      assert.ok(msgs[0].content.includes('Additional Instructions'));
     });
   });
 });
