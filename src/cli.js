@@ -36,6 +36,7 @@ const { register: registerDoctor } = require('./commands/doctor');
 const { register: registerQuickstart } = require('./commands/quickstart');
 const { registerBug } = require('./commands/bug');
 const { registerChat } = require('./commands/chat');
+const { registerMcpServer } = require('./commands/mcp-server');
 const { showBanner, showQuickStart, getVersion } = require('./lib/banner');
 
 const version = getVersion();
@@ -76,6 +77,7 @@ registerDoctor(program);
 registerQuickstart(program);
 registerBug(program);
 registerChat(program);
+registerMcpServer(program);
 
 // Append disclaimer to all help output
 program.addHelpText('after', `
