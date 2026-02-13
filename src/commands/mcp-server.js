@@ -14,6 +14,7 @@ function registerMcpServer(program) {
     .option('--host <address>', 'Bind address (http transport only)', '127.0.0.1')
     .option('--db <name>', 'Default MongoDB database for tools')
     .option('--collection <name>', 'Default collection for tools')
+    .option('--sse', 'Enable SSE transport alongside Streamable HTTP (for n8n, legacy MCP clients)')
     .option('--verbose', 'Enable debug logging to stderr')
     .action(async (opts) => {
       if (opts.verbose) {
@@ -27,7 +28,7 @@ function registerMcpServer(program) {
       const { runStdioServer, runHttpServer } = require('../mcp/server');
 
       if (opts.transport === 'http') {
-        await runHttpServer({ port: opts.port, host: opts.host });
+        await runHttpServer({ port: opts.port, host: opts.host, sse: !!opts.sse });
       } else if (opts.transport === 'stdio') {
         await runStdioServer();
       } else {
