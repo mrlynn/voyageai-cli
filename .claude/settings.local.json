@@ -17,11 +17,23 @@
       "Bash(node src/cli.js:*)",
       "WebFetch(domain:vai.mlynn.org)",
       "Bash(npx create-docusaurus@latest vai-docs classic --typescript:*)",
-      "Bash(test:*)"
+      "Bash(test:*)",
+      "Bash(git log:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git checkout:*)",
+      "Bash(node:*)",
+      "Bash(magick:*)",
+      "WebFetch(domain:docs.vaicli.com)",
+      "Bash(export PATH=\"/opt/homebrew/bin:/usr/local/bin:$PATH\")",
+      "Bash(export:*)",
+      "Bash([ -s \"$NVM_DIR/nvm.sh\" ])",
+      "Bash(. \"$NVM_DIR/nvm.sh\")",
+      "Bash(/opt/homebrew/bin/node --test:*)"
     ]
   },
+  "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
     "vai"
-  ],
-  "enableAllProjectMcpServers": true
+  ]
 }
