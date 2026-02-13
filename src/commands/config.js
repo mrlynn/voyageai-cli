@@ -94,11 +94,6 @@ function registerConfig(program) {
           console.log('');
           console.log(`  🔑 ${ui.bold('Voyage AI key detected')} (pa-*)`);
           console.log(`     Endpoint: ${ui.cyan(VOYAGE_API_BASE)}`);
-          console.log('');
-          console.log(`  💡 ${ui.bold('Consider migrating to MongoDB Atlas')}`);
-          console.log(`     Atlas now provides Voyage AI models directly with Atlas-native billing.`);
-          console.log(`     Get a key at: ${ui.cyan('https://cloud.mongodb.com')} → AI Models → Create API Key`);
-          console.log(`     Then: ${ui.cyan('vai config set api-key <your-atlas-key>')}`);
         } else {
           console.log('');
           console.log(`  ⚠️  Unrecognized key prefix. Expected ${ui.cyan('al-*')} (Atlas) or ${ui.cyan('pa-*')} (Voyage AI).`);

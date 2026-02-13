@@ -80,24 +80,6 @@ function requireApiKey() {
     process.stderr.write(mismatch);
   }
 
-  // Nudge Voyage AI direct users toward Atlas
-  if (keyInfo.type === 'voyage' && !process.env.VAI_NO_MIGRATE_HINT) {
-    const hint =
-      `\n💡 Tip: MongoDB Atlas now provides Voyage AI models directly.\n` +
-      `   Atlas keys (al-*) offer the same models with Atlas-native billing.\n` +
-      `   Get one at: https://cloud.mongodb.com → AI Models → Create API Key\n` +
-      `   Then: vai config set api-key <your-atlas-key>\n`;
-
-    // Only show this once per day — use a simple env flag or file check
-    const { getConfigValue: gc, setConfigValue: sc } = require('./config');
-    const lastHint = gc('_lastMigrateHint') || 0;
-    const oneDayMs = 86400000;
-    if (Date.now() - lastHint > oneDayMs) {
-      process.stderr.write(hint);
-      sc('_lastMigrateHint', Date.now());
-    }
-  }
-
   return key;
 }
 
