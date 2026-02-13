@@ -1,0 +1,50 @@
+{
+  "name": "batch-similarity-check",
+  "description": "Check the similarity of each document in a search result set against a reference text using a loop, then filter by threshold",
+  "version": "1.0.0",
+  "inputs": {
+    "query": { "type": "string", "required": true, "description": "Search query to find documents" },
+    "reference_text": { "type": "string", "required": true, "description": "Reference text to compare each result against" },
+    "threshold": { "type": "number", "default": 0.8, "description": "Minimum similarity score to keep" }
+  },
+  "steps": [
+    {
+      "id": "find_docs",
+      "tool": "search",
+      "name": "Find candidate documents",
+      "inputs": {
+        "query": "{{ inputs.query }}",
+        "limit": 10
+      }
+    },
+    {
+      "id": "check_similarity",
+      "tool": "loop",
+      "name": "Compare each doc to reference",
+      "inputs": {
+        "items": "{{ find_docs.output.results }}",
+        "as": "doc",
+        "step": {
+          "tool": "similarity",
+          "inputs": {
+            "text1": "{{ doc.text }}",
+            "text2": "{{ inputs.reference_text }}"
+          }
+        }
+      }
+    },
+    {
+      "id": "summary",
+      "tool": "template",
+      "name": "Summarize results",
+      "inputs": {
+        "text": "Checked {{ check_similarity.output.iterations }} documents against reference text.\nThreshold: {{ inputs.threshold }}\nResults: {{ check_similarity.output.results }}"
+      }
+    }
+  ],
+  "output": {
+    "documentsChecked": "{{ check_similarity.output.iterations }}",
+    "similarities": "{{ check_similarity.output.results }}",
+    "summary": "{{ summary.output.text }}"
+  }
+}

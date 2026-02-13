@@ -1,0 +1,64 @@
+{
+  "name": "multi-query-fusion",
+  "description": "Run multiple search queries, merge and deduplicate results, then rerank for best relevance",
+  "version": "1.0.0",
+  "inputs": {
+    "query1": { "type": "string", "required": true, "description": "First search query" },
+    "query2": { "type": "string", "required": true, "description": "Second search query (alternate phrasing)" },
+    "top_k": { "type": "number", "default": 5, "description": "Final number of results after reranking" }
+  },
+  "steps": [
+    {
+      "id": "search_a",
+      "tool": "search",
+      "name": "Search with query 1",
+      "inputs": {
+        "query": "{{ inputs.query1 }}",
+        "limit": 10
+      }
+    },
+    {
+      "id": "search_b",
+      "tool": "search",
+      "name": "Search with query 2",
+      "inputs": {
+        "query": "{{ inputs.query2 }}",
+        "limit": 10
+      }
+    },
+    {
+      "id": "fuse",
+      "tool": "merge",
+      "name": "Merge and deduplicate",
+      "inputs": {
+        "arrays": ["{{ search_a.output.results }}", "{{ search_b.output.results }}"],
+        "dedup": true,
+        "dedup_field": "source"
+      }
+    },
+    {
+      "id": "rerank_fused",
+      "tool": "rerank",
+      "name": "Rerank merged results",
+      "inputs": {
+        "query": "{{ inputs.query1 }}",
+        "documents": "{{ fuse.output.results }}"
+      }
+    },
+    {
+      "id": "top_results",
+      "tool": "filter",
+      "name": "Take top K results",
+      "inputs": {
+        "array": "{{ rerank_fused.output.results }}",
+        "condition": "index < {{ inputs.top_k }}"
+      }
+    }
+  ],
+  "output": {
+    "totalBeforeFusion": "{{ search_a.output.resultCount + search_b.output.resultCount }}",
+    "afterDedup": "{{ fuse.output.resultCount }}",
+    "finalCount": "{{ top_results.output.resultCount }}",
+    "results": "{{ top_results.output.results }}"
+  }
+}

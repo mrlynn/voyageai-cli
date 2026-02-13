@@ -1,0 +1,60 @@
+{
+  "name": "rag-with-guardrails",
+  "description": "RAG pipeline with conditional guardrails: check relevance before generating, fall back to a canned response if results are poor",
+  "version": "1.0.0",
+  "inputs": {
+    "query": { "type": "string", "required": true, "description": "User question" },
+    "min_score": { "type": "number", "default": 0.5, "description": "Minimum relevance score to proceed with generation" }
+  },
+  "steps": [
+    {
+      "id": "retrieve",
+      "tool": "query",
+      "name": "Retrieve relevant documents",
+      "inputs": {
+        "query": "{{ inputs.query }}",
+        "limit": 5
+      }
+    },
+    {
+      "id": "check_quality",
+      "tool": "conditional",
+      "name": "Are results relevant enough?",
+      "inputs": {
+        "condition": "{{ retrieve.output.results.0.score > inputs.min_score }}",
+        "then": ["build_context", "answer"],
+        "else": ["no_results_response"]
+      }
+    },
+    {
+      "id": "build_context",
+      "tool": "template",
+      "name": "Compose context from results",
+      "inputs": {
+        "text": "Use the following documents to answer the user's question. Only use information from these documents.\n\n{{ retrieve.output.results }}"
+      }
+    },
+    {
+      "id": "answer",
+      "tool": "generate",
+      "name": "Generate grounded answer",
+      "inputs": {
+        "prompt": "{{ inputs.query }}",
+        "context": "{{ build_context.output.text }}",
+        "systemPrompt": "You are a helpful assistant. Answer the question using only the provided context. If the context does not contain enough information, say so."
+      }
+    },
+    {
+      "id": "no_results_response",
+      "tool": "template",
+      "name": "Fallback response",
+      "inputs": {
+        "text": "I could not find sufficiently relevant information to answer your question: \"{{ inputs.query }}\". The best match had a relevance score of {{ retrieve.output.results.0.score }}, which is below the threshold of {{ inputs.min_score }}. Try rephrasing your question or broadening your search terms."
+      }
+    }
+  ],
+  "output": {
+    "branch": "{{ check_quality.output.branchTaken }}",
+    "response": "{{ check_quality.output.branchTaken === 'then' ? answer.output.text : no_results_response.output.text }}"
+  }
+}

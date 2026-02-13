@@ -1,0 +1,74 @@
+{
+  "name": "embedding-model-comparison",
+  "description": "Embed the same text with two different models and compare their similarity scores against a reference query",
+  "version": "1.0.0",
+  "inputs": {
+    "text": { "type": "string", "required": true, "description": "Text to embed with both models" },
+    "reference_query": { "type": "string", "required": true, "description": "Query to test similarity against" },
+    "model_a": { "type": "string", "default": "voyage-3-large", "description": "First embedding model" },
+    "model_b": { "type": "string", "default": "voyage-3-lite", "description": "Second embedding model" }
+  },
+  "steps": [
+    {
+      "id": "embed_a",
+      "tool": "embed",
+      "name": "Embed with model A",
+      "inputs": {
+        "text": "{{ inputs.text }}",
+        "model": "{{ inputs.model_a }}",
+        "inputType": "document"
+      }
+    },
+    {
+      "id": "embed_b",
+      "tool": "embed",
+      "name": "Embed with model B",
+      "inputs": {
+        "text": "{{ inputs.text }}",
+        "model": "{{ inputs.model_b }}",
+        "inputType": "document"
+      }
+    },
+    {
+      "id": "sim_a",
+      "tool": "similarity",
+      "name": "Similarity with model A",
+      "inputs": {
+        "text1": "{{ inputs.text }}",
+        "text2": "{{ inputs.reference_query }}",
+        "model": "{{ inputs.model_a }}"
+      }
+    },
+    {
+      "id": "sim_b",
+      "tool": "similarity",
+      "name": "Similarity with model B",
+      "inputs": {
+        "text1": "{{ inputs.text }}",
+        "text2": "{{ inputs.reference_query }}",
+        "model": "{{ inputs.model_b }}"
+      }
+    },
+    {
+      "id": "comparison_report",
+      "tool": "template",
+      "name": "Build comparison report",
+      "inputs": {
+        "text": "Model Comparison Report\n\nText: {{ inputs.text }}\nQuery: {{ inputs.reference_query }}\n\nModel A ({{ inputs.model_a }}):\n  Dimensions: {{ embed_a.output.dimensions }}\n  Similarity to query: {{ sim_a.output.similarity }}\n\nModel B ({{ inputs.model_b }}):\n  Dimensions: {{ embed_b.output.dimensions }}\n  Similarity to query: {{ sim_b.output.similarity }}"
+      }
+    }
+  ],
+  "output": {
+    "model_a": {
+      "name": "{{ inputs.model_a }}",
+      "dimensions": "{{ embed_a.output.dimensions }}",
+      "similarity": "{{ sim_a.output.similarity }}"
+    },
+    "model_b": {
+      "name": "{{ inputs.model_b }}",
+      "dimensions": "{{ embed_b.output.dimensions }}",
+      "similarity": "{{ sim_b.output.similarity }}"
+    },
+    "report": "{{ comparison_report.output.text }}"
+  }
+}
