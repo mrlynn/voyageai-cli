@@ -1,0 +1,74 @@
+{
+  "name": "content-quality-gate",
+  "description": "Chunk a document using markdown strategy, filter out boilerplate, assess quality with an LLM, and conditionally ingest only if quality passes",
+  "version": "1.0.0",
+  "inputs": {
+    "text": { "type": "string", "required": true, "description": "Document text to evaluate" },
+    "source": { "type": "string", "required": true, "description": "Source identifier" },
+    "min_chunks": { "type": "number", "default": 3, "description": "Minimum substantial chunks required to proceed" }
+  },
+  "steps": [
+    {
+      "id": "split",
+      "tool": "chunk",
+      "name": "Chunk with markdown strategy",
+      "inputs": {
+        "text": "{{ inputs.text }}",
+        "strategy": "markdown",
+        "size": 512,
+        "source": "{{ inputs.source }}"
+      }
+    },
+    {
+      "id": "remove_boilerplate",
+      "tool": "filter",
+      "name": "Filter out small/boilerplate chunks",
+      "inputs": {
+        "array": "{{ split.output.chunks }}",
+        "condition": "item.charCount > 80"
+      }
+    },
+    {
+      "id": "check_enough_content",
+      "tool": "conditional",
+      "name": "Enough substantial content?",
+      "inputs": {
+        "condition": "{{ remove_boilerplate.output.resultCount >= inputs.min_chunks }}",
+        "then": ["quality_check", "ingest_doc"],
+        "else": ["reject_message"]
+      }
+    },
+    {
+      "id": "quality_check",
+      "tool": "generate",
+      "name": "LLM quality assessment",
+      "inputs": {
+        "prompt": "Evaluate the quality of this document content. Is it well-structured, informative, and suitable for a knowledge base? Reply with YES or NO followed by a brief reason.",
+        "context": "{{ remove_boilerplate.output.results }}"
+      }
+    },
+    {
+      "id": "ingest_doc",
+      "tool": "ingest",
+      "name": "Ingest approved content",
+      "inputs": {
+        "text": "{{ inputs.text }}",
+        "source": "{{ inputs.source }}",
+        "chunkStrategy": "markdown"
+      }
+    },
+    {
+      "id": "reject_message",
+      "tool": "template",
+      "name": "Rejection notice",
+      "inputs": {
+        "text": "Document '{{ inputs.source }}' rejected: only {{ remove_boilerplate.output.resultCount }} substantial chunks found (minimum: {{ inputs.min_chunks }}). The document may be too short or contain mostly boilerplate."
+      }
+    }
+  ],
+  "output": {
+    "accepted": "{{ check_enough_content.output.branchTaken === 'then' }}",
+    "totalChunks": "{{ split.output.totalChunks }}",
+    "substantialChunks": "{{ remove_boilerplate.output.resultCount }}"
+  }
+}

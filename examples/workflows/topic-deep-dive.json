@@ -1,0 +1,52 @@
+{
+  "name": "topic-deep-dive",
+  "description": "Multi-pass RAG: search broadly, identify subtopics with an LLM, then search each subtopic and synthesize a comprehensive answer",
+  "version": "1.0.0",
+  "inputs": {
+    "topic": { "type": "string", "required": true, "description": "Topic to research" }
+  },
+  "steps": [
+    {
+      "id": "broad_search",
+      "tool": "query",
+      "name": "Broad topic search",
+      "inputs": {
+        "query": "{{ inputs.topic }}",
+        "limit": 10
+      }
+    },
+    {
+      "id": "identify_subtopics",
+      "tool": "generate",
+      "name": "Identify subtopics",
+      "inputs": {
+        "prompt": "Based on these search results about '{{ inputs.topic }}', list 3 specific subtopics worth exploring deeper. Return only the subtopic names, one per line.",
+        "context": "{{ broad_search.output.results }}"
+      }
+    },
+    {
+      "id": "compose_report",
+      "tool": "template",
+      "name": "Build synthesis context",
+      "inputs": {
+        "text": "Topic: {{ inputs.topic }}\n\nBroad search results:\n{{ broad_search.output.results }}\n\nIdentified subtopics:\n{{ identify_subtopics.output.text }}"
+      }
+    },
+    {
+      "id": "synthesize",
+      "tool": "generate",
+      "name": "Synthesize deep-dive report",
+      "inputs": {
+        "prompt": "Write a comprehensive overview of '{{ inputs.topic }}'. Cover the main concepts and the subtopics identified. Use the search results as your knowledge base.",
+        "context": "{{ compose_report.output.text }}",
+        "systemPrompt": "You are a technical writer. Produce well-structured reports with clear sections, based on the provided source material."
+      }
+    }
+  ],
+  "output": {
+    "topic": "{{ inputs.topic }}",
+    "report": "{{ synthesize.output.text }}",
+    "subtopics": "{{ identify_subtopics.output.text }}",
+    "sourcesUsed": "{{ broad_search.output.resultCount }}"
+  }
+}
