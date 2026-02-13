@@ -137,7 +137,7 @@ describe('MCP server — SSE flag integration', () => {
     assert.equal(typeof runHttpServer, 'function');
   });
 
-  it('mcp-server command registers --sse option', () => {
+  it('mcp-server command registers --no-sse option', () => {
     const { Command } = require('commander');
     const { registerMcpServer } = require('../../src/commands/mcp-server');
     const program = new Command();
@@ -146,7 +146,7 @@ describe('MCP server — SSE flag integration', () => {
     const mcpCmd = program.commands.find((c) => c.name() === 'mcp-server');
     assert.ok(mcpCmd, 'mcp-server command should exist');
 
-    const sseOpt = mcpCmd.options.find((o) => o.long === '--sse');
-    assert.ok(sseOpt, '--sse option should be registered');
+    const sseOpt = mcpCmd.options.find((o) => o.long === '--no-sse');
+    assert.ok(sseOpt, '--no-sse option should be registered');
   });
 });
