@@ -992,8 +992,9 @@ select:focus { outline: none; border-color: var(--accent); }
 }
 
 .explore-card-icon {
-  font-size: 28px;
   margin-bottom: 8px;
+  color: var(--accent, #00D4AA);
+  opacity: 0.85;
 }
 .explore-card-title {
   font-size: 16px;
@@ -1056,7 +1057,7 @@ select:focus { outline: none; border-color: var(--accent); }
   padding: 24px 28px 16px;
   border-bottom: 1px solid var(--border);
 }
-.explore-modal-icon { font-size: 32px; }
+.explore-modal-icon { color: var(--accent, #00D4AA); }
 .explore-modal-title {
   font-size: 18px;
   font-weight: 600;
@@ -3732,7 +3733,7 @@ select:focus { outline: none; border-color: var(--accent); }
         <option value="ubinary">ubinary (32× smaller)</option>
       </select>
     </div>
-    <button class="btn" id="embedBtn" onclick="doEmbed()">⚡ Embed</button>
+    <button class="btn" id="embedBtn" onclick="doEmbed()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>Embed</button>
   </div>
 
   <div class="error-msg" id="embedError"></div>
@@ -3743,7 +3744,7 @@ select:focus { outline: none; border-color: var(--accent); }
       <div id="embedStats"></div>
       <div class="vector-preview" id="embedVector"></div>
       <div style="margin-top:8px;">
-        <button class="btn btn-secondary btn-small" onclick="copyVector()">📋 Copy Full Vector</button>
+        <button class="btn btn-secondary btn-small" onclick="copyVector()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:3px;"><path d="M9 9V6a3 3 0 0 1 3-3h6a3 3 0 0 1 3 3v6a3 3 0 0 1-3 3h-3M3 15a3 3 0 0 1 3-3h6a3 3 0 0 1 3 3v6a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3z"/></svg>Copy Full Vector</button>
       </div>
       <div class="card-title" style="margin-top:16px;">Vector Heatmap</div>
       <div class="heatmap" id="embedHeatmap"></div>
@@ -3785,7 +3786,7 @@ select:focus { outline: none; border-color: var(--accent); }
         <option value="2048">2048</option>
       </select>
     </div>
-    <button class="btn" id="compareBtn" onclick="doCompare()">⚖️ Compare</button>
+    <button class="btn" id="compareBtn" onclick="doCompare()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M8 3 4 7l4 4M4 7h16M16 21l4-4-4-4M20 17H4"/></svg>Compare</button>
   </div>
 
   <div class="error-msg" id="compareError"></div>
@@ -3847,8 +3848,8 @@ Semantic search understands meaning beyond keyword matching</textarea>
         <option value="10">10</option>
       </select>
     </div>
-    <button class="btn" id="searchBtn" onclick="doSearch(false)">🔍 Search</button>
-    <button class="btn btn-secondary" id="searchRerankBtn" onclick="doSearch(true)">🔍+ Rerank</button>
+    <button class="btn" id="searchBtn" onclick="doSearch(false)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M21 21l-4.3-4.3M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16z"/></svg>Search</button>
+    <button class="btn btn-secondary" id="searchRerankBtn" onclick="doSearch(true)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M3 6h18M7 12h10M10 18h4"/></svg>Rerank</button>
   </div>
 
   <div class="error-msg" id="searchError"></div>
@@ -3907,7 +3908,7 @@ Semantic search understands meaning beyond keyword matching</textarea>
         <option value="2048">2048</option>
       </select>
     </div>
-    <button class="btn" id="mmCompareBtn" onclick="doMultimodalCompare()">🔮 Compare</button>
+    <button class="btn" id="mmCompareBtn" onclick="doMultimodalCompare()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M8 3 4 7l4 4M4 7h16M16 21l4-4-4-4M20 17H4"/></svg>Compare</button>
   </div>
 
   <div class="error-msg" id="mmError"></div>
@@ -3945,20 +3946,20 @@ Semantic search understands meaning beyond keyword matching</textarea>
     <div class="card" style="margin-top:12px;">
       <div class="card-title">Search Query</div>
       <div class="mm-search-mode" id="mmSearchMode">
-        <button class="active" data-mode="text" onclick="setMmSearchMode('text')">📝 Text Query</button>
-        <button data-mode="image" onclick="setMmSearchMode('image')">🖼️ Image Query</button>
+        <button class="active" data-mode="text" onclick="setMmSearchMode('text')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:3px;"><path d="M17 6.1H3M21 12.1H3M15.1 18H3"/></svg>Text Query</button>
+        <button data-mode="image" onclick="setMmSearchMode('image')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:3px;"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>Image Query</button>
       </div>
       <div id="mmSearchTextWrap">
         <div class="mm-search-row">
           <input type="text" id="mmSearchQuery" placeholder="Enter a search query...">
-          <button class="btn" id="mmSearchBtn" onclick="doMultimodalSearch()">🔮 Search Corpus</button>
+          <button class="btn" id="mmSearchBtn" onclick="doMultimodalSearch()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M21 21l-4.3-4.3M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16z"/></svg>Search Corpus</button>
         </div>
       </div>
       <div id="mmSearchImageWrap" style="display:none;">
         <p style="font-size:13px;color:var(--text-dim);margin-bottom:8px;">Click an image in the corpus above to use it as the search query, then:</p>
         <div style="display:flex;gap:8px;align-items:center;">
           <span id="mmSearchImageLabel" style="font-size:13px;color:var(--text-muted);">No image selected</span>
-          <button class="btn" id="mmSearchImgBtn" onclick="doMultimodalSearch()">🔮 Search Corpus</button>
+          <button class="btn" id="mmSearchImgBtn" onclick="doMultimodalSearch()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M21 21l-4.3-4.3M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16z"/></svg>Search Corpus</button>
         </div>
       </div>
     </div>
@@ -3985,12 +3986,12 @@ Semantic search understands meaning beyond keyword matching</textarea>
 
   <!-- Sub-panel switcher -->
   <div class="bench-panels">
-    <button class="bench-panel-btn active" data-bench="latency">⚡ Latency</button>
-    <button class="bench-panel-btn" data-bench="ranking">🏆 Ranking</button>
+    <button class="bench-panel-btn active" data-bench="latency"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:3px;"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>Latency</button>
+    <button class="bench-panel-btn" data-bench="ranking"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:3px;"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>Ranking</button>
     <button class="bench-panel-btn" data-bench="competitors">⚔️ vs Competitors</button>
-    <button class="bench-panel-btn" data-bench="quantization">⚗️ Quantization</button>
+    <button class="bench-panel-btn" data-bench="quantization"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:3px;"><path d="M10 2v7.527a2 2 0 0 1-.211.896L4.72 20.55a1 1 0 0 0 .9 1.45h12.76a1 1 0 0 0 .9-1.45l-5.069-10.127A2 2 0 0 1 14 9.527V2M8.5 2h7M7 16h10"/></svg>Quantization</button>
     <button class="bench-panel-btn" data-bench="cost">💰 Cost</button>
-    <button class="bench-panel-btn" data-bench="history">📊 History</button>
+    <button class="bench-panel-btn" data-bench="history"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:3px;"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>History</button>
   </div>
 
   <!-- ── Latency Panel ── -->
@@ -4012,7 +4013,7 @@ Semantic search understands meaning beyond keyword matching</textarea>
             <option value="10">10</option>
           </select>
         </div>
-        <button class="btn" id="benchLatencyBtn" onclick="doBenchLatency()">⚡ Run Benchmark</button>
+        <button class="btn" id="benchLatencyBtn" onclick="doBenchLatency()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>Run Benchmark</button>
       </div>
     </div>
 
@@ -4066,7 +4067,7 @@ Reranking models rescore initial search results to improve relevance ordering.</
             <option value="8">8</option>
           </select>
         </div>
-        <button class="btn" id="benchRankBtn" onclick="doBenchRanking()">🏆 Compare Rankings</button>
+        <button class="btn" id="benchRankBtn" onclick="doBenchRanking()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>Compare Rankings</button>
       </div>
     </div>
 
@@ -4303,7 +4304,7 @@ Approximate nearest neighbor algorithms like HNSW enable fast similarity search 
 Reranking models rescore initial search results to improve relevance ordering.</textarea>
       </div>
       <div style="margin-top:12px;">
-        <button class="btn" id="quantBtn" onclick="doBenchQuantization()">⚗️ Run Quantization Benchmark</button>
+        <button class="btn" id="quantBtn" onclick="doBenchQuantization()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M10 2v7.527a2 2 0 0 1-.211.896L4.72 20.55a1 1 0 0 0 .9 1.45h12.76a1 1 0 0 0 .9-1.45l-5.069-10.127A2 2 0 0 1 14 9.527V2M8.5 2h7M7 16h10"/></svg>Run Quantization Benchmark</button>
       </div>
     </div>
 
@@ -4452,7 +4453,7 @@ Reranking models rescore initial search results to improve relevance ordering.</
         <div class="history-empty">No benchmarks recorded yet. Run a latency benchmark to start tracking.</div>
       </div>
       <div style="margin-top:12px;text-align:right;">
-        <button class="btn btn-secondary btn-small" onclick="clearHistory()">🗑 Clear History</button>
+        <button class="btn btn-secondary btn-small" onclick="clearHistory()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:3px;"><path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>Clear History</button>
       </div>
     </div>
   </div>
@@ -4595,9 +4596,9 @@ Reranking models rescore initial search results to improve relevance ordering.</
           <div class="about-name">Michael Lynn</div>
           <div class="about-role">Principal Staff Developer Advocate · MongoDB</div>
           <div class="about-links">
-            <a href="https://github.com/mrlynn" target="_blank" rel="noopener">🔗 GitHub</a>
-            <a href="https://mlynn.org" target="_blank" rel="noopener">🌐 mlynn.org</a>
-            <a href="https://www.npmjs.com/package/voyageai-cli" target="_blank" rel="noopener">📦 npm</a>
+            <a href="https://github.com/mrlynn" target="_blank" rel="noopener"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:3px;"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>GitHub</a>
+            <a href="https://mlynn.org" target="_blank" rel="noopener"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:3px;"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>mlynn.org</a>
+            <a href="https://www.npmjs.com/package/voyageai-cli" target="_blank" rel="noopener"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:3px;"><path d="M16.5 9.4l-9-5.19M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16zM3.27 6.96 12 12.01l8.73-5.05M12 22.08V12"/></svg>npm</a>
           </div>
         </div>
       </div>
@@ -4839,7 +4840,7 @@ Reranking models rescore initial search results to improve relevance ordering.</
         </div>
         <div id="scaffoldWebButtons" style="display:none;">
           <button class="btn btn-primary" onclick="downloadScaffoldZip()" id="scaffoldDownloadBtn">
-            <svg width="16" height="16" viewBox="0 0 16 16" style="margin-right:6px;"><path fill="currentColor" d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path fill="currentColor" d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/></svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
             Download ZIP
           </button>
         </div>
@@ -4942,12 +4943,12 @@ Reranking models rescore initial search results to improve relevance ordering.</
           <div class="settings-row">
             <div class="settings-label">
               <span class="settings-label-text">API Key <span class="settings-origin" data-origin-key="apiKey"></span></span>
-              <span class="settings-label-hint">Encrypted via OS keychain · <a href="https://dash.voyageai.com" target="_blank" class="settings-key-link">🔑 Get a key</a></span>
+              <span class="settings-label-hint">Encrypted via OS keychain · <a href="https://dash.voyageai.com" target="_blank" class="settings-key-link"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:2px;"><path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"/><circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/></svg>Get a key</a></span>
             </div>
             <div class="settings-control" style="min-width:260px;">
               <div class="settings-api-field">
                 <input type="password" id="settingsApiKey" placeholder="pa-..." autocomplete="off" spellcheck="false">
-                <button type="button" id="settingsApiKeyToggle" title="Show/hide key">👁</button>
+                <button type="button" id="settingsApiKeyToggle" title="Show/hide key"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg></button>
                 <button type="button" id="settingsApiKeySave" class="save-btn" title="Save key">Save</button>
               </div>
             </div>
@@ -5101,7 +5102,7 @@ Reranking models rescore initial search results to improve relevance ordering.</
                 title="Show/hide API key"
                 style="padding:8px 12px;min-width:auto"
               >
-                👁️
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>
               </button>
               <button
                 class="btn"
@@ -5110,7 +5111,7 @@ Reranking models rescore initial search results to improve relevance ordering.</
                 title="Save API key"
                 style="padding:8px 12px;min-width:auto"
               >
-                💾
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>
               </button>
             </div>
           </div>
@@ -6126,12 +6127,12 @@ async function downloadScaffoldZip() {
     // Show success
     btn.innerHTML = '<span style="margin-right:6px;">✓</span> Downloaded!';
     setTimeout(() => {
-      btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 16 16" style="margin-right:6px;"><path fill="currentColor" d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path fill="currentColor" d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/></svg> Download ZIP';
+      btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg> Download ZIP';
       btn.disabled = false;
     }, 2000);
   } catch (err) {
     alert('Error: ' + err.message);
-    btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 16 16" style="margin-right:6px;"><path fill="currentColor" d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path fill="currentColor" d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/></svg> Download ZIP';
+    btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg> Download ZIP';
     btn.disabled = false;
   }
 }
@@ -6227,37 +6228,73 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ── Explore: icons and tab mappings per concept ──
+// Lucide SVG icon helper — returns an inline <svg> string
+function lucideIcon(d, size = 16) {
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg>`;
+}
+
+// Lucide path constants for concept/button icons
+const LI = {
+  zap:        'M13 2 3 14h9l-1 8 10-12h-9l1-8z',
+  search:     'M21 21l-4.3-4.3M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16z',
+  trophy:     'M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22M18 2H6v7a6 6 0 0 0 12 0V2z',
+  bot:        'M12 8V4H8M8 2h8M2 14a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2zM6 14v4M10 14v4M14 14v4M18 14v4',
+  ruler:      'M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z M15 5l4 4',
+  target:     'M12 12m-10 0a10 10 0 1 0 20 0 10 10 0 1 0-20 0M12 12m-6 0a6 6 0 1 0 12 0 6 6 0 1 0-12 0M12 12m-2 0a2 2 0 1 0 4 0 2 2 0 1 0-4 0',
+  tag:        'M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42zM7.5 7.5m-.5 0a.5.5 0 1 0 1 0 .5.5 0 1 0-1 0',
+  brain:      'M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2zM14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2z',
+  key:        'M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4zM16.5 7.5m-.5 0a.5.5 0 1 0 1 0 .5.5 0 1 0-1 0',
+  globe:      'M12 12m-10 0a10 10 0 1 0 20 0 10 10 0 1 0-20 0M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z',
+  package:    'M16.5 9.4l-9-5.19M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16zM3.27 6.96 12 12.01l8.73-5.05M12 22.08V12',
+  timer:      'M10 2h4M12 14l3-3M12 22a8 8 0 1 0 0-16 8 8 0 0 0 0 16z',
+  flask:      'M10 2v7.527a2 2 0 0 1-.211.896L4.72 20.55a1 1 0 0 0 .9 1.45h12.76a1 1 0 0 0 .9-1.45l-5.069-10.127A2 2 0 0 1 14 9.527V2M8.5 2h7M7 16h10',
+  puzzle:     'M19.439 7.85c-.049.322.059.648.289.878l1.568 1.568c.47.47.706 1.087.706 1.704s-.235 1.233-.706 1.704l-1.611 1.611a.98.98 0 0 1-.837.276c-.47-.07-.802-.48-.968-.925a2.501 2.501 0 1 0-3.214 3.214c.446.166.855.497.925.968a.979.979 0 0 1-.276.837l-1.61 1.61a2.404 2.404 0 0 1-1.705.707 2.402 2.402 0 0 1-1.704-.706l-1.568-1.568a1.026 1.026 0 0 0-.877-.29c-.493.074-.84.504-1.02.968a2.5 2.5 0 1 1-3.237-3.237c.464-.18.894-.527.967-1.02a1.026 1.026 0 0 0-.289-.877l-1.568-1.568A2.402 2.402 0 0 1 1.998 12c0-.617.236-1.234.706-1.704L4.23 8.77c.24-.24.581-.353.917-.303.515.077.877.528 1.073 1.01a2.5 2.5 0 1 0 3.259-3.259c-.482-.196-.933-.558-1.01-1.073-.05-.336.062-.676.303-.917l1.525-1.525A2.402 2.402 0 0 1 12 2c.617 0 1.234.236 1.704.706l1.568 1.568c.23.23.556.338.878.29.493-.074.84-.504 1.02-.968a2.5 2.5 0 1 1 3.237 3.237c-.464.18-.894.527-.968 1.02z',
+  link:       'M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71',
+  barChart:   'M12 20V10M18 20V4M6 20v-4',
+  microscope: 'M6 18h8M3 22h18M14 22a7 7 0 1 0 0-14h-1M9 14h2M9 12a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2z',
+  image:      'M3 3h18a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zM8.5 10a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zM21 15l-5-5L5 21',
+  shuffle:    'M2 18h1.4c1.3 0 2.5-.6 3.3-1.7l6.1-8.6c.7-1.1 2-1.7 3.3-1.7H22M18 2l4 4-4 4M2 6h1.9c1.5 0 2.9.9 3.6 2.2M22 18l-4 4-4-4M19 14h3',
+  circle:     'M12 12m-10 0a10 10 0 1 0 20 0 10 10 0 1 0-20 0',
+  fileTxt:    'M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7zM14 2v4a2 2 0 0 0 2 2h4M10 13h4M10 17h4M10 9h1',
+  scale:      'M16 3h5v5M8 3H3v5M12 22v-8.3a4 4 0 0 0-1.172-2.872L3 3M21 3l-7.828 7.828A4 4 0 0 0 12 13.7V22',
+  laptop:     'M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9M2 20h20M12 12h.01',
+  blocks:     'M2 12h10v10H2zM14 4l6 3.5v7L14 18l-6-3.5v-7zM12 2l10 6',
+  refresh:    'M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16',
+  sparkle:    'M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z',
+  download:   'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3',
+  copy:       'M9 9V6a3 3 0 0 1 3-3h6a3 3 0 0 1 3 3v6a3 3 0 0 1-3 3h-3M3 15a3 3 0 0 1 3-3h6a3 3 0 0 1 3 3v6a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3z',
+  filter:     'M3 6h18M7 12h10M10 18h4',
+};
+
 const CONCEPT_META = {
-  embeddings:          { icon: '🧮', tab: 'embed' },
-  reranking:           { icon: '🏆', tab: 'search' },
-  'vector-search':     { icon: '🔎', tab: 'search' },
-  rag:                 { icon: '🤖', tab: 'search' },
-  'cosine-similarity': { icon: '📐', tab: 'compare' },
-  'two-stage-retrieval': { icon: '🎯', tab: 'search' },
-  'input-type':        { icon: '🏷️', tab: 'embed' },
-  models:              { icon: '🧠', tab: 'embed' },
-  'api-keys':          { icon: '🔑', tab: 'embed' },
-  'api-access':        { icon: '🌐', tab: 'embed' },
-  'batch-processing':  { icon: '📦', tab: 'embed' },
-  benchmarking:        { icon: '⏱', tab: 'benchmark' },
-  quantization:        { icon: '⚗️', tab: 'benchmark' },
-  'mixture-of-experts': { icon: '🧩', tab: 'embed' },
-  'shared-embedding-space': { icon: '🔗', tab: 'compare' },
-  'rteb-benchmarks':   { icon: '📊', tab: 'benchmark' },
-  'voyage-4-nano':     { icon: '🔬', tab: 'embed' },
-  'rerank-eval':       { icon: '📐', tab: 'benchmark' },
-  'multimodal-embeddings': { icon: '🖼️', tab: 'multimodal' },
-  'cross-modal-search':    { icon: '🔀', tab: 'multimodal' },
-  'modality-gap':          { icon: '🕳️', tab: 'multimodal' },
-  'multimodal-rag':        { icon: '📄', tab: 'multimodal' },
-  'provider-comparison':   { icon: '⚖️', tab: 'explore' },
-  // Code generation & scaffolding
-  'code-generation':   { icon: '💻', tab: 'explore' },
-  scaffolding:         { icon: '🏗️', tab: 'explore' },
-  'eval-comparison':   { icon: '📊', tab: 'benchmark' },
-  // MongoDB Auto-Embedding
-  'auto-embedding':        { icon: '⚡', tab: 'explore' },
-  'vai-vs-auto-embedding': { icon: '🔄', tab: 'explore' },
+  embeddings:          { icon: LI.zap,        tab: 'embed' },
+  reranking:           { icon: LI.trophy,     tab: 'search' },
+  'vector-search':     { icon: LI.search,     tab: 'search' },
+  rag:                 { icon: LI.bot,        tab: 'search' },
+  'cosine-similarity': { icon: LI.ruler,      tab: 'compare' },
+  'two-stage-retrieval': { icon: LI.target,   tab: 'search' },
+  'input-type':        { icon: LI.tag,        tab: 'embed' },
+  models:              { icon: LI.brain,      tab: 'embed' },
+  'api-keys':          { icon: LI.key,        tab: 'embed' },
+  'api-access':        { icon: LI.globe,      tab: 'embed' },
+  'batch-processing':  { icon: LI.package,    tab: 'embed' },
+  benchmarking:        { icon: LI.timer,      tab: 'benchmark' },
+  quantization:        { icon: LI.flask,      tab: 'benchmark' },
+  'mixture-of-experts': { icon: LI.puzzle,    tab: 'embed' },
+  'shared-embedding-space': { icon: LI.link,  tab: 'compare' },
+  'rteb-benchmarks':   { icon: LI.barChart,   tab: 'benchmark' },
+  'voyage-4-nano':     { icon: LI.microscope, tab: 'embed' },
+  'rerank-eval':       { icon: LI.ruler,      tab: 'benchmark' },
+  'multimodal-embeddings': { icon: LI.image,  tab: 'multimodal' },
+  'cross-modal-search':    { icon: LI.shuffle, tab: 'multimodal' },
+  'modality-gap':          { icon: LI.circle,  tab: 'multimodal' },
+  'multimodal-rag':        { icon: LI.fileTxt, tab: 'multimodal' },
+  'provider-comparison':   { icon: LI.scale,   tab: 'explore' },
+  'code-generation':   { icon: LI.laptop,     tab: 'explore' },
+  scaffolding:         { icon: LI.blocks,     tab: 'explore' },
+  'eval-comparison':   { icon: LI.barChart,   tab: 'benchmark' },
+  'auto-embedding':        { icon: LI.zap,    tab: 'explore' },
+  'vai-vs-auto-embedding': { icon: LI.refresh, tab: 'explore' },
 };
 
 let exploreConcepts = {};
@@ -6283,13 +6320,13 @@ function buildExploreCards() {
   grid.innerHTML = '';
 
   for (const [key, concept] of Object.entries(exploreConcepts)) {
-    const meta = CONCEPT_META[key] || { icon: '📚', tab: 'embed' };
+    const meta = CONCEPT_META[key] || { icon: LI.package, tab: 'embed' };
     const card = document.createElement('div');
     card.className = 'explore-card';
     card.dataset.key = key;
 
     card.innerHTML = `
-      <div class="explore-card-icon">${meta.icon}</div>
+      <div class="explore-card-icon">${lucideIcon(meta.icon, 28)}</div>
       <div class="explore-card-title">${escapeHtml(concept.title)}</div>
       <div class="explore-card-summary">${escapeHtml(concept.summary)}</div>
     `;
@@ -6316,12 +6353,12 @@ let exploreModalPreviousFocus = null;
 function openExploreModal(key) {
   const concept = exploreConcepts[key];
   if (!concept) return;
-  const meta = CONCEPT_META[key] || { icon: '📚', tab: 'embed' };
+  const meta = CONCEPT_META[key] || { icon: LI.package, tab: 'embed' };
 
   // Save the currently focused element to restore when modal closes
   exploreModalPreviousFocus = document.activeElement;
 
-  document.getElementById('exploreModalIcon').textContent = meta.icon;
+  document.getElementById('exploreModalIcon').innerHTML = lucideIcon(meta.icon, 32);
   document.getElementById('exploreModalTitle').textContent = concept.title;
   document.getElementById('exploreModalSummary').textContent = concept.summary;
 
