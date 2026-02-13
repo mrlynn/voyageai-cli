@@ -3555,55 +3555,63 @@ select:focus { outline: none; border-color: var(--accent); }
 </head>
 <body>
 
-<!-- LeafyGreen Icon Sprites (mongodb.design) -->
+<!-- Lucide Icons (lucide.dev) — stroke-based, 16×16 -->
 <svg xmlns="http://www.w3.org/2000/svg" style="display:none;">
-  <symbol id="lg-lightning" viewBox="0 0 16 16">
-    <path d="M9.22274 1.99296C9.22274 1.49561 8.56293 1.31233 8.30107 1.73667L4.07384 8.58696C3.87133 8.91513 4.10921 9.33717 4.49748 9.33717H6.77682L6.77682 14.0066C6.77682 14.504 7.43627 14.6879 7.69813 14.2635L11.9262 7.4118C12.1288 7.08363 11.8903 6.66244 11.5021 6.66244H9.22274V1.99296Z" fill="currentColor"/>
+  <!-- Zap (Embed) -->
+  <symbol id="lg-lightning" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/>
   </symbol>
-  <symbol id="lg-arrows" viewBox="0 0 16 16">
-    <path d="M5 8.57279V13.4272C5 13.9565 4.39241 14.2015 4.0721 13.8014L2.12898 11.3742C1.95701 11.1594 1.95701 10.8406 2.12898 10.6258L4.0721 8.19856C4.39241 7.79846 5 8.04351 5 8.57279Z" fill="currentColor"/>
-    <path d="M5 10H12.5C12.7761 10 13 10.2239 13 10.5V11.5C13 11.7761 12.7761 12 12.5 12H5V10Z" fill="currentColor"/>
-    <path d="M11 7.42721V2.57279C11 2.04351 11.6076 1.79846 11.9279 2.19856L13.871 4.62577C14.043 4.84058 14.043 5.15942 13.871 5.37423L11.9279 7.80144C11.6076 8.20154 11 7.95649 11 7.42721Z" fill="currentColor"/>
-    <path d="M3 4.5C3 4.22386 3.22386 4 3.5 4H11V6H3.5C3.22386 6 3 5.77614 3 5.5V4.5Z" fill="currentColor"/>
+  <!-- Arrow Left Right (Compare) -->
+  <symbol id="lg-arrows" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M8 3 4 7l4 4"/><path d="M4 7h16"/><path d="m16 21 4-4-4-4"/><path d="M20 17H4"/>
   </symbol>
-  <symbol id="lg-search" viewBox="0 0 16 16">
-    <path fill-rule="evenodd" clip-rule="evenodd" d="M2.3234 9.81874C4.07618 11.5715 6.75062 11.8398 8.78588 10.6244L12.93 14.7685C13.4377 15.2762 14.2608 15.2762 14.7685 14.7685C15.2762 14.2608 15.2762 13.4377 14.7685 12.93L10.6244 8.78588C11.8398 6.75062 11.5715 4.07619 9.81873 2.32341C7.74896 0.253628 4.39318 0.253628 2.3234 2.32341C0.253624 4.39319 0.253624 7.74896 2.3234 9.81874ZM7.98026 4.16188C9.03467 5.2163 9.03467 6.92585 7.98026 7.98026C6.92584 9.03468 5.2163 9.03468 4.16188 7.98026C3.10746 6.92585 3.10746 5.2163 4.16188 4.16188C5.2163 3.10747 6.92584 3.10747 7.98026 4.16188Z" fill="currentColor"/>
+  <!-- Search -->
+  <symbol id="lg-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
   </symbol>
-  <symbol id="lg-gauge" viewBox="0 0 16 16">
-    <path d="M1.041 10.2514C0.996713 10.6632 1.33666 11 1.75088 11H4.2449C4.65912 11 4.98569 10.6591 5.08798 10.2577C5.22027 9.73864 5.49013 9.25966 5.87533 8.87446C6.43906 8.31073 7.20364 7.99403 8.00088 7.99403C8.27011 7.99403 8.53562 8.03015 8.79093 8.0997L11.7818 5.10887C10.6623 4.39046 9.35172 4 8.00088 4C6.14436 4 4.36388 4.7375 3.05113 6.05025C1.91604 7.18534 1.21104 8.67012 1.041 10.2514Z" fill="currentColor"/>
-    <path d="M13.2967 6.42237L10.455 9.26409C10.6678 9.56493 10.8231 9.90191 10.9138 10.2577C11.0161 10.6591 11.3426 11 11.7568 11L14.2509 11C14.6651 11 15.005 10.6632 14.9608 10.2514C14.8087 8.83759 14.229 7.50093 13.2967 6.42237Z" fill="currentColor"/>
+  <!-- Gauge (Benchmark) -->
+  <symbol id="lg-gauge" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/>
   </symbol>
-  <symbol id="lg-bulb" viewBox="0 0 16 16">
-    <path d="M12.3311 8.5C12.7565 7.76457 13 6.91072 13 6C13 3.23858 10.7614 1 8 1C5.23858 1 3 3.23858 3 6C3 6.94628 3.26287 7.83117 3.71958 8.58561L5.40749 11.501C5.58628 11.8099 5.91607 12 6.27291 12H6.5V6C6.5 5.17157 7.17157 4.5 8 4.5C8.82843 4.5 9.5 5.17157 9.5 6V12H9.72368C10.0793 12 10.4082 11.8111 10.5874 11.5039L12.34 8.5H12.3311Z" fill="currentColor"/>
-    <path d="M7.5 6V12H8.5V6C8.5 5.72386 8.27614 5.5 8 5.5C7.72386 5.5 7.5 5.72386 7.5 6Z" fill="currentColor"/>
-    <path d="M10 14V13H6V14C6 14.5523 6.44772 15 7 15H9C9.55228 15 10 14.5523 10 14Z" fill="currentColor"/>
+  <!-- Lightbulb (Explore) -->
+  <symbol id="lg-bulb" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/>
   </symbol>
-  <symbol id="lg-info" viewBox="0 0 16 16">
-    <path fill-rule="evenodd" clip-rule="evenodd" d="M8 15C11.866 15 15 11.866 15 8C15 4.13401 11.866 1 8 1C4.13401 1 1 4.13401 1 8C1 11.866 4.13401 15 8 15ZM9 4C9 4.55228 8.55228 5 8 5C7.44772 5 7 4.55228 7 4C7 3.44772 7.44772 3 8 3C8.55228 3 9 3.44772 9 4ZM8 6C8.55228 6 9 6.44772 9 7V11H9.5C9.77614 11 10 11.2239 10 11.5C10 11.7761 9.77614 12 9.5 12H6.5C6.22386 12 6 11.7761 6 11.5C6 11.2239 6.22386 11 6.5 11H7V7H6.5C6.22386 7 6 6.77614 6 6.5C6 6.22386 6.22386 6 6.5 6H8Z" fill="currentColor"/>
+  <!-- Info (About) -->
+  <symbol id="lg-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>
   </symbol>
-  <symbol id="lg-image" viewBox="0 0 16 16">
-    <path fill-rule="evenodd" clip-rule="evenodd" d="M2 3C2 2.44772 2.44772 2 3 2H13C13.5523 2 14 2.44772 14 3V13C14 13.5523 13.5523 14 13 14H3C2.44772 14 2 13.5523 2 13V3ZM4 4V9.586L5.793 7.793C6.183 7.403 6.817 7.403 7.207 7.793L8.5 9.086L10.293 7.293C10.683 6.903 11.317 6.903 11.707 7.293L12 7.586V4H4ZM12 10.414L10.5 8.914L8.207 11.207C7.817 11.597 7.183 11.597 6.793 11.207L5.5 9.914L4 11.414V12H12V10.414ZM10 5.5C10 6.328 10.672 7 11.5 7C11.776 7 12 6.776 12 6.5V5C12 4.724 11.776 4.5 11.5 4.5H10.5C10.224 4.5 10 4.724 10 5V5.5Z" fill="currentColor"/>
+  <!-- Image (Multimodal) -->
+  <symbol id="lg-image" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
   </symbol>
-  <symbol id="lg-config" viewBox="0 0 16 16">
-    <path fill-rule="evenodd" clip-rule="evenodd" d="M6.5 1.5A.5.5 0 0 1 7 1h2a.5.5 0 0 1 .5.5v1.05a5 5 0 0 1 1.37.57l.74-.74a.5.5 0 0 1 .7 0l1.42 1.42a.5.5 0 0 1 0 .7l-.74.74c.25.43.44.89.57 1.37H14.5a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-.5.5h-1.05a5 5 0 0 1-.57 1.37l.74.74a.5.5 0 0 1 0 .7l-1.42 1.42a.5.5 0 0 1-.7 0l-.74-.74a5 5 0 0 1-1.37.57V14.5a.5.5 0 0 1-.5.5H7a.5.5 0 0 1-.5-.5v-1.05a5 5 0 0 1-1.37-.57l-.74.74a.5.5 0 0 1-.7 0L2.27 12.2a.5.5 0 0 1 0-.7l.74-.74a5 5 0 0 1-.57-1.37H1.5A.5.5 0 0 1 1 9V7a.5.5 0 0 1 .5-.5h1.05c.13-.48.32-.94.57-1.37l-.74-.74a.5.5 0 0 1 0-.7L3.8 2.27a.5.5 0 0 1 .7 0l.74.74A5 5 0 0 1 6.6 2.44V1.5zM8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z" fill="currentColor"/>
+  <!-- Settings (Config) -->
+  <symbol id="lg-config" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>
   </symbol>
-  <symbol id="lg-code" viewBox="0 0 16 16">
-    <path fill="currentColor" d="M5.854 4.146a.5.5 0 0 1 0 .708L2.707 8l3.147 3.146a.5.5 0 0 1-.708.708l-3.5-3.5a.5.5 0 0 1 0-.708l3.5-3.5a.5.5 0 0 1 .708 0zm4.292 0a.5.5 0 0 0 0 .708L13.293 8l-3.147 3.146a.5.5 0 0 0 .708.708l3.5-3.5a.5.5 0 0 0 0-.708l-3.5-3.5a.5.5 0 0 0-.708 0z"/>
+  <!-- Code (Generate) -->
+  <symbol id="lg-code" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
   </symbol>
-  <symbol id="lg-palette" viewBox="0 0 16 16">
-    <path fill-rule="evenodd" clip-rule="evenodd" d="M8 1C4.13401 1 1 4.13401 1 8C1 11.866 4.13401 15 8 15C8.55228 15 9 14.5523 9 14V12.5C9 11.6716 9.67157 11 10.5 11H12C13.6569 11 15 9.65685 15 8C15 4.13401 11.866 1 8 1ZM4.5 9C5.32843 9 6 8.32843 6 7.5C6 6.67157 5.32843 6 4.5 6C3.67157 6 3 6.67157 3 7.5C3 8.32843 3.67157 9 4.5 9ZM7 5.5C7 6.32843 6.32843 7 5.5 7C4.67157 7 4 6.32843 4 5.5C4 4.67157 4.67157 4 5.5 4C6.32843 4 7 4.67157 7 5.5ZM9.5 6C10.3284 6 11 5.32843 11 4.5C11 3.67157 10.3284 3 9.5 3C8.67157 3 8 3.67157 8 4.5C8 5.32843 8.67157 6 9.5 6ZM13 7.5C13 8.32843 12.3284 9 11.5 9C10.6716 9 10 8.32843 10 7.5C10 6.67157 10.6716 6 11.5 6C12.3284 6 13 6.67157 13 7.5Z" fill="currentColor"/>
+  <!-- Palette (Theme) -->
+  <symbol id="lg-palette" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/>
   </symbol>
-  <symbol id="lg-cube" viewBox="0 0 16 16">
-    <path fill-rule="evenodd" clip-rule="evenodd" d="M8.35 1.18a.75.75 0 0 0-.7 0l-6 3.25A.75.75 0 0 0 1.25 5v6a.75.75 0 0 0 .4.66l6 3.25a.75.75 0 0 0 .7 0l6-3.25a.75.75 0 0 0 .4-.66V5a.75.75 0 0 0-.4-.66l-6-3.16zM8 3.2 3.47 5.65 8 7.82l4.53-2.17L8 3.2zM2.75 6.8v3.82L7.25 12.8V8.97L2.75 6.8zm5.5 6 4.5-2.18V6.8L8.25 8.97V12.8z" fill="currentColor"/>
+  <!-- Box (Cube) -->
+  <symbol id="lg-cube" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>
   </symbol>
-  <symbol id="lg-chat" viewBox="0 0 16 16">
-    <path d="M2 2h12v9H5l-3 3V2z" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <!-- Message Square (Chat) -->
+  <symbol id="lg-chat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
   </symbol>
-  <symbol id="lg-shield" viewBox="0 0 16 16">
-    <path fill-rule="evenodd" clip-rule="evenodd" d="M8.35 1.18a.75.75 0 0 0-.7 0l-5 2.7A.75.75 0 0 0 2.25 4.5V8c0 2.9 2.1 5.5 5.5 6.95a.75.75 0 0 0 .5 0C11.65 13.5 13.75 10.9 13.75 8V4.5a.75.75 0 0 0-.4-.62l-5-2.7zM8 3.2 3.75 5.5V8c0 2.2 1.6 4.2 4.25 5.45C10.65 12.2 12.25 10.2 12.25 8V5.5L8 3.2z" fill="currentColor"/>
+  <!-- Shield -->
+  <symbol id="lg-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 .5-.87l7-4a1 1 0 0 1 1 0l7 4A1 1 0 0 1 20 6z"/>
   </symbol>
-  <symbol id="lg-pulse" viewBox="0 0 16 16">
-    <path d="M1 8h3l2-5 2 10 2-5h5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Activity (Pulse) -->
+  <symbol id="lg-pulse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36-3.18-19.64A2 2 0 0 0 10.12 1h-.24a2 2 0 0 0-1.94 1.55L5.18 12H2"/>
   </symbol>
 </svg>
 
@@ -3614,7 +3622,7 @@ select:focus { outline: none; border-color: var(--accent); }
   <div class="sidebar-drag-region">
     <img class="sidebar-logo" id="sidebarLogo" src="/icons/dark/64.png" alt="Vai">
     <span class="sidebar-title">Vai</span>
-    <button class="sidebar-settings-btn" data-tab="settings" title="Settings"><svg width="16" height="16" viewBox="0 0 16 16"><use href="#lg-config"/></svg></button>
+    <button class="sidebar-settings-btn" data-tab="settings" title="Settings"><svg width="16" height="16" viewBox="0 0 24 24"><use href="#lg-config"/></svg></button>
   </div>
   <nav class="sidebar-nav">
     <div class="sidebar-nav-group" role="tablist" aria-label="Tools">
@@ -3624,8 +3632,8 @@ select:focus { outline: none; border-color: var(--accent); }
       <button class="tab-btn" data-tab="search" role="tab" aria-selected="false" aria-controls="tab-search" id="tab-btn-search"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-search"/></svg></span><span>Search</span></button>
       <button class="tab-btn" data-tab="multimodal" role="tab" aria-selected="false" aria-controls="tab-multimodal" id="tab-btn-multimodal"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-image"/></svg></span><span>Multimodal</span></button>
       <button class="tab-btn" data-tab="generate" role="tab" aria-selected="false" aria-controls="tab-generate" id="tab-btn-generate"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-code"/></svg></span><span>Generate</span></button>
-      <button class="tab-btn" data-tab="chat" role="tab" aria-selected="false" aria-controls="tab-chat" id="tab-btn-chat"><span class="tab-btn-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16"><path d="M2 2h12v9H5l-3 3V2z" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></span><span>Chat</span></button>
-      <button class="tab-btn" data-tab="workflows" role="tab" aria-selected="false" aria-controls="tab-workflows" id="tab-btn-workflows"><span class="tab-btn-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16"><circle cx="3" cy="8" r="2" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="13" cy="4" r="2" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="13" cy="12" r="2" fill="none" stroke="currentColor" stroke-width="1.3"/><line x1="5" y1="7" x2="11" y2="4.5" stroke="currentColor" stroke-width="1.3"/><line x1="5" y1="9" x2="11" y2="11.5" stroke="currentColor" stroke-width="1.3"/></svg></span><span>Workflows</span></button>
+      <button class="tab-btn" data-tab="chat" role="tab" aria-selected="false" aria-controls="tab-chat" id="tab-btn-chat"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-chat"/></svg></span><span>Chat</span></button>
+      <button class="tab-btn" data-tab="workflows" role="tab" aria-selected="false" aria-controls="tab-workflows" id="tab-btn-workflows"><span class="tab-btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="3"/><circle cx="19" cy="6" r="3"/><circle cx="19" cy="18" r="3"/><line x1="7.7" y1="10.7" x2="16.3" y2="7.3"/><line x1="7.7" y1="13.3" x2="16.3" y2="16.7"/></svg></span><span>Workflows</span></button>
     </div>
     <div class="sidebar-nav-divider"></div>
     <div class="sidebar-nav-group" role="tablist" aria-label="Learn">
@@ -4461,7 +4469,7 @@ Reranking models rescore initial search results to improve relevance ordering.</
         <span id="chatStatusDb">No database</span>
       </div>
       <button class="chat-config-toggle" id="chatOpenSettings" onclick="openChatSettings()" title="Configure in Settings">
-        <svg width="14" height="14" viewBox="0 0 16 16"><use href="#lg-config"/></svg>
+        <svg width="14" height="14" viewBox="0 0 24 24"><use href="#lg-config"/></svg>
         Configure
       </button>
     </div>
@@ -4685,11 +4693,11 @@ Reranking models rescore initial search results to improve relevance ordering.</
   <!-- Mode Toggle -->
   <div class="subtabs" role="tablist">
     <button class="subtab active" id="genModeCode" onclick="setGenerateMode('code')" role="tab" aria-selected="true">
-      <svg viewBox="0 0 16 16"><path fill="currentColor" d="M5.854 4.854a.5.5 0 1 0-.708-.708l-3.5 3.5a.5.5 0 0 0 0 .708l3.5 3.5a.5.5 0 0 0 .708-.708L2.707 8l3.147-3.146zm4.292 0a.5.5 0 0 1 .708-.708l3.5 3.5a.5.5 0 0 1 0 .708l-3.5 3.5a.5.5 0 0 1-.708-.708L13.293 8l-3.147-3.146z"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
       Generate Code
     </button>
     <button class="subtab" id="genModeScaffold" onclick="setGenerateMode('scaffold')" role="tab" aria-selected="false">
-      <svg viewBox="0 0 16 16"><path fill="currentColor" d="M14.5 3a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h13zm-13-1A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 2h-13z"/><path fill="currentColor" d="M5 8a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7A.5.5 0 0 1 5 8zm0-2.5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm0 5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm-1-5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zM4 8a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm0 2.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0z"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 13h4"/><path d="M10 17h4"/><path d="M10 9h1"/></svg>
       Scaffold Project
     </button>
   </div>
@@ -4888,31 +4896,31 @@ Reranking models rescore initial search results to improve relevance ordering.</
     <nav class="settings-nav">
       <div class="settings-nav-header">Settings</div>
       <button class="settings-nav-item active" data-settings-section="general">
-        <svg width="16" height="16" viewBox="0 0 16 16"><use href="#lg-config"/></svg>
+        <svg width="16" height="16" viewBox="0 0 24 24"><use href="#lg-config"/></svg>
         <span>General</span>
       </button>
       <button class="settings-nav-item" data-settings-section="appearance">
-        <svg width="16" height="16" viewBox="0 0 16 16"><use href="#lg-palette"/></svg>
+        <svg width="16" height="16" viewBox="0 0 24 24"><use href="#lg-palette"/></svg>
         <span>Appearance</span>
       </button>
       <button class="settings-nav-item" data-settings-section="models">
-        <svg width="16" height="16" viewBox="0 0 16 16"><use href="#lg-cube"/></svg>
+        <svg width="16" height="16" viewBox="0 0 24 24"><use href="#lg-cube"/></svg>
         <span>Models</span>
       </button>
       <button class="settings-nav-item" data-settings-section="chat">
-        <svg width="16" height="16" viewBox="0 0 16 16"><use href="#lg-chat"/></svg>
+        <svg width="16" height="16" viewBox="0 0 24 24"><use href="#lg-chat"/></svg>
         <span>Chat</span>
       </button>
       <button class="settings-nav-item" data-settings-section="benchmark">
-        <svg width="16" height="16" viewBox="0 0 16 16"><use href="#lg-gauge"/></svg>
+        <svg width="16" height="16" viewBox="0 0 24 24"><use href="#lg-gauge"/></svg>
         <span>Benchmark</span>
       </button>
       <button class="settings-nav-item" data-settings-section="privacy">
-        <svg width="16" height="16" viewBox="0 0 16 16"><use href="#lg-shield"/></svg>
+        <svg width="16" height="16" viewBox="0 0 24 24"><use href="#lg-shield"/></svg>
         <span>Data &amp; Privacy</span>
       </button>
       <button class="settings-nav-item" data-settings-section="health">
-        <svg width="16" height="16" viewBox="0 0 16 16"><use href="#lg-pulse"/></svg>
+        <svg width="16" height="16" viewBox="0 0 24 24"><use href="#lg-pulse"/></svg>
         <span>Health Check</span>
       </button>
     </nav>
