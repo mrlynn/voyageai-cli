@@ -6,16 +6,22 @@
  * Dimensions: {{dimensions}}
  */
 
-const VOYAGE_API_URL = process.env.VOYAGE_API_URL || 'https://api.voyageai.com/v1';
-const VOYAGE_API_KEY = process.env.VOYAGE_API_KEY;
+function getApiUrl() {
+  return process.env.VOYAGE_API_URL || 'https://api.voyageai.com/v1';
+}
+
+function getApiKey() {
+  const key = process.env.VOYAGE_API_KEY;
+  if (!key) throw new Error('VOYAGE_API_KEY environment variable is required');
+  return key;
+}
 
 /**
  * Generate embeddings for text(s) using Voyage AI.
  */
 export async function embed(input, options = {}) {
-  if (!VOYAGE_API_KEY) {
-    throw new Error('VOYAGE_API_KEY environment variable is required');
-  }
+  const VOYAGE_API_URL = getApiUrl();
+  const VOYAGE_API_KEY = getApiKey();
 
   const texts = Array.isArray(input) ? input : [input];
   
@@ -66,9 +72,8 @@ export async function embedDocuments(documents, options = {}) {
  * Rerank documents by relevance to a query.
  */
 export async function rerank(query, documents, options = {}) {
-  if (!VOYAGE_API_KEY) {
-    throw new Error('VOYAGE_API_KEY environment variable is required');
-  }
+  const VOYAGE_API_URL = getApiUrl();
+  const VOYAGE_API_KEY = getApiKey();
 
   const response = await fetch(`${VOYAGE_API_URL}/rerank`, {
     method: 'POST',

@@ -1,0 +1,46 @@
+{
+  "$schema": "https://vai.dev/schemas/workflow-v1.json",
+  "name": "Research and Summarize",
+  "description": "Search knowledge base, then use LLM to produce a structured summary",
+  "version": "1.0.0",
+  "inputs": {
+    "question": {
+      "type": "string",
+      "description": "The research question to answer",
+      "required": true
+    },
+    "limit": {
+      "type": "number",
+      "description": "Maximum documents to retrieve",
+      "default": 10
+    }
+  },
+  "defaults": {},
+  "steps": [
+    {
+      "id": "research",
+      "name": "Search knowledge base",
+      "tool": "query",
+      "inputs": {
+        "query": "{{ inputs.question }}",
+        "limit": "{{ inputs.limit }}"
+      }
+    },
+    {
+      "id": "summarize",
+      "name": "Generate summary with LLM",
+      "tool": "generate",
+      "inputs": {
+        "prompt": "Based on the following documents, provide a structured summary answering: {{ inputs.question }}",
+        "context": "{{ research.output.results }}",
+        "systemPrompt": "You are a research analyst. Structure your response with: Key Findings, Supporting Evidence, and Gaps in Available Information. Cite sources when possible."
+      }
+    }
+  ],
+  "output": {
+    "summary": "{{ summarize.output.text }}",
+    "sources": "{{ research.output.results }}",
+    "sourceCount": "{{ research.output.resultCount }}",
+    "question": "{{ inputs.question }}"
+  }
+}

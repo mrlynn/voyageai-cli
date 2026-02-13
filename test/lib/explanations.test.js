@@ -35,6 +35,7 @@ describe('explanations', () => {
     'scaffolding',
     'eval-comparison',
     'chat',
+    'workflows',
   ];
 
   it('has all expected concepts', () => {

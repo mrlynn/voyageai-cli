@@ -1,0 +1,64 @@
+{
+  "$schema": "https://vai.dev/schemas/workflow-v1.json",
+  "name": "Consistency Check",
+  "description": "Compare content about the same topic across two collections using semantic similarity",
+  "version": "1.0.0",
+  "inputs": {
+    "topic": {
+      "type": "string",
+      "description": "The topic to check consistency for",
+      "required": true
+    },
+    "collection1": {
+      "type": "string",
+      "description": "First collection to search",
+      "required": true
+    },
+    "collection2": {
+      "type": "string",
+      "description": "Second collection to search",
+      "required": true
+    }
+  },
+  "defaults": {},
+  "steps": [
+    {
+      "id": "search_source_a",
+      "name": "Search first collection",
+      "tool": "query",
+      "inputs": {
+        "query": "{{ inputs.topic }}",
+        "collection": "{{ inputs.collection1 }}",
+        "limit": 5,
+        "rerank": false
+      }
+    },
+    {
+      "id": "search_source_b",
+      "name": "Search second collection",
+      "tool": "query",
+      "inputs": {
+        "query": "{{ inputs.topic }}",
+        "collection": "{{ inputs.collection2 }}",
+        "limit": 5,
+        "rerank": false
+      }
+    },
+    {
+      "id": "compare",
+      "name": "Compare top results from each source",
+      "tool": "similarity",
+      "inputs": {
+        "text1": "{{ search_source_a.output.results[0].text }}",
+        "text2": "{{ search_source_b.output.results[0].text }}"
+      },
+      "condition": "{{ search_source_a.output.results.length > 0 && search_source_b.output.results.length > 0 }}"
+    }
+  ],
+  "output": {
+    "similarity": "{{ compare.output.similarity }}",
+    "sourceA": "{{ search_source_a.output.results[0] }}",
+    "sourceB": "{{ search_source_b.output.results[0] }}",
+    "topic": "{{ inputs.topic }}"
+  }
+}

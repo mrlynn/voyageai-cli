@@ -9,7 +9,7 @@
  * - command name, version, platform, locale
  */
 
-const TELEMETRY_URL = 'https://vai.mlynn.org/api/telemetry';
+const TELEMETRY_URL = 'https://vaicli.com/api/telemetry';
 const TIMEOUT_MS = 3000;
 
 /**
