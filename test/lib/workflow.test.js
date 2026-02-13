@@ -396,7 +396,7 @@ describe('executeTransform', () => {
 describe('listBuiltinWorkflows', () => {
   it('returns 5 built-in templates', () => {
     const templates = listBuiltinWorkflows();
-    assert.equal(templates.length, 8);
+    assert.equal(templates.length, 9);
   });
 
   it('each template has name, description, file', () => {

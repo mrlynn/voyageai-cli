@@ -787,6 +787,138 @@ function executeChunk(inputs) {
   };
 }
 
+/**
+ * Execute an HTTP request step.
+ *
+ * @param {object} inputs - { url, method?, headers?, body?, timeout?, responseType?, followRedirects? }
+ * @returns {Promise<{ status: number, statusText: string, headers: object, body: any, durationMs: number }>}
+ */
+async function executeHttp(inputs) {
+  const { url, method = 'GET', headers = {}, body, timeout = 30000, responseType = 'json', followRedirects = false } = inputs;
+
+  if (!url || typeof url !== 'string') {
+    throw new Error('http: "url" input is required');
+  }
+
+  // URL allowlisting check
+  try {
+    const { loadProject } = require('./project');
+    const { config: proj } = loadProject();
+    if (proj && proj.allowedHosts && Array.isArray(proj.allowedHosts)) {
+      const parsed = new URL(url);
+      if (!proj.allowedHosts.includes(parsed.hostname)) {
+        throw new Error(`http: host "${parsed.hostname}" is not in allowedHosts. Allowed: ${proj.allowedHosts.join(', ')}`);
+      }
+    }
+  } catch (e) {
+    if (e.message.includes('allowedHosts')) throw e;
+    // If project config can't be loaded, allow all hosts
+  }
+
+  const startTime = Date.now();
+
+  // Build fetch options
+  const fetchOpts = {
+    method: method.toUpperCase(),
+    headers: { ...headers },
+    signal: AbortSignal.timeout(timeout),
+    redirect: followRedirects ? 'follow' : 'manual',
+  };
+
+  if (body && ['POST', 'PUT', 'PATCH'].includes(fetchOpts.method)) {
+    if (typeof body === 'object') {
+      fetchOpts.body = JSON.stringify(body);
+      if (!fetchOpts.headers['Content-Type'] && !fetchOpts.headers['content-type']) {
+        fetchOpts.headers['Content-Type'] = 'application/json';
+      }
+    } else {
+      fetchOpts.body = String(body);
+    }
+  }
+
+  const response = await fetch(url, fetchOpts);
+  const durationMs = Date.now() - startTime;
+
+  // Response size limit: 5MB
+  const MAX_RESPONSE_SIZE = 5 * 1024 * 1024;
+  const responseText = await response.text();
+  const truncated = responseText.length > MAX_RESPONSE_SIZE;
+  const rawBody = truncated ? responseText.slice(0, MAX_RESPONSE_SIZE) : responseText;
+
+  // Parse body
+  let parsedBody;
+  if (responseType === 'json') {
+    try {
+      parsedBody = JSON.parse(rawBody);
+    } catch {
+      parsedBody = rawBody; // Fall back to text
+    }
+  } else {
+    parsedBody = rawBody;
+  }
+
+  // Collect response headers
+  const respHeaders = {};
+  response.headers.forEach((value, key) => {
+    respHeaders[key] = value;
+  });
+
+  return {
+    status: response.status,
+    statusText: response.statusText,
+    headers: respHeaders,
+    body: parsedBody,
+    durationMs,
+    ...(truncated && { warning: 'Response truncated at 5MB' }),
+  };
+}
+
+/**
+ * Execute a MongoDB aggregation pipeline step.
+ *
+ * @param {object} inputs - { db?, collection?, pipeline, allowWrites? }
+ * @param {object} defaults - workflow defaults
+ * @returns {Promise<{ results: any[], count: number, durationMs: number }>}
+ */
+async function executeAggregate(inputs, defaults) {
+  const { getMongoCollection } = require('./mongo');
+  const { loadProject } = require('./project');
+  const { config: proj } = loadProject();
+
+  const db = inputs.db || defaults.db || proj.db;
+  const collection = inputs.collection || defaults.collection || proj.collection;
+  const pipeline = inputs.pipeline;
+  const allowWrites = inputs.allowWrites || false;
+
+  if (!db) throw new Error('aggregate: database not specified');
+  if (!collection) throw new Error('aggregate: collection not specified');
+  if (!Array.isArray(pipeline)) throw new Error('aggregate: "pipeline" must be an array');
+  if (pipeline.length > 20) throw new Error('aggregate: pipeline limited to 20 stages');
+
+  // Block write stages unless explicitly allowed
+  if (!allowWrites) {
+    for (const stage of pipeline) {
+      const stageKey = Object.keys(stage)[0];
+      if (stageKey === '$out' || stageKey === '$merge') {
+        throw new Error(`aggregate: "${stageKey}" stage is not allowed without allowWrites: true`);
+      }
+    }
+  }
+
+  const startTime = Date.now();
+  const { client, collection: col } = await getMongoCollection(db, collection);
+  try {
+    const results = await col.aggregate(pipeline).toArray();
+    return {
+      results,
+      count: results.length,
+      durationMs: Date.now() - startTime,
+    };
+  } finally {
+    await client.close();
+  }
+}
+
 // ════════════════════════════════════════════════════════════════════
 // VAI Tool Executors
 // ════════════════════════════════════════════════════════════════════
@@ -1179,6 +1311,10 @@ async function executeStep(step, resolvedInputs, defaults, context) {
       return executeLoop(resolvedInputs, defaults, context);
     case 'chunk':
       return executeChunk(resolvedInputs);
+    case 'http':
+      return executeHttp(resolvedInputs);
+    case 'aggregate':
+      return executeAggregate(resolvedInputs, defaults);
 
     // VAI tools
     case 'query':
@@ -1619,6 +1755,8 @@ module.exports = {
   executeTemplate,
   executeLoop,
   executeChunk,
+  executeHttp,
+  executeAggregate,
 
   // Main execution
   executeStep,
