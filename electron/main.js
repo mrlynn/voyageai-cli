@@ -132,6 +132,25 @@ function registerApiKeyHandlers() {
     autoUpdater.quitAndInstall(false, true);
   });
 
+  // ── File picker for image uploads (more reliable than <input type="file"> in Electron) ──
+  ipcMain.handle('dialog:open-image', async () => {
+    const result = await dialog.showOpenDialog(mainWindow, {
+      title: 'Select an image',
+      filters: [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'webp', 'gif'] }],
+      properties: ['openFile'],
+    });
+    if (result.canceled || result.filePaths.length === 0) return { canceled: true };
+    const filePath = result.filePaths[0];
+    const data = fs.readFileSync(filePath);
+    const ext = path.extname(filePath).toLowerCase().replace('.', '');
+    const mimeMap = { png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp', gif: 'image/gif' };
+    const mime = mimeMap[ext] || 'image/png';
+    const base64 = `data:${mime};base64,${data.toString('base64')}`;
+    const name = path.basename(filePath);
+    const size = data.length;
+    return { canceled: false, dataUrl: base64, name, size };
+  });
+
   // ── Generate & Scaffold handlers ──
   
   // Import codegen and scaffold structure from the CLI package
@@ -754,14 +773,32 @@ app.whenReady().then(async () => {
     }
   }
 
+  // Load stored LLM API key into env if not already set
+  if (!process.env.VAI_LLM_API_KEY) {
+    const llmKeyFile = path.join(app.getPath('userData'), '.llm-api-key');
+    if (fs.existsSync(llmKeyFile)) {
+      try {
+        if (safeStorage.isEncryptionAvailable()) {
+          const llmKey = safeStorage.decryptString(fs.readFileSync(llmKeyFile));
+          if (llmKey) process.env.VAI_LLM_API_KEY = llmKey;
+        }
+      } catch (err) {
+        console.error('[LLM API Key] Failed to decrypt:', err.message);
+      }
+    }
+  }
+
   // Also check ~/.vai/config.json (CLI config file) as fallback
-  if (!process.env.VOYAGE_API_KEY) {
+  if (!process.env.VOYAGE_API_KEY || !process.env.VAI_LLM_API_KEY) {
     try {
       const cliConfigPath = path.join(require('os').homedir(), '.vai', 'config.json');
       if (fs.existsSync(cliConfigPath)) {
         const cliConfig = JSON.parse(fs.readFileSync(cliConfigPath, 'utf8'));
-        if (cliConfig.apiKey) {
+        if (cliConfig.apiKey && !process.env.VOYAGE_API_KEY) {
           process.env.VOYAGE_API_KEY = cliConfig.apiKey;
+        }
+        if (cliConfig.llmApiKey && !process.env.VAI_LLM_API_KEY) {
+          process.env.VAI_LLM_API_KEY = cliConfig.llmApiKey;
         }
       }
     } catch { /* ignore */ }

@@ -6,8 +6,8 @@ const { loadProject } = require('./project');
 /**
  * LLM Provider Adapter
  *
- * Provider-agnostic LLM client with streaming support.
- * Uses native fetch — zero new dependencies.
+ * Provider-agnostic LLM client with streaming and tool-calling support.
+ * Uses native fetch, zero new dependencies.
  */
 
 // Provider default models
@@ -107,6 +107,8 @@ class AnthropicProvider {
     }
   }
 
+  get supportsTools() { return true; }
+
   async *chat(messages, options = {}) {
     const model = options.model || this.model;
     const maxTokens = options.maxTokens || 4096;
@@ -156,6 +158,112 @@ class AnthropicProvider {
     });
   }
 
+  /**
+   * Non-streaming tool-calling request.
+   * @param {Array} messages - Conversation messages
+   * @param {Array} tools - Tool definitions in Anthropic format
+   * @param {object} [options]
+   * @returns {Promise<{type: 'text'|'tool_calls', content?: string, calls?: Array, stopReason: string}>}
+   */
+  async chatWithTools(messages, tools, options = {}) {
+    const model = options.model || this.model;
+    const maxTokens = options.maxTokens || 4096;
+
+    const systemMsg = messages.find(m => m.role === 'system');
+    const nonSystemMsgs = messages.filter(m => m.role !== 'system');
+
+    const body = {
+      model,
+      max_tokens: maxTokens,
+      stream: false,
+      messages: nonSystemMsgs,
+      tools,
+    };
+    if (systemMsg) {
+      body.system = systemMsg.content;
+    }
+
+    const res = await fetch(`${this.baseUrl}/v1/messages`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': this.apiKey,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!res.ok) {
+      const errBody = await res.text();
+      throw new Error(`Anthropic API error (${res.status}): ${errBody}`);
+    }
+
+    const json = await res.json();
+    const stopReason = json.stop_reason || 'end_turn';
+
+    // Check for tool_use blocks
+    const toolBlocks = (json.content || []).filter(b => b.type === 'tool_use');
+    if (toolBlocks.length > 0) {
+      return {
+        type: 'tool_calls',
+        calls: toolBlocks.map(b => ({
+          id: b.id,
+          name: b.name,
+          arguments: b.input,
+        })),
+        stopReason,
+        _raw: json.content,
+      };
+    }
+
+    // Text response
+    const textBlocks = (json.content || []).filter(b => b.type === 'text');
+    return {
+      type: 'text',
+      content: textBlocks.map(b => b.text).join(''),
+      stopReason,
+    };
+  }
+
+  /**
+   * Format a tool-calling response as an assistant message.
+   * @param {object} response - Response from chatWithTools
+   * @returns {{role: string, content: Array}}
+   */
+  formatAssistantToolCall(response) {
+    if (response._raw) {
+      return { role: 'assistant', content: response._raw };
+    }
+    return {
+      role: 'assistant',
+      content: response.calls.map(c => ({
+        type: 'tool_use',
+        id: c.id,
+        name: c.name,
+        input: c.arguments,
+      })),
+    };
+  }
+
+  /**
+   * Format a tool result as a user message.
+   * @param {string} callId - Tool call ID
+   * @param {string} content - Stringified result
+   * @param {boolean} [isError=false]
+   * @returns {{role: string, content: Array}}
+   */
+  formatToolResult(callId, content, isError = false) {
+    return {
+      role: 'user',
+      content: [{
+        type: 'tool_result',
+        tool_use_id: callId,
+        content,
+        ...(isError && { is_error: true }),
+      }],
+    };
+  }
+
   async ping() {
     try {
       const res = await fetch(`${this.baseUrl}/v1/messages`, {
@@ -202,6 +310,8 @@ class OpenAIProvider {
     }
   }
 
+  get supportsTools() { return true; }
+
   async *chat(messages, options = {}) {
     const model = options.model || this.model;
     const maxTokens = options.maxTokens || 4096;
@@ -242,6 +352,103 @@ class OpenAIProvider {
     });
   }
 
+  /**
+   * Non-streaming tool-calling request (OpenAI format).
+   * @param {Array} messages - Conversation messages
+   * @param {Array} tools - Tool definitions in OpenAI format
+   * @param {object} [options]
+   * @returns {Promise<{type: 'text'|'tool_calls', content?: string, calls?: Array, stopReason: string}>}
+   */
+  async chatWithTools(messages, tools, options = {}) {
+    const model = options.model || this.model;
+    const maxTokens = options.maxTokens || 4096;
+
+    const body = {
+      model,
+      max_tokens: maxTokens,
+      stream: false,
+      messages,
+      tools,
+    };
+
+    const res = await fetch(`${this.baseUrl}/v1/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${this.apiKey}`,
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!res.ok) {
+      const errBody = await res.text();
+      throw new Error(`OpenAI API error (${res.status}): ${errBody}`);
+    }
+
+    const json = await res.json();
+    const choice = json.choices?.[0] || {};
+    const msg = choice.message || {};
+    const stopReason = choice.finish_reason || 'stop';
+
+    if (msg.tool_calls && msg.tool_calls.length > 0) {
+      return {
+        type: 'tool_calls',
+        calls: msg.tool_calls.map(tc => ({
+          id: tc.id,
+          name: tc.function.name,
+          arguments: typeof tc.function.arguments === 'string'
+            ? JSON.parse(tc.function.arguments)
+            : tc.function.arguments,
+        })),
+        stopReason,
+        _raw: msg,
+      };
+    }
+
+    return {
+      type: 'text',
+      content: msg.content || '',
+      stopReason,
+    };
+  }
+
+  /**
+   * Format a tool-calling response as an assistant message.
+   * @param {object} response - Response from chatWithTools
+   * @returns {{role: string, content: string|null, tool_calls: Array}}
+   */
+  formatAssistantToolCall(response) {
+    if (response._raw) {
+      return response._raw;
+    }
+    return {
+      role: 'assistant',
+      content: null,
+      tool_calls: response.calls.map(c => ({
+        id: c.id,
+        type: 'function',
+        function: {
+          name: c.name,
+          arguments: JSON.stringify(c.arguments),
+        },
+      })),
+    };
+  }
+
+  /**
+   * Format a tool result as a tool message.
+   * @param {string} callId - Tool call ID
+   * @param {string} content - Stringified result
+   * @returns {{role: string, tool_call_id: string, content: string}}
+   */
+  formatToolResult(callId, content) {
+    return {
+      role: 'tool',
+      tool_call_id: callId,
+      content,
+    };
+  }
+
   async ping() {
     try {
       const res = await fetch(`${this.baseUrl}/v1/models`, {
@@ -267,6 +474,8 @@ class OllamaProvider {
     this.model = config.model || PROVIDER_DEFAULTS.ollama;
     this.baseUrl = config.baseUrl || PROVIDER_BASE_URLS.ollama;
   }
+
+  get supportsTools() { return true; }
 
   async *chat(messages, options = {}) {
     const model = options.model || this.model;
@@ -301,6 +510,99 @@ class OllamaProvider {
       const content = data.choices?.[0]?.delta?.content;
       return content || null;
     });
+  }
+
+  /**
+   * Non-streaming tool-calling request (OpenAI-compatible format).
+   * @param {Array} messages - Conversation messages
+   * @param {Array} tools - Tool definitions in OpenAI format
+   * @param {object} [options]
+   * @returns {Promise<{type: 'text'|'tool_calls', content?: string, calls?: Array, stopReason: string}>}
+   */
+  async chatWithTools(messages, tools, options = {}) {
+    const model = options.model || this.model;
+
+    const body = {
+      model,
+      stream: false,
+      messages,
+      tools,
+    };
+
+    const res = await fetch(`${this.baseUrl}/v1/chat/completions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    if (!res.ok) {
+      const errBody = await res.text();
+      throw new Error(`Ollama API error (${res.status}): ${errBody}`);
+    }
+
+    const json = await res.json();
+    const choice = json.choices?.[0] || {};
+    const msg = choice.message || {};
+    const stopReason = choice.finish_reason || 'stop';
+
+    if (msg.tool_calls && msg.tool_calls.length > 0) {
+      return {
+        type: 'tool_calls',
+        calls: msg.tool_calls.map(tc => ({
+          id: tc.id || `call_${Date.now()}`,
+          name: tc.function.name,
+          arguments: typeof tc.function.arguments === 'string'
+            ? JSON.parse(tc.function.arguments)
+            : tc.function.arguments,
+        })),
+        stopReason,
+        _raw: msg,
+      };
+    }
+
+    return {
+      type: 'text',
+      content: msg.content || '',
+      stopReason,
+    };
+  }
+
+  /**
+   * Format a tool-calling response as an assistant message.
+   * (Same as OpenAI format since Ollama uses OpenAI-compatible API)
+   * @param {object} response - Response from chatWithTools
+   * @returns {{role: string, content: string|null, tool_calls: Array}}
+   */
+  formatAssistantToolCall(response) {
+    if (response._raw) {
+      return response._raw;
+    }
+    return {
+      role: 'assistant',
+      content: null,
+      tool_calls: response.calls.map(c => ({
+        id: c.id,
+        type: 'function',
+        function: {
+          name: c.name,
+          arguments: JSON.stringify(c.arguments),
+        },
+      })),
+    };
+  }
+
+  /**
+   * Format a tool result as a tool message.
+   * @param {string} callId - Tool call ID
+   * @param {string} content - Stringified result
+   * @returns {{role: string, tool_call_id: string, content: string}}
+   */
+  formatToolResult(callId, content) {
+    return {
+      role: 'tool',
+      tool_call_id: callId,
+      content,
+    };
   }
 
   async ping() {

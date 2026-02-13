@@ -49,6 +49,8 @@ contextBridge.exposeInMainWorld('vai', {
     delete: ()      => ipcRenderer.invoke('llm-key:delete'),
     exists: ()      => ipcRenderer.invoke('llm-key:exists'),
   },
+  // Native file dialog for image uploads (more reliable than <input type="file">)
+  openImageDialog: () => ipcRenderer.invoke('dialog:open-image'),
   // App info — returns { app, cli }
   getVersion: () => ipcRenderer.invoke('app:version'),
   isElectron: true,

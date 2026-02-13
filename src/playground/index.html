@@ -2334,6 +2334,108 @@ select:focus { outline: none; border-color: var(--accent); }
 .chat-sources summary { cursor: pointer; }
 .chat-sources ul { margin: 4px 0 0 16px; padding: 0; }
 .chat-sources li { margin: 2px 0; }
+/* Markdown rendering in assistant messages */
+.chat-message.assistant .chat-message-content.rendered {
+  white-space: normal;
+}
+.chat-message.assistant .chat-message-content.rendered p {
+  margin: 0 0 8px 0;
+}
+.chat-message.assistant .chat-message-content.rendered p:last-child {
+  margin-bottom: 0;
+}
+.chat-message.assistant .chat-message-content.rendered h1,
+.chat-message.assistant .chat-message-content.rendered h2,
+.chat-message.assistant .chat-message-content.rendered h3,
+.chat-message.assistant .chat-message-content.rendered h4 {
+  margin: 12px 0 6px 0;
+  font-weight: 600;
+  color: var(--accent-text, #fff);
+}
+.chat-message.assistant .chat-message-content.rendered h1 { font-size: 1.3em; }
+.chat-message.assistant .chat-message-content.rendered h2 { font-size: 1.15em; }
+.chat-message.assistant .chat-message-content.rendered h3 { font-size: 1.05em; }
+.chat-message.assistant .chat-message-content.rendered code {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 0.9em;
+  background: var(--bg-input, #112733);
+  padding: 2px 5px;
+  border-radius: 4px;
+}
+.chat-message.assistant .chat-message-content.rendered pre {
+  background: var(--bg-input, #112733);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  margin: 8px 0;
+  overflow-x: auto;
+  white-space: pre;
+}
+.chat-message.assistant .chat-message-content.rendered pre code {
+  background: none;
+  padding: 0;
+  border-radius: 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.chat-message.assistant .chat-message-content.rendered ul,
+.chat-message.assistant .chat-message-content.rendered ol {
+  margin: 6px 0;
+  padding-left: 20px;
+}
+.chat-message.assistant .chat-message-content.rendered li {
+  margin: 3px 0;
+}
+.chat-message.assistant .chat-message-content.rendered blockquote {
+  border-left: 3px solid var(--accent, #00D4AA);
+  margin: 8px 0;
+  padding: 4px 12px;
+  color: var(--text-muted);
+}
+.chat-message.assistant .chat-message-content.rendered a {
+  color: var(--accent, #00D4AA);
+  text-decoration: none;
+}
+.chat-message.assistant .chat-message-content.rendered a:hover {
+  text-decoration: underline;
+}
+.chat-message.assistant .chat-message-content.rendered table {
+  border-collapse: collapse;
+  margin: 8px 0;
+  font-size: 13px;
+  width: 100%;
+}
+.chat-message.assistant .chat-message-content.rendered th,
+.chat-message.assistant .chat-message-content.rendered td {
+  border: 1px solid var(--border);
+  padding: 6px 10px;
+  text-align: left;
+}
+.chat-message.assistant .chat-message-content.rendered th {
+  background: var(--bg-input, #112733);
+  font-weight: 600;
+}
+.chat-message.assistant .chat-message-content.rendered hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 12px 0;
+}
+
+.chat-tool-calls {
+  display: flex; flex-direction: column; gap: 4px;
+  margin-bottom: 4px; align-self: flex-start; max-width: 85%;
+}
+.chat-tool-call {
+  font-size: 12px; color: var(--text-muted);
+  padding: 6px 12px; border-radius: 8px;
+  background: var(--bg-card); border: 1px dashed var(--border);
+  display: flex; align-items: center; gap: 6px;
+}
+.chat-tool-call .tool-icon { opacity: 0.5; font-size: 11px; }
+.chat-tool-call .tool-name { font-weight: 600; }
+.chat-tool-call .tool-time { opacity: 0.5; }
+.chat-tool-call.error { border-color: #e74c3c; }
+.chat-tool-call .tool-error { color: #e74c3c; font-size: 11px; }
 .chat-input-area {
   padding: 12px 16px;
   border-top: 1px solid var(--border);
@@ -4046,6 +4148,39 @@ Reranking models rescore initial search results to improve relevance ordering.</
               </select>
             </div>
           </div>
+          <div class="settings-row" id="chatApiKeyRow" style="display:none">
+            <div class="settings-label">
+              <span class="settings-label-text">API Key</span>
+              <span class="settings-label-hint">Provider API key (stored securely in OS keychain)</span>
+            </div>
+            <div class="settings-control" style="display:flex;gap:8px;align-items:center">
+              <input
+                type="password"
+                class="settings-input"
+                id="chatApiKey"
+                placeholder="Enter your API key"
+                style="flex:1;font-family:monospace;font-size:13px"
+              >
+              <button
+                class="btn btn-secondary"
+                id="chatApiKeyToggle"
+                onclick="toggleChatApiKeyVisibility()"
+                title="Show/hide API key"
+                style="padding:8px 12px;min-width:auto"
+              >
+                👁️
+              </button>
+              <button
+                class="btn"
+                id="chatApiKeySave"
+                onclick="saveChatApiKey()"
+                title="Save API key"
+                style="padding:8px 12px;min-width:auto"
+              >
+                💾
+              </button>
+            </div>
+          </div>
         </div>
         <div class="settings-section">
           <div class="settings-section-title">Knowledge Base</div>
@@ -4083,6 +4218,18 @@ Reranking models rescore initial search results to improve relevance ordering.</
             </div>
             <div class="settings-control">
               <button class="settings-toggle active" id="chatRerank" type="button"></button>
+            </div>
+          </div>
+          <div class="settings-row">
+            <div class="settings-label">
+              <span class="settings-label-text">Chat Mode</span>
+              <span class="settings-label-hint">Pipeline: fixed RAG retrieval. Agent: LLM chooses which tools to call.</span>
+            </div>
+            <div class="settings-control">
+              <select class="settings-select" id="chatMode">
+                <option value="pipeline">Pipeline (fixed RAG)</option>
+                <option value="agent">Agent (tool-calling)</option>
+              </select>
             </div>
           </div>
         </div>
@@ -6497,6 +6644,8 @@ function initSettings() {
   }
   const chatModel = document.getElementById('chatModel');
   if (chatModel) chatModel.addEventListener('change', saveChatSettings);
+  const chatMode = document.getElementById('chatMode');
+  if (chatMode) chatMode.addEventListener('change', saveChatSettings);
   const chatMaxDocs = document.getElementById('chatMaxDocs');
   if (chatMaxDocs) chatMaxDocs.addEventListener('change', saveChatSettings);
 
@@ -6507,6 +6656,23 @@ function initSettings() {
   if (chatCollection) chatCollection.addEventListener('input', () => { updateChatStatus(); saveChatSettingsDebounced(); });
   const chatSystemPrompt = document.getElementById('chatSystemPrompt');
   if (chatSystemPrompt) chatSystemPrompt.addEventListener('input', saveChatSettingsDebounced);
+
+  // API key input listeners
+  const chatApiKey = document.getElementById('chatApiKey');
+  if (chatApiKey) {
+    // Mark as modified when user types
+    chatApiKey.addEventListener('input', () => {
+      delete chatApiKey.dataset.isMasked;
+      delete chatApiKey.dataset.actualKey;
+    });
+    // Save on Enter key
+    chatApiKey.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        saveChatApiKey();
+      }
+    });
+  }
 
   // Set up settings sub-navigation
   setupSettingsNav();
@@ -6881,10 +7047,29 @@ function initMultimodal() {
   const dropZone = document.getElementById('mmDropZone');
   const fileInput = document.getElementById('mmFileInput');
 
-  // Click to browse
-  dropZone.addEventListener('click', () => fileInput.click());
+  // Click to browse — in Electron, use native dialog (more reliable);
+  // in browser, use <input type="file"> with a re-trigger guard.
+  let fileDialogOpen = false;
+  dropZone.addEventListener('click', async () => {
+    if (fileDialogOpen) return;
+    fileDialogOpen = true;
+    try {
+      if (window.vai && window.vai.isElectron && window.vai.openImageDialog) {
+        const result = await window.vai.openImageDialog();
+        if (!result.canceled && result.dataUrl) {
+          handleMultimodalImageFromData(result.dataUrl, result.name, result.size);
+        }
+      } else {
+        fileInput.click();
+      }
+    } finally {
+      setTimeout(() => { fileDialogOpen = false; }, 300);
+    }
+  });
   fileInput.addEventListener('change', (e) => {
+    fileDialogOpen = false;
     if (e.target.files && e.target.files[0]) handleMultimodalImage(e.target.files[0]);
+    fileInput.value = '';
   });
 
   // Drag and drop
@@ -6934,6 +7119,23 @@ function initMultimodal() {
     }
     galleryInput.value = '';
   });
+}
+
+// Handle image from Electron native dialog (already has dataUrl)
+function handleMultimodalImageFromData(dataUrl, name, size) {
+  mmImageData = dataUrl;
+  const img = document.getElementById('mmPreviewImg');
+  img.src = mmImageData;
+  img.onload = () => {
+    const info = document.getElementById('mmFileInfo');
+    const sizeStr = size > 1024 * 1024
+      ? (size / (1024 * 1024)).toFixed(1) + ' MB'
+      : (size / 1024).toFixed(0) + ' KB';
+    info.textContent = `${name} · ${img.naturalWidth}×${img.naturalHeight} · ${sizeStr}`;
+  };
+  document.getElementById('mmDropZone').style.display = 'none';
+  document.getElementById('mmPreview').classList.add('visible');
+  hideError('mmError');
 }
 
 function handleMultimodalImage(file) {
@@ -7073,11 +7275,31 @@ function renderGalleryGrid() {
     const addSlot = document.createElement('div');
     addSlot.className = 'mm-gallery-slot';
     addSlot.innerHTML = '<span class="mm-slot-add">+</span>';
-    addSlot.addEventListener('click', () => {
-      document.getElementById('mmGalleryFileInput').click();
+    addSlot.addEventListener('click', async () => {
+      if (window._galleryDialogOpen) return;
+      window._galleryDialogOpen = true;
+      try {
+        if (window.vai && window.vai.isElectron && window.vai.openImageDialog) {
+          const result = await window.vai.openImageDialog();
+          if (!result.canceled && result.dataUrl) {
+            addGalleryImageFromData(result.dataUrl, result.name, result.size);
+          }
+        } else {
+          document.getElementById('mmGalleryFileInput').click();
+        }
+      } finally {
+        setTimeout(() => { window._galleryDialogOpen = false; }, 300);
+      }
     });
     grid.appendChild(addSlot);
   }
+}
+
+// Add gallery image from Electron native dialog (already has dataUrl)
+function addGalleryImageFromData(dataUrl, name, size) {
+  if (mmGalleryImages.length >= 6) return;
+  mmGalleryImages.push({ dataUrl, name, size });
+  renderGalleryGrid();
 }
 
 function addGalleryImage(file) {
@@ -7731,6 +7953,7 @@ function saveChatSettings() {
     maxDocs: parseInt(document.getElementById('chatMaxDocs').value) || 5,
     rerank: document.getElementById('chatRerank').classList.contains('active'),
     systemPrompt: document.getElementById('chatSystemPrompt').value.trim(),
+    mode: document.getElementById('chatMode').value,
   };
   fetch('/api/chat/config', {
     method: 'POST',
@@ -7779,6 +8002,7 @@ async function loadChatConfig() {
     if (data.chat?.maxContextDocs) document.getElementById('chatMaxDocs').value = data.chat.maxContextDocs;
     if (data.chat?.rerank === false) document.getElementById('chatRerank').classList.remove('active');
     if (data.chat?.systemPrompt) document.getElementById('chatSystemPrompt').value = data.chat.systemPrompt;
+    if (data.mode || data.chat?.mode) document.getElementById('chatMode').value = data.mode || data.chat?.mode || 'pipeline';
     updateChatStatus();
     // Show not-configured banner if incomplete
     const notConfigured = document.getElementById('chatNotConfigured');
@@ -7792,23 +8016,137 @@ async function loadChatConfig() {
   }
 }
 
+// ── Chat API Key Management ──
+
+async function loadChatApiKey() {
+  if (!window.vai?.llmKey) return;
+  const apiKeyInput = document.getElementById('chatApiKey');
+  if (!apiKeyInput) return;
+
+  try {
+    const key = await window.vai.llmKey.get();
+    if (key) {
+      // Mask the key by default (show first 4 + last 4)
+      const masked = key.slice(0, 4) + '•'.repeat(Math.max(0, key.length - 8)) + key.slice(-4);
+      apiKeyInput.value = masked;
+      apiKeyInput.dataset.actualKey = key;
+      apiKeyInput.dataset.isMasked = 'true';
+      apiKeyInput.type = 'password';
+    } else {
+      apiKeyInput.value = '';
+      delete apiKeyInput.dataset.actualKey;
+      delete apiKeyInput.dataset.isMasked;
+    }
+  } catch (err) {
+    console.error('Failed to load LLM API key:', err);
+  }
+}
+
+function toggleChatApiKeyVisibility() {
+  const apiKeyInput = document.getElementById('chatApiKey');
+  const toggleBtn = document.getElementById('chatApiKeyToggle');
+  if (!apiKeyInput || !toggleBtn) return;
+
+  if (apiKeyInput.dataset.isMasked === 'true' && apiKeyInput.dataset.actualKey) {
+    // Show actual key
+    apiKeyInput.value = apiKeyInput.dataset.actualKey;
+    apiKeyInput.type = 'text';
+    apiKeyInput.dataset.isMasked = 'false';
+    toggleBtn.textContent = '🙈';
+    toggleBtn.title = 'Hide API key';
+  } else if (apiKeyInput.dataset.actualKey) {
+    // Re-mask the key
+    const key = apiKeyInput.dataset.actualKey;
+    const masked = key.slice(0, 4) + '•'.repeat(Math.max(0, key.length - 8)) + key.slice(-4);
+    apiKeyInput.value = masked;
+    apiKeyInput.type = 'password';
+    apiKeyInput.dataset.isMasked = 'true';
+    toggleBtn.textContent = '👁️';
+    toggleBtn.title = 'Show API key';
+  } else {
+    // No stored key, just toggle between text/password for new input
+    apiKeyInput.type = apiKeyInput.type === 'password' ? 'text' : 'password';
+    toggleBtn.textContent = apiKeyInput.type === 'password' ? '👁️' : '🙈';
+    toggleBtn.title = apiKeyInput.type === 'password' ? 'Show API key' : 'Hide API key';
+  }
+}
+
+async function saveChatApiKey() {
+  if (!window.vai?.llmKey) return;
+  const apiKeyInput = document.getElementById('chatApiKey');
+  const toggleBtn = document.getElementById('chatApiKeyToggle');
+  if (!apiKeyInput) return;
+
+  let key = apiKeyInput.value.trim();
+
+  // If showing masked value and it hasn't been modified, no need to save
+  if (apiKeyInput.dataset.isMasked === 'true' && apiKeyInput.dataset.actualKey) {
+    const currentMasked = apiKeyInput.dataset.actualKey.slice(0, 4) + '•'.repeat(Math.max(0, apiKeyInput.dataset.actualKey.length - 8)) + apiKeyInput.dataset.actualKey.slice(-4);
+    if (key === currentMasked) {
+      flashSaved();
+      return;
+    }
+  }
+
+  if (!key) {
+    // Delete the key if empty
+    try {
+      await window.vai.llmKey.delete();
+      delete apiKeyInput.dataset.actualKey;
+      delete apiKeyInput.dataset.isMasked;
+      flashSaved();
+    } catch (err) {
+      console.error('Failed to delete LLM API key:', err);
+      alert('Failed to delete API key: ' + err.message);
+    }
+    return;
+  }
+
+  try {
+    await window.vai.llmKey.set(key);
+    // Mask the newly saved key
+    const masked = key.slice(0, 4) + '•'.repeat(Math.max(0, key.length - 8)) + key.slice(-4);
+    apiKeyInput.value = masked;
+    apiKeyInput.dataset.actualKey = key;
+    apiKeyInput.dataset.isMasked = 'true';
+    apiKeyInput.type = 'password';
+    toggleBtn.textContent = '👁️';
+    toggleBtn.title = 'Show API key';
+    flashSaved();
+  } catch (err) {
+    console.error('Failed to save LLM API key:', err);
+    alert('Failed to save API key: ' + err.message);
+  }
+}
+
 function updateChatStatus() {
   const provider = document.getElementById('chatProvider');
   const db = document.getElementById('chatDb').value;
   const collection = document.getElementById('chatCollection').value;
+  const mode = document.getElementById('chatMode')?.value || 'pipeline';
   const providerLabel = provider.value
     ? provider.options[provider.selectedIndex].text
     : 'No provider';
-  document.getElementById('chatStatusProvider').textContent = providerLabel;
+  const modeLabel = mode === 'agent' ? 'Agent' : 'Pipeline';
+  document.getElementById('chatStatusProvider').textContent = `${providerLabel} (${modeLabel})`;
   document.getElementById('chatStatusDb').textContent =
-    (db && collection) ? `${db}.${collection}` : 'No database';
+    (db && collection) ? `${db}.${collection}` : (mode === 'agent' ? 'Agent discovers' : 'No database');
 }
 
 async function chatProviderChanged() {
   updateChatStatus();
   const provider = document.getElementById('chatProvider').value;
   const modelSelect = document.getElementById('chatModel');
-  
+  const apiKeyRow = document.getElementById('chatApiKeyRow');
+
+  // Show/hide API key row based on provider (not needed for Ollama)
+  if (apiKeyRow) {
+    apiKeyRow.style.display = (provider === 'anthropic' || provider === 'openai') ? 'flex' : 'none';
+    if (provider === 'anthropic' || provider === 'openai') {
+      await loadChatApiKey();
+    }
+  }
+
   if (!provider) {
     modelSelect.innerHTML = '<option value="">Select provider first</option>';
     return;
@@ -7886,6 +8224,123 @@ function chatInputKeydown(e) {
   }
 }
 
+/**
+ * Lightweight markdown-to-HTML renderer for assistant chat messages.
+ * Handles: fenced code blocks, inline code, headings, bold, italic,
+ * links, images, unordered/ordered lists, blockquotes, tables, and <hr>.
+ * No external dependencies.
+ */
+function renderMarkdown(md) {
+  // Escape HTML to prevent XSS, then selectively render markdown
+  function esc(s) {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  // Extract fenced code blocks first (preserve content as-is)
+  const codeBlocks = [];
+  let text = md.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => {
+    const idx = codeBlocks.length;
+    codeBlocks.push(`<pre><code${lang ? ' data-lang="' + esc(lang) + '"' : ''}>${esc(code.replace(/\n$/, ''))}</code></pre>`);
+    return '\x00CB' + idx + '\x00';
+  });
+
+  // Escape remaining HTML
+  text = esc(text);
+
+  // Restore code block placeholders
+  text = text.replace(/\x00CB(\d+)\x00/g, (_, i) => codeBlocks[i]);
+
+  // Inline code (must come after escape but before other inline formatting)
+  text = text.replace(/`([^`\n]+)`/g, '<code>$1</code>');
+
+  // Headings (must be at line start)
+  text = text.replace(/^#### (.+)$/gm, '<h4>$1</h4>');
+  text = text.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+  text = text.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+  text = text.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+
+  // Horizontal rule
+  text = text.replace(/^---+$/gm, '<hr>');
+
+  // Bold and italic
+  text = text.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
+  text = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  text = text.replace(/\*(.+?)\*/g, '<em>$1</em>');
+
+  // Links and images
+  text = text.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img alt="$1" src="$2" style="max-width:100%;border-radius:4px;">');
+  text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+
+  // Tables (pipe-delimited)
+  text = text.replace(/((?:^\|.+\|$\n?)+)/gm, (block) => {
+    const rows = block.trim().split('\n').filter(r => r.trim());
+    if (rows.length < 2) return block;
+    // Check if second row is separator
+    const sep = rows[1];
+    if (!/^\|[\s:-]+\|$/.test(sep.trim().replace(/\|/g, '|'))) return block;
+    const headerCells = rows[0].split('|').filter(c => c.trim() !== '').map(c => c.trim());
+    let html = '<table><thead><tr>' + headerCells.map(c => '<th>' + c + '</th>').join('') + '</tr></thead><tbody>';
+    for (let i = 2; i < rows.length; i++) {
+      const cells = rows[i].split('|').filter(c => c.trim() !== '').map(c => c.trim());
+      html += '<tr>' + cells.map(c => '<td>' + c + '</td>').join('') + '</tr>';
+    }
+    html += '</tbody></table>';
+    return html;
+  });
+
+  // Blockquotes
+  text = text.replace(/^&gt; (.+)$/gm, '<blockquote>$1</blockquote>');
+  // Merge adjacent blockquotes
+  text = text.replace(/<\/blockquote>\n<blockquote>/g, '\n');
+
+  // Unordered lists (lines starting with - or *)
+  text = text.replace(/((?:^[\s]*[-*] .+$\n?)+)/gm, (block) => {
+    const items = block.trim().split('\n').map(line => {
+      const content = line.replace(/^[\s]*[-*] /, '');
+      return '<li>' + content + '</li>';
+    });
+    return '<ul>' + items.join('') + '</ul>';
+  });
+
+  // Ordered lists (lines starting with number.)
+  text = text.replace(/((?:^[\s]*\d+\. .+$\n?)+)/gm, (block) => {
+    const items = block.trim().split('\n').map(line => {
+      const content = line.replace(/^[\s]*\d+\. /, '');
+      return '<li>' + content + '</li>';
+    });
+    return '<ol>' + items.join('') + '</ol>';
+  });
+
+  // Paragraphs: wrap remaining text lines that aren't already wrapped in block elements
+  const blockTags = ['<h1', '<h2', '<h3', '<h4', '<hr', '<pre', '<ul', '<ol', '<table', '<blockquote'];
+  const lines = text.split('\n');
+  const result = [];
+  let paraLines = [];
+
+  function flushPara() {
+    if (paraLines.length > 0) {
+      const content = paraLines.join('\n').trim();
+      if (content) result.push('<p>' + content + '</p>');
+      paraLines = [];
+    }
+  }
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (trimmed === '') {
+      flushPara();
+    } else if (blockTags.some(tag => trimmed.startsWith(tag))) {
+      flushPara();
+      result.push(line);
+    } else {
+      paraLines.push(line);
+    }
+  }
+  flushPara();
+
+  return result.join('\n');
+}
+
 function addChatMessage(role, content, sources) {
   const container = document.getElementById('chatMessages');
   const div = document.createElement('div');
@@ -7929,12 +8384,14 @@ async function sendChatMessage() {
   const maxDocs = parseInt(document.getElementById('chatMaxDocs').value) || 5;
   const rerank = document.getElementById('chatRerank').classList.contains('active');
   const systemPrompt = document.getElementById('chatSystemPrompt').value.trim() || undefined;
+  const mode = document.getElementById('chatMode')?.value || 'pipeline';
+  const isAgent = mode === 'agent';
 
   if (!provider) {
     addChatMessage('system-msg', 'Please select an LLM provider in <a href="#" onclick="openChatSettings();return false;">Chat Settings</a>.');
     return;
   }
-  if (!db || !collection) {
+  if (!isAgent && (!db || !collection)) {
     addChatMessage('system-msg', 'Please configure a database and collection in <a href="#" onclick="openChatSettings();return false;">Chat Settings</a>.');
     return;
   }
@@ -7947,7 +8404,7 @@ async function sendChatMessage() {
   // Show typing indicator
   const typing = document.createElement('div');
   typing.className = 'chat-typing';
-  typing.textContent = 'Thinking';
+  typing.textContent = isAgent ? 'Agent working' : 'Thinking';
   document.getElementById('chatMessages').appendChild(typing);
 
   // Disable input
@@ -7959,7 +8416,7 @@ async function sendChatMessage() {
     const res = await fetch('/api/chat/message', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query, db, collection, provider, model, maxDocs, rerank, systemPrompt }),
+      body: JSON.stringify({ query, db, collection, provider, model, maxDocs, rerank, systemPrompt, mode }),
     });
 
     if (!res.ok) {
@@ -7976,6 +8433,7 @@ async function sendChatMessage() {
     let assistantDiv = null;
     let fullText = '';
     let sources = [];
+    let toolCallsDiv = null;
 
     while (true) {
       const { done, value } = await reader.read();
@@ -7998,6 +8456,37 @@ async function sendChatMessage() {
             typing.textContent = `Retrieved ${data.docs?.length || 0} docs (${data.timeMs}ms)`;
           }
 
+          if (currentEvent === 'tool_call') {
+            if (!toolCallsDiv) {
+              toolCallsDiv = document.createElement('div');
+              toolCallsDiv.className = 'chat-tool-calls';
+              document.getElementById('chatMessages').appendChild(toolCallsDiv);
+            }
+            const tc = document.createElement('div');
+            tc.className = 'chat-tool-call' + (data.error ? ' error' : '');
+            const icon = document.createElement('span');
+            icon.className = 'tool-icon';
+            icon.textContent = '\u2699';
+            tc.appendChild(icon);
+            const nameSpan = document.createElement('span');
+            nameSpan.className = 'tool-name';
+            nameSpan.textContent = data.name;
+            tc.appendChild(nameSpan);
+            const timeSpan = document.createElement('span');
+            timeSpan.className = 'tool-time';
+            timeSpan.textContent = (data.timeMs || 0) + 'ms';
+            tc.appendChild(timeSpan);
+            if (data.error) {
+              const errSpan = document.createElement('span');
+              errSpan.className = 'tool-error';
+              errSpan.textContent = data.error;
+              tc.appendChild(errSpan);
+            }
+            toolCallsDiv.appendChild(tc);
+            typing.textContent = 'Calling ' + data.name + '...';
+            document.getElementById('chatMessages').scrollTop = document.getElementById('chatMessages').scrollHeight;
+          }
+
           if (currentEvent === 'chunk') {
             if (!assistantDiv) {
               typing.remove();
@@ -8009,6 +8498,12 @@ async function sendChatMessage() {
           }
 
           if (currentEvent === 'done') {
+            // Render accumulated text as markdown for assistant messages
+            if (assistantDiv && fullText) {
+              const contentEl = assistantDiv.querySelector('.chat-message-content');
+              contentEl.innerHTML = renderMarkdown(fullText);
+              contentEl.classList.add('rendered');
+            }
             sources = data.sources || [];
             if (sources.length > 0 && assistantDiv) {
               const details = document.createElement('details');
@@ -8074,6 +8569,9 @@ window.switchSettingsSection = switchSettingsSection;
 window.updateChatStatus = updateChatStatus;
 window.chatInputKeydown = chatInputKeydown;
 window.chatProviderChanged = chatProviderChanged;
+window.loadChatApiKey = loadChatApiKey;
+window.toggleChatApiKeyVisibility = toggleChatApiKeyVisibility;
+window.saveChatApiKey = saveChatApiKey;
 
 // ── Start ──
 init();

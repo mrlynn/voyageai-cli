@@ -277,6 +277,7 @@ function createPlaygroundServer() {
           db: proj.db || null,
           collection: proj.collection || null,
           chat: proj.chat || {},
+          mode: proj.chat?.mode || 'pipeline',
         }));
         return;
       }
@@ -364,6 +365,7 @@ function createPlaygroundServer() {
         if (parsed.maxDocs !== undefined) proj.chat.maxContextDocs = parsed.maxDocs;
         if (parsed.rerank !== undefined) proj.chat.rerank = parsed.rerank;
         if (parsed.systemPrompt !== undefined) proj.chat.systemPrompt = parsed.systemPrompt;
+        if (parsed.mode !== undefined) proj.chat.mode = parsed.mode;
 
         try {
           saveProject(proj, filePath || undefined);
@@ -401,20 +403,23 @@ function createPlaygroundServer() {
 
         // API: Chat message (streaming SSE)
         if (req.url === '/api/chat/message') {
-          const { query, db, collection, provider, model, maxDocs, rerank, systemPrompt } = parsed;
+          const { query, db, collection, provider, model, maxDocs, rerank, systemPrompt, mode } = parsed;
+          const isAgent = mode === 'agent';
+
           if (!query) {
             res.writeHead(400, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ error: 'query is required' }));
             return;
           }
-          if (!db || !collection) {
+          // Pipeline mode requires db + collection; agent mode they're optional
+          if (!isAgent && (!db || !collection)) {
             res.writeHead(400, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ error: 'db and collection are required' }));
+            res.end(JSON.stringify({ error: 'db and collection are required for pipeline mode' }));
             return;
           }
 
           const { createLLMProvider } = require('../lib/llm');
-          const { chatTurn } = require('../lib/chat');
+          const { chatTurn, agentChatTurn } = require('../lib/chat');
           const { ChatHistory } = require('../lib/history');
 
           let llm;
@@ -447,21 +452,39 @@ function createPlaygroundServer() {
           });
 
           try {
-            for await (const event of chatTurn({
-              query, db, collection, llm, history,
-              opts: {
-                maxDocs: maxDocs || 5,
-                rerank: rerank !== false,
-                stream: true,
-                systemPrompt,
-              },
-            })) {
-              if (event.type === 'retrieval') {
-                res.write(`event: retrieval\ndata: ${JSON.stringify(event.data)}\n\n`);
-              } else if (event.type === 'chunk') {
-                res.write(`event: chunk\ndata: ${JSON.stringify({ text: event.data })}\n\n`);
-              } else if (event.type === 'done') {
-                res.write(`event: done\ndata: ${JSON.stringify(event.data)}\n\n`);
+            if (isAgent) {
+              // Agent mode: LLM decides which tools to call
+              for await (const event of agentChatTurn({
+                query, llm, history,
+                opts: { systemPrompt, db: db || undefined, collection: collection || undefined },
+              })) {
+                if (event.type === 'tool_call') {
+                  const { name, args, timeMs, error } = event.data;
+                  res.write(`event: tool_call\ndata: ${JSON.stringify({ name, args, timeMs, error })}\n\n`);
+                } else if (event.type === 'chunk') {
+                  res.write(`event: chunk\ndata: ${JSON.stringify({ text: event.data })}\n\n`);
+                } else if (event.type === 'done') {
+                  res.write(`event: done\ndata: ${JSON.stringify(event.data)}\n\n`);
+                }
+              }
+            } else {
+              // Pipeline mode: fixed RAG retrieval
+              for await (const event of chatTurn({
+                query, db, collection, llm, history,
+                opts: {
+                  maxDocs: maxDocs || 5,
+                  rerank: rerank !== false,
+                  stream: true,
+                  systemPrompt,
+                },
+              })) {
+                if (event.type === 'retrieval') {
+                  res.write(`event: retrieval\ndata: ${JSON.stringify(event.data)}\n\n`);
+                } else if (event.type === 'chunk') {
+                  res.write(`event: chunk\ndata: ${JSON.stringify({ text: event.data })}\n\n`);
+                } else if (event.type === 'done') {
+                  res.write(`event: done\ndata: ${JSON.stringify(event.data)}\n\n`);
+                }
               }
             }
           } catch (err) {
