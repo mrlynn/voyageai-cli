@@ -29,7 +29,12 @@
       "Bash(export:*)",
       "Bash([ -s \"$NVM_DIR/nvm.sh\" ])",
       "Bash(. \"$NVM_DIR/nvm.sh\")",
-      "Bash(/opt/homebrew/bin/node --test:*)"
+      "Bash(/opt/homebrew/bin/node --test:*)",
+      "Bash(PATH=\"/opt/homebrew/bin:/usr/local/bin:/bin:/usr/bin:$PATH\" git push:*)",
+      "Bash(PATH=\"/opt/homebrew/bin:/usr/local/bin:/bin:/usr/bin:$PATH\" gh pr create:*)",
+      "Bash(git branch:*)",
+      "Bash(git remote:*)",
+      "Bash(PATH=\"/opt/homebrew/bin:/usr/local/bin:/bin:/usr/bin:$PATH\" gh pr list:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

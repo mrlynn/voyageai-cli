@@ -11,5 +11,6 @@ VoyageAI-CLI-Assessment-Report.*
 CLAUDE.md
 VaiSite-Marketing-Assessment.md
 .claude/
+.claude/*
 .mcp.json
 /docs/*

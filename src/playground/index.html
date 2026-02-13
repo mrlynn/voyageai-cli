@@ -3196,7 +3196,7 @@ select:focus { outline: none; border-color: var(--accent); }
 }
 .wf-output-expand-btn:hover { color: var(--text); border-color: var(--text-muted); }
 #wf-canvas {
-  width: 100%; height: 100%; display: block;
+  width: 100%; height: 100%; display: block; position: relative; z-index: 1;
 }
 /* SVG node styles */
 .wf-node { cursor: pointer; }
@@ -3406,8 +3406,17 @@ select:focus { outline: none; border-color: var(--accent); }
   position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
   text-align: center; color: var(--text-muted); pointer-events: none;
 }
-.wf-canvas-empty-icon { font-size: 48px; margin-bottom: 12px; opacity: 0.5; }
+.wf-canvas-empty-icon { margin-bottom: 16px; opacity: 0.15; }
+.wf-canvas-empty-icon img { width: 200px; height: 200px; filter: invert(1); }
+[data-theme="light"] .wf-canvas-empty-icon img { filter: none; opacity: 0.1; }
 .wf-canvas-empty-text { font-size: 14px; }
+/* Persistent watermark behind workflows */
+.wf-canvas-watermark {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  pointer-events: none; z-index: 0; opacity: 0.04;
+}
+.wf-canvas-watermark img { width: 300px; height: 300px; filter: invert(1); }
+[data-theme="light"] .wf-canvas-watermark img { filter: none; }
 </style>
 </head>
 <body>
@@ -4377,9 +4386,10 @@ Reranking models rescore initial search results to improve relevance ordering.</
         <span class="wf-exec-status-time" id="wfExecStatusTime"></span>
       </div>
       <div class="wf-canvas-empty" id="wfCanvasEmpty">
-        <div class="wf-canvas-empty-icon">&#9881;</div>
+        <div class="wf-canvas-empty-icon"><img src="/icons/watermark.png" alt="Vai"></div>
         <div class="wf-canvas-empty-text">Select a workflow from the library</div>
       </div>
+      <div class="wf-canvas-watermark" id="wfCanvasWatermark"><img src="/icons/watermark.png" alt=""></div>
       <svg id="wf-canvas" xmlns="http://www.w3.org/2000/svg"></svg>
     </div>
     <div class="wf-inspector collapsed" id="wfInspector">
