@@ -992,8 +992,9 @@ select:focus { outline: none; border-color: var(--accent); }
 }
 
 .explore-card-icon {
-  font-size: 28px;
   margin-bottom: 8px;
+  color: var(--accent, #00D4AA);
+  opacity: 0.85;
 }
 .explore-card-title {
   font-size: 16px;
@@ -1056,7 +1057,7 @@ select:focus { outline: none; border-color: var(--accent); }
   padding: 24px 28px 16px;
   border-bottom: 1px solid var(--border);
 }
-.explore-modal-icon { font-size: 32px; }
+.explore-modal-icon { color: var(--accent, #00D4AA); }
 .explore-modal-title {
   font-size: 18px;
   font-weight: 600;
@@ -3124,7 +3125,7 @@ select:focus { outline: none; border-color: var(--accent); }
 }
 .wf-palette-item:hover { background: var(--bg-card); }
 .wf-palette-item:active { cursor: grabbing; }
-.wf-palette-icon { font-size: 14px; width: 20px; text-align: center; }
+.wf-palette-icon { width: 20px; text-align: center; display: flex; align-items: center; justify-content: center; }
 .wf-palette-label { font-weight: 500; }
 /* Builder port styles */
 .wf-port-builder { cursor: crosshair; transition: r 0.15s; pointer-events: all !important; }
@@ -3186,7 +3187,7 @@ select:focus { outline: none; border-color: var(--accent); }
   background: var(--bg-card); border: 1px solid var(--border);
   display: flex; align-items: center; gap: 10px; font-size: 12px;
 }
-.wf-dryrun-step-icon { font-size: 16px; flex-shrink: 0; }
+.wf-dryrun-step-icon { flex-shrink: 0; display: flex; align-items: center; }
 .wf-dryrun-step-info { flex: 1; min-width: 0; }
 .wf-dryrun-step-name { font-weight: 600; color: var(--text); }
 .wf-dryrun-step-tool { color: var(--text-muted); font-size: 11px; }
@@ -3343,8 +3344,8 @@ select:focus { outline: none; border-color: var(--accent); }
   pointer-events: none; text-anchor: middle; dominant-baseline: central;
 }
 .wf-node-icon {
-  font-size: 16px; pointer-events: none;
-  text-anchor: middle; dominant-baseline: central;
+  pointer-events: none;
+  color: #fff;
 }
 .wf-node-badge {
   font-size: 10px; fill: rgba(255,255,255,0.7);
@@ -3506,7 +3507,7 @@ select:focus { outline: none; border-color: var(--accent); }
 }
 /* Workflow visualizer light mode */
 [data-theme="light"] .wf-node-label { fill: #001E2B; }
-[data-theme="light"] .wf-node-icon { fill: #001E2B; }
+[data-theme="light"] .wf-node-icon { color: #001E2B; }
 [data-theme="light"] .wf-node-badge { fill: rgba(0,30,43,0.55); }
 [data-theme="light"] .wf-node-time { fill: rgba(0,30,43,0.5); }
 [data-theme="light"] .wf-node-condition { fill: #944F01; }
@@ -3555,55 +3556,63 @@ select:focus { outline: none; border-color: var(--accent); }
 </head>
 <body>
 
-<!-- LeafyGreen Icon Sprites (mongodb.design) -->
+<!-- Lucide Icons (lucide.dev) — stroke-based, 16×16 -->
 <svg xmlns="http://www.w3.org/2000/svg" style="display:none;">
-  <symbol id="lg-lightning" viewBox="0 0 16 16">
-    <path d="M9.22274 1.99296C9.22274 1.49561 8.56293 1.31233 8.30107 1.73667L4.07384 8.58696C3.87133 8.91513 4.10921 9.33717 4.49748 9.33717H6.77682L6.77682 14.0066C6.77682 14.504 7.43627 14.6879 7.69813 14.2635L11.9262 7.4118C12.1288 7.08363 11.8903 6.66244 11.5021 6.66244H9.22274V1.99296Z" fill="currentColor"/>
+  <!-- Zap (Embed) -->
+  <symbol id="lg-lightning" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/>
   </symbol>
-  <symbol id="lg-arrows" viewBox="0 0 16 16">
-    <path d="M5 8.57279V13.4272C5 13.9565 4.39241 14.2015 4.0721 13.8014L2.12898 11.3742C1.95701 11.1594 1.95701 10.8406 2.12898 10.6258L4.0721 8.19856C4.39241 7.79846 5 8.04351 5 8.57279Z" fill="currentColor"/>
-    <path d="M5 10H12.5C12.7761 10 13 10.2239 13 10.5V11.5C13 11.7761 12.7761 12 12.5 12H5V10Z" fill="currentColor"/>
-    <path d="M11 7.42721V2.57279C11 2.04351 11.6076 1.79846 11.9279 2.19856L13.871 4.62577C14.043 4.84058 14.043 5.15942 13.871 5.37423L11.9279 7.80144C11.6076 8.20154 11 7.95649 11 7.42721Z" fill="currentColor"/>
-    <path d="M3 4.5C3 4.22386 3.22386 4 3.5 4H11V6H3.5C3.22386 6 3 5.77614 3 5.5V4.5Z" fill="currentColor"/>
+  <!-- Arrow Left Right (Compare) -->
+  <symbol id="lg-arrows" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M8 3 4 7l4 4"/><path d="M4 7h16"/><path d="m16 21 4-4-4-4"/><path d="M20 17H4"/>
   </symbol>
-  <symbol id="lg-search" viewBox="0 0 16 16">
-    <path fill-rule="evenodd" clip-rule="evenodd" d="M2.3234 9.81874C4.07618 11.5715 6.75062 11.8398 8.78588 10.6244L12.93 14.7685C13.4377 15.2762 14.2608 15.2762 14.7685 14.7685C15.2762 14.2608 15.2762 13.4377 14.7685 12.93L10.6244 8.78588C11.8398 6.75062 11.5715 4.07619 9.81873 2.32341C7.74896 0.253628 4.39318 0.253628 2.3234 2.32341C0.253624 4.39319 0.253624 7.74896 2.3234 9.81874ZM7.98026 4.16188C9.03467 5.2163 9.03467 6.92585 7.98026 7.98026C6.92584 9.03468 5.2163 9.03468 4.16188 7.98026C3.10746 6.92585 3.10746 5.2163 4.16188 4.16188C5.2163 3.10747 6.92584 3.10747 7.98026 4.16188Z" fill="currentColor"/>
+  <!-- Search -->
+  <symbol id="lg-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
   </symbol>
-  <symbol id="lg-gauge" viewBox="0 0 16 16">
-    <path d="M1.041 10.2514C0.996713 10.6632 1.33666 11 1.75088 11H4.2449C4.65912 11 4.98569 10.6591 5.08798 10.2577C5.22027 9.73864 5.49013 9.25966 5.87533 8.87446C6.43906 8.31073 7.20364 7.99403 8.00088 7.99403C8.27011 7.99403 8.53562 8.03015 8.79093 8.0997L11.7818 5.10887C10.6623 4.39046 9.35172 4 8.00088 4C6.14436 4 4.36388 4.7375 3.05113 6.05025C1.91604 7.18534 1.21104 8.67012 1.041 10.2514Z" fill="currentColor"/>
-    <path d="M13.2967 6.42237L10.455 9.26409C10.6678 9.56493 10.8231 9.90191 10.9138 10.2577C11.0161 10.6591 11.3426 11 11.7568 11L14.2509 11C14.6651 11 15.005 10.6632 14.9608 10.2514C14.8087 8.83759 14.229 7.50093 13.2967 6.42237Z" fill="currentColor"/>
+  <!-- Gauge (Benchmark) -->
+  <symbol id="lg-gauge" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/>
   </symbol>
-  <symbol id="lg-bulb" viewBox="0 0 16 16">
-    <path d="M12.3311 8.5C12.7565 7.76457 13 6.91072 13 6C13 3.23858 10.7614 1 8 1C5.23858 1 3 3.23858 3 6C3 6.94628 3.26287 7.83117 3.71958 8.58561L5.40749 11.501C5.58628 11.8099 5.91607 12 6.27291 12H6.5V6C6.5 5.17157 7.17157 4.5 8 4.5C8.82843 4.5 9.5 5.17157 9.5 6V12H9.72368C10.0793 12 10.4082 11.8111 10.5874 11.5039L12.34 8.5H12.3311Z" fill="currentColor"/>
-    <path d="M7.5 6V12H8.5V6C8.5 5.72386 8.27614 5.5 8 5.5C7.72386 5.5 7.5 5.72386 7.5 6Z" fill="currentColor"/>
-    <path d="M10 14V13H6V14C6 14.5523 6.44772 15 7 15H9C9.55228 15 10 14.5523 10 14Z" fill="currentColor"/>
+  <!-- Lightbulb (Explore) -->
+  <symbol id="lg-bulb" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/>
   </symbol>
-  <symbol id="lg-info" viewBox="0 0 16 16">
-    <path fill-rule="evenodd" clip-rule="evenodd" d="M8 15C11.866 15 15 11.866 15 8C15 4.13401 11.866 1 8 1C4.13401 1 1 4.13401 1 8C1 11.866 4.13401 15 8 15ZM9 4C9 4.55228 8.55228 5 8 5C7.44772 5 7 4.55228 7 4C7 3.44772 7.44772 3 8 3C8.55228 3 9 3.44772 9 4ZM8 6C8.55228 6 9 6.44772 9 7V11H9.5C9.77614 11 10 11.2239 10 11.5C10 11.7761 9.77614 12 9.5 12H6.5C6.22386 12 6 11.7761 6 11.5C6 11.2239 6.22386 11 6.5 11H7V7H6.5C6.22386 7 6 6.77614 6 6.5C6 6.22386 6.22386 6 6.5 6H8Z" fill="currentColor"/>
+  <!-- Info (About) -->
+  <symbol id="lg-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>
   </symbol>
-  <symbol id="lg-image" viewBox="0 0 16 16">
-    <path fill-rule="evenodd" clip-rule="evenodd" d="M2 3C2 2.44772 2.44772 2 3 2H13C13.5523 2 14 2.44772 14 3V13C14 13.5523 13.5523 14 13 14H3C2.44772 14 2 13.5523 2 13V3ZM4 4V9.586L5.793 7.793C6.183 7.403 6.817 7.403 7.207 7.793L8.5 9.086L10.293 7.293C10.683 6.903 11.317 6.903 11.707 7.293L12 7.586V4H4ZM12 10.414L10.5 8.914L8.207 11.207C7.817 11.597 7.183 11.597 6.793 11.207L5.5 9.914L4 11.414V12H12V10.414ZM10 5.5C10 6.328 10.672 7 11.5 7C11.776 7 12 6.776 12 6.5V5C12 4.724 11.776 4.5 11.5 4.5H10.5C10.224 4.5 10 4.724 10 5V5.5Z" fill="currentColor"/>
+  <!-- Image (Multimodal) -->
+  <symbol id="lg-image" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
   </symbol>
-  <symbol id="lg-config" viewBox="0 0 16 16">
-    <path fill-rule="evenodd" clip-rule="evenodd" d="M6.5 1.5A.5.5 0 0 1 7 1h2a.5.5 0 0 1 .5.5v1.05a5 5 0 0 1 1.37.57l.74-.74a.5.5 0 0 1 .7 0l1.42 1.42a.5.5 0 0 1 0 .7l-.74.74c.25.43.44.89.57 1.37H14.5a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-.5.5h-1.05a5 5 0 0 1-.57 1.37l.74.74a.5.5 0 0 1 0 .7l-1.42 1.42a.5.5 0 0 1-.7 0l-.74-.74a5 5 0 0 1-1.37.57V14.5a.5.5 0 0 1-.5.5H7a.5.5 0 0 1-.5-.5v-1.05a5 5 0 0 1-1.37-.57l-.74.74a.5.5 0 0 1-.7 0L2.27 12.2a.5.5 0 0 1 0-.7l.74-.74a5 5 0 0 1-.57-1.37H1.5A.5.5 0 0 1 1 9V7a.5.5 0 0 1 .5-.5h1.05c.13-.48.32-.94.57-1.37l-.74-.74a.5.5 0 0 1 0-.7L3.8 2.27a.5.5 0 0 1 .7 0l.74.74A5 5 0 0 1 6.6 2.44V1.5zM8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z" fill="currentColor"/>
+  <!-- Settings (Config) -->
+  <symbol id="lg-config" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>
   </symbol>
-  <symbol id="lg-code" viewBox="0 0 16 16">
-    <path fill="currentColor" d="M5.854 4.146a.5.5 0 0 1 0 .708L2.707 8l3.147 3.146a.5.5 0 0 1-.708.708l-3.5-3.5a.5.5 0 0 1 0-.708l3.5-3.5a.5.5 0 0 1 .708 0zm4.292 0a.5.5 0 0 0 0 .708L13.293 8l-3.147 3.146a.5.5 0 0 0 .708.708l3.5-3.5a.5.5 0 0 0 0-.708l-3.5-3.5a.5.5 0 0 0-.708 0z"/>
+  <!-- Code (Generate) -->
+  <symbol id="lg-code" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
   </symbol>
-  <symbol id="lg-palette" viewBox="0 0 16 16">
-    <path fill-rule="evenodd" clip-rule="evenodd" d="M8 1C4.13401 1 1 4.13401 1 8C1 11.866 4.13401 15 8 15C8.55228 15 9 14.5523 9 14V12.5C9 11.6716 9.67157 11 10.5 11H12C13.6569 11 15 9.65685 15 8C15 4.13401 11.866 1 8 1ZM4.5 9C5.32843 9 6 8.32843 6 7.5C6 6.67157 5.32843 6 4.5 6C3.67157 6 3 6.67157 3 7.5C3 8.32843 3.67157 9 4.5 9ZM7 5.5C7 6.32843 6.32843 7 5.5 7C4.67157 7 4 6.32843 4 5.5C4 4.67157 4.67157 4 5.5 4C6.32843 4 7 4.67157 7 5.5ZM9.5 6C10.3284 6 11 5.32843 11 4.5C11 3.67157 10.3284 3 9.5 3C8.67157 3 8 3.67157 8 4.5C8 5.32843 8.67157 6 9.5 6ZM13 7.5C13 8.32843 12.3284 9 11.5 9C10.6716 9 10 8.32843 10 7.5C10 6.67157 10.6716 6 11.5 6C12.3284 6 13 6.67157 13 7.5Z" fill="currentColor"/>
+  <!-- Palette (Theme) -->
+  <symbol id="lg-palette" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/>
   </symbol>
-  <symbol id="lg-cube" viewBox="0 0 16 16">
-    <path fill-rule="evenodd" clip-rule="evenodd" d="M8.35 1.18a.75.75 0 0 0-.7 0l-6 3.25A.75.75 0 0 0 1.25 5v6a.75.75 0 0 0 .4.66l6 3.25a.75.75 0 0 0 .7 0l6-3.25a.75.75 0 0 0 .4-.66V5a.75.75 0 0 0-.4-.66l-6-3.16zM8 3.2 3.47 5.65 8 7.82l4.53-2.17L8 3.2zM2.75 6.8v3.82L7.25 12.8V8.97L2.75 6.8zm5.5 6 4.5-2.18V6.8L8.25 8.97V12.8z" fill="currentColor"/>
+  <!-- Box (Cube) -->
+  <symbol id="lg-cube" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>
   </symbol>
-  <symbol id="lg-chat" viewBox="0 0 16 16">
-    <path d="M2 2h12v9H5l-3 3V2z" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <!-- Message Square (Chat) -->
+  <symbol id="lg-chat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
   </symbol>
-  <symbol id="lg-shield" viewBox="0 0 16 16">
-    <path fill-rule="evenodd" clip-rule="evenodd" d="M8.35 1.18a.75.75 0 0 0-.7 0l-5 2.7A.75.75 0 0 0 2.25 4.5V8c0 2.9 2.1 5.5 5.5 6.95a.75.75 0 0 0 .5 0C11.65 13.5 13.75 10.9 13.75 8V4.5a.75.75 0 0 0-.4-.62l-5-2.7zM8 3.2 3.75 5.5V8c0 2.2 1.6 4.2 4.25 5.45C10.65 12.2 12.25 10.2 12.25 8V5.5L8 3.2z" fill="currentColor"/>
+  <!-- Shield -->
+  <symbol id="lg-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 .5-.87l7-4a1 1 0 0 1 1 0l7 4A1 1 0 0 1 20 6z"/>
   </symbol>
-  <symbol id="lg-pulse" viewBox="0 0 16 16">
-    <path d="M1 8h3l2-5 2 10 2-5h5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Activity (Pulse) -->
+  <symbol id="lg-pulse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36-3.18-19.64A2 2 0 0 0 10.12 1h-.24a2 2 0 0 0-1.94 1.55L5.18 12H2"/>
   </symbol>
 </svg>
 
@@ -3614,7 +3623,7 @@ select:focus { outline: none; border-color: var(--accent); }
   <div class="sidebar-drag-region">
     <img class="sidebar-logo" id="sidebarLogo" src="/icons/dark/64.png" alt="Vai">
     <span class="sidebar-title">Vai</span>
-    <button class="sidebar-settings-btn" data-tab="settings" title="Settings"><svg width="16" height="16" viewBox="0 0 16 16"><use href="#lg-config"/></svg></button>
+    <button class="sidebar-settings-btn" data-tab="settings" title="Settings"><svg width="16" height="16" viewBox="0 0 24 24"><use href="#lg-config"/></svg></button>
   </div>
   <nav class="sidebar-nav">
     <div class="sidebar-nav-group" role="tablist" aria-label="Tools">
@@ -3624,8 +3633,8 @@ select:focus { outline: none; border-color: var(--accent); }
       <button class="tab-btn" data-tab="search" role="tab" aria-selected="false" aria-controls="tab-search" id="tab-btn-search"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-search"/></svg></span><span>Search</span></button>
       <button class="tab-btn" data-tab="multimodal" role="tab" aria-selected="false" aria-controls="tab-multimodal" id="tab-btn-multimodal"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-image"/></svg></span><span>Multimodal</span></button>
       <button class="tab-btn" data-tab="generate" role="tab" aria-selected="false" aria-controls="tab-generate" id="tab-btn-generate"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-code"/></svg></span><span>Generate</span></button>
-      <button class="tab-btn" data-tab="chat" role="tab" aria-selected="false" aria-controls="tab-chat" id="tab-btn-chat"><span class="tab-btn-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16"><path d="M2 2h12v9H5l-3 3V2z" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></span><span>Chat</span></button>
-      <button class="tab-btn" data-tab="workflows" role="tab" aria-selected="false" aria-controls="tab-workflows" id="tab-btn-workflows"><span class="tab-btn-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16"><circle cx="3" cy="8" r="2" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="13" cy="4" r="2" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="13" cy="12" r="2" fill="none" stroke="currentColor" stroke-width="1.3"/><line x1="5" y1="7" x2="11" y2="4.5" stroke="currentColor" stroke-width="1.3"/><line x1="5" y1="9" x2="11" y2="11.5" stroke="currentColor" stroke-width="1.3"/></svg></span><span>Workflows</span></button>
+      <button class="tab-btn" data-tab="chat" role="tab" aria-selected="false" aria-controls="tab-chat" id="tab-btn-chat"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-chat"/></svg></span><span>Chat</span></button>
+      <button class="tab-btn" data-tab="workflows" role="tab" aria-selected="false" aria-controls="tab-workflows" id="tab-btn-workflows"><span class="tab-btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="3"/><circle cx="19" cy="6" r="3"/><circle cx="19" cy="18" r="3"/><line x1="7.7" y1="10.7" x2="16.3" y2="7.3"/><line x1="7.7" y1="13.3" x2="16.3" y2="16.7"/></svg></span><span>Workflows</span></button>
     </div>
     <div class="sidebar-nav-divider"></div>
     <div class="sidebar-nav-group" role="tablist" aria-label="Learn">
@@ -3724,7 +3733,7 @@ select:focus { outline: none; border-color: var(--accent); }
         <option value="ubinary">ubinary (32× smaller)</option>
       </select>
     </div>
-    <button class="btn" id="embedBtn" onclick="doEmbed()">⚡ Embed</button>
+    <button class="btn" id="embedBtn" onclick="doEmbed()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>Embed</button>
   </div>
 
   <div class="error-msg" id="embedError"></div>
@@ -3735,7 +3744,7 @@ select:focus { outline: none; border-color: var(--accent); }
       <div id="embedStats"></div>
       <div class="vector-preview" id="embedVector"></div>
       <div style="margin-top:8px;">
-        <button class="btn btn-secondary btn-small" onclick="copyVector()">📋 Copy Full Vector</button>
+        <button class="btn btn-secondary btn-small" onclick="copyVector()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:3px;"><path d="M9 9V6a3 3 0 0 1 3-3h6a3 3 0 0 1 3 3v6a3 3 0 0 1-3 3h-3M3 15a3 3 0 0 1 3-3h6a3 3 0 0 1 3 3v6a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3z"/></svg>Copy Full Vector</button>
       </div>
       <div class="card-title" style="margin-top:16px;">Vector Heatmap</div>
       <div class="heatmap" id="embedHeatmap"></div>
@@ -3777,7 +3786,7 @@ select:focus { outline: none; border-color: var(--accent); }
         <option value="2048">2048</option>
       </select>
     </div>
-    <button class="btn" id="compareBtn" onclick="doCompare()">⚖️ Compare</button>
+    <button class="btn" id="compareBtn" onclick="doCompare()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M8 3 4 7l4 4M4 7h16M16 21l4-4-4-4M20 17H4"/></svg>Compare</button>
   </div>
 
   <div class="error-msg" id="compareError"></div>
@@ -3839,8 +3848,8 @@ Semantic search understands meaning beyond keyword matching</textarea>
         <option value="10">10</option>
       </select>
     </div>
-    <button class="btn" id="searchBtn" onclick="doSearch(false)">🔍 Search</button>
-    <button class="btn btn-secondary" id="searchRerankBtn" onclick="doSearch(true)">🔍+ Rerank</button>
+    <button class="btn" id="searchBtn" onclick="doSearch(false)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M21 21l-4.3-4.3M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16z"/></svg>Search</button>
+    <button class="btn btn-secondary" id="searchRerankBtn" onclick="doSearch(true)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M3 6h18M7 12h10M10 18h4"/></svg>Rerank</button>
   </div>
 
   <div class="error-msg" id="searchError"></div>
@@ -3899,7 +3908,7 @@ Semantic search understands meaning beyond keyword matching</textarea>
         <option value="2048">2048</option>
       </select>
     </div>
-    <button class="btn" id="mmCompareBtn" onclick="doMultimodalCompare()">🔮 Compare</button>
+    <button class="btn" id="mmCompareBtn" onclick="doMultimodalCompare()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M8 3 4 7l4 4M4 7h16M16 21l4-4-4-4M20 17H4"/></svg>Compare</button>
   </div>
 
   <div class="error-msg" id="mmError"></div>
@@ -3937,20 +3946,20 @@ Semantic search understands meaning beyond keyword matching</textarea>
     <div class="card" style="margin-top:12px;">
       <div class="card-title">Search Query</div>
       <div class="mm-search-mode" id="mmSearchMode">
-        <button class="active" data-mode="text" onclick="setMmSearchMode('text')">📝 Text Query</button>
-        <button data-mode="image" onclick="setMmSearchMode('image')">🖼️ Image Query</button>
+        <button class="active" data-mode="text" onclick="setMmSearchMode('text')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:3px;"><path d="M17 6.1H3M21 12.1H3M15.1 18H3"/></svg>Text Query</button>
+        <button data-mode="image" onclick="setMmSearchMode('image')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:3px;"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>Image Query</button>
       </div>
       <div id="mmSearchTextWrap">
         <div class="mm-search-row">
           <input type="text" id="mmSearchQuery" placeholder="Enter a search query...">
-          <button class="btn" id="mmSearchBtn" onclick="doMultimodalSearch()">🔮 Search Corpus</button>
+          <button class="btn" id="mmSearchBtn" onclick="doMultimodalSearch()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M21 21l-4.3-4.3M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16z"/></svg>Search Corpus</button>
         </div>
       </div>
       <div id="mmSearchImageWrap" style="display:none;">
         <p style="font-size:13px;color:var(--text-dim);margin-bottom:8px;">Click an image in the corpus above to use it as the search query, then:</p>
         <div style="display:flex;gap:8px;align-items:center;">
           <span id="mmSearchImageLabel" style="font-size:13px;color:var(--text-muted);">No image selected</span>
-          <button class="btn" id="mmSearchImgBtn" onclick="doMultimodalSearch()">🔮 Search Corpus</button>
+          <button class="btn" id="mmSearchImgBtn" onclick="doMultimodalSearch()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M21 21l-4.3-4.3M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16z"/></svg>Search Corpus</button>
         </div>
       </div>
     </div>
@@ -3977,12 +3986,12 @@ Semantic search understands meaning beyond keyword matching</textarea>
 
   <!-- Sub-panel switcher -->
   <div class="bench-panels">
-    <button class="bench-panel-btn active" data-bench="latency">⚡ Latency</button>
-    <button class="bench-panel-btn" data-bench="ranking">🏆 Ranking</button>
-    <button class="bench-panel-btn" data-bench="competitors">⚔️ vs Competitors</button>
-    <button class="bench-panel-btn" data-bench="quantization">⚗️ Quantization</button>
-    <button class="bench-panel-btn" data-bench="cost">💰 Cost</button>
-    <button class="bench-panel-btn" data-bench="history">📊 History</button>
+    <button class="bench-panel-btn active" data-bench="latency"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:3px;"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>Latency</button>
+    <button class="bench-panel-btn" data-bench="ranking"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:3px;"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>Ranking</button>
+    <button class="bench-panel-btn" data-bench="competitors"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:3px;"><path d="M16 3h5v5M8 3H3v5M12 22v-8.3a4 4 0 0 0-1.172-2.872L3 3M21 3l-7.828 7.828A4 4 0 0 0 12 13.7V22"/></svg>vs Competitors</button>
+    <button class="bench-panel-btn" data-bench="quantization"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:3px;"><path d="M10 2v7.527a2 2 0 0 1-.211.896L4.72 20.55a1 1 0 0 0 .9 1.45h12.76a1 1 0 0 0 .9-1.45l-5.069-10.127A2 2 0 0 1 14 9.527V2M8.5 2h7M7 16h10"/></svg>Quantization</button>
+    <button class="bench-panel-btn" data-bench="cost"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:3px;"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Cost</button>
+    <button class="bench-panel-btn" data-bench="history"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:3px;"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>History</button>
   </div>
 
   <!-- ── Latency Panel ── -->
@@ -4004,7 +4013,7 @@ Semantic search understands meaning beyond keyword matching</textarea>
             <option value="10">10</option>
           </select>
         </div>
-        <button class="btn" id="benchLatencyBtn" onclick="doBenchLatency()">⚡ Run Benchmark</button>
+        <button class="btn" id="benchLatencyBtn" onclick="doBenchLatency()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>Run Benchmark</button>
       </div>
     </div>
 
@@ -4058,7 +4067,7 @@ Reranking models rescore initial search results to improve relevance ordering.</
             <option value="8">8</option>
           </select>
         </div>
-        <button class="btn" id="benchRankBtn" onclick="doBenchRanking()">🏆 Compare Rankings</button>
+        <button class="btn" id="benchRankBtn" onclick="doBenchRanking()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>Compare Rankings</button>
       </div>
     </div>
 
@@ -4134,7 +4143,7 @@ Reranking models rescore initial search results to improve relevance ordering.</
 
     <!-- Cost Comparison -->
     <div class="card" style="margin-top:16px;">
-      <div class="card-title">💰 Cost per Million Tokens</div>
+      <div class="card-title"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:3px;"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Cost per Million Tokens</div>
       <p style="color:var(--text-dim);font-size:13px;margin-bottom:16px;">
         Voyage AI offers significant cost savings, especially with asymmetric retrieval strategies.
       </p>
@@ -4295,7 +4304,7 @@ Approximate nearest neighbor algorithms like HNSW enable fast similarity search 
 Reranking models rescore initial search results to improve relevance ordering.</textarea>
       </div>
       <div style="margin-top:12px;">
-        <button class="btn" id="quantBtn" onclick="doBenchQuantization()">⚗️ Run Quantization Benchmark</button>
+        <button class="btn" id="quantBtn" onclick="doBenchQuantization()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M10 2v7.527a2 2 0 0 1-.211.896L4.72 20.55a1 1 0 0 0 .9 1.45h12.76a1 1 0 0 0 .9-1.45l-5.069-10.127A2 2 0 0 1 14 9.527V2M8.5 2h7M7 16h10"/></svg>Run Quantization Benchmark</button>
       </div>
     </div>
 
@@ -4323,7 +4332,7 @@ Reranking models rescore initial search results to improve relevance ordering.</
   <!-- ── Cost Panel ── -->
   <div class="bench-view" id="bench-cost">
     <div class="card">
-      <div class="card-title">💰 RAG Cost Calculator <button class="cost-help-btn" id="costHelpBtn" title="How the math works">?</button></div>
+      <div class="card-title"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>RAG Cost Calculator <button class="cost-help-btn" id="costHelpBtn" title="How the math works">?</button></div>
 
       <!-- Mode toggle -->
       <div style="margin-bottom: 20px;">
@@ -4444,7 +4453,7 @@ Reranking models rescore initial search results to improve relevance ordering.</
         <div class="history-empty">No benchmarks recorded yet. Run a latency benchmark to start tracking.</div>
       </div>
       <div style="margin-top:12px;text-align:right;">
-        <button class="btn btn-secondary btn-small" onclick="clearHistory()">🗑 Clear History</button>
+        <button class="btn btn-secondary btn-small" onclick="clearHistory()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:3px;"><path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>Clear History</button>
       </div>
     </div>
   </div>
@@ -4461,7 +4470,7 @@ Reranking models rescore initial search results to improve relevance ordering.</
         <span id="chatStatusDb">No database</span>
       </div>
       <button class="chat-config-toggle" id="chatOpenSettings" onclick="openChatSettings()" title="Configure in Settings">
-        <svg width="14" height="14" viewBox="0 0 16 16"><use href="#lg-config"/></svg>
+        <svg width="14" height="14" viewBox="0 0 24 24"><use href="#lg-config"/></svg>
         Configure
       </button>
     </div>
@@ -4587,9 +4596,9 @@ Reranking models rescore initial search results to improve relevance ordering.</
           <div class="about-name">Michael Lynn</div>
           <div class="about-role">Principal Staff Developer Advocate · MongoDB</div>
           <div class="about-links">
-            <a href="https://github.com/mrlynn" target="_blank" rel="noopener">🔗 GitHub</a>
-            <a href="https://mlynn.org" target="_blank" rel="noopener">🌐 mlynn.org</a>
-            <a href="https://www.npmjs.com/package/voyageai-cli" target="_blank" rel="noopener">📦 npm</a>
+            <a href="https://github.com/mrlynn" target="_blank" rel="noopener"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:3px;"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>GitHub</a>
+            <a href="https://mlynn.org" target="_blank" rel="noopener"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:3px;"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>mlynn.org</a>
+            <a href="https://www.npmjs.com/package/voyageai-cli" target="_blank" rel="noopener"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:3px;"><path d="M16.5 9.4l-9-5.19M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16zM3.27 6.96 12 12.01l8.73-5.05M12 22.08V12"/></svg>npm</a>
           </div>
         </div>
       </div>
@@ -4685,11 +4694,11 @@ Reranking models rescore initial search results to improve relevance ordering.</
   <!-- Mode Toggle -->
   <div class="subtabs" role="tablist">
     <button class="subtab active" id="genModeCode" onclick="setGenerateMode('code')" role="tab" aria-selected="true">
-      <svg viewBox="0 0 16 16"><path fill="currentColor" d="M5.854 4.854a.5.5 0 1 0-.708-.708l-3.5 3.5a.5.5 0 0 0 0 .708l3.5 3.5a.5.5 0 0 0 .708-.708L2.707 8l3.147-3.146zm4.292 0a.5.5 0 0 1 .708-.708l3.5 3.5a.5.5 0 0 1 0 .708l-3.5 3.5a.5.5 0 0 1-.708-.708L13.293 8l-3.147-3.146z"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
       Generate Code
     </button>
     <button class="subtab" id="genModeScaffold" onclick="setGenerateMode('scaffold')" role="tab" aria-selected="false">
-      <svg viewBox="0 0 16 16"><path fill="currentColor" d="M14.5 3a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h13zm-13-1A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 2h-13z"/><path fill="currentColor" d="M5 8a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7A.5.5 0 0 1 5 8zm0-2.5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm0 5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm-1-5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zM4 8a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm0 2.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0z"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 13h4"/><path d="M10 17h4"/><path d="M10 9h1"/></svg>
       Scaffold Project
     </button>
   </div>
@@ -4831,7 +4840,7 @@ Reranking models rescore initial search results to improve relevance ordering.</
         </div>
         <div id="scaffoldWebButtons" style="display:none;">
           <button class="btn btn-primary" onclick="downloadScaffoldZip()" id="scaffoldDownloadBtn">
-            <svg width="16" height="16" viewBox="0 0 16 16" style="margin-right:6px;"><path fill="currentColor" d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path fill="currentColor" d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/></svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
             Download ZIP
           </button>
         </div>
@@ -4888,31 +4897,31 @@ Reranking models rescore initial search results to improve relevance ordering.</
     <nav class="settings-nav">
       <div class="settings-nav-header">Settings</div>
       <button class="settings-nav-item active" data-settings-section="general">
-        <svg width="16" height="16" viewBox="0 0 16 16"><use href="#lg-config"/></svg>
+        <svg width="16" height="16" viewBox="0 0 24 24"><use href="#lg-config"/></svg>
         <span>General</span>
       </button>
       <button class="settings-nav-item" data-settings-section="appearance">
-        <svg width="16" height="16" viewBox="0 0 16 16"><use href="#lg-palette"/></svg>
+        <svg width="16" height="16" viewBox="0 0 24 24"><use href="#lg-palette"/></svg>
         <span>Appearance</span>
       </button>
       <button class="settings-nav-item" data-settings-section="models">
-        <svg width="16" height="16" viewBox="0 0 16 16"><use href="#lg-cube"/></svg>
+        <svg width="16" height="16" viewBox="0 0 24 24"><use href="#lg-cube"/></svg>
         <span>Models</span>
       </button>
       <button class="settings-nav-item" data-settings-section="chat">
-        <svg width="16" height="16" viewBox="0 0 16 16"><use href="#lg-chat"/></svg>
+        <svg width="16" height="16" viewBox="0 0 24 24"><use href="#lg-chat"/></svg>
         <span>Chat</span>
       </button>
       <button class="settings-nav-item" data-settings-section="benchmark">
-        <svg width="16" height="16" viewBox="0 0 16 16"><use href="#lg-gauge"/></svg>
+        <svg width="16" height="16" viewBox="0 0 24 24"><use href="#lg-gauge"/></svg>
         <span>Benchmark</span>
       </button>
       <button class="settings-nav-item" data-settings-section="privacy">
-        <svg width="16" height="16" viewBox="0 0 16 16"><use href="#lg-shield"/></svg>
+        <svg width="16" height="16" viewBox="0 0 24 24"><use href="#lg-shield"/></svg>
         <span>Data &amp; Privacy</span>
       </button>
       <button class="settings-nav-item" data-settings-section="health">
-        <svg width="16" height="16" viewBox="0 0 16 16"><use href="#lg-pulse"/></svg>
+        <svg width="16" height="16" viewBox="0 0 24 24"><use href="#lg-pulse"/></svg>
         <span>Health Check</span>
       </button>
     </nav>
@@ -4934,12 +4943,12 @@ Reranking models rescore initial search results to improve relevance ordering.</
           <div class="settings-row">
             <div class="settings-label">
               <span class="settings-label-text">API Key <span class="settings-origin" data-origin-key="apiKey"></span></span>
-              <span class="settings-label-hint">Encrypted via OS keychain · <a href="https://dash.voyageai.com" target="_blank" class="settings-key-link">🔑 Get a key</a></span>
+              <span class="settings-label-hint">Encrypted via OS keychain · <a href="https://dash.voyageai.com" target="_blank" class="settings-key-link"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:2px;"><path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"/><circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/></svg>Get a key</a></span>
             </div>
             <div class="settings-control" style="min-width:260px;">
               <div class="settings-api-field">
                 <input type="password" id="settingsApiKey" placeholder="pa-..." autocomplete="off" spellcheck="false">
-                <button type="button" id="settingsApiKeyToggle" title="Show/hide key">👁</button>
+                <button type="button" id="settingsApiKeyToggle" title="Show/hide key"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg></button>
                 <button type="button" id="settingsApiKeySave" class="save-btn" title="Save key">Save</button>
               </div>
             </div>
@@ -5093,7 +5102,7 @@ Reranking models rescore initial search results to improve relevance ordering.</
                 title="Show/hide API key"
                 style="padding:8px 12px;min-width:auto"
               >
-                👁️
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>
               </button>
               <button
                 class="btn"
@@ -5102,7 +5111,7 @@ Reranking models rescore initial search results to improve relevance ordering.</
                 title="Save API key"
                 style="padding:8px 12px;min-width:auto"
               >
-                💾
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>
               </button>
             </div>
           </div>
@@ -6118,12 +6127,12 @@ async function downloadScaffoldZip() {
     // Show success
     btn.innerHTML = '<span style="margin-right:6px;">✓</span> Downloaded!';
     setTimeout(() => {
-      btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 16 16" style="margin-right:6px;"><path fill="currentColor" d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path fill="currentColor" d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/></svg> Download ZIP';
+      btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg> Download ZIP';
       btn.disabled = false;
     }, 2000);
   } catch (err) {
     alert('Error: ' + err.message);
-    btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 16 16" style="margin-right:6px;"><path fill="currentColor" d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path fill="currentColor" d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/></svg> Download ZIP';
+    btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg> Download ZIP';
     btn.disabled = false;
   }
 }
@@ -6219,37 +6228,73 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ── Explore: icons and tab mappings per concept ──
+// Lucide SVG icon helper — returns an inline <svg> string
+function lucideIcon(d, size = 16) {
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg>`;
+}
+
+// Lucide path constants for concept/button icons
+const LI = {
+  zap:        'M13 2 3 14h9l-1 8 10-12h-9l1-8z',
+  search:     'M21 21l-4.3-4.3M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16z',
+  trophy:     'M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22M18 2H6v7a6 6 0 0 0 12 0V2z',
+  bot:        'M12 8V4H8M8 2h8M2 14a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2zM6 14v4M10 14v4M14 14v4M18 14v4',
+  ruler:      'M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z M15 5l4 4',
+  target:     'M12 12m-10 0a10 10 0 1 0 20 0 10 10 0 1 0-20 0M12 12m-6 0a6 6 0 1 0 12 0 6 6 0 1 0-12 0M12 12m-2 0a2 2 0 1 0 4 0 2 2 0 1 0-4 0',
+  tag:        'M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42zM7.5 7.5m-.5 0a.5.5 0 1 0 1 0 .5.5 0 1 0-1 0',
+  brain:      'M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2zM14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2z',
+  key:        'M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4zM16.5 7.5m-.5 0a.5.5 0 1 0 1 0 .5.5 0 1 0-1 0',
+  globe:      'M12 12m-10 0a10 10 0 1 0 20 0 10 10 0 1 0-20 0M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z',
+  package:    'M16.5 9.4l-9-5.19M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16zM3.27 6.96 12 12.01l8.73-5.05M12 22.08V12',
+  timer:      'M10 2h4M12 14l3-3M12 22a8 8 0 1 0 0-16 8 8 0 0 0 0 16z',
+  flask:      'M10 2v7.527a2 2 0 0 1-.211.896L4.72 20.55a1 1 0 0 0 .9 1.45h12.76a1 1 0 0 0 .9-1.45l-5.069-10.127A2 2 0 0 1 14 9.527V2M8.5 2h7M7 16h10',
+  puzzle:     'M19.439 7.85c-.049.322.059.648.289.878l1.568 1.568c.47.47.706 1.087.706 1.704s-.235 1.233-.706 1.704l-1.611 1.611a.98.98 0 0 1-.837.276c-.47-.07-.802-.48-.968-.925a2.501 2.501 0 1 0-3.214 3.214c.446.166.855.497.925.968a.979.979 0 0 1-.276.837l-1.61 1.61a2.404 2.404 0 0 1-1.705.707 2.402 2.402 0 0 1-1.704-.706l-1.568-1.568a1.026 1.026 0 0 0-.877-.29c-.493.074-.84.504-1.02.968a2.5 2.5 0 1 1-3.237-3.237c.464-.18.894-.527.967-1.02a1.026 1.026 0 0 0-.289-.877l-1.568-1.568A2.402 2.402 0 0 1 1.998 12c0-.617.236-1.234.706-1.704L4.23 8.77c.24-.24.581-.353.917-.303.515.077.877.528 1.073 1.01a2.5 2.5 0 1 0 3.259-3.259c-.482-.196-.933-.558-1.01-1.073-.05-.336.062-.676.303-.917l1.525-1.525A2.402 2.402 0 0 1 12 2c.617 0 1.234.236 1.704.706l1.568 1.568c.23.23.556.338.878.29.493-.074.84-.504 1.02-.968a2.5 2.5 0 1 1 3.237 3.237c-.464.18-.894.527-.968 1.02z',
+  link:       'M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71',
+  barChart:   'M12 20V10M18 20V4M6 20v-4',
+  microscope: 'M6 18h8M3 22h18M14 22a7 7 0 1 0 0-14h-1M9 14h2M9 12a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2z',
+  image:      'M3 3h18a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zM8.5 10a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zM21 15l-5-5L5 21',
+  shuffle:    'M2 18h1.4c1.3 0 2.5-.6 3.3-1.7l6.1-8.6c.7-1.1 2-1.7 3.3-1.7H22M18 2l4 4-4 4M2 6h1.9c1.5 0 2.9.9 3.6 2.2M22 18l-4 4-4-4M19 14h3',
+  circle:     'M12 12m-10 0a10 10 0 1 0 20 0 10 10 0 1 0-20 0',
+  fileTxt:    'M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7zM14 2v4a2 2 0 0 0 2 2h4M10 13h4M10 17h4M10 9h1',
+  scale:      'M16 3h5v5M8 3H3v5M12 22v-8.3a4 4 0 0 0-1.172-2.872L3 3M21 3l-7.828 7.828A4 4 0 0 0 12 13.7V22',
+  laptop:     'M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9M2 20h20M12 12h.01',
+  blocks:     'M2 12h10v10H2zM14 4l6 3.5v7L14 18l-6-3.5v-7zM12 2l10 6',
+  refresh:    'M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16',
+  sparkle:    'M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z',
+  download:   'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3',
+  copy:       'M9 9V6a3 3 0 0 1 3-3h6a3 3 0 0 1 3 3v6a3 3 0 0 1-3 3h-3M3 15a3 3 0 0 1 3-3h6a3 3 0 0 1 3 3v6a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3z',
+  filter:     'M3 6h18M7 12h10M10 18h4',
+};
+
 const CONCEPT_META = {
-  embeddings:          { icon: '🧮', tab: 'embed' },
-  reranking:           { icon: '🏆', tab: 'search' },
-  'vector-search':     { icon: '🔎', tab: 'search' },
-  rag:                 { icon: '🤖', tab: 'search' },
-  'cosine-similarity': { icon: '📐', tab: 'compare' },
-  'two-stage-retrieval': { icon: '🎯', tab: 'search' },
-  'input-type':        { icon: '🏷️', tab: 'embed' },
-  models:              { icon: '🧠', tab: 'embed' },
-  'api-keys':          { icon: '🔑', tab: 'embed' },
-  'api-access':        { icon: '🌐', tab: 'embed' },
-  'batch-processing':  { icon: '📦', tab: 'embed' },
-  benchmarking:        { icon: '⏱', tab: 'benchmark' },
-  quantization:        { icon: '⚗️', tab: 'benchmark' },
-  'mixture-of-experts': { icon: '🧩', tab: 'embed' },
-  'shared-embedding-space': { icon: '🔗', tab: 'compare' },
-  'rteb-benchmarks':   { icon: '📊', tab: 'benchmark' },
-  'voyage-4-nano':     { icon: '🔬', tab: 'embed' },
-  'rerank-eval':       { icon: '📐', tab: 'benchmark' },
-  'multimodal-embeddings': { icon: '🖼️', tab: 'multimodal' },
-  'cross-modal-search':    { icon: '🔀', tab: 'multimodal' },
-  'modality-gap':          { icon: '🕳️', tab: 'multimodal' },
-  'multimodal-rag':        { icon: '📄', tab: 'multimodal' },
-  'provider-comparison':   { icon: '⚖️', tab: 'explore' },
-  // Code generation & scaffolding
-  'code-generation':   { icon: '💻', tab: 'explore' },
-  scaffolding:         { icon: '🏗️', tab: 'explore' },
-  'eval-comparison':   { icon: '📊', tab: 'benchmark' },
-  // MongoDB Auto-Embedding
-  'auto-embedding':        { icon: '⚡', tab: 'explore' },
-  'vai-vs-auto-embedding': { icon: '🔄', tab: 'explore' },
+  embeddings:          { icon: LI.zap,        tab: 'embed' },
+  reranking:           { icon: LI.trophy,     tab: 'search' },
+  'vector-search':     { icon: LI.search,     tab: 'search' },
+  rag:                 { icon: LI.bot,        tab: 'search' },
+  'cosine-similarity': { icon: LI.ruler,      tab: 'compare' },
+  'two-stage-retrieval': { icon: LI.target,   tab: 'search' },
+  'input-type':        { icon: LI.tag,        tab: 'embed' },
+  models:              { icon: LI.brain,      tab: 'embed' },
+  'api-keys':          { icon: LI.key,        tab: 'embed' },
+  'api-access':        { icon: LI.globe,      tab: 'embed' },
+  'batch-processing':  { icon: LI.package,    tab: 'embed' },
+  benchmarking:        { icon: LI.timer,      tab: 'benchmark' },
+  quantization:        { icon: LI.flask,      tab: 'benchmark' },
+  'mixture-of-experts': { icon: LI.puzzle,    tab: 'embed' },
+  'shared-embedding-space': { icon: LI.link,  tab: 'compare' },
+  'rteb-benchmarks':   { icon: LI.barChart,   tab: 'benchmark' },
+  'voyage-4-nano':     { icon: LI.microscope, tab: 'embed' },
+  'rerank-eval':       { icon: LI.ruler,      tab: 'benchmark' },
+  'multimodal-embeddings': { icon: LI.image,  tab: 'multimodal' },
+  'cross-modal-search':    { icon: LI.shuffle, tab: 'multimodal' },
+  'modality-gap':          { icon: LI.circle,  tab: 'multimodal' },
+  'multimodal-rag':        { icon: LI.fileTxt, tab: 'multimodal' },
+  'provider-comparison':   { icon: LI.scale,   tab: 'explore' },
+  'code-generation':   { icon: LI.laptop,     tab: 'explore' },
+  scaffolding:         { icon: LI.blocks,     tab: 'explore' },
+  'eval-comparison':   { icon: LI.barChart,   tab: 'benchmark' },
+  'auto-embedding':        { icon: LI.zap,    tab: 'explore' },
+  'vai-vs-auto-embedding': { icon: LI.refresh, tab: 'explore' },
 };
 
 let exploreConcepts = {};
@@ -6275,13 +6320,13 @@ function buildExploreCards() {
   grid.innerHTML = '';
 
   for (const [key, concept] of Object.entries(exploreConcepts)) {
-    const meta = CONCEPT_META[key] || { icon: '📚', tab: 'embed' };
+    const meta = CONCEPT_META[key] || { icon: LI.package, tab: 'embed' };
     const card = document.createElement('div');
     card.className = 'explore-card';
     card.dataset.key = key;
 
     card.innerHTML = `
-      <div class="explore-card-icon">${meta.icon}</div>
+      <div class="explore-card-icon">${lucideIcon(meta.icon, 28)}</div>
       <div class="explore-card-title">${escapeHtml(concept.title)}</div>
       <div class="explore-card-summary">${escapeHtml(concept.summary)}</div>
     `;
@@ -6308,12 +6353,12 @@ let exploreModalPreviousFocus = null;
 function openExploreModal(key) {
   const concept = exploreConcepts[key];
   if (!concept) return;
-  const meta = CONCEPT_META[key] || { icon: '📚', tab: 'embed' };
+  const meta = CONCEPT_META[key] || { icon: LI.package, tab: 'embed' };
 
   // Save the currently focused element to restore when modal closes
   exploreModalPreviousFocus = document.activeElement;
 
-  document.getElementById('exploreModalIcon').textContent = meta.icon;
+  document.getElementById('exploreModalIcon').innerHTML = lucideIcon(meta.icon, 32);
   document.getElementById('exploreModalTitle').textContent = concept.title;
   document.getElementById('exploreModalSummary').textContent = concept.summary;
 
@@ -9956,18 +10001,25 @@ const WF_NODE_META = {
   search:      { icon: '\u{1F50E}', label: 'Vector Search',   color: '#40E0FF', category: 'retrieval' },
   rerank:      { icon: '\u{1F3C6}', label: 'Rerank',          color: '#40E0FF', category: 'retrieval' },
   ingest:      { icon: '\u{1F4E5}', label: 'Ingest',          color: '#40E0FF', category: 'retrieval' },
-  embed:       { icon: '\u{1F4D0}', label: 'Embed',           color: '#B388FF', category: 'embedding' },
-  similarity:  { icon: '\u{1F517}', label: 'Similarity',      color: '#B388FF', category: 'embedding' },
-  collections: { icon: '\u{1F5C4}', label: 'Collections',     color: '#00D4AA', category: 'management' },
-  models:      { icon: '\u{1F4CB}', label: 'Models',          color: '#00D4AA', category: 'management' },
-  estimate:    { icon: '\u{1F4B0}', label: 'Cost Estimate',   color: '#FFB74D', category: 'utility' },
-  explain:     { icon: '\u{1F4D6}', label: 'Explain',         color: '#FFB74D', category: 'utility' },
-  topics:      { icon: '\u{1F5C2}', label: 'Topics',          color: '#FFB74D', category: 'utility' },
-  merge:       { icon: '\u{1F500}', label: 'Merge',           color: '#90A4AE', category: 'control' },
-  filter:      { icon: '\u{1F9F9}', label: 'Filter',          color: '#90A4AE', category: 'control' },
-  transform:   { icon: '\u{1F504}', label: 'Transform',       color: '#90A4AE', category: 'control' },
-  generate:    { icon: '\u2728',    label: 'Generate',        color: '#69F0AE', category: 'generation' },
+  embed:       { icon: 'M13 2 3 14h9l-1 8 10-12h-9l1-8z', label: 'Embed',           color: '#B388FF', category: 'embedding' },
+  similarity:  { icon: 'M8 3 4 7l4 4M4 7h16M16 21l4-4-4-4M20 17H4', label: 'Similarity',      color: '#B388FF', category: 'embedding' },
+  collections: { icon: 'M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z', label: 'Collections',     color: '#00D4AA', category: 'management' },
+  models:      { icon: 'M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2M9 5h6M9 14l2 2 4-4', label: 'Models',          color: '#00D4AA', category: 'management' },
+  estimate:    { icon: 'M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6', label: 'Cost Estimate',   color: '#FFB74D', category: 'utility' },
+  explain:     { icon: 'M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2zM22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z', label: 'Explain',         color: '#FFB74D', category: 'utility' },
+  topics:      { icon: 'M12 6V2M8 18H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-4M12 18v4M8 22h8', label: 'Topics',          color: '#FFB74D', category: 'utility' },
+  merge:       { icon: 'M18 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM6 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM6 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM6 9v6M18 15l-6-6-6 6', label: 'Merge',           color: '#90A4AE', category: 'control' },
+  filter:      { icon: 'M22 3H2l8 9.46V19l4 2v-8.54L22 3z', label: 'Filter',          color: '#90A4AE', category: 'control' },
+  transform:   { icon: 'M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16', label: 'Transform',       color: '#90A4AE', category: 'control' },
+  generate:    { icon: 'M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z', label: 'Generate', color: '#69F0AE', category: 'generation' },
+  query:       { icon: 'M21 21l-4.3-4.3M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16z', label: 'Query',           color: '#64B5F6', category: 'retrieval' },
+  rerank:      { icon: 'M3 6h18M7 12h10M10 18h4', label: 'Rerank',          color: '#CE93D8', category: 'retrieval' },
+  search:      { icon: 'M21 21l-4.3-4.3M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16z', label: 'Search',          color: '#64B5F6', category: 'retrieval' },
+  ingest:      { icon: 'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3', label: 'Ingest',          color: '#4DB6AC', category: 'management' },
 };
+
+// Fallback icon (gear) for unknown workflow node types
+const WF_FALLBACK_ICON = 'M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2zM12 12m-3 0a3 3 0 1 0 6 0 3 3 0 1 0-6 0';
 
 const WF_NODE_W = 180;
 const WF_NODE_H = 64;
@@ -10237,7 +10289,7 @@ async function wfRenderWorkflow(definition) {
 }
 
 function wfDrawNode(step, x, y, state, hasDeps, hasDependents) {
-  const meta = WF_NODE_META[step.tool] || { icon: '\u2699', label: step.tool, color: '#666', category: 'unknown' };
+  const meta = WF_NODE_META[step.tool] || { icon: WF_FALLBACK_ICON, label: step.tool, color: '#666', category: 'unknown' };
   const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
   g.classList.add('wf-node');
   if (state !== 'idle') g.classList.add('wf-node--' + state);
@@ -10334,13 +10386,23 @@ function wfDrawNode(step, x, y, state, hasDeps, hasDependents) {
     g.appendChild(outPort);
   }
 
-  // Icon
-  const icon = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-  icon.classList.add('wf-node-icon');
-  icon.setAttribute('x', 22);
-  icon.setAttribute('y', WF_NODE_H / 2);
-  icon.textContent = meta.icon;
-  g.appendChild(icon);
+  // Icon (Lucide SVG)
+  const iconG = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+  iconG.classList.add('wf-node-icon');
+  const iconSize = 18;
+  const ix = 22 - iconSize / 2;
+  const iy = WF_NODE_H / 2 - iconSize / 2;
+  iconG.setAttribute('transform', `translate(${ix},${iy}) scale(${iconSize / 24})`);
+  const fullD = meta.icon || WF_FALLBACK_ICON;
+  const iconPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  iconPath.setAttribute('d', fullD);
+  iconPath.setAttribute('fill', 'none');
+  iconPath.setAttribute('stroke', 'currentColor');
+  iconPath.setAttribute('stroke-width', '1.75');
+  iconPath.setAttribute('stroke-linecap', 'round');
+  iconPath.setAttribute('stroke-linejoin', 'round');
+  iconG.appendChild(iconPath);
+  g.appendChild(iconG);
 
   // Label (step name, truncated)
   const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
@@ -10595,7 +10657,7 @@ function wfUpdateInspector() {
     return;
   }
 
-  const meta = WF_NODE_META[step.tool] || { icon: '\u2699', label: step.tool, color: '#666' };
+  const meta = WF_NODE_META[step.tool] || { icon: WF_FALLBACK_ICON, label: step.tool, color: '#666' };
   header.textContent = step.name || step.id;
 
   let html = '';
@@ -10603,7 +10665,7 @@ function wfUpdateInspector() {
   // Tool badge (always shown)
   html += `<div class="wf-inspector-section">
     <div class="wf-inspector-section-title">Tool</div>
-    <span class="wf-tool-badge" style="background:${meta.color}">${meta.icon} ${meta.label}</span>
+    <span class="wf-tool-badge" style="background:${meta.color}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="${meta.icon || WF_FALLBACK_ICON}"/></svg>${meta.label}</span>
   </div>`;
 
   if (wfState.builderMode) {
@@ -10807,9 +10869,9 @@ function wfDryRun() {
       const step = stepMap[stepId];
       if (!step) return;
       totalSteps++;
-      const meta = WF_NODE_META[step.tool] || { icon: '\u2699', label: step.tool, color: '#666' };
+      const meta = WF_NODE_META[step.tool] || { icon: WF_FALLBACK_ICON, label: step.tool, color: '#666' };
       layersHtml += '<div class="wf-dryrun-step">';
-      layersHtml += '<span class="wf-dryrun-step-icon">' + meta.icon + '</span>';
+      layersHtml += '<span class="wf-dryrun-step-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="' + (meta.icon || WF_FALLBACK_ICON) + '"/></svg></span>';
       layersHtml += '<div class="wf-dryrun-step-info">';
       layersHtml += '<div class="wf-dryrun-step-name">' + escapeHtml(step.name || step.id) + '</div>';
       layersHtml += '<div class="wf-dryrun-step-tool">' + escapeHtml(meta.label) + ' (' + escapeHtml(step.id) + ')</div>';
@@ -11424,7 +11486,7 @@ function wfRenderPalette() {
     html += `<div class="wf-palette-category"><div class="wf-palette-category-title">${WF_CATEGORY_LABELS[cat] || cat}</div>`;
     for (const item of items) {
       html += `<div class="wf-palette-item" draggable="true" ondragstart="event.dataTransfer.setData('text/plain','${item.tool}')" onclick="wfAddNodeFromPalette('${item.tool}')">
-        <span class="wf-palette-icon" style="color:${item.color}">${item.icon}</span>
+        <span class="wf-palette-icon" style="color:${item.color}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="${item.icon || WF_FALLBACK_ICON}"/></svg></span>
         <span class="wf-palette-label">${item.label}</span>
       </div>`;
     }
