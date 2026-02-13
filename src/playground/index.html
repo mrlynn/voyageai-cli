@@ -9974,7 +9974,11 @@ const WF_NODE_META = {
   merge:       { icon: 'M18 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM6 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM6 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM6 9v6M18 15l-6-6-6 6', label: 'Merge',           color: '#90A4AE', category: 'control' },
   filter:      { icon: 'M22 3H2l8 9.46V19l4 2v-8.54L22 3z', label: 'Filter',          color: '#90A4AE', category: 'control' },
   transform:   { icon: 'M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16', label: 'Transform',       color: '#90A4AE', category: 'control' },
-  generate:    { icon: 'M12 3v4m0 14v-4m-7.8-2H0m24 0h-4.2M5.6 5.6l2.8 2.8m7.2 7.2 2.8 2.8m0-15.6-2.8 2.8m-7.2 7.2-2.8 2.8', label: 'Generate',        color: '#69F0AE', category: 'generation' },
+  generate:    { icon: 'M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z', label: 'Generate', color: '#69F0AE', category: 'generation' },
+  query:       { icon: 'M21 21l-4.3-4.3M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16z', label: 'Query',           color: '#64B5F6', category: 'retrieval' },
+  rerank:      { icon: 'M3 6h18M7 12h10M10 18h4', label: 'Rerank',          color: '#CE93D8', category: 'retrieval' },
+  search:      { icon: 'M21 21l-4.3-4.3M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16z', label: 'Search',          color: '#64B5F6', category: 'retrieval' },
+  ingest:      { icon: 'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3', label: 'Ingest',          color: '#4DB6AC', category: 'management' },
 };
 
 // Fallback icon (gear) for unknown workflow node types
@@ -10248,7 +10252,7 @@ async function wfRenderWorkflow(definition) {
 }
 
 function wfDrawNode(step, x, y, state, hasDeps, hasDependents) {
-  const meta = WF_NODE_META[step.tool] || { icon: '\u2699', label: step.tool, color: '#666', category: 'unknown' };
+  const meta = WF_NODE_META[step.tool] || { icon: WF_FALLBACK_ICON, label: step.tool, color: '#666', category: 'unknown' };
   const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
   g.classList.add('wf-node');
   if (state !== 'idle') g.classList.add('wf-node--' + state);
@@ -10616,7 +10620,7 @@ function wfUpdateInspector() {
     return;
   }
 
-  const meta = WF_NODE_META[step.tool] || { icon: '\u2699', label: step.tool, color: '#666' };
+  const meta = WF_NODE_META[step.tool] || { icon: WF_FALLBACK_ICON, label: step.tool, color: '#666' };
   header.textContent = step.name || step.id;
 
   let html = '';
