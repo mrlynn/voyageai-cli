@@ -1,7 +1,21 @@
 'use strict';
 
+const path = require('path');
 const pc = require('picocolors');
 const ui = require('../lib/ui');
+
+/**
+ * Try to get the git user name for default author.
+ * @returns {string}
+ */
+function getGitAuthor() {
+  try {
+    const { execSync } = require('child_process');
+    return execSync('git config user.name', { encoding: 'utf8' }).trim();
+  } catch {
+    return '';
+  }
+}
 
 /**
  * Parse repeatable --input key=value options into an object.
@@ -532,6 +546,120 @@ function registerWorkflow(program) {
           }
         }
 
+        console.log();
+      } catch (err) {
+        console.error(ui.error(err.message));
+        process.exit(1);
+      }
+    });
+
+  // ── workflow create ──
+  wfCmd
+    .command('create')
+    .description('Scaffold a publish-ready npm package from a workflow')
+    .option('--from <file>', 'Existing workflow JSON to package')
+    .option('--name <name>', 'Package name (without vai-workflow- prefix)')
+    .option('--author <name>', 'Author name')
+    .option('--description <desc>', 'Package description')
+    .option('--category <cat>', 'Category (retrieval, analysis, ingestion, domain-specific, utility, integration)')
+    .option('--output <dir>', 'Output directory')
+    .action(async (opts) => {
+      const { scaffoldPackage, toPackageName, CATEGORIES, emptyWorkflowTemplate } = require('../lib/workflow-scaffold');
+      const { loadWorkflow } = require('../lib/workflow');
+
+      let definition;
+      let name = opts.name;
+      let author = opts.author;
+      let description = opts.description;
+      let category = opts.category;
+
+      if (opts.from) {
+        // Package an existing workflow
+        try {
+          definition = loadWorkflow(opts.from);
+        } catch (err) {
+          console.error(ui.error(err.message));
+          process.exit(1);
+        }
+        if (!name) {
+          name = definition.name || path.basename(opts.from, '.json').replace('.vai-workflow', '');
+        }
+        if (!description) {
+          description = definition.description;
+        }
+      } else if (process.stdin.isTTY) {
+        // Interactive mode
+        try {
+          const p = require('@clack/prompts');
+          p.intro(pc.bold('Create a new workflow package'));
+
+          const answers = await p.group({
+            name: () => p.text({ message: 'Workflow name', placeholder: 'my-workflow', validate: v => v ? undefined : 'Required' }),
+            description: () => p.text({ message: 'Description', placeholder: 'A brief description of what this workflow does' }),
+            category: () => p.select({
+              message: 'Category',
+              options: CATEGORIES.map(c => ({ value: c, label: c })),
+            }),
+            author: () => p.text({ message: 'Author', placeholder: 'Your Name', defaultValue: getGitAuthor() }),
+          });
+
+          if (p.isCancel(answers)) {
+            p.cancel('Cancelled.');
+            process.exit(0);
+          }
+
+          name = answers.name;
+          description = answers.description;
+          category = answers.category;
+          author = answers.author;
+          definition = emptyWorkflowTemplate();
+          definition.name = name;
+          definition.description = description || '';
+          // Add a placeholder step so validation passes
+          definition.steps = [{
+            id: 'search',
+            tool: 'query',
+            name: 'Search',
+            inputs: { query: '{{ inputs.query }}' },
+          }];
+          definition.inputs = {
+            query: { type: 'string', required: true, description: 'Search query' },
+          };
+        } catch (err) {
+          console.error(ui.error(`Interactive mode failed: ${err.message}`));
+          process.exit(1);
+        }
+      } else {
+        console.error(ui.error('Provide --from <file> or run interactively (TTY required).'));
+        process.exit(1);
+      }
+
+      if (!name) {
+        console.error(ui.error('Workflow name is required. Use --name <name>.'));
+        process.exit(1);
+      }
+
+      try {
+        const result = scaffoldPackage({
+          definition,
+          name,
+          author,
+          description,
+          category,
+          outputDir: opts.output,
+        });
+
+        const pkgName = toPackageName(name);
+        console.log();
+        console.log(`${pc.green('✔')} Created ${pc.cyan(pkgName)}/`);
+        for (const f of result.files) {
+          console.log(`  ${pc.dim('├──')} ${f}`);
+        }
+        console.log();
+        console.log('Next steps:');
+        console.log(`  1. ${opts.from ? '' : pc.dim('Edit workflow.json with your workflow definition')}${opts.from ? 'Review README.md' : ''}`);
+        console.log(`  2. cd ${pkgName}`);
+        console.log(`  3. npm publish`);
         console.log();
       } catch (err) {
         console.error(ui.error(err.message));
