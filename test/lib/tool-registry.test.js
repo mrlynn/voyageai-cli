@@ -173,9 +173,12 @@ describe('tool-registry', () => {
           // model should default to 'rerank-2.5'
         });
       } catch (err) {
-        // It's OK if it fails at the API call level,
-        // as long as it didn't fail at Zod validation
-        assert.ok(!err.message.includes('model'), 'Should not fail on model validation');
+        // It's OK if it fails at the API call level (no API key in CI),
+        // as long as it didn't fail at Zod validation level.
+        // Zod errors contain "Required" or "invalid_type" — check we didn't get those.
+        const isZodError = err.name === 'ZodError' ||
+          err.message.includes('Required') && !err.message.includes('API');
+        assert.ok(!isZodError, 'Should not fail on Zod validation — defaults should be applied');
       }
     });
   });
