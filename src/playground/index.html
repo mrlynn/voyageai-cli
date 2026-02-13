@@ -1779,6 +1779,43 @@ select:focus { outline: none; border-color: var(--accent); }
   margin-bottom: 8px;
 }
 .about-text { font-size: 14px; line-height: 1.8; color: var(--text); }
+.about-changelog { font-size: 13px; line-height: 1.6; }
+.about-changelog details {
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  padding: 0;
+}
+.about-changelog details:last-child { border-bottom: none; }
+.about-changelog summary {
+  padding: 10px 0;
+  cursor: pointer;
+  color: var(--text);
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.about-changelog summary::before {
+  content: '';
+  display: inline-block;
+  width: 5px; height: 5px;
+  border-right: 1.5px solid var(--accent, #00D4AA);
+  border-bottom: 1.5px solid var(--accent, #00D4AA);
+  transform: rotate(-45deg);
+  transition: transform 0.15s ease;
+  flex-shrink: 0;
+}
+.about-changelog details[open] > summary::before {
+  transform: rotate(45deg);
+}
+.about-changelog summary::-webkit-details-marker { display: none; }
+.about-changelog summary:hover { color: var(--accent-text); }
+.about-changelog p {
+  margin: 0 0 10px 13px;
+  color: var(--text-muted);
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+[data-theme="light"] .about-changelog details { border-color: rgba(0,0,0,0.08); }
 .about-text a { color: var(--blue); text-decoration: none; }
 .about-text a:hover { text-decoration: underline; }
 .about-disclaimer {
@@ -4665,13 +4702,39 @@ Reranking models rescore initial search results to improve relevance ordering.</
     <div class="card" style="margin-top:16px;">
       <div class="about-section" style="padding-bottom:0;">
         <div class="about-section-title">What's New</div>
-        <div class="about-text" style="font-size:13px;">
-          <strong>v1.26</strong> — Agent workflows with thinking panel &amp; markdown rendering, multi-step tool orchestration<br>
-          <strong>v1.25</strong> — Code generation &amp; project scaffolding tabs<br>
-          <strong>v1.24</strong> — MCP server install/uninstall/status commands, Electron app v1.5<br>
-          <strong>v1.23</strong> — MCP server (expose vai tools to AI agents), HTTP transport, bearer auth, 71+ MCP tests<br>
-          <strong>v1.22</strong> — RAG chat with smart source labels, configurable system prompts, streaming responses<br>
-          <strong>v1.2</strong> — Multimodal tab, 4 new Explore concepts, auto-update, hidden easter egg 🕹️
+        <div class="about-changelog">
+          <details open>
+            <summary><strong>v1.28</strong> — Lucide icon overhaul</summary>
+            <p>Replaced all emoji and filled LeafyGreen icons with clean, stroke-based Lucide SVGs across the entire app — tabs, workflow nodes, action buttons, benchmark page, explore cards, settings, and more. Added reusable icon helper and path library.</p>
+          </details>
+          <details>
+            <summary><strong>v1.27</strong> — Workflow builder improvements</summary>
+            <p>Workflow palette with drag-and-drop node creation, edge drawing, dry-run preview, and builder mode toggle. New workflow node types: query, rerank, search, ingest.</p>
+          </details>
+          <details>
+            <summary><strong>v1.26</strong> — Agent workflows</summary>
+            <p>Agent workflows with thinking panel &amp; markdown rendering, multi-step tool orchestration, interactive DAG visualization with execution animation.</p>
+          </details>
+          <details>
+            <summary><strong>v1.25</strong> — Code generation &amp; scaffolding</summary>
+            <p>Generate embedding/search code snippets and scaffold full project directories with best-practice structure, ready-to-run RAG pipelines.</p>
+          </details>
+          <details>
+            <summary><strong>v1.24</strong> — MCP server management</summary>
+            <p>MCP server install/uninstall/status commands. Electron app v1.5 with signed macOS builds.</p>
+          </details>
+          <details>
+            <summary><strong>v1.23</strong> — MCP server</summary>
+            <p>Expose vai tools to AI agents via MCP protocol. HTTP transport, bearer auth, 71+ MCP tests.</p>
+          </details>
+          <details>
+            <summary><strong>v1.22</strong> — RAG chat</summary>
+            <p>RAG chat with smart source labels, configurable system prompts, streaming responses.</p>
+          </details>
+          <details>
+            <summary><strong>v1.2</strong> — Multimodal &amp; more</summary>
+            <p>Multimodal tab, 4 new Explore concepts, auto-update, hidden easter egg <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/></svg></p>
+          </details>
         </div>
       </div>
     </div>
