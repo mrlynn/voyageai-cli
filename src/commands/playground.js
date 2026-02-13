@@ -14,13 +14,16 @@ function registerPlayground(program) {
     .command('playground')
     .description('Launch interactive web playground for Voyage AI')
     .option('-p, --port <port>', 'Port to serve on', '3333')
+    .option('--host <address>', 'Bind address', '127.0.0.1')
     .option('--no-open', 'Skip auto-opening browser')
     .action(async (opts) => {
       const port = parseInt(opts.port, 10) || 3333;
+      const host = opts.host || '127.0.0.1';
       const server = createPlaygroundServer();
 
-      server.listen(port, () => {
-        const url = `http://localhost:${port}`;
+      server.listen(port, host, () => {
+        const displayHost = host === '0.0.0.0' ? 'localhost' : host;
+        const url = `http://${displayHost}:${port}`;
         console.log(`🧭 Playground running at ${url} — Press Ctrl+C to stop`);
 
         if (opts.open !== false) {
@@ -359,6 +362,20 @@ function createPlaygroundServer() {
           const workflows = listBuiltinWorkflows();
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ workflows }));
+        } catch (err) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: err.message }));
+        }
+        return;
+      }
+
+      // API: List example workflows (must be before the :name route)
+      if (req.method === 'GET' && req.url === '/api/workflows/examples') {
+        try {
+          const { listExampleWorkflows } = require('../lib/workflow');
+          const examples = listExampleWorkflows();
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ examples }));
         } catch (err) {
           res.writeHead(500, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: err.message }));
