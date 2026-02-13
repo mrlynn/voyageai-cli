@@ -18,9 +18,13 @@ const VAI_TOOLS = new Set([
   'ingest', 'collections', 'models', 'explain', 'estimate',
 ]);
 
-const CONTROL_FLOW_TOOLS = new Set(['merge', 'filter', 'transform', 'generate']);
+const CONTROL_FLOW_TOOLS = new Set(['merge', 'filter', 'transform', 'generate', 'conditional', 'loop', 'template']);
 
-const ALL_TOOLS = new Set([...VAI_TOOLS, ...CONTROL_FLOW_TOOLS]);
+const PROCESSING_TOOLS = new Set(['chunk', 'aggregate']);
+
+const INTEGRATION_TOOLS = new Set(['http']);
+
+const ALL_TOOLS = new Set([...VAI_TOOLS, ...CONTROL_FLOW_TOOLS, ...PROCESSING_TOOLS, ...INTEGRATION_TOOLS]);
 
 // ════════════════════════════════════════════════════════════════════
 // Validation
@@ -52,8 +56,8 @@ function validateWorkflow(definition) {
   // Validate inputs schema
   if (definition.inputs) {
     for (const [key, schema] of Object.entries(definition.inputs)) {
-      if (schema.type && !['string', 'number', 'boolean'].includes(schema.type)) {
-        errors.push(`Input "${key}" has invalid type "${schema.type}" (must be string, number, or boolean)`);
+      if (schema.type && !['string', 'number', 'boolean', 'array'].includes(schema.type)) {
+        errors.push(`Input "${key}" has invalid type "${schema.type}" (must be string, number, boolean, or array)`);
       }
     }
   }
@@ -94,10 +98,22 @@ function validateWorkflow(definition) {
     // Check template references point to known step IDs or reserved prefixes
     // "item" and "index" are injected by forEach at runtime
     const forEachVars = step.forEach ? new Set(['item', 'index']) : new Set();
+    // For loop nodes, the "as" variable and inline step refs are scoped
+    const loopVars = new Set();
+    if (step.tool === 'loop' && step.inputs) {
+      if (step.inputs.as) loopVars.add(step.inputs.as);
+      loopVars.add('item');
+      loopVars.add('index');
+    }
     if (step.inputs) {
-      const deps = extractDependencies(step.inputs);
+      // For loop nodes, only check dependencies on top-level inputs (items, as, maxIterations)
+      // not on the inline step's inputs which may reference the loop variable
+      const inputsToCheck = step.tool === 'loop'
+        ? { items: step.inputs.items }
+        : step.inputs;
+      const deps = extractDependencies(inputsToCheck);
       for (const dep of deps) {
-        if (!forEachVars.has(dep) && !stepIds.has(dep) && !definition.steps.some(s => s.id === dep)) {
+        if (!forEachVars.has(dep) && !loopVars.has(dep) && !stepIds.has(dep) && !definition.steps.some(s => s.id === dep)) {
           errors.push(`${stepPrefix}: references unknown step "${dep}"`);
         }
       }
@@ -117,6 +133,44 @@ function validateWorkflow(definition) {
   // Report duplicates
   for (const id of duplicateIds) {
     errors.push(`Duplicate step id: "${id}"`);
+  }
+
+  // Validate conditional branch references
+  for (const step of definition.steps) {
+    if (step.tool === 'conditional' && step.inputs) {
+      const branches = ['then', 'else'];
+      for (const branch of branches) {
+        const refs = step.inputs[branch];
+        if (refs && Array.isArray(refs)) {
+          for (const ref of refs) {
+            if (!stepIds.has(ref)) {
+              errors.push(`Step "${step.id}": conditional ${branch} references unknown step "${ref}"`);
+            }
+          }
+        }
+      }
+      if (!step.inputs.condition) {
+        errors.push(`Step "${step.id}": conditional must have a "condition" input`);
+      }
+      if (!step.inputs.then || !Array.isArray(step.inputs.then)) {
+        errors.push(`Step "${step.id}": conditional must have a "then" array`);
+      }
+    }
+
+    // Validate loop inline step
+    if (step.tool === 'loop' && step.inputs) {
+      if (!step.inputs.items) {
+        errors.push(`Step "${step.id}": loop must have an "items" input`);
+      }
+      if (!step.inputs.as || typeof step.inputs.as !== 'string') {
+        errors.push(`Step "${step.id}": loop must have a string "as" input`);
+      }
+      if (!step.inputs.step || typeof step.inputs.step !== 'object') {
+        errors.push(`Step "${step.id}": loop must have a "step" object`);
+      } else if (step.inputs.step.tool && !ALL_TOOLS.has(step.inputs.step.tool)) {
+        errors.push(`Step "${step.id}": loop sub-step has unknown tool "${step.inputs.step.tool}"`);
+      }
+    }
   }
 
   // Check for circular dependencies
@@ -197,6 +251,18 @@ function detectCycles(steps) {
 function buildDependencyGraph(steps) {
   const graph = new Map();
 
+  // First pass: build index of conditional branches
+  // Steps referenced in then/else of a conditional depend on that conditional
+  const conditionalDeps = new Map(); // stepId -> conditionalStepId
+  for (const step of steps) {
+    if (step.tool === 'conditional' && step.inputs) {
+      const branches = [...(step.inputs.then || []), ...(step.inputs.else || [])];
+      for (const ref of branches) {
+        conditionalDeps.set(ref, step.id);
+      }
+    }
+  }
+
   for (const step of steps) {
     const deps = extractDependencies(step.inputs || {});
     if (step.condition) {
@@ -206,6 +272,10 @@ function buildDependencyGraph(steps) {
     if (step.forEach) {
       const forDeps = extractDependencies(step.forEach);
       for (const d of forDeps) deps.add(d);
+    }
+    // If this step is referenced by a conditional, it depends on that conditional
+    if (conditionalDeps.has(step.id)) {
+      deps.add(conditionalDeps.get(step.id));
     }
     graph.set(step.id, deps);
   }
@@ -552,6 +622,70 @@ function executeTransform(inputs) {
   }
 
   return { results, resultCount: results.length };
+}
+
+/**
+ * Execute a conditional step: evaluate condition and determine branch.
+ *
+ * NOTE: The actual branch enforcement (skipping steps) is handled by
+ * the main execution loop, not here. This just evaluates and returns
+ * which branch was taken.
+ *
+ * @param {object} inputs - { condition: string, then: string[], else?: string[] }
+ * @param {object} context - workflow context
+ * @returns {{ conditionResult: boolean, branchTaken: string, enabledSteps: string[], skippedSteps: string[] }}
+ */
+function executeConditional(inputs, context) {
+  const { condition } = inputs;
+  const thenSteps = inputs.then || [];
+  const elseSteps = inputs.else || [];
+
+  if (!condition && condition !== false && condition !== 0) {
+    throw new Error('conditional: "condition" input is required');
+  }
+
+  // Condition may already be resolved by template engine to a boolean
+  let result;
+  if (typeof condition === 'boolean') {
+    result = condition;
+  } else if (typeof condition === 'string') {
+    result = evaluateCondition(condition, context);
+  } else {
+    result = Boolean(condition);
+  }
+
+  const taken = result ? 'then' : 'else';
+  const enabled = result ? thenSteps : elseSteps;
+  const skipped = result ? elseSteps : thenSteps;
+
+  return {
+    conditionResult: result,
+    branchTaken: taken,
+    enabledSteps: enabled,
+    skippedSteps: skipped,
+  };
+}
+
+/**
+ * Execute a template step: compose text from template.
+ *
+ * @param {object} inputs - { text: string }
+ * @returns {{ text: string, charCount: number, referencedSteps: string[] }}
+ */
+function executeTemplate(inputs) {
+  const { text } = inputs;
+
+  if (text === undefined || text === null) {
+    throw new Error('template: "text" input is required');
+  }
+
+  const textStr = String(text);
+  // Extract referenced step IDs from the original template (before resolution)
+  // Since inputs are already resolved by this point, we just return the composed text
+  return {
+    text: textStr,
+    charCount: textStr.length,
+  };
 }
 
 // ════════════════════════════════════════════════════════════════════
@@ -938,6 +1072,10 @@ async function executeStep(step, resolvedInputs, defaults, context) {
       return executeTransform(resolvedInputs);
     case 'generate':
       return executeGenerate(resolvedInputs);
+    case 'conditional':
+      return executeConditional(resolvedInputs, context);
+    case 'template':
+      return executeTemplate(resolvedInputs);
 
     // VAI tools
     case 'query':
@@ -1056,11 +1194,26 @@ async function executeWorkflow(definition, opts = {}) {
 
   // Execute layer by layer
   const stepResults = [];
+  const skippedByConditional = new Set(); // Steps skipped by conditional branches
 
   for (const layer of layers) {
     const layerPromises = layer.map(async (stepId) => {
       const step = stepMap.get(stepId);
       const stepStart = Date.now();
+
+      // Check if this step was skipped by a conditional branch
+      if (skippedByConditional.has(stepId)) {
+        if (opts.onStepSkip) opts.onStepSkip(stepId, 'conditional branch not taken');
+        context[stepId] = { output: null, skipped: true };
+        stepResults.push({
+          id: stepId,
+          tool: step.tool,
+          skipped: true,
+          reason: 'conditional branch not taken',
+          durationMs: Date.now() - stepStart,
+        });
+        return;
+      }
 
       // Evaluate condition
       if (step.condition) {
@@ -1083,7 +1236,16 @@ async function executeWorkflow(definition, opts = {}) {
       try {
         let output;
 
-        if (step.forEach) {
+        if (step.tool === 'conditional') {
+          // Special handling: resolve then/else but pass raw condition to evaluator
+          const rawCondition = step.inputs.condition;
+          const resolvedInputs = {
+            condition: rawCondition, // Keep raw for condition evaluator
+            then: step.inputs.then || [],
+            else: step.inputs.else || [],
+          };
+          output = await executeStep(step, resolvedInputs, defaults, context);
+        } else if (step.forEach) {
           // Iterate over an array
           const iterArray = resolveTemplate(step.forEach, context);
           if (!Array.isArray(iterArray)) {
@@ -1102,6 +1264,13 @@ async function executeWorkflow(definition, opts = {}) {
           // Normal execution
           const resolvedInputs = resolveTemplate(step.inputs || {}, context);
           output = await executeStep(step, resolvedInputs, defaults, context);
+        }
+
+        // If this was a conditional node, mark skipped branch steps
+        if (step.tool === 'conditional' && output.skippedSteps) {
+          for (const skippedId of output.skippedSteps) {
+            skippedByConditional.add(skippedId);
+          }
         }
 
         const durationMs = Date.now() - stepStart;
@@ -1333,6 +1502,8 @@ module.exports = {
   executeMerge,
   executeFilter,
   executeTransform,
+  executeConditional,
+  executeTemplate,
 
   // Main execution
   executeStep,
@@ -1351,5 +1522,7 @@ module.exports = {
   // Constants
   VAI_TOOLS,
   CONTROL_FLOW_TOOLS,
+  PROCESSING_TOOLS,
+  INTEGRATION_TOOLS,
   ALL_TOOLS,
 };

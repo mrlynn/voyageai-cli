@@ -1,0 +1,62 @@
+{
+  "name": "search-with-fallback",
+  "description": "Search primary collection, fall back to secondary if empty",
+  "version": "1.0.0",
+  "inputs": {
+    "query": { "type": "string", "required": true, "description": "Search query" },
+    "primary_collection": { "type": "string", "default": "api_docs", "description": "Primary collection to search" },
+    "fallback_collection": { "type": "string", "default": "knowledge", "description": "Fallback collection if primary returns no results" }
+  },
+  "steps": [
+    {
+      "id": "primary_search",
+      "tool": "query",
+      "name": "Search primary collection",
+      "inputs": {
+        "query": "{{ inputs.query }}",
+        "collection": "{{ inputs.primary_collection }}",
+        "limit": 5
+      }
+    },
+    {
+      "id": "check_results",
+      "tool": "conditional",
+      "name": "Any results found?",
+      "inputs": {
+        "condition": "{{ primary_search.output.results.length > 0 }}",
+        "then": ["format_primary"],
+        "else": ["fallback_search", "format_fallback"]
+      }
+    },
+    {
+      "id": "fallback_search",
+      "tool": "query",
+      "name": "Search fallback collection",
+      "inputs": {
+        "query": "{{ inputs.query }}",
+        "collection": "{{ inputs.fallback_collection }}",
+        "limit": 5
+      }
+    },
+    {
+      "id": "format_primary",
+      "tool": "template",
+      "name": "Format primary results",
+      "inputs": {
+        "text": "Found {{ primary_search.output.results.length }} results in {{ inputs.primary_collection }}."
+      }
+    },
+    {
+      "id": "format_fallback",
+      "tool": "template",
+      "name": "Format fallback results",
+      "inputs": {
+        "text": "No results in {{ inputs.primary_collection }}. Found {{ fallback_search.output.results.length }} results in {{ inputs.fallback_collection }}."
+      }
+    }
+  ],
+  "output": {
+    "summary": "{{ check_results.output.branchTaken }}",
+    "results": "{{ check_results.output.branchTaken }}"
+  }
+}
