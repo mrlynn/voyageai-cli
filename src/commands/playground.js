@@ -309,6 +309,20 @@ function createPlaygroundServer() {
         return;
       }
 
+      // API: Doctor health checks
+      if (req.method === 'GET' && req.url === '/api/doctor') {
+        try {
+          const { runChecks } = require('./doctor');
+          const results = await runChecks();
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify(results));
+        } catch (err) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: err.message }));
+        }
+        return;
+      }
+
       // API: Settings origins — where each config value comes from
       if (req.method === 'GET' && req.url === '/api/settings/origins') {
         const { resolveLLMConfig } = require('../lib/llm');
@@ -335,6 +349,40 @@ function createPlaygroundServer() {
 
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify(origins));
+        return;
+      }
+
+      // API: List built-in workflows
+      if (req.method === 'GET' && req.url === '/api/workflows') {
+        try {
+          const { listBuiltinWorkflows } = require('../lib/workflow');
+          const workflows = listBuiltinWorkflows();
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ workflows }));
+        } catch (err) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: err.message }));
+        }
+        return;
+      }
+
+      // API: Get a specific workflow by name
+      if (req.method === 'GET' && req.url?.startsWith('/api/workflows/')) {
+        const name = decodeURIComponent(req.url.replace('/api/workflows/', ''));
+        if (!name) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Workflow name is required' }));
+          return;
+        }
+        try {
+          const { loadWorkflow } = require('../lib/workflow');
+          const definition = loadWorkflow(name);
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ definition }));
+        } catch (err) {
+          res.writeHead(404, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: err.message }));
+        }
         return;
       }
 
@@ -459,8 +507,37 @@ function createPlaygroundServer() {
                 opts: { systemPrompt, db: db || undefined, collection: collection || undefined },
               })) {
                 if (event.type === 'tool_call') {
-                  const { name, args, timeMs, error } = event.data;
-                  res.write(`event: tool_call\ndata: ${JSON.stringify({ name, args, timeMs, error })}\n\n`);
+                  const { name, args, timeMs, error, result } = event.data;
+                  // Build a short human-readable summary of the tool result
+                  let resultSummary = '';
+                  if (!error && result) {
+                    if (name === 'vai_query' || name === 'vai_search') {
+                      const docs = result.results || result.documents || [];
+                      resultSummary = `Found ${docs.length} result${docs.length !== 1 ? 's' : ''}`;
+                    } else if (name === 'vai_collections') {
+                      const colls = result.collections || [];
+                      resultSummary = colls.length > 0
+                        ? colls.map(c => `<code>${c.name || c}</code>`).slice(0, 5).join(', ')
+                        : 'No collections found';
+                    } else if (name === 'vai_models') {
+                      const models = result.models || [];
+                      resultSummary = `${models.length} model${models.length !== 1 ? 's' : ''} available`;
+                    } else if (name === 'vai_embed') {
+                      const dims = result.dimensions || result.embedding?.length || '?';
+                      resultSummary = `${dims}-dim vector`;
+                    } else if (name === 'vai_similarity') {
+                      const score = result.similarity ?? result.score;
+                      resultSummary = score !== undefined ? `Score: ${Number(score).toFixed(4)}` : '';
+                    } else if (name === 'vai_rerank') {
+                      const items = result.results || [];
+                      resultSummary = `Reranked ${items.length} result${items.length !== 1 ? 's' : ''}`;
+                    } else if (name === 'vai_estimate') {
+                      resultSummary = result.recommendation || '';
+                    } else if (name === 'vai_explain' || name === 'vai_topics') {
+                      resultSummary = result.title || result.topic || '';
+                    }
+                  }
+                  res.write(`event: tool_call\ndata: ${JSON.stringify({ name, args, timeMs, error, resultSummary })}\n\n`);
                 } else if (event.type === 'chunk') {
                   res.write(`event: chunk\ndata: ${JSON.stringify({ text: event.data })}\n\n`);
                 } else if (event.type === 'done') {
@@ -643,6 +720,120 @@ function createPlaygroundServer() {
             usage: result.usage,
             model: result.model,
           }));
+          return;
+        }
+
+        // API: Validate a workflow definition
+        if (req.url === '/api/workflows/validate') {
+          const { validateWorkflow } = require('../lib/workflow');
+          const { definition } = parsed;
+          if (!definition) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'definition is required' }));
+            return;
+          }
+          const errors = validateWorkflow(definition);
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ valid: errors.length === 0, errors }));
+          return;
+        }
+
+        // API: Get execution plan (layers + dependency graph)
+        if (req.url === '/api/workflows/plan') {
+          const { buildExecutionPlan, buildDependencyGraph, validateWorkflow } = require('../lib/workflow');
+          const { definition } = parsed;
+          if (!definition || !definition.steps) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'definition with steps is required' }));
+            return;
+          }
+          const errors = validateWorkflow(definition);
+          if (errors.length > 0) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Invalid workflow', errors }));
+            return;
+          }
+          const layers = buildExecutionPlan(definition.steps);
+          const graphMap = buildDependencyGraph(definition.steps);
+          // Convert Map<string, Set<string>> to plain object for JSON serialization
+          const graph = {};
+          for (const [stepId, deps] of graphMap) {
+            graph[stepId] = Array.from(deps);
+          }
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ layers, graph }));
+          return;
+        }
+
+        // API: Execute a workflow (streaming SSE)
+        if (req.url === '/api/workflows/execute') {
+          const { executeWorkflow, validateWorkflow: validateWf } = require('../lib/workflow');
+          const { definition, inputs } = parsed;
+          if (!definition) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'definition is required' }));
+            return;
+          }
+          const errors = validateWf(definition);
+          if (errors.length > 0) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Invalid workflow', errors }));
+            return;
+          }
+
+          // Stream execution events as SSE
+          res.writeHead(200, {
+            'Content-Type': 'text/event-stream',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+          });
+
+          try {
+            const result = await executeWorkflow(definition, {
+              inputs: inputs || {},
+              onStepStart: (stepId, stepDef) => {
+                res.write(`event: step_start\ndata: ${JSON.stringify({
+                  stepId,
+                  name: stepDef.name || stepId,
+                  tool: stepDef.tool,
+                })}\n\n`);
+              },
+              onStepComplete: (stepId, output, timeMs) => {
+                // Summarize output to avoid huge payloads
+                let summary = '';
+                if (output && typeof output === 'object') {
+                  if (output.results) summary = `${output.results.length} results`;
+                  else if (output.similarity !== undefined) summary = `similarity: ${Number(output.similarity).toFixed(4)}`;
+                  else if (output.text) summary = output.text.slice(0, 100) + (output.text.length > 100 ? '...' : '');
+                  else summary = JSON.stringify(output).slice(0, 200);
+                }
+                res.write(`event: step_complete\ndata: ${JSON.stringify({
+                  stepId, timeMs, summary,
+                  output: JSON.stringify(output).length < 5000 ? output : { _truncated: true, summary },
+                })}\n\n`);
+              },
+              onStepSkip: (stepId, reason) => {
+                res.write(`event: step_skip\ndata: ${JSON.stringify({ stepId, reason })}\n\n`);
+              },
+              onStepError: (stepId, error) => {
+                res.write(`event: step_error\ndata: ${JSON.stringify({
+                  stepId,
+                  error: error.message || String(error),
+                })}\n\n`);
+              },
+            });
+
+            res.write(`event: done\ndata: ${JSON.stringify({
+              output: result.output,
+              totalTimeMs: result.totalTimeMs,
+              layers: result.layers,
+              steps: result.steps,
+            })}\n\n`);
+          } catch (err) {
+            res.write(`event: error\ndata: ${JSON.stringify({ error: err.message })}\n\n`);
+          }
+
+          res.end();
           return;
         }
       }
