@@ -23,6 +23,45 @@ function collectInputs(pair, prev) {
 }
 
 /**
+ * Interactively prompt the user for missing workflow inputs using @clack/prompts.
+ * Only prompts for inputs not already provided via --input flags.
+ *
+ * @param {object} definition - Workflow definition
+ * @param {object} existingInputs - Inputs already provided via --input
+ * @returns {Promise<object>} Merged inputs (existing + prompted)
+ */
+async function promptForInputs(definition, existingInputs) {
+  const { buildInputSteps } = require('../lib/workflow');
+  const { createCLIRenderer } = require('../lib/wizard-cli');
+  const { runWizard } = require('../lib/wizard');
+
+  const allSteps = buildInputSteps(definition);
+  // Only prompt for inputs not already provided
+  const steps = allSteps.filter(s => !(s.id in existingInputs));
+  if (steps.length === 0) return existingInputs;
+
+  const renderer = createCLIRenderer({
+    title: `${definition.name || 'Workflow'} inputs`,
+    doneMessage: 'Inputs ready.',
+    showBackHint: true,
+  });
+
+  const { answers, cancelled } = await runWizard({
+    steps,
+    config: {},
+    renderer,
+    initial: {},
+  });
+
+  if (cancelled) {
+    console.log(pc.dim('Cancelled.'));
+    process.exit(0);
+  }
+
+  return { ...existingInputs, ...answers };
+}
+
+/**
  * Register the workflow command on a Commander program.
  * @param {import('commander').Command} program
  */
@@ -43,6 +82,7 @@ function registerWorkflow(program) {
     .option('--quiet', 'Suppress progress output', false)
     .option('--dry-run', 'Show execution plan without running', false)
     .option('--verbose', 'Show step details', false)
+    .option('--no-interactive', 'Disable interactive input prompting')
     .action(async (file, opts) => {
       const { loadWorkflow, executeWorkflow, buildExecutionPlan, validateWorkflow } = require('../lib/workflow');
 
@@ -63,6 +103,11 @@ function registerWorkflow(program) {
       }
 
       const workflowName = definition.name || file;
+
+      // Interactive prompting for missing inputs
+      if (opts.interactive !== false && process.stdin.isTTY) {
+        opts.input = await promptForInputs(definition, opts.input);
+      }
 
       if (opts.dryRun) {
         // Dry run: show plan
