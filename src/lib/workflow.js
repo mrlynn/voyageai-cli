@@ -688,6 +688,105 @@ function executeTemplate(inputs) {
   };
 }
 
+/**
+ * Execute a loop step: iterate over an array, executing a sub-step per item.
+ *
+ * @param {object} inputs - { items, as, step, maxIterations? }
+ * @param {object} defaults - workflow defaults
+ * @param {object} context - workflow context
+ * @returns {Promise<{ iterations: number, results: any[], errors: any[] }>}
+ */
+async function executeLoop(inputs, defaults, context) {
+  const { items, as, step: subStepDef, maxIterations = 100 } = inputs;
+
+  if (!Array.isArray(items)) {
+    throw new Error('loop: "items" must resolve to an array');
+  }
+  if (!as || typeof as !== 'string') {
+    throw new Error('loop: "as" must be a string variable name');
+  }
+  if (!subStepDef || typeof subStepDef !== 'object') {
+    throw new Error('loop: "step" must be a step definition object');
+  }
+
+  const results = [];
+  const errors = [];
+
+  const limit = Math.min(items.length, maxIterations);
+
+  for (let i = 0; i < limit; i++) {
+    const item = items[i];
+    // Build scoped context with loop variable
+    const scopedContext = { ...context, [as]: item, _loopIndex: i };
+
+    try {
+      // Resolve the sub-step inputs in the scoped context
+      const resolvedInputs = resolveTemplate(subStepDef.inputs || {}, scopedContext);
+      // Create a temporary step object for the dispatcher
+      const tempStep = { id: `_loop_${i}`, tool: subStepDef.tool, inputs: subStepDef.inputs };
+      const output = await executeStep(tempStep, resolvedInputs, defaults, scopedContext);
+      results.push(output);
+    } catch (err) {
+      errors.push({ index: i, error: err.message });
+      // If the parent loop has continueOnError, we keep going (handled by caller)
+      // For now, loop always continues and collects errors
+    }
+  }
+
+  if (items.length > maxIterations) {
+    errors.push({ index: maxIterations, error: `Loop truncated at maxIterations (${maxIterations})` });
+  }
+
+  return {
+    iterations: results.length,
+    results,
+    errors,
+  };
+}
+
+/**
+ * Execute a chunk step: split text using vai's chunking strategies.
+ *
+ * @param {object} inputs - { text, strategy?, size?, overlap?, source? }
+ * @returns {{ chunks: object[], totalChunks: number, strategy: string, avgChunkSize: number }}
+ */
+function executeChunk(inputs) {
+  const { chunk: doChunk } = require('./chunker');
+
+  const { text, strategy = 'recursive', size = 512, overlap = 50, source } = inputs;
+
+  if (!text && text !== '') {
+    throw new Error('chunk: "text" input is required');
+  }
+
+  const chunkTexts = doChunk(text, { strategy, size, overlap });
+
+  const chunks = chunkTexts.map((content, index) => {
+    const obj = {
+      index,
+      content,
+      charCount: content.length,
+    };
+    if (source) obj.source = source;
+    obj.metadata = { strategy };
+    // For markdown strategy, try to extract heading
+    if (strategy === 'markdown') {
+      const headingMatch = content.match(/^#+\s+(.+)/m);
+      if (headingMatch) obj.metadata.heading = headingMatch[1];
+    }
+    return obj;
+  });
+
+  const totalChars = chunks.reduce((sum, c) => sum + c.charCount, 0);
+
+  return {
+    chunks,
+    totalChunks: chunks.length,
+    strategy,
+    avgChunkSize: chunks.length > 0 ? Math.round(totalChars / chunks.length) : 0,
+  };
+}
+
 // ════════════════════════════════════════════════════════════════════
 // VAI Tool Executors
 // ════════════════════════════════════════════════════════════════════
@@ -1076,6 +1175,10 @@ async function executeStep(step, resolvedInputs, defaults, context) {
       return executeConditional(resolvedInputs, context);
     case 'template':
       return executeTemplate(resolvedInputs);
+    case 'loop':
+      return executeLoop(resolvedInputs, defaults, context);
+    case 'chunk':
+      return executeChunk(resolvedInputs);
 
     // VAI tools
     case 'query':
@@ -1243,6 +1346,16 @@ async function executeWorkflow(definition, opts = {}) {
             condition: rawCondition, // Keep raw for condition evaluator
             then: step.inputs.then || [],
             else: step.inputs.else || [],
+          };
+          output = await executeStep(step, resolvedInputs, defaults, context);
+        } else if (step.tool === 'loop') {
+          // Special handling: resolve items but pass raw step def for per-iteration resolution
+          const resolvedItems = resolveTemplate(step.inputs.items, context);
+          const resolvedInputs = {
+            items: resolvedItems,
+            as: step.inputs.as,
+            step: step.inputs.step, // Raw — resolved per iteration inside executeLoop
+            maxIterations: step.inputs.maxIterations,
           };
           output = await executeStep(step, resolvedInputs, defaults, context);
         } else if (step.forEach) {
@@ -1504,6 +1617,8 @@ module.exports = {
   executeTransform,
   executeConditional,
   executeTemplate,
+  executeLoop,
+  executeChunk,
 
   // Main execution
   executeStep,
