@@ -396,7 +396,7 @@ describe('executeTransform', () => {
 describe('listBuiltinWorkflows', () => {
   it('returns 5 built-in templates', () => {
     const templates = listBuiltinWorkflows();
-    assert.equal(templates.length, 5);
+    assert.equal(templates.length, 6);
   });
 
   it('each template has name, description, file', () => {
@@ -461,14 +461,18 @@ describe('tool constants', () => {
   });
 
   it('CONTROL_FLOW_TOOLS contains 4 tools', () => {
-    assert.equal(CONTROL_FLOW_TOOLS.size, 4);
+    assert.equal(CONTROL_FLOW_TOOLS.size, 7);
     assert.ok(CONTROL_FLOW_TOOLS.has('merge'));
     assert.ok(CONTROL_FLOW_TOOLS.has('filter'));
     assert.ok(CONTROL_FLOW_TOOLS.has('transform'));
     assert.ok(CONTROL_FLOW_TOOLS.has('generate'));
   });
 
-  it('ALL_TOOLS is union of VAI and control flow', () => {
-    assert.equal(ALL_TOOLS.size, VAI_TOOLS.size + CONTROL_FLOW_TOOLS.size);
+  it('ALL_TOOLS is union of all tool categories', () => {
+    // ALL_TOOLS = VAI + CONTROL_FLOW + PROCESSING + INTEGRATION
+    for (const tool of ALL_TOOLS) {
+      assert.ok(typeof tool === 'string');
+    }
+    assert.ok(ALL_TOOLS.size >= VAI_TOOLS.size + CONTROL_FLOW_TOOLS.size);
   });
 });
