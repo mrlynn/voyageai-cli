@@ -51,7 +51,7 @@ async function runStdioServer() {
  * @param {number} options.port
  * @param {string} options.host
  */
-async function runHttpServer({ port = 3100, host = '127.0.0.1' } = {}) {
+async function runHttpServer({ port = 3100, host = '127.0.0.1', sse = false } = {}) {
   const express = require('express');
   const { StreamableHTTPServerTransport } = require('@modelcontextprotocol/sdk/server/streamableHttp.js');
   const { getConfigValue } = require('../lib/config');
@@ -131,8 +131,25 @@ async function runHttpServer({ port = 3100, host = '127.0.0.1' } = {}) {
     res.status(405).json({ error: 'Method not allowed. Stateless server — no sessions to delete.' });
   });
 
+  // SSE transport (opt-in via --sse flag)
+  if (sse) {
+    const { setupSSE, getSessionCount } = require('./sse-transport');
+    setupSSE(app, authenticateRequest);
+
+    // Augment health endpoint with SSE session count
+    const _originalHealthHandler = app._router.stack.find(
+      (layer) => layer.route && layer.route.path === '/health' && layer.route.methods.get
+    );
+    // Add SSE info to health response via a second middleware
+    app.get('/health/sse', (_req, res) => {
+      res.json({ sseSessions: getSessionCount() });
+    });
+  }
+
   app.listen(port, host, () => {
-    const msg = `vai MCP server v${VERSION} running on http://${host}:${port}/mcp`;
+    const transports = ['Streamable HTTP (POST /mcp)'];
+    if (sse) transports.push('SSE (GET /sse)');
+    const msg = `vai MCP server v${VERSION} running on http://${host}:${port}\n  Transports: ${transports.join(', ')}`;
     if (process.env.VAI_MCP_VERBOSE) {
       process.stderr.write(msg + '\n');
       process.stderr.write(`Authentication: ${requireAuth ? 'enabled' : 'disabled (no keys configured)'}\n`);
