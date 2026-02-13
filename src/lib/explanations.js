@@ -1434,6 +1434,50 @@ const concepts = {
       'vai chat --db myapp --collection knowledge',
     ],
   },
+
+  workflows: {
+    title: 'Agentic Workflows',
+    summary: 'Composable, multi-step RAG pipelines as JSON files',
+    content: [
+      `${pc.cyan('Workflows')} are composable, multi-step RAG pipelines defined as portable`,
+      `JSON files. Think Docker Compose or GitHub Actions, but for search and retrieval`,
+      `pipelines.`,
+      ``,
+      `${pc.bold('Why workflows?')} Instead of writing bash scripts to chain vai commands,`,
+      `a workflow file captures the intent declaratively. Workflows are reproducible,`,
+      `shareable (commit them to git), and inspectable.`,
+      ``,
+      `${pc.bold('How it works:')}`,
+      `Each workflow defines a DAG (directed acyclic graph) of steps. Each step maps`,
+      `to a vai operation (query, search, rerank, embed, etc.) or a control flow`,
+      `operation (merge, filter, transform, generate). Steps reference outputs from`,
+      `previous steps using ${pc.cyan('{{ template expressions }}')} for data flow.`,
+      ``,
+      `${pc.bold('Template expressions:')}`,
+      `  ${pc.cyan('{{ inputs.query }}')}              workflow input parameter`,
+      `  ${pc.cyan('{{ search.output.results }}')}      results from a previous step`,
+      `  ${pc.cyan('{{ merge.output.results[0] }}')}    array indexing`,
+      `  ${pc.cyan('{{ defaults.db }}')}                workflow default value`,
+      ``,
+      `${pc.bold('Parallel execution:')} The engine automatically detects independent steps`,
+      `and runs them in parallel. No configuration needed.`,
+      ``,
+      `${pc.bold('Step types:')}`,
+      `  ${pc.dim('VAI tools:')}     query, search, rerank, embed, similarity, ingest,`,
+      `                 collections, models, explain, estimate`,
+      `  ${pc.dim('Control flow:')} merge, filter, transform, generate`,
+      ``,
+      `${pc.bold('Built-in templates:')} Run ${pc.cyan('vai workflow list')} to see available`,
+      `templates like multi-collection-search, smart-ingest, research-and-summarize.`,
+    ].join('\n'),
+    links: ['https://github.com/mrlynn/voyageai-cli#workflows'],
+    tryIt: [
+      'vai workflow list',
+      'vai workflow init --name my-pipeline',
+      'vai workflow validate ./my-pipeline.vai-workflow.json',
+      'vai workflow run multi-collection-search --input query="test" --dry-run',
+    ],
+  },
 };
 
 /**
@@ -1598,6 +1642,15 @@ const aliases = {
   conversational: 'chat',
   'chat-history': 'chat',
   llm: 'chat',
+  // Workflow aliases
+  workflow: 'workflows',
+  workflows: 'workflows',
+  'rag-pipeline': 'workflows',
+  composable: 'workflows',
+  'workflow-engine': 'workflows',
+  'vai-workflow': 'workflows',
+  pipeline: 'workflows',
+  dag: 'workflows',
 };
 
 /**

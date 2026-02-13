@@ -15,7 +15,7 @@ function getVersion() {
 }
 
 const GITHUB_ISSUES_URL = 'https://github.com/mrlynn/voyageai-cli/issues/new';
-const BUG_API_URL = 'https://vai.mlynn.org/api/bugs';
+const BUG_API_URL = 'https://vaicli.com/api/bugs';
 
 /**
  * Generate a GitHub issue URL with pre-filled template

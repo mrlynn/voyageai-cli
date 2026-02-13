@@ -1,0 +1,63 @@
+{
+  "$schema": "https://vai.dev/schemas/workflow-v1.json",
+  "name": "Smart Ingest",
+  "description": "Check if a document is novel before ingesting (avoid duplicates)",
+  "version": "1.0.0",
+  "inputs": {
+    "text": {
+      "type": "string",
+      "description": "The document text to ingest",
+      "required": true
+    },
+    "source": {
+      "type": "string",
+      "description": "Source identifier for the document",
+      "required": true
+    },
+    "threshold": {
+      "type": "number",
+      "description": "Similarity threshold (0-1). Documents more similar than this are considered duplicates",
+      "default": 0.85
+    }
+  },
+  "defaults": {},
+  "steps": [
+    {
+      "id": "check_existing",
+      "name": "Search for similar existing documents",
+      "tool": "search",
+      "inputs": {
+        "query": "{{ inputs.text }}",
+        "limit": 3
+      }
+    },
+    {
+      "id": "similarity_check",
+      "name": "Check similarity to top match",
+      "tool": "similarity",
+      "inputs": {
+        "text1": "{{ inputs.text }}",
+        "text2": "{{ check_existing.output.results[0].text }}"
+      },
+      "condition": "{{ check_existing.output.results.length > 0 }}"
+    },
+    {
+      "id": "ingest_doc",
+      "name": "Ingest if sufficiently novel",
+      "tool": "ingest",
+      "inputs": {
+        "text": "{{ inputs.text }}",
+        "source": "{{ inputs.source }}",
+        "metadata": {
+          "ingested_via": "smart-ingest-workflow"
+        }
+      },
+      "condition": "{{ !similarity_check.output || similarity_check.output.similarity < 0.85 }}"
+    }
+  ],
+  "output": {
+    "ingested": "{{ ingest_doc.output ? true : false }}",
+    "similarityScore": "{{ similarity_check.output.similarity }}",
+    "existingDocs": "{{ check_existing.output.resultCount }}"
+  }
+}

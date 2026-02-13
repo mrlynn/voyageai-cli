@@ -10,56 +10,56 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  /* MongoDB Design System — Dark Mode Palette (default) */
+  /* Vai Dark Mode Palette (default) — Teal/Cyan brand */
   --bg: #001E2B;            /* MDB Black */
   --bg-surface: #112733;    /* Gray Dark 4 */
   --bg-card: #1C2D38;       /* Gray Dark 3 */
   --bg-input: #112733;      /* Gray Dark 4 */
-  --accent: #00ED64;        /* Green Base — interactive elements only */
+  --accent: #00D4AA;        /* Teal — interactive elements */
   --accent-text: #FFFFFF;   /* Bright white — headings/labels in dark mode */
-  --accent-dim: #00A35C;    /* Green Dark 1 */
-  --accent-glow: rgba(0, 237, 100, 0.12);
+  --accent-dim: #009E80;    /* Teal Dark */
+  --accent-glow: rgba(0, 212, 170, 0.10);
   --text: #E8EDEB;          /* Gray Light 2 */
   --text-dim: #C1C7C6;      /* Gray Light 1 */
   --text-muted: #889397;    /* Gray Base */
   --border: #3D4F58;        /* Gray Dark 2 */
   --error: #FF6960;         /* Red Light 1 */
   --warning: #FFC010;       /* Yellow Base */
-  --success: #00ED64;       /* Green Base */
+  --success: #00D4AA;       /* Teal */
   --red: #FF6960;           /* Red Light 1 */
   --yellow: #FFC010;        /* Yellow Base */
-  --green: #00ED64;         /* Green Base */
-  --blue: #0498EC;          /* Blue Light 1 (links) */
+  --green: #00D4AA;         /* Teal */
+  --blue: #40E0FF;          /* Cyan (links) */
   --purple: #B45AF2;        /* Purple Base */
-  --green-dark: #023430;    /* Green Dark 3 */
+  --green-dark: #00241E;    /* Teal Dark 3 */
   --radius: 8px;
   --font: 'Euclid Circular A', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
   --mono: 'Source Code Pro', 'SF Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
 }
 
-/* MongoDB Design System — Light Mode Palette */
+/* Vai Light Mode Palette — Teal/Cyan brand */
 [data-theme="light"] {
   --bg: #FFFFFF;             /* White */
   --bg-surface: #F9FBFA;    /* Gray Light 3 */
   --bg-card: #FFFFFF;        /* White */
   --bg-input: #F9FBFA;      /* Gray Light 3 */
-  --accent: #00A35C;         /* Green Dark 1 — interactive elements */
+  --accent: #009E80;         /* Teal Dark — interactive elements */
   --accent-text: #001E2B;   /* MDB Black — headings/labels in light mode */
-  --accent-dim: #00684A;     /* Green Dark 2 */
-  --accent-glow: rgba(0, 163, 92, 0.08);
+  --accent-dim: #007A63;     /* Teal Darker */
+  --accent-glow: rgba(0, 158, 128, 0.08);
   --text: #001E2B;           /* MDB Black */
   --text-dim: #5C6C75;       /* Gray Dark 1 */
   --text-muted: #889397;     /* Gray Base */
   --border: #E8EDEB;         /* Gray Light 2 */
   --error: #DB3030;          /* Red Base */
   --warning: #944F01;        /* Yellow Dark 2 */
-  --success: #00684A;        /* Green Dark 2 */
+  --success: #009E80;        /* Teal Dark */
   --red: #DB3030;            /* Red Base */
   --yellow: #944F01;         /* Yellow Dark 2 */
-  --green: #00684A;          /* Green Dark 2 */
-  --blue: #016BF8;           /* Blue Base */
+  --green: #009E80;          /* Teal Dark */
+  --blue: #0088CC;           /* Cyan Dark (links) */
   --purple: #5E0C9E;         /* Purple Dark 2 */
-  --green-dark: #023430;     /* Green Dark 3 */
+  --green-dark: #00241E;     /* Teal Dark 3 */
 }
 /* Light mode shadow + card adjustments */
 [data-theme="light"] .explore-card,
@@ -69,7 +69,7 @@
   box-shadow: 0 1px 4px rgba(0, 30, 43, 0.08);
 }
 [data-theme="light"] .explore-card:hover {
-  box-shadow: 0 4px 16px rgba(0, 163, 92, 0.12);
+  box-shadow: 0 4px 16px rgba(0, 158, 128, 0.12);
 }
 [data-theme="light"] .cost-modal,
 [data-theme="light"] .explore-modal {
@@ -83,14 +83,14 @@
   box-shadow: 1px 0 3px rgba(0, 30, 43, 0.06);
 }
 /* Light mode gradient overrides */
-[data-theme="light"] .quant-bar-fill.storage { background: linear-gradient(90deg, #00A35C, #00ED64); }
-[data-theme="light"] .quant-bar-fill.latency { background: linear-gradient(90deg, #016BF8, #0498EC); }
-[data-theme="light"] .quant-meter-fill.perfect { background: linear-gradient(90deg, #00A35C, #00ED64); }
+[data-theme="light"] .quant-bar-fill.storage { background: linear-gradient(90deg, #009E80, #00D4AA); }
+[data-theme="light"] .quant-bar-fill.latency { background: linear-gradient(90deg, #0088CC, #40E0FF); }
+[data-theme="light"] .quant-meter-fill.perfect { background: linear-gradient(90deg, #009E80, #00D4AA); }
 [data-theme="light"] .quant-meter-fill.good { background: linear-gradient(90deg, #944F01, #FFC010); }
 [data-theme="light"] .quant-meter-fill.degraded { background: linear-gradient(90deg, #DB3030, #FF6960); }
 /* Light mode button text */
 [data-theme="light"] .btn { color: #FFFFFF; }
-[data-theme="light"] .btn:hover { background: #00684A; }
+[data-theme="light"] .btn:hover { background: #007A63; }
 
 html, body { height: 100%; }
 
@@ -108,8 +108,8 @@ body {
   align-items: center;
   gap: 10px;
   padding: 8px 16px;
-  background: linear-gradient(135deg, rgba(0,163,92,0.12), rgba(4,152,236,0.12));
-  border-bottom: 1px solid rgba(0,237,100,0.2);
+  background: linear-gradient(135deg, rgba(0,158,128,0.12), rgba(4,152,236,0.12));
+  border-bottom: 1px solid rgba(0,212,170,0.2);
   font-size: 13px;
   color: var(--text);
   flex-shrink: 0;
@@ -178,7 +178,7 @@ body {
   padding: 24px 28px 20px;
   width: 380px;
   max-width: 90vw;
-  box-shadow: 0 12px 40px rgba(0,0,0,0.4), 0 0 0 1px rgba(0,237,100,0.15);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.4), 0 0 0 1px rgba(0,212,170,0.15);
   transition: all 0.4s cubic-bezier(0.4,0,0.2,1);
   opacity: 0;
   transform: translateY(10px);
@@ -296,7 +296,7 @@ body {
   width: 460px;
   max-width: 90vw;
   text-align: center;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,237,100,0.08);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 80px rgba(0,212,170,0.08);
   pointer-events: auto;
   opacity: 0;
   transform: scale(0.95);
@@ -324,10 +324,10 @@ body {
   margin-bottom: 28px;
 }
 [data-theme="light"] .onboarding-tooltip {
-  box-shadow: 0 12px 40px rgba(0,30,43,0.15), 0 0 0 1px rgba(0,163,92,0.2);
+  box-shadow: 0 12px 40px rgba(0,30,43,0.15), 0 0 0 1px rgba(0,158,128,0.2);
 }
 [data-theme="light"] .onboarding-welcome-card {
-  box-shadow: 0 20px 60px rgba(0,30,43,0.18), 0 0 80px rgba(0,163,92,0.06);
+  box-shadow: 0 20px 60px rgba(0,30,43,0.18), 0 0 80px rgba(0,158,128,0.06);
 }
 [data-theme="light"] .onboarding-backdrop {
   background: rgba(0,30,43,0.45);
@@ -480,7 +480,7 @@ body:not(.is-electron) .sidebar-drag-region {
   height: 16px;
 }
 [data-theme="light"] .tab-btn:hover { background: rgba(0,30,43,0.04); }
-[data-theme="light"] .tab-btn.active { background: rgba(0,163,92,0.08); }
+[data-theme="light"] .tab-btn.active { background: rgba(0,158,128,0.08); }
 
 .sidebar-footer {
   padding: 12px 16px;
@@ -558,6 +558,27 @@ body:not(.is-electron) .sidebar-drag-region {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
+  position: relative;
+}
+
+.content-area::after {
+  content: '';
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  width: 200px;
+  height: 200px;
+  background-image: url('/icons/watermark.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  opacity: 0.05;
+  pointer-events: none;
+  z-index: 0;
+  filter: invert(1);
+}
+
+[data-theme="light"] .content-area::after {
+  filter: none;
 }
 
 .content-drag-region {
@@ -644,7 +665,7 @@ select:focus { outline: none; border-color: var(--accent); }
   align-items: center;
   gap: 8px;
 }
-.btn:hover { background: #71F6BA; transform: translateY(-1px); }
+.btn:hover { background: #5CE8CC; transform: translateY(-1px); }
 .btn:active { transform: translateY(0); }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
@@ -689,7 +710,7 @@ select:focus { outline: none; border-color: var(--accent); }
 }
 .subtab:hover {
   color: var(--text);
-  background: rgba(0, 237, 100, 0.05);
+  background: rgba(0, 212, 170, 0.05);
 }
 .subtab.active {
   background: var(--accent);
@@ -964,7 +985,7 @@ select:focus { outline: none; border-color: var(--accent); }
 .explore-card:hover {
   border-color: var(--accent);
   transform: translateY(-2px);
-  box-shadow: 0 4px 20px rgba(0, 237, 100, 0.1);
+  box-shadow: 0 4px 20px rgba(0, 212, 170, 0.1);
 }
 .explore-card.expanded {
   border-color: var(--accent);
@@ -1252,8 +1273,8 @@ select:focus { outline: none; border-color: var(--accent); }
   font-family: var(--mono); font-size: 12px; font-weight: 600;
   color: var(--green-dark); white-space: nowrap; min-width: fit-content;
 }
-.quant-bar-fill.storage { background: linear-gradient(90deg, #00ED64, #71F6BA); }
-.quant-bar-fill.latency { background: linear-gradient(90deg, #0498EC, #016BF8); }
+.quant-bar-fill.storage { background: linear-gradient(90deg, #00D4AA, #5CE8CC); }
+.quant-bar-fill.latency { background: linear-gradient(90deg, #40E0FF, #0088CC); }
 .quant-bar-badge {
   position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
   font-size: 12px; color: var(--text-dim); font-family: var(--mono);
@@ -1278,7 +1299,7 @@ select:focus { outline: none; border-color: var(--accent); }
   height: 100%; border-radius: 5px;
   transition: width 0.8s cubic-bezier(0.22, 1, 0.36, 1);
 }
-.quant-meter-fill.perfect { background: linear-gradient(90deg, #00ED64, #71F6BA); }
+.quant-meter-fill.perfect { background: linear-gradient(90deg, #00D4AA, #5CE8CC); }
 .quant-meter-fill.good { background: linear-gradient(90deg, #FFC010, #FFEC9E); }
 .quant-meter-fill.degraded { background: linear-gradient(90deg, #FF6960, #FFCDC7); }
 .quant-meter-detail { font-size: 11px; color: var(--text-muted); margin-top: 4px; font-family: var(--mono); }
@@ -1374,7 +1395,7 @@ select:focus { outline: none; border-color: var(--accent); }
   font-weight: 600;
 }
 .cost-mode-btn:hover:not(.active) {
-  background: rgba(0, 237, 100, 0.1);
+  background: rgba(0, 212, 170, 0.1);
   color: var(--text);
 }
 .cost-select {
@@ -1514,7 +1535,7 @@ select:focus { outline: none; border-color: var(--accent); }
   border-bottom: 1px solid rgba(42, 53, 80, 0.3);
   font-family: var(--mono);
 }
-.cost-table tr:hover { background: rgba(0, 237, 100, 0.03); }
+.cost-table tr:hover { background: rgba(0, 212, 170, 0.03); }
 .cost-highlight {
   color: var(--accent-text);
   font-weight: 600;
@@ -1541,7 +1562,7 @@ select:focus { outline: none; border-color: var(--accent); }
 .cost-tip {
   font-size: 12px;
   color: var(--text-muted);
-  background: rgba(0, 237, 100, 0.05);
+  background: rgba(0, 212, 170, 0.05);
   border-left: 3px solid var(--accent);
   padding: 10px 14px;
   border-radius: 0 6px 6px 0;
@@ -1661,7 +1682,7 @@ select:focus { outline: none; border-color: var(--accent); }
 }
 .cost-modal .formula .accent { color: var(--accent); font-weight: 600; }
 .cost-modal .example {
-  background: rgba(0, 237, 100, 0.05);
+  background: rgba(0, 212, 170, 0.05);
   border-left: 3px solid var(--accent);
   border-radius: 0 8px 8px 0;
   padding: 12px 16px;
@@ -1843,8 +1864,8 @@ select:focus { outline: none; border-color: var(--accent); }
   line-height: 1.5;
 }
 .settings-api-banner.success {
-  background: rgba(0,237,100,0.06);
-  border-color: rgba(0,237,100,0.2);
+  background: rgba(0,212,170,0.06);
+  border-color: rgba(0,212,170,0.2);
   color: var(--success);
 }
 [data-theme="light"] .settings-api-banner {
@@ -1932,8 +1953,8 @@ select:focus { outline: none; border-color: var(--accent); }
   font-size: 13px;
   font-weight: 600;
   color: var(--accent);
-  background: rgba(0,237,100,0.08);
-  border: 1px solid rgba(0,237,100,0.2);
+  background: rgba(0,212,170,0.08);
+  border: 1px solid rgba(0,212,170,0.2);
   border-radius: 6px;
   padding: 4px 12px;
   letter-spacing: 0.3px;
@@ -1941,7 +1962,7 @@ select:focus { outline: none; border-color: var(--accent); }
 [data-theme="light"] .version-badge {
   background: rgba(0,104,74,0.06);
   border-color: rgba(0,104,74,0.2);
-  color: #00684A;
+  color: #007A63;
 }
 .settings-api-field .save-btn {
   color: var(--accent);
@@ -2174,7 +2195,7 @@ select:focus { outline: none; border-color: var(--accent); }
 }
 [data-theme="light"] .settings-origin.origin-env {
   background: rgba(4,120,190,0.10);
-  color: #016BF8;
+  color: #0088CC;
 }
 .settings-origin.origin-config {
   background: rgba(180,90,242,0.12);
@@ -2185,12 +2206,12 @@ select:focus { outline: none; border-color: var(--accent); }
   color: #7B3DB5;
 }
 .settings-origin.origin-project {
-  background: rgba(0,237,100,0.12);
+  background: rgba(0,212,170,0.12);
   color: var(--accent);
 }
 [data-theme="light"] .settings-origin.origin-project {
-  background: rgba(0,163,92,0.10);
-  color: #00A35C;
+  background: rgba(0,158,128,0.10);
+  color: #009E80;
 }
 .settings-origin.origin-default {
   background: rgba(136,147,151,0.12);
@@ -4280,7 +4301,7 @@ let lastEmbedding = null;
 
 // ── Init ──
 // ── Anonymous Telemetry ──
-const TELEMETRY_URL = 'https://vai.mlynn.org/api/telemetry';
+const TELEMETRY_URL = 'https://vaicli.com/api/telemetry';
 const TELEMETRY_KEY = 'vai-telemetry-enabled';
 
 function isTelemetryEnabled() {
@@ -5318,8 +5339,8 @@ const BENCH_SAMPLE_TEXTS = [
 ];
 
 const MODEL_COLORS = [
-  '#00ED64', '#71F6BA', '#0498EC', '#B45AF2', '#FFC010',
-  '#FF6960', '#B45AF2', '#FFC010', '#016BF8', '#C0FAE6',
+  '#00D4AA', '#5CE8CC', '#40E0FF', '#B45AF2', '#FFC010',
+  '#FF6960', '#B45AF2', '#FFC010', '#0088CC', '#A8F0E0',
 ];
 
 window.doBenchLatency = async function() {
@@ -5660,7 +5681,7 @@ window.doBenchQuantization = async function() {
     const baseline = completed.find(r => r.dtype === 'float') || completed[0];
     const maxBytes = Math.max(...completed.map(r => r.bytesPerVec));
     const maxLatency = Math.max(...completed.map(r => r.latency));
-    const DTYPE_COLORS = { float: '#00ED64', int8: '#71F6BA', uint8: '#0498EC', ubinary: '#FFC010', binary: '#FF6960' };
+    const DTYPE_COLORS = { float: '#00D4AA', int8: '#5CE8CC', uint8: '#40E0FF', ubinary: '#FFC010', binary: '#FF6960' };
 
     // ── Storage Bar Chart ──
     let storageHTML = '';
@@ -5671,7 +5692,7 @@ window.doBenchQuantization = async function() {
       const savings = r.bytesPerVec < baseline.bytesPerVec
         ? `${(baseline.bytesPerVec / r.bytesPerVec).toFixed(0)}× smaller`
         : 'baseline';
-      const color = DTYPE_COLORS[r.dtype] || '#0498EC';
+      const color = DTYPE_COLORS[r.dtype] || '#40E0FF';
       storageHTML += `<div class="quant-bar-group">
         <div class="quant-bar-label">
           <span class="dtype-name">${r.dtype}</span>
@@ -5689,7 +5710,7 @@ window.doBenchQuantization = async function() {
     const minLatency = Math.min(...completed.map(r => r.latency));
     for (const r of completed) {
       const pct = Math.max(8, (r.latency / maxLatency) * 100);
-      const color = DTYPE_COLORS[r.dtype] || '#0498EC';
+      const color = DTYPE_COLORS[r.dtype] || '#40E0FF';
       const badge = r.latency === minLatency ? ' ⚡' : '';
       latencyHTML += `<div class="quant-bar-group">
         <div class="quant-bar-label">
@@ -7229,7 +7250,22 @@ init = async function() {
 // ── Start ──
 init();
  
-// ──  Vector Space Invaders (Easter Egg) ──    
+// ──  Vector Space Invaders (Easter Egg) ──
+
+// VSI Telemetry helper
+function sendVSITelemetry(event, extra) {
+  try {
+    fetch('https://vaicli.com/api/telemetry', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ event, ...extra, sentAt: new Date().toISOString() }),
+    }).catch(() => {});
+  } catch (_) {}
+}
+
+let _vsiGameStartTime = 0;
+let _vsiGameTrigger = 'unknown';
+
 (function initEasterEgg() {
   const KONAMI = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'];
   let konamiIdx = 0;
@@ -7237,7 +7273,7 @@ init();
 
   document.addEventListener('keydown', (e) => {
     if (document.getElementById('vsiOverlay')?.style.display === 'flex') return;
-    if (e.key === KONAMI[konamiIdx]) { konamiIdx++; if (konamiIdx === KONAMI.length) { konamiIdx = 0; launchVSI(); } }
+    if (e.key === KONAMI[konamiIdx]) { konamiIdx++; if (konamiIdx === KONAMI.length) { konamiIdx = 0; _vsiGameTrigger = 'konami'; launchVSI(); } }
     else { konamiIdx = 0; }
   });
 
@@ -7247,7 +7283,7 @@ init();
       const now = Date.now();
       logoClicks.push(now);
       logoClicks = logoClicks.filter(t => now - t < 2000);
-      if (logoClicks.length >= 7) { logoClicks = []; launchVSI(); }
+      if (logoClicks.length >= 7) { logoClicks = []; _vsiGameTrigger = 'logo_click'; launchVSI(); }
     });
   }
 
@@ -7256,6 +7292,22 @@ init();
     const canvas = document.getElementById('vsiCanvas');
     if (!overlay || !canvas) return;
     overlay.style.display = 'flex';
+    _vsiGameStartTime = Date.now();
+
+    // Detect version from page
+    const versionEl = document.querySelector('.version-label, [data-version]');
+    const version = versionEl ? (versionEl.dataset?.version || versionEl.textContent?.trim()) : 'unknown';
+    const ua = navigator.userAgent;
+    const platform = /Mac/.test(ua) ? 'macOS' : /Win/.test(ua) ? 'Windows' : /Linux/.test(ua) ? 'Linux' : /Android/.test(ua) ? 'Android' : /iPhone|iPad/.test(ua) ? 'iOS' : 'unknown';
+
+    sendVSITelemetry('vsi_game_start', {
+      version,
+      context: 'playground',
+      platform,
+      locale: navigator.language || 'unknown',
+      trigger: _vsiGameTrigger,
+    });
+
     startVSI(canvas, () => { overlay.style.display = 'none'; });
   }
 })();
@@ -7277,7 +7329,7 @@ function startVSI(canvas, onExit) {
     ctx.quadraticCurveTo(x - size * 0.6, y - size * 0.3, x, y - size);
     ctx.fill();
     // Central vein
-    ctx.strokeStyle = color === '#00ED64' ? '#00A35C' : color;
+    ctx.strokeStyle = color === '#00D4AA' ? '#009E80' : color;
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(x, y - size);
@@ -7312,7 +7364,7 @@ function startVSI(canvas, onExit) {
   let waveQueued = false;
 
   const keys = {};
-  const keyDown = (e) => { keys[e.key] = true; if (['ArrowLeft','ArrowRight',' ','Escape'].includes(e.key)) e.preventDefault(); if (e.key === 'Escape') { cleanup(); onExit(); } };
+  const keyDown = (e) => { keys[e.key] = true; if (['ArrowLeft','ArrowRight',' ','Escape'].includes(e.key)) e.preventDefault(); if (e.key === 'Escape') { sendVSITelemetry('vsi_game_over', { score, wave, durationMs: Date.now() - _vsiGameStartTime, livesRemaining: lives, exitReason: 'esc' }); cleanup(); onExit(); } };
   const keyUp = (e) => { keys[e.key] = false; };
   document.addEventListener('keydown', keyDown);
   document.addEventListener('keyup', keyUp);
@@ -7353,7 +7405,7 @@ function startVSI(canvas, onExit) {
   }
 
   function addExplosion(x, y, sim) {
-    const color = sim > 0.7 ? '#00ED64' : sim > 0.4 ? '#FFC010' : '#FF6960';
+    const color = sim > 0.7 ? '#00D4AA' : sim > 0.4 ? '#FFC010' : '#FF6960';
     for (let i = 0; i < 8; i++) {
       const angle = (Math.PI * 2 / 8) * i + Math.random() * 0.5;
       const speed = 1.5 + Math.random() * 2;
@@ -7445,7 +7497,7 @@ function startVSI(canvas, onExit) {
       if (enemies[i].y > H - 50) {
         enemies.splice(i, 1);
         lives--;
-        if (lives <= 0) gameOver = true;
+        if (lives <= 0) { gameOver = true; sendVSITelemetry('vsi_game_over', { score, wave, durationMs: Date.now() - _vsiGameStartTime, livesRemaining: 0, exitReason: 'death' }); }
       }
     }
 
@@ -7482,16 +7534,16 @@ function startVSI(canvas, onExit) {
     }
 
     // Ship (Voyage AI leaf)
-    drawLeaf(ctx, ship.x, H - 32, 12, '#00ED64');
+    drawLeaf(ctx, ship.x, H - 32, 12, '#00D4AA');
     // Ship label
-    ctx.fillStyle = '#00ED64';
+    ctx.fillStyle = '#00D4AA';
     ctx.font = '9px monospace';
     ctx.textAlign = 'center';
     ctx.fillText('voyage', ship.x, H - 14);
 
     // Bullets (small leaf shapes)
     for (const b of bullets) {
-      drawLeaf(ctx, b.x, b.y, 3, '#00ED64');
+      drawLeaf(ctx, b.x, b.y, 3, '#00D4AA');
     }
 
     // Boss
@@ -7516,7 +7568,7 @@ function startVSI(canvas, onExit) {
     for (const e of enemies) {
       ctx.fillStyle = 'rgba(61,79,88,0.6)';
       ctx.fillRect(e.x - e.w / 2, e.y - e.h / 2, e.w, e.h);
-      ctx.strokeStyle = '#0498EC';
+      ctx.strokeStyle = '#40E0FF';
       ctx.lineWidth = 1;
       ctx.strokeRect(e.x - e.w / 2, e.y - e.h / 2, e.w, e.h);
       ctx.fillStyle = '#E8EDEB';
@@ -7556,19 +7608,19 @@ function startVSI(canvas, onExit) {
 
     // Lives (leaf icons)
     for (let i = 0; i < lives; i++) {
-      drawLeaf(ctx, W - 20 - (i * 18), 15, 6, '#00ED64');
+      drawLeaf(ctx, W - 20 - (i * 18), 15, 6, '#00D4AA');
     }
 
     // Title with Voyage AI branding
-    ctx.fillStyle = '#00ED64';
+    ctx.fillStyle = '#00D4AA';
     ctx.font = 'bold 10px monospace';
     ctx.textAlign = 'center';
     ctx.fillText('VECTOR SPACE INVADERS', W / 2, H - 4);
 
     // Voyage AI watermark (top right corner)
     ctx.globalAlpha = 0.3;
-    drawLeaf(ctx, W - 25, 25, 8, '#00ED64');
-    ctx.fillStyle = '#00ED64';
+    drawLeaf(ctx, W - 25, 25, 8, '#00D4AA');
+    ctx.fillStyle = '#00D4AA';
     ctx.font = 'bold 9px monospace';
     ctx.textAlign = 'right';
     ctx.fillText('VOYAGE AI', W - 38, 28);
@@ -7578,7 +7630,7 @@ function startVSI(canvas, onExit) {
     if (gameOver) {
       ctx.fillStyle = 'rgba(0,30,43,0.8)';
       ctx.fillRect(0, 0, W, H);
-      ctx.fillStyle = '#00ED64';
+      ctx.fillStyle = '#00D4AA';
       ctx.font = 'bold 28px monospace';
       ctx.textAlign = 'center';
       ctx.fillText('GAME OVER', W / 2, H / 2 - 30);
@@ -8141,13 +8193,13 @@ init();
 .bug-error{padding:10px 12px;background:rgba(255,107,107,0.15);border:1px solid rgba(255,107,107,0.3);border-radius:8px;color:var(--error);font-size:13px;margin-bottom:16px}
 .bug-actions{display:flex;gap:12px}
 .bug-actions button{flex:1;padding:12px 16px;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;transition:all .2s;border:none}
-.bug-actions .primary{background:linear-gradient(135deg,var(--accent),#00c853);color:#000}
-.bug-actions .primary:hover{box-shadow:0 4px 12px rgba(0,237,100,0.4)}
+.bug-actions .primary{background:linear-gradient(135deg,var(--accent),#5CE8CC);color:#000}
+.bug-actions .primary:hover{box-shadow:0 4px 12px rgba(0,212,170,0.4)}
 .bug-actions .primary:disabled{opacity:0.6;cursor:not-allowed}
 .bug-actions .secondary{background:rgba(255,255,255,0.1);color:var(--text);border:1px solid var(--border)}
 .bug-actions .secondary:hover{background:rgba(255,255,255,0.15)}
 .bug-success{padding:40px 20px;text-align:center}
-.bug-success .icon{width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#00c853);color:#000;font-size:32px;display:flex;align-items:center;justify-content:center;margin:0 auto 20px}
+.bug-success .icon{width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#5CE8CC);color:#000;font-size:32px;display:flex;align-items:center;justify-content:center;margin:0 auto 20px}
 .bug-success h3{margin:0 0 12px;color:var(--accent-text);font-size:20px}
 .bug-success p{margin:8px 0;color:var(--text-muted)}
 .bug-success code{background:rgba(255,255,255,0.1);padding:4px 8px;border-radius:4px;font-size:12px;color:var(--accent)}
@@ -8203,7 +8255,7 @@ init();
 
 <script>
 (function() {
-  const BUG_API = 'https://vai.mlynn.org/api/bugs';
+  const BUG_API = 'https://vaicli.com/api/bugs';
   const GITHUB_URL = 'https://github.com/mrlynn/voyageai-cli/issues/new';
   
   function getEnv() {

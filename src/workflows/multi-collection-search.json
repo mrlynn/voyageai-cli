@@ -1,0 +1,80 @@
+{
+  "$schema": "https://vai.dev/schemas/workflow-v1.json",
+  "name": "Multi-Collection Search",
+  "description": "Search multiple collections, merge results, and rerank for best relevance",
+  "version": "1.0.0",
+  "inputs": {
+    "query": {
+      "type": "string",
+      "description": "The search query",
+      "required": true
+    },
+    "collection1": {
+      "type": "string",
+      "description": "First collection to search",
+      "required": true
+    },
+    "collection2": {
+      "type": "string",
+      "description": "Second collection to search",
+      "required": true
+    },
+    "limit": {
+      "type": "number",
+      "description": "Results per collection",
+      "default": 10
+    }
+  },
+  "defaults": {},
+  "steps": [
+    {
+      "id": "search_1",
+      "name": "Search first collection",
+      "tool": "query",
+      "inputs": {
+        "query": "{{ inputs.query }}",
+        "collection": "{{ inputs.collection1 }}",
+        "limit": "{{ inputs.limit }}",
+        "rerank": false
+      }
+    },
+    {
+      "id": "search_2",
+      "name": "Search second collection",
+      "tool": "query",
+      "inputs": {
+        "query": "{{ inputs.query }}",
+        "collection": "{{ inputs.collection2 }}",
+        "limit": "{{ inputs.limit }}",
+        "rerank": false
+      }
+    },
+    {
+      "id": "merge",
+      "name": "Merge results",
+      "tool": "merge",
+      "inputs": {
+        "arrays": [
+          "{{ search_1.output.results }}",
+          "{{ search_2.output.results }}"
+        ],
+        "dedup": true,
+        "dedup_field": "source"
+      }
+    },
+    {
+      "id": "rerank_all",
+      "name": "Rerank merged results",
+      "tool": "rerank",
+      "inputs": {
+        "query": "{{ inputs.query }}",
+        "documents": "{{ merge.output.results }}"
+      }
+    }
+  ],
+  "output": {
+    "results": "{{ rerank_all.output.results }}",
+    "resultCount": "{{ rerank_all.output.resultCount }}",
+    "query": "{{ inputs.query }}"
+  }
+}

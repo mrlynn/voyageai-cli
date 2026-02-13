@@ -5,7 +5,19 @@
       "Bash(npm test:*)",
       "Bash(node --version:*)",
       "Bash(gh run list:*)",
-      "Bash(gh run view:*)"
+      "Bash(gh run view:*)",
+      "Bash(npx next build:*)",
+      "Bash(open:*)",
+      "Bash(git stash:*)",
+      "Bash(zip:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm install:*)",
+      "Bash(node --test:*)",
+      "Bash(node src/cli.js workflow list:*)",
+      "Bash(node src/cli.js:*)",
+      "WebFetch(domain:vai.mlynn.org)",
+      "Bash(npx create-docusaurus@latest vai-docs classic --typescript:*)",
+      "Bash(test:*)"
     ]
   }
 }

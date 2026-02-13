@@ -31,23 +31,22 @@ const PROJECT_STRUCTURE = {
       { template: 'env.example', output: '.env.example' },
       { template: 'README.md', output: 'README.md' },
       { template: 'layout.jsx', output: 'app/layout.jsx' },
+      { template: 'page-home.jsx', output: 'app/page.jsx' },
       { template: 'page-search.jsx', output: 'app/search/page.jsx' },
       { template: 'route-search.js', output: 'app/api/search/route.js' },
       { template: 'route-ingest.js', output: 'app/api/ingest/route.js' },
       { template: 'lib-voyage.js', output: 'lib/voyage.js' },
       { template: 'lib-mongo.js', output: 'lib/mongodb.js' },
       { template: 'theme.js', output: 'lib/theme.js' },
+      { template: 'theme-registry.jsx', output: 'components/ThemeRegistry.jsx' },
+      { template: 'navbar.jsx', output: 'components/Navbar.jsx' },
+      { template: 'footer.jsx', output: 'components/Footer.jsx' },
+      { template: 'favicon.svg', output: 'public/favicon.svg' },
+    ],
+    binaryFiles: [
+      { source: 'vai-logo-256.png', output: 'public/vai-logo.png' },
     ],
     extraFiles: [
-      {
-        output: 'app/page.jsx',
-        content: `'use client';
-import { redirect } from 'next/navigation';
-export default function Home() {
-  redirect('/search');
-}
-`,
-      },
       {
         output: 'next.config.js',
         content: `/** @type {import('next').NextConfig} */

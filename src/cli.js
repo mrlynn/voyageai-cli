@@ -37,6 +37,7 @@ const { register: registerQuickstart } = require('./commands/quickstart');
 const { registerBug } = require('./commands/bug');
 const { registerChat } = require('./commands/chat');
 const { registerMcpServer } = require('./commands/mcp-server');
+const { registerWorkflow } = require('./commands/workflow');
 const { showBanner, showQuickStart, getVersion } = require('./lib/banner');
 
 const version = getVersion();
@@ -78,6 +79,7 @@ registerQuickstart(program);
 registerBug(program);
 registerChat(program);
 registerMcpServer(program);
+registerWorkflow(program);
 
 // Append disclaimer to all help output
 program.addHelpText('after', `

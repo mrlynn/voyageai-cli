@@ -7,10 +7,10 @@
 
 import { MongoClient } from 'mongodb';
 
-const MONGODB_URI = process.env.MONGODB_URI;
-
-if (!MONGODB_URI) {
-  throw new Error('MONGODB_URI environment variable is required');
+function getUri() {
+  const uri = process.env.MONGODB_URI;
+  if (!uri) throw new Error('MONGODB_URI environment variable is required');
+  return uri;
 }
 
 // Cache the client promise for connection reuse in serverless
@@ -30,7 +30,7 @@ export async function getMongoClient() {
   }
 
   if (!cached.promise) {
-    cached.promise = MongoClient.connect(MONGODB_URI);
+    cached.promise = MongoClient.connect(getUri());
   }
 
   cached.conn = await cached.promise;

@@ -129,6 +129,23 @@ function registerScaffold(program) {
             });
           }
         }
+
+        // Add binary files (copied as-is from templates dir)
+        if (structure.binaryFiles) {
+          for (const file of structure.binaryFiles) {
+            const srcPath = path.join(__dirname, '..', 'lib', 'templates', target, file.source);
+            const destPath = path.join(projectDir, file.output);
+            const binarySize = fs.existsSync(srcPath) ? fs.statSync(srcPath).size : 0;
+            manifest.push({
+              path: file.output,
+              fullPath: destPath,
+              source: `${target}/${file.source}`,
+              size: binarySize,
+              binary: true,
+              binarySrc: srcPath,
+            });
+          }
+        }
         
         // JSON output mode
         if (opts.json) {
@@ -171,7 +188,12 @@ function registerScaffold(program) {
         
         // Write all files
         for (const file of manifest) {
-          writeFile(file.fullPath, file.content);
+          if (file.binary) {
+            ensureDir(path.dirname(file.fullPath));
+            fs.copyFileSync(file.binarySrc, file.fullPath);
+          } else {
+            writeFile(file.fullPath, file.content);
+          }
           if (!opts.quiet) {
             console.log(`  ${ui.cyan('✓')} ${file.path}`);
           }

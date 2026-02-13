@@ -85,6 +85,23 @@ function createPlaygroundServer() {
         return;
       }
 
+      // Serve watermark image
+      if (req.method === 'GET' && req.url === '/icons/watermark.png') {
+        const wmPath = path.join(__dirname, '..', 'playground', 'icons', 'watermark.png');
+        if (fs.existsSync(wmPath)) {
+          const data = fs.readFileSync(wmPath);
+          res.writeHead(200, {
+            'Content-Type': 'image/png',
+            'Cache-Control': 'public, max-age=86400',
+          });
+          res.end(data);
+        } else {
+          res.writeHead(404);
+          res.end('Watermark not found');
+        }
+        return;
+      }
+
       // Serve icon assets: /icons/{dark|light}/{size}.png
       const iconMatch = req.url.match(/^\/icons\/(dark|light)\/(\d+)\.png$/);
       if (req.method === 'GET' && iconMatch) {
@@ -193,6 +210,20 @@ function createPlaygroundServer() {
               }
             }
             
+            // Add binary files
+            if (structure.binaryFiles) {
+              for (const file of structure.binaryFiles) {
+                const srcPath = path.join(__dirname, '..', 'lib', 'templates', target, file.source);
+                if (fs.existsSync(srcPath)) {
+                  files.push({
+                    name: `${projectName}/${file.output}`,
+                    content: fs.readFileSync(srcPath),
+                    binary: true,
+                  });
+                }
+              }
+            }
+
             // Create ZIP
             const zipBuffer = createZip(files);
             

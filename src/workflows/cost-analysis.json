@@ -1,0 +1,69 @@
+{
+  "$schema": "https://vai.dev/schemas/workflow-v1.json",
+  "name": "Cost Analysis",
+  "description": "Compare embedding costs across different models and scenarios",
+  "version": "1.0.0",
+  "inputs": {
+    "docs": {
+      "type": "number",
+      "description": "Number of documents to estimate for",
+      "required": true
+    },
+    "queries": {
+      "type": "number",
+      "description": "Monthly query volume",
+      "default": 1000
+    },
+    "months": {
+      "type": "number",
+      "description": "Planning horizon in months",
+      "default": 12
+    }
+  },
+  "defaults": {},
+  "steps": [
+    {
+      "id": "cost_large",
+      "name": "Estimate with voyage-4-large (best quality)",
+      "tool": "estimate",
+      "inputs": {
+        "model": "voyage-4-large",
+        "docs": "{{ inputs.docs }}",
+        "queries": "{{ inputs.queries }}",
+        "months": "{{ inputs.months }}"
+      }
+    },
+    {
+      "id": "cost_balanced",
+      "name": "Estimate with voyage-4 (balanced)",
+      "tool": "estimate",
+      "inputs": {
+        "model": "voyage-4",
+        "docs": "{{ inputs.docs }}",
+        "queries": "{{ inputs.queries }}",
+        "months": "{{ inputs.months }}"
+      }
+    },
+    {
+      "id": "cost_lite",
+      "name": "Estimate with voyage-4-lite (budget)",
+      "tool": "estimate",
+      "inputs": {
+        "model": "voyage-4-lite",
+        "docs": "{{ inputs.docs }}",
+        "queries": "{{ inputs.queries }}",
+        "months": "{{ inputs.months }}"
+      }
+    }
+  ],
+  "output": {
+    "comparison": [
+      "{{ cost_large.output }}",
+      "{{ cost_balanced.output }}",
+      "{{ cost_lite.output }}"
+    ],
+    "docs": "{{ inputs.docs }}",
+    "queriesPerMonth": "{{ inputs.queries }}",
+    "months": "{{ inputs.months }}"
+  }
+}
