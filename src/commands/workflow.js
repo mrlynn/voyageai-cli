@@ -84,11 +84,27 @@ function registerWorkflow(program) {
     .option('--verbose', 'Show step details', false)
     .option('--no-interactive', 'Disable interactive input prompting')
     .action(async (file, opts) => {
-      const { loadWorkflow, executeWorkflow, buildExecutionPlan, validateWorkflow } = require('../lib/workflow');
+      const { executeWorkflow, buildExecutionPlan, validateWorkflow } = require('../lib/workflow');
+      const { resolveWorkflow } = require('../lib/workflow-registry');
 
       let definition;
       try {
-        definition = loadWorkflow(file);
+        const resolved = resolveWorkflow(file);
+        definition = resolved.definition;
+
+        // Show community workflow notice
+        if (resolved.source === 'community' && !opts.quiet) {
+          const pkg = resolved.metadata?.package;
+          const author = typeof pkg?.author === 'string' ? pkg.author : pkg?.author?.name || 'unknown';
+          const tools = (pkg?.vai?.tools || []).join(', ');
+          console.error(`${pc.dim('ℹ')} Running community workflow: ${pc.cyan(pkg?.name || file)} ${pc.dim(`v${pkg?.version || '?'}`)}`);
+          console.error(`  ${pc.dim(`by ${author}`)}${tools ? pc.dim(` | Tools: ${tools}`) : ''}`);
+          console.error(`  ${pc.dim('This is a community-contributed workflow, not maintained by the vai project.')}`);
+          console.error();
+          for (const w of resolved.metadata?.warnings || []) {
+            console.error(`  ${pc.yellow('⚠')} ${w}`);
+          }
+        }
       } catch (err) {
         console.error(ui.error(err.message));
         process.exit(1);
@@ -265,25 +281,262 @@ function registerWorkflow(program) {
   // ── workflow list ──
   wfCmd
     .command('list')
-    .description('List built-in workflow templates')
-    .action(() => {
-      const { listBuiltinWorkflows } = require('../lib/workflow');
+    .description('List available workflows (built-in + community)')
+    .option('--built-in', 'Show only built-in workflows', false)
+    .option('--community', 'Show only community workflows', false)
+    .option('--category <name>', 'Filter by category')
+    .option('--tag <name>', 'Filter by tag')
+    .option('--json', 'Output JSON', false)
+    .action((opts) => {
+      const { getRegistry } = require('../lib/workflow-registry');
+      const registry = getRegistry({ force: true });
 
-      const workflows = listBuiltinWorkflows();
-      if (workflows.length === 0) {
-        console.log(pc.dim('No built-in workflows found.'));
+      if (opts.json) {
+        const out = {};
+        if (!opts.community) out.builtIn = registry.builtIn;
+        if (!opts.builtIn) out.community = registry.community.filter(c => c.errors.length === 0);
+        console.log(JSON.stringify(out, null, 2));
         return;
       }
 
-      console.log();
-      console.log(pc.bold('Built-in workflow templates:'));
-      console.log();
-      for (const wf of workflows) {
-        console.log(`  ${pc.cyan(wf.name.padEnd(28))} ${wf.description}`);
+      // Built-in
+      if (!opts.community) {
+        console.log();
+        console.log(pc.bold(`Built-in Workflows (${registry.builtIn.length})`));
+        if (registry.builtIn.length === 0) {
+          console.log(pc.dim('  (none)'));
+        } else {
+          for (const wf of registry.builtIn) {
+            console.log(`  ${pc.cyan(wf.name.padEnd(28))} ${wf.description}`);
+          }
+        }
       }
+
+      // Community
+      if (!opts.builtIn) {
+        let community = registry.community.filter(c => c.errors.length === 0);
+
+        if (opts.category) {
+          community = community.filter(c => (c.pkg?.vai?.category || 'utility') === opts.category);
+        }
+        if (opts.tag) {
+          community = community.filter(c => (c.pkg?.vai?.tags || []).includes(opts.tag));
+        }
+
+        console.log();
+        console.log(pc.bold(`Community Workflows (${community.length})`));
+        if (community.length === 0) {
+          console.log(pc.dim('  (none installed)'));
+          console.log(pc.dim('  Install with: vai workflow install <package-name>'));
+          console.log(pc.dim('  Search with:  vai workflow search <query>'));
+        } else {
+          for (const wf of community) {
+            const pkg = wf.pkg || {};
+            const author = typeof pkg.author === 'string' ? pkg.author : pkg.author?.name || '';
+            const tags = (pkg.vai?.tags || []).join(' · ');
+            console.log(`  ${pc.cyan(wf.name.padEnd(36))} ${pkg.description || ''}`);
+            if (author || tags) {
+              console.log(`    ${pc.dim(`by ${author}`)}${pkg.version ? pc.dim(` | v${pkg.version}`) : ''}${tags ? pc.dim(` | ${tags}`) : ''}`);
+            }
+          }
+        }
+
+        // Show invalid packages as warnings
+        const invalid = registry.community.filter(c => c.errors.length > 0);
+        if (invalid.length > 0) {
+          console.log();
+          for (const inv of invalid) {
+            console.error(`  ${pc.yellow('⚠')} ${inv.name}: ${inv.errors[0]}`);
+          }
+        }
+      }
+
       console.log();
       console.log(pc.dim('Run with: vai workflow run <name> --input key=value'));
       console.log();
+    });
+
+  // ── workflow install ──
+  wfCmd
+    .command('install <package>')
+    .description('Install a community workflow from npm')
+    .option('--global', 'Install globally', false)
+    .option('--json', 'Output JSON', false)
+    .action(async (packageName, opts) => {
+      const { installPackage, WORKFLOW_PREFIX } = require('../lib/npm-utils');
+      const { validatePackage, clearRegistryCache } = require('../lib/workflow-registry');
+
+      // Auto-prefix if needed
+      if (!packageName.startsWith(WORKFLOW_PREFIX)) {
+        packageName = WORKFLOW_PREFIX + packageName;
+      }
+
+      console.log(`Installing ${pc.cyan(packageName)}...`);
+
+      try {
+        const result = installPackage(packageName, { global: opts.global });
+        console.log(`${pc.green('✔')} Downloaded ${pc.cyan(packageName)}@${result.version}`);
+
+        // Validate
+        if (result.path) {
+          const validation = validatePackage(result.path);
+          if (validation.errors.length === 0) {
+            const steps = validation.definition?.steps?.length || 0;
+            const tools = (validation.pkg?.vai?.tools || []).join(', ');
+            console.log(`${pc.green('✔')} Validated workflow definition (${steps} steps${tools ? `, tools: ${tools}` : ''})`);
+          } else {
+            console.log(`${pc.yellow('⚠')} Validation issues:`);
+            for (const e of validation.errors) {
+              console.log(`  ${pc.yellow('-')} ${e}`);
+            }
+            console.log();
+            console.log(pc.dim('The package was installed but the workflow may not execute correctly.'));
+          }
+          for (const w of validation.warnings) {
+            console.log(`${pc.yellow('⚠')} ${w}`);
+          }
+        }
+
+        clearRegistryCache();
+
+        if (opts.json) {
+          console.log(JSON.stringify(result, null, 2));
+        } else {
+          console.log();
+          console.log(`Installed. Run with:`);
+          console.log(`  ${pc.cyan(`vai workflow run ${packageName}`)} --input key=value`);
+        }
+      } catch (err) {
+        console.error(ui.error(err.message));
+        process.exit(1);
+      }
+    });
+
+  // ── workflow uninstall ──
+  wfCmd
+    .command('uninstall <package>')
+    .description('Remove a community workflow package')
+    .option('--global', 'Uninstall globally', false)
+    .action((packageName, opts) => {
+      const { uninstallPackage, WORKFLOW_PREFIX } = require('../lib/npm-utils');
+      const { clearRegistryCache } = require('../lib/workflow-registry');
+
+      if (!packageName.startsWith(WORKFLOW_PREFIX)) {
+        packageName = WORKFLOW_PREFIX + packageName;
+      }
+
+      console.log(`Uninstalling ${pc.cyan(packageName)}...`);
+
+      try {
+        uninstallPackage(packageName, { global: opts.global });
+        clearRegistryCache();
+        console.log(`${pc.green('✔')} Removed ${packageName}`);
+      } catch (err) {
+        console.error(ui.error(err.message));
+        process.exit(1);
+      }
+    });
+
+  // ── workflow search ──
+  wfCmd
+    .command('search <query>')
+    .description('Search npm for community workflows')
+    .option('--limit <n>', 'Maximum results', '10')
+    .option('--json', 'Output JSON', false)
+    .action(async (query, opts) => {
+      const { searchNpm } = require('../lib/npm-utils');
+
+      console.log(`Searching npm for vai-workflow packages matching "${query}"...`);
+      console.log();
+
+      try {
+        const results = await searchNpm(query, { limit: parseInt(opts.limit, 10) });
+
+        if (opts.json) {
+          console.log(JSON.stringify(results, null, 2));
+          return;
+        }
+
+        if (results.length === 0) {
+          console.log(pc.dim('  No matching workflow packages found.'));
+          console.log();
+          return;
+        }
+
+        for (const r of results) {
+          console.log(`  ${pc.cyan(r.name)}  ${pc.dim(`v${r.version}`)}`);
+          if (r.description) console.log(`    ${r.description}`);
+          console.log(`    ${pc.dim(`by ${r.author}`)}${r.keywords.length ? pc.dim(` | ${r.keywords.slice(0, 5).join(', ')}`) : ''}`);
+          console.log();
+        }
+
+        console.log(pc.dim(`Install: vai workflow install <package-name>`));
+        console.log();
+      } catch (err) {
+        console.error(ui.error(err.message));
+        process.exit(1);
+      }
+    });
+
+  // ── workflow info ──
+  wfCmd
+    .command('info <name>')
+    .description('Show detailed info about an installed workflow')
+    .option('--json', 'Output JSON', false)
+    .action((name, opts) => {
+      const { resolveWorkflow, getRegistry } = require('../lib/workflow-registry');
+      const { WORKFLOW_PREFIX } = require('../lib/npm-utils');
+
+      try {
+        const resolved = resolveWorkflow(name);
+
+        if (opts.json) {
+          console.log(JSON.stringify({ source: resolved.source, definition: resolved.definition, metadata: resolved.metadata }, null, 2));
+          return;
+        }
+
+        const def = resolved.definition;
+        console.log();
+
+        if (resolved.source === 'community') {
+          const pkg = resolved.metadata?.package || {};
+          const author = typeof pkg.author === 'string' ? pkg.author : pkg.author?.name || 'unknown';
+          const vai = pkg.vai || {};
+
+          console.log(`${pc.bold(pc.cyan(pkg.name || name))} ${pc.dim(`v${pkg.version || '?'}`)}`);
+          console.log(`  ${pkg.description || def.description || ''}`);
+          console.log();
+          console.log(`  ${pc.dim('Author:')}     ${author}`);
+          console.log(`  ${pc.dim('License:')}    ${pkg.license || 'unknown'}`);
+          console.log(`  ${pc.dim('Category:')}   ${vai.category || 'utility'}`);
+          if (vai.tags?.length) console.log(`  ${pc.dim('Tags:')}       ${vai.tags.join(', ')}`);
+          if (vai.minVaiVersion) console.log(`  ${pc.dim('Min vai:')}    v${vai.minVaiVersion}`);
+          if (vai.tools?.length) console.log(`  ${pc.dim('Tools:')}      ${vai.tools.join(', ')}`);
+          console.log(`  ${pc.dim('Steps:')}      ${def.steps?.length || 0}`);
+          console.log(`  ${pc.dim('Source:')}     ${resolved.metadata?.path || 'unknown'}`);
+          if (pkg.name) console.log(`  ${pc.dim('npm:')}        https://www.npmjs.com/package/${pkg.name}`);
+        } else {
+          console.log(`${pc.bold(pc.cyan(def.name || name))} ${pc.dim(`[${resolved.source}]`)}`);
+          console.log(`  ${def.description || ''}`);
+          console.log(`  ${pc.dim('Steps:')} ${def.steps?.length || 0}`);
+        }
+
+        // Show inputs
+        if (def.inputs && Object.keys(def.inputs).length > 0) {
+          console.log();
+          console.log(`  ${pc.bold('Inputs:')}`);
+          for (const [key, schema] of Object.entries(def.inputs)) {
+            const req = schema.required ? pc.red('(required)') : pc.dim(`(default: ${schema.default ?? 'none'})`);
+            const desc = schema.description || '';
+            console.log(`    ${pc.cyan(key.padEnd(16))} ${(schema.type || 'string').padEnd(8)} ${req}  ${pc.dim(desc)}`);
+          }
+        }
+
+        console.log();
+      } catch (err) {
+        console.error(ui.error(err.message));
+        process.exit(1);
+      }
     });
 
   // ── workflow init ──
