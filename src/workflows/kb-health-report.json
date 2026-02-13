@@ -1,0 +1,41 @@
+{
+  "name": "kb-health-report",
+  "description": "Analyze knowledge base health: counts, coverage, staleness",
+  "version": "1.0.0",
+  "inputs": {
+    "test_queries": {
+      "type": "array",
+      "default": ["authentication", "deployment", "error handling", "configuration"],
+      "description": "Queries to test coverage"
+    }
+  },
+  "defaults": { "db": "myapp", "collection": "knowledge" },
+  "steps": [
+    {
+      "id": "coverage_check",
+      "tool": "loop",
+      "name": "Test query coverage",
+      "inputs": {
+        "items": "{{ inputs.test_queries }}",
+        "as": "test_query",
+        "step": {
+          "tool": "query",
+          "inputs": {
+            "query": "{{ test_query }}",
+            "limit": 3
+          }
+        }
+      }
+    },
+    {
+      "id": "report",
+      "tool": "generate",
+      "name": "Generate health report",
+      "inputs": {
+        "prompt": "Analyze this knowledge base health data and write a brief report.",
+        "context": "Query coverage tests: {{ coverage_check.output.results }}"
+      }
+    }
+  ],
+  "output": "{{ report.output }}"
+}

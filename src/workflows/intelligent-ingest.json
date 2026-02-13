@@ -1,0 +1,62 @@
+{
+  "name": "intelligent-ingest",
+  "description": "Chunk, deduplicate, and selectively ingest documents",
+  "version": "1.0.0",
+  "inputs": {
+    "text": { "type": "string", "required": true, "description": "Document text to process" },
+    "source": { "type": "string", "required": true, "description": "Source identifier" },
+    "similarity_threshold": { "type": "number", "default": 0.92, "description": "Similarity threshold for deduplication" }
+  },
+  "defaults": { "db": "myapp", "collection": "knowledge" },
+  "steps": [
+    {
+      "id": "split",
+      "tool": "chunk",
+      "name": "Chunk the document",
+      "inputs": {
+        "text": "{{ inputs.text }}",
+        "strategy": "recursive",
+        "size": 512,
+        "source": "{{ inputs.source }}"
+      }
+    },
+    {
+      "id": "filter_short",
+      "tool": "filter",
+      "name": "Remove short chunks",
+      "inputs": {
+        "array": "{{ split.output.chunks }}",
+        "condition": "item.charCount > 100"
+      }
+    },
+    {
+      "id": "check_each",
+      "tool": "loop",
+      "name": "Check novelty of each chunk",
+      "inputs": {
+        "items": "{{ filter_short.output.results }}",
+        "as": "chunk",
+        "step": {
+          "tool": "search",
+          "inputs": {
+            "query": "{{ chunk.content }}",
+            "limit": 1
+          }
+        }
+      }
+    },
+    {
+      "id": "embed_novel",
+      "tool": "template",
+      "name": "Summarize results",
+      "inputs": {
+        "text": "Processed {{ split.output.totalChunks }} chunks, {{ filter_short.output.resultCount }} passed filter, {{ check_each.output.iterations }} checked for novelty"
+      }
+    }
+  ],
+  "output": {
+    "totalChunks": "{{ split.output.totalChunks }}",
+    "filteredChunks": "{{ filter_short.output.resultCount }}",
+    "summary": "{{ embed_novel.output.text }}"
+  }
+}
