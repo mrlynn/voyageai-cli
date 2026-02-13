@@ -3124,7 +3124,7 @@ select:focus { outline: none; border-color: var(--accent); }
 }
 .wf-palette-item:hover { background: var(--bg-card); }
 .wf-palette-item:active { cursor: grabbing; }
-.wf-palette-icon { font-size: 14px; width: 20px; text-align: center; }
+.wf-palette-icon { width: 20px; text-align: center; display: flex; align-items: center; justify-content: center; }
 .wf-palette-label { font-weight: 500; }
 /* Builder port styles */
 .wf-port-builder { cursor: crosshair; transition: r 0.15s; pointer-events: all !important; }
@@ -3186,7 +3186,7 @@ select:focus { outline: none; border-color: var(--accent); }
   background: var(--bg-card); border: 1px solid var(--border);
   display: flex; align-items: center; gap: 10px; font-size: 12px;
 }
-.wf-dryrun-step-icon { font-size: 16px; flex-shrink: 0; }
+.wf-dryrun-step-icon { flex-shrink: 0; display: flex; align-items: center; }
 .wf-dryrun-step-info { flex: 1; min-width: 0; }
 .wf-dryrun-step-name { font-weight: 600; color: var(--text); }
 .wf-dryrun-step-tool { color: var(--text-muted); font-size: 11px; }
@@ -3343,8 +3343,8 @@ select:focus { outline: none; border-color: var(--accent); }
   pointer-events: none; text-anchor: middle; dominant-baseline: central;
 }
 .wf-node-icon {
-  font-size: 16px; pointer-events: none;
-  text-anchor: middle; dominant-baseline: central;
+  pointer-events: none;
+  color: #fff;
 }
 .wf-node-badge {
   font-size: 10px; fill: rgba(255,255,255,0.7);
@@ -3506,7 +3506,7 @@ select:focus { outline: none; border-color: var(--accent); }
 }
 /* Workflow visualizer light mode */
 [data-theme="light"] .wf-node-label { fill: #001E2B; }
-[data-theme="light"] .wf-node-icon { fill: #001E2B; }
+[data-theme="light"] .wf-node-icon { color: #001E2B; }
 [data-theme="light"] .wf-node-badge { fill: rgba(0,30,43,0.55); }
 [data-theme="light"] .wf-node-time { fill: rgba(0,30,43,0.5); }
 [data-theme="light"] .wf-node-condition { fill: #944F01; }
@@ -9964,18 +9964,21 @@ const WF_NODE_META = {
   search:      { icon: '\u{1F50E}', label: 'Vector Search',   color: '#40E0FF', category: 'retrieval' },
   rerank:      { icon: '\u{1F3C6}', label: 'Rerank',          color: '#40E0FF', category: 'retrieval' },
   ingest:      { icon: '\u{1F4E5}', label: 'Ingest',          color: '#40E0FF', category: 'retrieval' },
-  embed:       { icon: '\u{1F4D0}', label: 'Embed',           color: '#B388FF', category: 'embedding' },
-  similarity:  { icon: '\u{1F517}', label: 'Similarity',      color: '#B388FF', category: 'embedding' },
-  collections: { icon: '\u{1F5C4}', label: 'Collections',     color: '#00D4AA', category: 'management' },
-  models:      { icon: '\u{1F4CB}', label: 'Models',          color: '#00D4AA', category: 'management' },
-  estimate:    { icon: '\u{1F4B0}', label: 'Cost Estimate',   color: '#FFB74D', category: 'utility' },
-  explain:     { icon: '\u{1F4D6}', label: 'Explain',         color: '#FFB74D', category: 'utility' },
-  topics:      { icon: '\u{1F5C2}', label: 'Topics',          color: '#FFB74D', category: 'utility' },
-  merge:       { icon: '\u{1F500}', label: 'Merge',           color: '#90A4AE', category: 'control' },
-  filter:      { icon: '\u{1F9F9}', label: 'Filter',          color: '#90A4AE', category: 'control' },
-  transform:   { icon: '\u{1F504}', label: 'Transform',       color: '#90A4AE', category: 'control' },
-  generate:    { icon: '\u2728',    label: 'Generate',        color: '#69F0AE', category: 'generation' },
+  embed:       { icon: 'M13 2 3 14h9l-1 8 10-12h-9l1-8z', label: 'Embed',           color: '#B388FF', category: 'embedding' },
+  similarity:  { icon: 'M8 3 4 7l4 4M4 7h16M16 21l4-4-4-4M20 17H4', label: 'Similarity',      color: '#B388FF', category: 'embedding' },
+  collections: { icon: 'M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z', label: 'Collections',     color: '#00D4AA', category: 'management' },
+  models:      { icon: 'M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2M9 5h6M9 14l2 2 4-4', label: 'Models',          color: '#00D4AA', category: 'management' },
+  estimate:    { icon: 'M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6', label: 'Cost Estimate',   color: '#FFB74D', category: 'utility' },
+  explain:     { icon: 'M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2zM22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z', label: 'Explain',         color: '#FFB74D', category: 'utility' },
+  topics:      { icon: 'M12 6V2M8 18H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-4M12 18v4M8 22h8', label: 'Topics',          color: '#FFB74D', category: 'utility' },
+  merge:       { icon: 'M18 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM6 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM6 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM6 9v6M18 15l-6-6-6 6', label: 'Merge',           color: '#90A4AE', category: 'control' },
+  filter:      { icon: 'M22 3H2l8 9.46V19l4 2v-8.54L22 3z', label: 'Filter',          color: '#90A4AE', category: 'control' },
+  transform:   { icon: 'M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16', label: 'Transform',       color: '#90A4AE', category: 'control' },
+  generate:    { icon: 'M12 3v4m0 14v-4m-7.8-2H0m24 0h-4.2M5.6 5.6l2.8 2.8m7.2 7.2 2.8 2.8m0-15.6-2.8 2.8m-7.2 7.2-2.8 2.8', label: 'Generate',        color: '#69F0AE', category: 'generation' },
 };
+
+// Fallback icon (gear) for unknown workflow node types
+const WF_FALLBACK_ICON = 'M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2zM12 12m-3 0a3 3 0 1 0 6 0 3 3 0 1 0-6 0';
 
 const WF_NODE_W = 180;
 const WF_NODE_H = 64;
@@ -10342,13 +10345,23 @@ function wfDrawNode(step, x, y, state, hasDeps, hasDependents) {
     g.appendChild(outPort);
   }
 
-  // Icon
-  const icon = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-  icon.classList.add('wf-node-icon');
-  icon.setAttribute('x', 22);
-  icon.setAttribute('y', WF_NODE_H / 2);
-  icon.textContent = meta.icon;
-  g.appendChild(icon);
+  // Icon (Lucide SVG)
+  const iconG = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+  iconG.classList.add('wf-node-icon');
+  const iconSize = 18;
+  const ix = 22 - iconSize / 2;
+  const iy = WF_NODE_H / 2 - iconSize / 2;
+  iconG.setAttribute('transform', `translate(${ix},${iy}) scale(${iconSize / 24})`);
+  const fullD = meta.icon || WF_FALLBACK_ICON;
+  const iconPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  iconPath.setAttribute('d', fullD);
+  iconPath.setAttribute('fill', 'none');
+  iconPath.setAttribute('stroke', 'currentColor');
+  iconPath.setAttribute('stroke-width', '1.75');
+  iconPath.setAttribute('stroke-linecap', 'round');
+  iconPath.setAttribute('stroke-linejoin', 'round');
+  iconG.appendChild(iconPath);
+  g.appendChild(iconG);
 
   // Label (step name, truncated)
   const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
@@ -10611,7 +10624,7 @@ function wfUpdateInspector() {
   // Tool badge (always shown)
   html += `<div class="wf-inspector-section">
     <div class="wf-inspector-section-title">Tool</div>
-    <span class="wf-tool-badge" style="background:${meta.color}">${meta.icon} ${meta.label}</span>
+    <span class="wf-tool-badge" style="background:${meta.color}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="${meta.icon || WF_FALLBACK_ICON}"/></svg>${meta.label}</span>
   </div>`;
 
   if (wfState.builderMode) {
@@ -10815,9 +10828,9 @@ function wfDryRun() {
       const step = stepMap[stepId];
       if (!step) return;
       totalSteps++;
-      const meta = WF_NODE_META[step.tool] || { icon: '\u2699', label: step.tool, color: '#666' };
+      const meta = WF_NODE_META[step.tool] || { icon: WF_FALLBACK_ICON, label: step.tool, color: '#666' };
       layersHtml += '<div class="wf-dryrun-step">';
-      layersHtml += '<span class="wf-dryrun-step-icon">' + meta.icon + '</span>';
+      layersHtml += '<span class="wf-dryrun-step-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="' + (meta.icon || WF_FALLBACK_ICON) + '"/></svg></span>';
       layersHtml += '<div class="wf-dryrun-step-info">';
       layersHtml += '<div class="wf-dryrun-step-name">' + escapeHtml(step.name || step.id) + '</div>';
       layersHtml += '<div class="wf-dryrun-step-tool">' + escapeHtml(meta.label) + ' (' + escapeHtml(step.id) + ')</div>';
@@ -11432,7 +11445,7 @@ function wfRenderPalette() {
     html += `<div class="wf-palette-category"><div class="wf-palette-category-title">${WF_CATEGORY_LABELS[cat] || cat}</div>`;
     for (const item of items) {
       html += `<div class="wf-palette-item" draggable="true" ondragstart="event.dataTransfer.setData('text/plain','${item.tool}')" onclick="wfAddNodeFromPalette('${item.tool}')">
-        <span class="wf-palette-icon" style="color:${item.color}">${item.icon}</span>
+        <span class="wf-palette-icon" style="color:${item.color}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="${item.icon || WF_FALLBACK_ICON}"/></svg></span>
         <span class="wf-palette-label">${item.label}</span>
       </div>`;
     }
