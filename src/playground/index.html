@@ -10133,6 +10133,7 @@ async function wfLoadLibrary() {
     const wfData = await wfRes.json();
     const exData = await exRes.json();
     wfState.workflows = wfData.workflows || [];
+    wfState.community = wfData.community || [];
     wfState.examples = exData.examples || [];
     wfRenderLibrary();
   } catch (err) {
@@ -10182,6 +10183,29 @@ function wfRenderLibrary() {
     }
     html += '</div></div>';
   }
+
+  // Community workflows section
+  const community = wfState.community || [];
+  html += `<div class="wf-library-section">
+    <div class="wf-library-category" style="display:flex;align-items:center;justify-content:space-between;">
+      <span>Community (${community.length})</span>
+      <button onclick="wfLoadLibrary()" title="Refresh" style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:12px;">🔄</button>
+    </div>`;
+  if (community.length === 0) {
+    html += '<div style="padding:8px 12px;color:var(--text-muted);font-size:11px;">No community workflows installed.<br><code style="font-size:10px;">vai workflow install &lt;name&gt;</code></div>';
+  } else {
+    html += community.map(w => {
+      const displayName = w.name.replace(/^vai-workflow-/, '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+      const authorLine = w.author ? `<span style="color:var(--text-muted);font-size:10px;">by ${w.author}${w.version ? ' · v' + w.version : ''}</span>` : '';
+      const tagLine = (w.tags || []).length ? `<div style="margin-top:2px;font-size:10px;color:var(--text-muted);">${w.tags.join(' · ')}</div>` : '';
+      return `<div class="wf-library-item" data-wf-name="${w.name}" onclick="wfSelectWorkflow('${w.name}')">
+        <div class="wf-library-item-name">🌐 ${displayName}</div>
+        <div class="wf-library-item-desc">${w.description || ''}</div>
+        ${authorLine}${tagLine}
+      </div>`;
+    }).join('');
+  }
+  html += '</div>';
 
   list.innerHTML = html;
 }
