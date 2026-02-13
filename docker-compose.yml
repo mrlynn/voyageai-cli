@@ -1,0 +1,58 @@
+services:
+  # One-shot CLI commands: docker compose run --rm vai <command>
+  vai:
+    build: .
+    image: vai:latest
+    env_file: .env
+    volumes:
+      - ${DATA_DIR:-.}:/data:ro
+      - vai-config:/root/.vai
+    profiles: ["cli"]
+
+  # Web playground: docker compose up playground
+  playground:
+    build: .
+    image: vai:latest
+    command: ["playground", "--port", "3333", "--no-open"]
+    env_file: .env
+    ports:
+      - "${PLAYGROUND_PORT:-3333}:3333"
+    volumes:
+      - vai-config:/root/.vai
+    restart: unless-stopped
+
+  # MCP server (HTTP transport): docker compose up mcp-server
+  mcp-server:
+    build: .
+    image: vai:latest
+    command: ["mcp-server", "--transport", "http", "--host", "0.0.0.0", "--port", "3100"]
+    env_file: .env
+    ports:
+      - "${MCP_PORT:-3100}:3100"
+    volumes:
+      - vai-config:/root/.vai
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3100/health').then(r=>{process.exit(r.ok?0:1)}).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+
+  # Local Ollama sidecar (optional): docker compose --profile local up ollama
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "${OLLAMA_PORT:-11434}:11434"
+    volumes:
+      - vai-ollama-models:/root/.ollama
+    profiles: ["local"]
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:11434/api/tags"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  vai-config:
+  vai-ollama-models:
