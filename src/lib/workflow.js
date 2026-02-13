@@ -92,10 +92,12 @@ function validateWorkflow(definition) {
     }
 
     // Check template references point to known step IDs or reserved prefixes
+    // "item" and "index" are injected by forEach at runtime
+    const forEachVars = step.forEach ? new Set(['item', 'index']) : new Set();
     if (step.inputs) {
       const deps = extractDependencies(step.inputs);
       for (const dep of deps) {
-        if (!stepIds.has(dep) && !definition.steps.some(s => s.id === dep)) {
+        if (!forEachVars.has(dep) && !stepIds.has(dep) && !definition.steps.some(s => s.id === dep)) {
           errors.push(`${stepPrefix}: references unknown step "${dep}"`);
         }
       }
@@ -1163,6 +1165,36 @@ function coerceInput(value, type) {
 }
 
 // ════════════════════════════════════════════════════════════════════
+// Input Schema Helpers
+// ════════════════════════════════════════════════════════════════════
+
+/**
+ * Convert a workflow's `inputs` object into wizard-engine-compatible step definitions.
+ * Used by both CLI (via @clack/prompts) and playground (via input modal) to
+ * prompt users for missing inputs before execution.
+ *
+ * @param {object} definition - Workflow definition with an `inputs` property
+ * @returns {import('./wizard').Step[]}
+ */
+function buildInputSteps(definition) {
+  if (!definition.inputs) return [];
+  return Object.entries(definition.inputs).map(([key, spec]) => ({
+    id: key,
+    label: spec.description || key,
+    type: 'text',
+    required: !!spec.required,
+    placeholder: spec.type === 'number' ? 'number' : (spec.type || 'string'),
+    defaultValue: spec.default !== undefined ? String(spec.default) : undefined,
+    validate: (val) => {
+      if (spec.type === 'number' && val && isNaN(Number(val))) {
+        return 'Must be a number';
+      }
+      return true;
+    },
+  }));
+}
+
+// ════════════════════════════════════════════════════════════════════
 // Built-in Templates
 // ════════════════════════════════════════════════════════════════════
 
@@ -1196,8 +1228,60 @@ function listBuiltinWorkflows() {
   });
 }
 
+// ════════════════════════════════════════════════════════════════════
+// Example Workflows
+// ════════════════════════════════════════════════════════════════════
+
+const EXAMPLE_CATEGORIES = {
+  'search-filter-transform': 'Retrieval',
+  'conditional-fallback-search': 'Retrieval',
+  'multi-query-fusion': 'Retrieval',
+  'rag-with-guardrails': 'RAG',
+  'question-answer-with-citations': 'RAG',
+  'topic-deep-dive': 'RAG',
+  'dedup-and-ingest': 'Ingestion',
+  'content-quality-gate': 'Ingestion',
+  'embedding-model-comparison': 'Analysis',
+  'batch-similarity-check': 'Analysis',
+  'collection-inventory': 'Analysis',
+};
+
 /**
- * Load a workflow definition from a file path or built-in template name.
+ * Get the path to the example workflows directory.
+ */
+function getExamplesDir() {
+  return path.join(__dirname, '..', '..', 'examples', 'workflows');
+}
+
+/**
+ * List example workflow files with category metadata.
+ * @returns {Array<{ name: string, description: string, file: string, category: string, isExample: boolean }>}
+ */
+function listExampleWorkflows() {
+  const dir = getExamplesDir();
+  if (!fs.existsSync(dir)) return [];
+
+  const files = fs.readdirSync(dir).filter(f => f.endsWith('.json'));
+  return files.map(f => {
+    try {
+      const def = JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8'));
+      const stem = f.replace('.json', '');
+      return {
+        name: stem,
+        description: def.description || def.name || f,
+        file: f,
+        category: EXAMPLE_CATEGORIES[stem] || 'Other',
+        isExample: true,
+      };
+    } catch {
+      return null;
+    }
+  }).filter(Boolean);
+}
+
+/**
+ * Load a workflow definition from a file path, built-in template name,
+ * or example workflow name.
  *
  * @param {string} nameOrPath - File path or template name (e.g., "multi-collection-search")
  * @returns {object} Parsed workflow definition
@@ -1213,6 +1297,13 @@ function loadWorkflow(nameOrPath) {
   const builtinPath = path.join(getWorkflowsDir(), `${nameOrPath}.json`);
   if (fs.existsSync(builtinPath)) {
     const content = fs.readFileSync(builtinPath, 'utf8');
+    return JSON.parse(content);
+  }
+
+  // Try as an example workflow name
+  const examplePath = path.join(getExamplesDir(), `${nameOrPath}.json`);
+  if (fs.existsSync(examplePath)) {
+    const content = fs.readFileSync(examplePath, 'utf8');
     return JSON.parse(content);
   }
 
@@ -1249,8 +1340,13 @@ module.exports = {
 
   // Templates
   listBuiltinWorkflows,
+  listExampleWorkflows,
   loadWorkflow,
   getWorkflowsDir,
+  getExamplesDir,
+
+  // Input helpers
+  buildInputSteps,
 
   // Constants
   VAI_TOOLS,
