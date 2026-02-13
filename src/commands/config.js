@@ -67,6 +67,44 @@ function registerConfig(program) {
       const storedValue = key === 'default-dimensions' ? parseInt(value, 10) : value;
       setConfigValue(internalKey, storedValue);
       console.log(ui.success(`Set ${ui.cyan(key)} = ${SECRET_KEYS.has(internalKey) ? ui.dim(maskSecret(String(storedValue))) : storedValue}`));
+
+      // When setting an API key, auto-configure the matching base URL
+      if (internalKey === 'apiKey') {
+        const { identifyKey, ATLAS_API_BASE, VOYAGE_API_BASE } = require('../lib/api');
+        const keyInfo = identifyKey(storedValue);
+        const currentBase = getConfigValue('baseUrl');
+
+        if (keyInfo.type === 'atlas') {
+          if (currentBase !== ATLAS_API_BASE) {
+            setConfigValue('baseUrl', ATLAS_API_BASE);
+            console.log('');
+            console.log(ui.success(`Auto-configured base URL → ${ui.cyan(ATLAS_API_BASE)}`));
+          }
+          console.log('');
+          console.log(`  🔑 ${ui.bold('MongoDB Atlas key detected')} (al-*)`);
+          console.log(`     Endpoint: ${ui.cyan(ATLAS_API_BASE)}`);
+          console.log(`     Atlas provides Voyage AI models with Atlas-native billing.`);
+          console.log(`     All vai features work identically on both endpoints.`);
+        } else if (keyInfo.type === 'voyage') {
+          if (currentBase !== VOYAGE_API_BASE) {
+            setConfigValue('baseUrl', VOYAGE_API_BASE);
+            console.log('');
+            console.log(ui.success(`Auto-configured base URL → ${ui.cyan(VOYAGE_API_BASE)}`));
+          }
+          console.log('');
+          console.log(`  🔑 ${ui.bold('Voyage AI key detected')} (pa-*)`);
+          console.log(`     Endpoint: ${ui.cyan(VOYAGE_API_BASE)}`);
+          console.log('');
+          console.log(`  💡 ${ui.bold('Consider migrating to MongoDB Atlas')}`);
+          console.log(`     Atlas now provides Voyage AI models directly with Atlas-native billing.`);
+          console.log(`     Get a key at: ${ui.cyan('https://cloud.mongodb.com')} → AI Models → Create API Key`);
+          console.log(`     Then: ${ui.cyan('vai config set api-key <your-atlas-key>')}`);
+        } else {
+          console.log('');
+          console.log(`  ⚠️  Unrecognized key prefix. Expected ${ui.cyan('al-*')} (Atlas) or ${ui.cyan('pa-*')} (Voyage AI).`);
+          console.log(`     Make sure your base URL matches: ${ui.cyan('vai config set base-url <url>')}`);
+        }
+      }
     });
 
   // ── config get [key] ──

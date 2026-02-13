@@ -5,9 +5,23 @@ const VOYAGE_API_BASE = 'https://api.voyageai.com/v1';
 const MAX_RETRIES = 3;
 
 /**
+ * Identify the key type from its prefix.
+ * @param {string} key
+ * @returns {{ type: 'atlas'|'voyage'|'unknown', label: string, expectedBase: string }}
+ */
+function identifyKey(key) {
+  if (key.startsWith('al-')) {
+    return { type: 'atlas', label: 'MongoDB Atlas', expectedBase: ATLAS_API_BASE };
+  }
+  if (key.startsWith('pa-')) {
+    return { type: 'voyage', label: 'Voyage AI (direct)', expectedBase: VOYAGE_API_BASE };
+  }
+  return { type: 'unknown', label: 'Unknown provider', expectedBase: ATLAS_API_BASE };
+}
+
+/**
  * Resolve the API base URL.
  * Priority: VOYAGE_API_BASE env → config baseUrl → auto-detect from key prefix.
- * Keys starting with 'pa-' that work on Voyage platform use VOYAGE_API_BASE.
  * @returns {string}
  */
 function getApiBase() {
@@ -20,6 +34,10 @@ function getApiBase() {
   const configBase = getConfigValue('baseUrl');
   if (configBase) return configBase.replace(/\/+$/, '');
 
+  // Auto-detect from key prefix
+  const key = process.env.VOYAGE_API_KEY || getConfigValue('apiKey');
+  if (key) return identifyKey(key).expectedBase;
+
   // Default to Atlas endpoint
   return ATLAS_API_BASE;
 }
@@ -29,7 +47,7 @@ const API_BASE = ATLAS_API_BASE;
 
 /**
  * Get the Voyage API key or exit with a helpful error.
- * Checks: env var → config file.
+ * Validates that the key prefix matches the configured base URL and warns on mismatch.
  * @returns {string}
  */
 function requireApiKey() {
@@ -43,6 +61,43 @@ function requireApiKey() {
       '       or Voyage AI platform > Dashboard > API Keys';
     throw new Error(msg);
   }
+
+  // Validate key/endpoint match and warn on mismatch
+  const base = getApiBase();
+  const keyInfo = identifyKey(key);
+
+  if (keyInfo.type !== 'unknown' && keyInfo.expectedBase !== base) {
+    const mismatch =
+      `\n⚠️  API key/endpoint mismatch detected!\n` +
+      `   Key type:   ${keyInfo.label} (${key.slice(0, 5)}...)\n` +
+      `   Endpoint:   ${base}\n` +
+      `   Expected:   ${keyInfo.expectedBase}\n\n` +
+      `   This will likely cause a 401 or 403 error.\n\n` +
+      `   Fix: Update your base URL to match your key:\n` +
+      `     vai config set base-url ${keyInfo.expectedBase}\n\n` +
+      `   Or switch to a ${base.includes('ai.mongodb.com') ? 'MongoDB Atlas' : 'Voyage AI'} key:\n` +
+      `     vai config set api-key <your-${base.includes('ai.mongodb.com') ? 'atlas' : 'voyage'}-key>\n`;
+    process.stderr.write(mismatch);
+  }
+
+  // Nudge Voyage AI direct users toward Atlas
+  if (keyInfo.type === 'voyage' && !process.env.VAI_NO_MIGRATE_HINT) {
+    const hint =
+      `\n💡 Tip: MongoDB Atlas now provides Voyage AI models directly.\n` +
+      `   Atlas keys (al-*) offer the same models with Atlas-native billing.\n` +
+      `   Get one at: https://cloud.mongodb.com → AI Models → Create API Key\n` +
+      `   Then: vai config set api-key <your-atlas-key>\n`;
+
+    // Only show this once per day — use a simple env flag or file check
+    const { getConfigValue: gc, setConfigValue: sc } = require('./config');
+    const lastHint = gc('_lastMigrateHint') || 0;
+    const oneDayMs = 86400000;
+    if (Date.now() - lastHint > oneDayMs) {
+      process.stderr.write(hint);
+      sc('_lastMigrateHint', Date.now());
+    }
+  }
+
   return key;
 }
 
@@ -162,6 +217,7 @@ module.exports = {
   API_BASE,
   ATLAS_API_BASE,
   VOYAGE_API_BASE,
+  identifyKey,
   getApiBase,
   requireApiKey,
   apiRequest,
