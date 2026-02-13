@@ -1,0 +1,52 @@
+{
+  "name": "enrich-and-ingest",
+  "description": "Fetch external metadata, enrich document, then ingest",
+  "version": "1.0.0",
+  "inputs": {
+    "document_url": { "type": "string", "required": true, "description": "URL to fetch document metadata from" },
+    "text": { "type": "string", "required": true, "description": "Document text to ingest" }
+  },
+  "steps": [
+    {
+      "id": "fetch_metadata",
+      "tool": "http",
+      "name": "Fetch document metadata",
+      "inputs": {
+        "url": "{{ inputs.document_url }}",
+        "method": "GET",
+        "timeout": 5000
+      }
+    },
+    {
+      "id": "store",
+      "tool": "ingest",
+      "name": "Ingest with metadata",
+      "inputs": {
+        "text": "{{ inputs.text }}",
+        "source": "{{ fetch_metadata.output.body.title }}",
+        "metadata": {
+          "author": "{{ fetch_metadata.output.body.author }}",
+          "category": "{{ fetch_metadata.output.body.category }}",
+          "fetchedAt": "{{ fetch_metadata.output.body.timestamp }}"
+        }
+      }
+    },
+    {
+      "id": "notify",
+      "tool": "http",
+      "name": "Notify webhook",
+      "inputs": {
+        "url": "https://hooks.slack.com/services/T00/B00/xxx",
+        "method": "POST",
+        "body": {
+          "text": "Ingested document — {{ store.output.chunks }} chunks"
+        }
+      },
+      "continueOnError": true
+    }
+  ],
+  "output": {
+    "source": "{{ fetch_metadata.output.body.title }}",
+    "chunks": "{{ store.output.chunks }}"
+  }
+}
