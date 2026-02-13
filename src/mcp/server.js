@@ -136,11 +136,7 @@ async function runHttpServer({ port = 3100, host = '127.0.0.1', sse = false } = 
     const { setupSSE, getSessionCount } = require('./sse-transport');
     setupSSE(app, authenticateRequest);
 
-    // Augment health endpoint with SSE session count
-    const _originalHealthHandler = app._router.stack.find(
-      (layer) => layer.route && layer.route.path === '/health' && layer.route.methods.get
-    );
-    // Add SSE info to health response via a second middleware
+    // Add SSE session count endpoint
     app.get('/health/sse', (_req, res) => {
       res.json({ sseSessions: getSessionCount() });
     });
