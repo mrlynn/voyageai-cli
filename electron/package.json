@@ -1,6 +1,6 @@
 {
   "name": "voyage-ai-playground",
-  "version": "1.7.0",
+  "version": "1.8.0",
   "description": "Vai Playground — Desktop app for exploring embeddings, reranking, and vector search",
   "main": "main.js",
   "author": "Michael Lynn",
