@@ -459,8 +459,37 @@ function createPlaygroundServer() {
                 opts: { systemPrompt, db: db || undefined, collection: collection || undefined },
               })) {
                 if (event.type === 'tool_call') {
-                  const { name, args, timeMs, error } = event.data;
-                  res.write(`event: tool_call\ndata: ${JSON.stringify({ name, args, timeMs, error })}\n\n`);
+                  const { name, args, timeMs, error, result } = event.data;
+                  // Build a short human-readable summary of the tool result
+                  let resultSummary = '';
+                  if (!error && result) {
+                    if (name === 'vai_query' || name === 'vai_search') {
+                      const docs = result.results || result.documents || [];
+                      resultSummary = `Found ${docs.length} result${docs.length !== 1 ? 's' : ''}`;
+                    } else if (name === 'vai_collections') {
+                      const colls = result.collections || [];
+                      resultSummary = colls.length > 0
+                        ? colls.map(c => `<code>${c.name || c}</code>`).slice(0, 5).join(', ')
+                        : 'No collections found';
+                    } else if (name === 'vai_models') {
+                      const models = result.models || [];
+                      resultSummary = `${models.length} model${models.length !== 1 ? 's' : ''} available`;
+                    } else if (name === 'vai_embed') {
+                      const dims = result.dimensions || result.embedding?.length || '?';
+                      resultSummary = `${dims}-dim vector`;
+                    } else if (name === 'vai_similarity') {
+                      const score = result.similarity ?? result.score;
+                      resultSummary = score !== undefined ? `Score: ${Number(score).toFixed(4)}` : '';
+                    } else if (name === 'vai_rerank') {
+                      const items = result.results || [];
+                      resultSummary = `Reranked ${items.length} result${items.length !== 1 ? 's' : ''}`;
+                    } else if (name === 'vai_estimate') {
+                      resultSummary = result.recommendation || '';
+                    } else if (name === 'vai_explain' || name === 'vai_topics') {
+                      resultSummary = result.title || result.topic || '';
+                    }
+                  }
+                  res.write(`event: tool_call\ndata: ${JSON.stringify({ name, args, timeMs, error, resultSummary })}\n\n`);
                 } else if (event.type === 'chunk') {
                   res.write(`event: chunk\ndata: ${JSON.stringify({ text: event.data })}\n\n`);
                 } else if (event.type === 'done') {
