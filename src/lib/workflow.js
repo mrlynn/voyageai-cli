@@ -18,9 +18,13 @@ const VAI_TOOLS = new Set([
   'ingest', 'collections', 'models', 'explain', 'estimate',
 ]);
 
-const CONTROL_FLOW_TOOLS = new Set(['merge', 'filter', 'transform', 'generate']);
+const CONTROL_FLOW_TOOLS = new Set(['merge', 'filter', 'transform', 'generate', 'conditional', 'loop', 'template']);
 
-const ALL_TOOLS = new Set([...VAI_TOOLS, ...CONTROL_FLOW_TOOLS]);
+const PROCESSING_TOOLS = new Set(['chunk', 'aggregate']);
+
+const INTEGRATION_TOOLS = new Set(['http']);
+
+const ALL_TOOLS = new Set([...VAI_TOOLS, ...CONTROL_FLOW_TOOLS, ...PROCESSING_TOOLS, ...INTEGRATION_TOOLS]);
 
 // ════════════════════════════════════════════════════════════════════
 // Validation
@@ -52,8 +56,8 @@ function validateWorkflow(definition) {
   // Validate inputs schema
   if (definition.inputs) {
     for (const [key, schema] of Object.entries(definition.inputs)) {
-      if (schema.type && !['string', 'number', 'boolean'].includes(schema.type)) {
-        errors.push(`Input "${key}" has invalid type "${schema.type}" (must be string, number, or boolean)`);
+      if (schema.type && !['string', 'number', 'boolean', 'array'].includes(schema.type)) {
+        errors.push(`Input "${key}" has invalid type "${schema.type}" (must be string, number, boolean, or array)`);
       }
     }
   }
@@ -94,10 +98,22 @@ function validateWorkflow(definition) {
     // Check template references point to known step IDs or reserved prefixes
     // "item" and "index" are injected by forEach at runtime
     const forEachVars = step.forEach ? new Set(['item', 'index']) : new Set();
+    // For loop nodes, the "as" variable and inline step refs are scoped
+    const loopVars = new Set();
+    if (step.tool === 'loop' && step.inputs) {
+      if (step.inputs.as) loopVars.add(step.inputs.as);
+      loopVars.add('item');
+      loopVars.add('index');
+    }
     if (step.inputs) {
-      const deps = extractDependencies(step.inputs);
+      // For loop nodes, only check dependencies on top-level inputs (items, as, maxIterations)
+      // not on the inline step's inputs which may reference the loop variable
+      const inputsToCheck = step.tool === 'loop'
+        ? { items: step.inputs.items }
+        : step.inputs;
+      const deps = extractDependencies(inputsToCheck);
       for (const dep of deps) {
-        if (!forEachVars.has(dep) && !stepIds.has(dep) && !definition.steps.some(s => s.id === dep)) {
+        if (!forEachVars.has(dep) && !loopVars.has(dep) && !stepIds.has(dep) && !definition.steps.some(s => s.id === dep)) {
           errors.push(`${stepPrefix}: references unknown step "${dep}"`);
         }
       }
@@ -117,6 +133,44 @@ function validateWorkflow(definition) {
   // Report duplicates
   for (const id of duplicateIds) {
     errors.push(`Duplicate step id: "${id}"`);
+  }
+
+  // Validate conditional branch references
+  for (const step of definition.steps) {
+    if (step.tool === 'conditional' && step.inputs) {
+      const branches = ['then', 'else'];
+      for (const branch of branches) {
+        const refs = step.inputs[branch];
+        if (refs && Array.isArray(refs)) {
+          for (const ref of refs) {
+            if (!stepIds.has(ref)) {
+              errors.push(`Step "${step.id}": conditional ${branch} references unknown step "${ref}"`);
+            }
+          }
+        }
+      }
+      if (!step.inputs.condition) {
+        errors.push(`Step "${step.id}": conditional must have a "condition" input`);
+      }
+      if (!step.inputs.then || !Array.isArray(step.inputs.then)) {
+        errors.push(`Step "${step.id}": conditional must have a "then" array`);
+      }
+    }
+
+    // Validate loop inline step
+    if (step.tool === 'loop' && step.inputs) {
+      if (!step.inputs.items) {
+        errors.push(`Step "${step.id}": loop must have an "items" input`);
+      }
+      if (!step.inputs.as || typeof step.inputs.as !== 'string') {
+        errors.push(`Step "${step.id}": loop must have a string "as" input`);
+      }
+      if (!step.inputs.step || typeof step.inputs.step !== 'object') {
+        errors.push(`Step "${step.id}": loop must have a "step" object`);
+      } else if (step.inputs.step.tool && !ALL_TOOLS.has(step.inputs.step.tool)) {
+        errors.push(`Step "${step.id}": loop sub-step has unknown tool "${step.inputs.step.tool}"`);
+      }
+    }
   }
 
   // Check for circular dependencies
@@ -197,6 +251,18 @@ function detectCycles(steps) {
 function buildDependencyGraph(steps) {
   const graph = new Map();
 
+  // First pass: build index of conditional branches
+  // Steps referenced in then/else of a conditional depend on that conditional
+  const conditionalDeps = new Map(); // stepId -> conditionalStepId
+  for (const step of steps) {
+    if (step.tool === 'conditional' && step.inputs) {
+      const branches = [...(step.inputs.then || []), ...(step.inputs.else || [])];
+      for (const ref of branches) {
+        conditionalDeps.set(ref, step.id);
+      }
+    }
+  }
+
   for (const step of steps) {
     const deps = extractDependencies(step.inputs || {});
     if (step.condition) {
@@ -206,6 +272,10 @@ function buildDependencyGraph(steps) {
     if (step.forEach) {
       const forDeps = extractDependencies(step.forEach);
       for (const d of forDeps) deps.add(d);
+    }
+    // If this step is referenced by a conditional, it depends on that conditional
+    if (conditionalDeps.has(step.id)) {
+      deps.add(conditionalDeps.get(step.id));
     }
     graph.set(step.id, deps);
   }
@@ -552,6 +622,301 @@ function executeTransform(inputs) {
   }
 
   return { results, resultCount: results.length };
+}
+
+/**
+ * Execute a conditional step: evaluate condition and determine branch.
+ *
+ * NOTE: The actual branch enforcement (skipping steps) is handled by
+ * the main execution loop, not here. This just evaluates and returns
+ * which branch was taken.
+ *
+ * @param {object} inputs - { condition: string, then: string[], else?: string[] }
+ * @param {object} context - workflow context
+ * @returns {{ conditionResult: boolean, branchTaken: string, enabledSteps: string[], skippedSteps: string[] }}
+ */
+function executeConditional(inputs, context) {
+  const { condition } = inputs;
+  const thenSteps = inputs.then || [];
+  const elseSteps = inputs.else || [];
+
+  if (!condition && condition !== false && condition !== 0) {
+    throw new Error('conditional: "condition" input is required');
+  }
+
+  // Condition may already be resolved by template engine to a boolean
+  let result;
+  if (typeof condition === 'boolean') {
+    result = condition;
+  } else if (typeof condition === 'string') {
+    result = evaluateCondition(condition, context);
+  } else {
+    result = Boolean(condition);
+  }
+
+  const taken = result ? 'then' : 'else';
+  const enabled = result ? thenSteps : elseSteps;
+  const skipped = result ? elseSteps : thenSteps;
+
+  return {
+    conditionResult: result,
+    branchTaken: taken,
+    enabledSteps: enabled,
+    skippedSteps: skipped,
+  };
+}
+
+/**
+ * Execute a template step: compose text from template.
+ *
+ * @param {object} inputs - { text: string }
+ * @returns {{ text: string, charCount: number, referencedSteps: string[] }}
+ */
+function executeTemplate(inputs) {
+  const { text } = inputs;
+
+  if (text === undefined || text === null) {
+    throw new Error('template: "text" input is required');
+  }
+
+  const textStr = String(text);
+  // Extract referenced step IDs from the original template (before resolution)
+  // Since inputs are already resolved by this point, we just return the composed text
+  return {
+    text: textStr,
+    charCount: textStr.length,
+  };
+}
+
+/**
+ * Execute a loop step: iterate over an array, executing a sub-step per item.
+ *
+ * @param {object} inputs - { items, as, step, maxIterations? }
+ * @param {object} defaults - workflow defaults
+ * @param {object} context - workflow context
+ * @returns {Promise<{ iterations: number, results: any[], errors: any[] }>}
+ */
+async function executeLoop(inputs, defaults, context) {
+  const { items, as, step: subStepDef, maxIterations = 100 } = inputs;
+
+  if (!Array.isArray(items)) {
+    throw new Error('loop: "items" must resolve to an array');
+  }
+  if (!as || typeof as !== 'string') {
+    throw new Error('loop: "as" must be a string variable name');
+  }
+  if (!subStepDef || typeof subStepDef !== 'object') {
+    throw new Error('loop: "step" must be a step definition object');
+  }
+
+  const results = [];
+  const errors = [];
+
+  const limit = Math.min(items.length, maxIterations);
+
+  for (let i = 0; i < limit; i++) {
+    const item = items[i];
+    // Build scoped context with loop variable
+    const scopedContext = { ...context, [as]: item, _loopIndex: i };
+
+    try {
+      // Resolve the sub-step inputs in the scoped context
+      const resolvedInputs = resolveTemplate(subStepDef.inputs || {}, scopedContext);
+      // Create a temporary step object for the dispatcher
+      const tempStep = { id: `_loop_${i}`, tool: subStepDef.tool, inputs: subStepDef.inputs };
+      const output = await executeStep(tempStep, resolvedInputs, defaults, scopedContext);
+      results.push(output);
+    } catch (err) {
+      errors.push({ index: i, error: err.message });
+      // If the parent loop has continueOnError, we keep going (handled by caller)
+      // For now, loop always continues and collects errors
+    }
+  }
+
+  if (items.length > maxIterations) {
+    errors.push({ index: maxIterations, error: `Loop truncated at maxIterations (${maxIterations})` });
+  }
+
+  return {
+    iterations: results.length,
+    results,
+    errors,
+  };
+}
+
+/**
+ * Execute a chunk step: split text using vai's chunking strategies.
+ *
+ * @param {object} inputs - { text, strategy?, size?, overlap?, source? }
+ * @returns {{ chunks: object[], totalChunks: number, strategy: string, avgChunkSize: number }}
+ */
+function executeChunk(inputs) {
+  const { chunk: doChunk } = require('./chunker');
+
+  const { text, strategy = 'recursive', size = 512, overlap = 50, source } = inputs;
+
+  if (!text && text !== '') {
+    throw new Error('chunk: "text" input is required');
+  }
+
+  const chunkTexts = doChunk(text, { strategy, size, overlap });
+
+  const chunks = chunkTexts.map((content, index) => {
+    const obj = {
+      index,
+      content,
+      charCount: content.length,
+    };
+    if (source) obj.source = source;
+    obj.metadata = { strategy };
+    // For markdown strategy, try to extract heading
+    if (strategy === 'markdown') {
+      const headingMatch = content.match(/^#+\s+(.+)/m);
+      if (headingMatch) obj.metadata.heading = headingMatch[1];
+    }
+    return obj;
+  });
+
+  const totalChars = chunks.reduce((sum, c) => sum + c.charCount, 0);
+
+  return {
+    chunks,
+    totalChunks: chunks.length,
+    strategy,
+    avgChunkSize: chunks.length > 0 ? Math.round(totalChars / chunks.length) : 0,
+  };
+}
+
+/**
+ * Execute an HTTP request step.
+ *
+ * @param {object} inputs - { url, method?, headers?, body?, timeout?, responseType?, followRedirects? }
+ * @returns {Promise<{ status: number, statusText: string, headers: object, body: any, durationMs: number }>}
+ */
+async function executeHttp(inputs) {
+  const { url, method = 'GET', headers = {}, body, timeout = 30000, responseType = 'json', followRedirects = false } = inputs;
+
+  if (!url || typeof url !== 'string') {
+    throw new Error('http: "url" input is required');
+  }
+
+  // URL allowlisting check
+  try {
+    const { loadProject } = require('./project');
+    const { config: proj } = loadProject();
+    if (proj && proj.allowedHosts && Array.isArray(proj.allowedHosts)) {
+      const parsed = new URL(url);
+      if (!proj.allowedHosts.includes(parsed.hostname)) {
+        throw new Error(`http: host "${parsed.hostname}" is not in allowedHosts. Allowed: ${proj.allowedHosts.join(', ')}`);
+      }
+    }
+  } catch (e) {
+    if (e.message.includes('allowedHosts')) throw e;
+    // If project config can't be loaded, allow all hosts
+  }
+
+  const startTime = Date.now();
+
+  // Build fetch options
+  const fetchOpts = {
+    method: method.toUpperCase(),
+    headers: { ...headers },
+    signal: AbortSignal.timeout(timeout),
+    redirect: followRedirects ? 'follow' : 'manual',
+  };
+
+  if (body && ['POST', 'PUT', 'PATCH'].includes(fetchOpts.method)) {
+    if (typeof body === 'object') {
+      fetchOpts.body = JSON.stringify(body);
+      if (!fetchOpts.headers['Content-Type'] && !fetchOpts.headers['content-type']) {
+        fetchOpts.headers['Content-Type'] = 'application/json';
+      }
+    } else {
+      fetchOpts.body = String(body);
+    }
+  }
+
+  const response = await fetch(url, fetchOpts);
+  const durationMs = Date.now() - startTime;
+
+  // Response size limit: 5MB
+  const MAX_RESPONSE_SIZE = 5 * 1024 * 1024;
+  const responseText = await response.text();
+  const truncated = responseText.length > MAX_RESPONSE_SIZE;
+  const rawBody = truncated ? responseText.slice(0, MAX_RESPONSE_SIZE) : responseText;
+
+  // Parse body
+  let parsedBody;
+  if (responseType === 'json') {
+    try {
+      parsedBody = JSON.parse(rawBody);
+    } catch {
+      parsedBody = rawBody; // Fall back to text
+    }
+  } else {
+    parsedBody = rawBody;
+  }
+
+  // Collect response headers
+  const respHeaders = {};
+  response.headers.forEach((value, key) => {
+    respHeaders[key] = value;
+  });
+
+  return {
+    status: response.status,
+    statusText: response.statusText,
+    headers: respHeaders,
+    body: parsedBody,
+    durationMs,
+    ...(truncated && { warning: 'Response truncated at 5MB' }),
+  };
+}
+
+/**
+ * Execute a MongoDB aggregation pipeline step.
+ *
+ * @param {object} inputs - { db?, collection?, pipeline, allowWrites? }
+ * @param {object} defaults - workflow defaults
+ * @returns {Promise<{ results: any[], count: number, durationMs: number }>}
+ */
+async function executeAggregate(inputs, defaults) {
+  const { getMongoCollection } = require('./mongo');
+  const { loadProject } = require('./project');
+  const { config: proj } = loadProject();
+
+  const db = inputs.db || defaults.db || proj.db;
+  const collection = inputs.collection || defaults.collection || proj.collection;
+  const pipeline = inputs.pipeline;
+  const allowWrites = inputs.allowWrites || false;
+
+  if (!db) throw new Error('aggregate: database not specified');
+  if (!collection) throw new Error('aggregate: collection not specified');
+  if (!Array.isArray(pipeline)) throw new Error('aggregate: "pipeline" must be an array');
+  if (pipeline.length > 20) throw new Error('aggregate: pipeline limited to 20 stages');
+
+  // Block write stages unless explicitly allowed
+  if (!allowWrites) {
+    for (const stage of pipeline) {
+      const stageKey = Object.keys(stage)[0];
+      if (stageKey === '$out' || stageKey === '$merge') {
+        throw new Error(`aggregate: "${stageKey}" stage is not allowed without allowWrites: true`);
+      }
+    }
+  }
+
+  const startTime = Date.now();
+  const { client, collection: col } = await getMongoCollection(db, collection);
+  try {
+    const results = await col.aggregate(pipeline).toArray();
+    return {
+      results,
+      count: results.length,
+      durationMs: Date.now() - startTime,
+    };
+  } finally {
+    await client.close();
+  }
 }
 
 // ════════════════════════════════════════════════════════════════════
@@ -938,6 +1303,18 @@ async function executeStep(step, resolvedInputs, defaults, context) {
       return executeTransform(resolvedInputs);
     case 'generate':
       return executeGenerate(resolvedInputs);
+    case 'conditional':
+      return executeConditional(resolvedInputs, context);
+    case 'template':
+      return executeTemplate(resolvedInputs);
+    case 'loop':
+      return executeLoop(resolvedInputs, defaults, context);
+    case 'chunk':
+      return executeChunk(resolvedInputs);
+    case 'http':
+      return executeHttp(resolvedInputs);
+    case 'aggregate':
+      return executeAggregate(resolvedInputs, defaults);
 
     // VAI tools
     case 'query':
@@ -1056,11 +1433,26 @@ async function executeWorkflow(definition, opts = {}) {
 
   // Execute layer by layer
   const stepResults = [];
+  const skippedByConditional = new Set(); // Steps skipped by conditional branches
 
   for (const layer of layers) {
     const layerPromises = layer.map(async (stepId) => {
       const step = stepMap.get(stepId);
       const stepStart = Date.now();
+
+      // Check if this step was skipped by a conditional branch
+      if (skippedByConditional.has(stepId)) {
+        if (opts.onStepSkip) opts.onStepSkip(stepId, 'conditional branch not taken');
+        context[stepId] = { output: null, skipped: true };
+        stepResults.push({
+          id: stepId,
+          tool: step.tool,
+          skipped: true,
+          reason: 'conditional branch not taken',
+          durationMs: Date.now() - stepStart,
+        });
+        return;
+      }
 
       // Evaluate condition
       if (step.condition) {
@@ -1083,7 +1475,26 @@ async function executeWorkflow(definition, opts = {}) {
       try {
         let output;
 
-        if (step.forEach) {
+        if (step.tool === 'conditional') {
+          // Special handling: resolve then/else but pass raw condition to evaluator
+          const rawCondition = step.inputs.condition;
+          const resolvedInputs = {
+            condition: rawCondition, // Keep raw for condition evaluator
+            then: step.inputs.then || [],
+            else: step.inputs.else || [],
+          };
+          output = await executeStep(step, resolvedInputs, defaults, context);
+        } else if (step.tool === 'loop') {
+          // Special handling: resolve items but pass raw step def for per-iteration resolution
+          const resolvedItems = resolveTemplate(step.inputs.items, context);
+          const resolvedInputs = {
+            items: resolvedItems,
+            as: step.inputs.as,
+            step: step.inputs.step, // Raw — resolved per iteration inside executeLoop
+            maxIterations: step.inputs.maxIterations,
+          };
+          output = await executeStep(step, resolvedInputs, defaults, context);
+        } else if (step.forEach) {
           // Iterate over an array
           const iterArray = resolveTemplate(step.forEach, context);
           if (!Array.isArray(iterArray)) {
@@ -1102,6 +1513,13 @@ async function executeWorkflow(definition, opts = {}) {
           // Normal execution
           const resolvedInputs = resolveTemplate(step.inputs || {}, context);
           output = await executeStep(step, resolvedInputs, defaults, context);
+        }
+
+        // If this was a conditional node, mark skipped branch steps
+        if (step.tool === 'conditional' && output.skippedSteps) {
+          for (const skippedId of output.skippedSteps) {
+            skippedByConditional.add(skippedId);
+          }
         }
 
         const durationMs = Date.now() - stepStart;
@@ -1333,6 +1751,12 @@ module.exports = {
   executeMerge,
   executeFilter,
   executeTransform,
+  executeConditional,
+  executeTemplate,
+  executeLoop,
+  executeChunk,
+  executeHttp,
+  executeAggregate,
 
   // Main execution
   executeStep,
@@ -1351,5 +1775,7 @@ module.exports = {
   // Constants
   VAI_TOOLS,
   CONTROL_FLOW_TOOLS,
+  PROCESSING_TOOLS,
+  INTEGRATION_TOOLS,
   ALL_TOOLS,
 };

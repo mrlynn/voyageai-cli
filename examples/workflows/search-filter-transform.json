@@ -1,0 +1,45 @@
+{
+  "name": "search-filter-transform",
+  "description": "Search a collection, filter results by score threshold, and transform into a clean output format",
+  "version": "1.0.0",
+  "inputs": {
+    "query": { "type": "string", "required": true, "description": "Search query" },
+    "min_score": { "type": "number", "default": 0.7, "description": "Minimum relevance score to keep" },
+    "limit": { "type": "number", "default": 10, "description": "Maximum results to return" }
+  },
+  "steps": [
+    {
+      "id": "search",
+      "tool": "query",
+      "name": "Search collection",
+      "inputs": {
+        "query": "{{ inputs.query }}",
+        "limit": "{{ inputs.limit }}"
+      }
+    },
+    {
+      "id": "filter_by_score",
+      "tool": "filter",
+      "name": "Filter by relevance score",
+      "inputs": {
+        "array": "{{ search.output.results }}",
+        "condition": "item.score >= {{ inputs.min_score }}"
+      }
+    },
+    {
+      "id": "clean_output",
+      "tool": "transform",
+      "name": "Extract key fields",
+      "inputs": {
+        "array": "{{ filter_by_score.output.results }}",
+        "fields": ["text", "source", "score"]
+      }
+    }
+  ],
+  "output": {
+    "query": "{{ inputs.query }}",
+    "totalFound": "{{ search.output.resultCount }}",
+    "afterFilter": "{{ filter_by_score.output.resultCount }}",
+    "results": "{{ clean_output.output.results }}"
+  }
+}

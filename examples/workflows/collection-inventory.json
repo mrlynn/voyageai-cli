@@ -1,0 +1,61 @@
+{
+  "name": "collection-inventory",
+  "description": "Inventory a MongoDB database: list collections, run aggregate stats on the main collection, and produce a summary report",
+  "version": "1.0.0",
+  "inputs": {
+    "db": { "type": "string", "required": true, "description": "Database to inventory" },
+    "collection": { "type": "string", "required": true, "description": "Primary collection to analyze" }
+  },
+  "steps": [
+    {
+      "id": "list_collections",
+      "tool": "collections",
+      "name": "List all collections",
+      "inputs": {
+        "db": "{{ inputs.db }}"
+      }
+    },
+    {
+      "id": "source_stats",
+      "tool": "aggregate",
+      "name": "Document count by source",
+      "inputs": {
+        "db": "{{ inputs.db }}",
+        "collection": "{{ inputs.collection }}",
+        "pipeline": [
+          { "$group": { "_id": "$source", "count": { "$sum": 1 }, "avgLength": { "$avg": { "$strLenCP": { "$ifNull": ["$text", ""] } } } } },
+          { "$sort": { "count": -1 } },
+          { "$limit": 20 }
+        ]
+      }
+    },
+    {
+      "id": "total_count",
+      "tool": "aggregate",
+      "name": "Total document count",
+      "inputs": {
+        "db": "{{ inputs.db }}",
+        "collection": "{{ inputs.collection }}",
+        "pipeline": [
+          { "$count": "total" }
+        ]
+      }
+    },
+    {
+      "id": "inventory_report",
+      "tool": "template",
+      "name": "Build inventory report",
+      "inputs": {
+        "text": "Collection Inventory: {{ inputs.db }}.{{ inputs.collection }}\n\nTotal documents: {{ total_count.output.results }}\n\nDocuments by source:\n{{ source_stats.output.results }}\n\nAll collections in database:\n{{ list_collections.output.collections }}"
+      }
+    }
+  ],
+  "output": {
+    "database": "{{ inputs.db }}",
+    "collection": "{{ inputs.collection }}",
+    "totalDocuments": "{{ total_count.output.results }}",
+    "sourceBreakdown": "{{ source_stats.output.results }}",
+    "allCollections": "{{ list_collections.output.collections }}",
+    "report": "{{ inventory_report.output.text }}"
+  }
+}

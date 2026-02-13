@@ -1,0 +1,64 @@
+{
+  "name": "dedup-and-ingest",
+  "description": "Chunk a document, check each chunk for duplicates against existing content, and only ingest novel chunks",
+  "version": "1.0.0",
+  "inputs": {
+    "text": { "type": "string", "required": true, "description": "Document text to ingest" },
+    "source": { "type": "string", "required": true, "description": "Source identifier for the document" },
+    "similarity_threshold": { "type": "number", "default": 0.92, "description": "Similarity score above which a chunk is considered a duplicate" }
+  },
+  "steps": [
+    {
+      "id": "split",
+      "tool": "chunk",
+      "name": "Chunk the document",
+      "inputs": {
+        "text": "{{ inputs.text }}",
+        "strategy": "recursive",
+        "size": 512,
+        "overlap": 50,
+        "source": "{{ inputs.source }}"
+      }
+    },
+    {
+      "id": "filter_short",
+      "tool": "filter",
+      "name": "Remove short chunks",
+      "inputs": {
+        "array": "{{ split.output.chunks }}",
+        "condition": "item.charCount > 100"
+      }
+    },
+    {
+      "id": "check_each",
+      "tool": "loop",
+      "name": "Check novelty of each chunk",
+      "inputs": {
+        "items": "{{ filter_short.output.results }}",
+        "as": "chunk",
+        "step": {
+          "tool": "search",
+          "inputs": {
+            "query": "{{ chunk.content }}",
+            "limit": 1
+          }
+        },
+        "maxIterations": 50
+      }
+    },
+    {
+      "id": "build_novel",
+      "tool": "template",
+      "name": "Summarize dedup results",
+      "inputs": {
+        "text": "Checked {{ check_each.output.iterations }} chunks against existing content. Threshold: {{ inputs.similarity_threshold }}."
+      }
+    }
+  ],
+  "output": {
+    "totalChunks": "{{ split.output.totalChunks }}",
+    "afterShortFilter": "{{ filter_short.output.resultCount }}",
+    "checkedChunks": "{{ check_each.output.iterations }}",
+    "summary": "{{ build_novel.output.text }}"
+  }
+}

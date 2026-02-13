@@ -3437,6 +3437,8 @@ select:focus { outline: none; border-color: var(--accent); }
 }
 @keyframes wf-flow { to { stroke-dashoffset: -12; } }
 .wf-edge--complete { stroke: var(--accent, #6c63ff); opacity: 0.6; stroke-dasharray: none; }
+.wf-edge--else { stroke-dasharray: 6 4; opacity: 0.4; }
+.wf-edge--skipped { opacity: 0.12; stroke-dasharray: 4 4; }
 /* Inspector */
 .wf-inspector {
   flex-shrink: 0; position: relative;
@@ -10079,6 +10081,13 @@ const WF_NODE_META = {
   rerank:      { icon: 'M3 6h18M7 12h10M10 18h4', label: 'Rerank',          color: '#CE93D8', category: 'retrieval' },
   search:      { icon: 'M21 21l-4.3-4.3M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16z', label: 'Search',          color: '#64B5F6', category: 'retrieval' },
   ingest:      { icon: 'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3', label: 'Ingest',          color: '#4DB6AC', category: 'management' },
+  // Phase 1-3: New workflow nodes
+  conditional: { icon: 'M12 3l9 9-9 9-9-9z', label: 'Conditional', color: '#90A4AE', category: 'control', shape: 'diamond' },
+  loop:        { icon: 'M17 1l4 4-4 4M3 11V9a4 4 0 0 1 4-4h14M7 23l-4-4 4-4M21 13v2a4 4 0 0 1-4 4H3', label: 'Loop', color: '#90A4AE', category: 'control' },
+  template:    { icon: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M16 13H8M16 17H8M10 9H8', label: 'Template', color: '#90A4AE', category: 'control' },
+  chunk:       { icon: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M9 15h6M9 11h6M9 19h4', label: 'Chunk', color: '#00D4AA', category: 'processing' },
+  aggregate:   { icon: 'M22 3H2l8 9.46V19l4 2v-8.54L22 3z', label: 'Aggregate', color: '#00D4AA', category: 'processing' },
+  http:        { icon: 'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zM2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z', label: 'HTTP Request', color: '#F5A623', category: 'integration' },
 };
 
 // Fallback icon (gear) for unknown workflow node types
@@ -10320,6 +10329,19 @@ async function wfRenderWorkflow(definition) {
     });
   }
 
+  // Build conditional branch maps for edge styling
+  const elseBranchEdges = new Set(); // "fromId->toId" for else branches
+  if (definition.steps) {
+    for (const step of definition.steps) {
+      if (step.tool === 'conditional' && step.inputs) {
+        const elseSteps = step.inputs.else || [];
+        for (const eId of elseSteps) {
+          elseBranchEdges.add(`${step.id}->${eId}`);
+        }
+      }
+    }
+  }
+
   // Draw edges first (behind nodes)
   const edgeGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
   edgeGroup.classList.add('wf-edge-group');
@@ -10330,6 +10352,15 @@ async function wfRenderWorkflow(definition) {
       const depId = rawDepId.replace(/^!/, '');
       if (positions[depId] && positions[stepId]) {
         const edge = wfDrawEdge(depId, stepId, positions);
+        // Mark else-branch edges with dashed style
+        const edgeKey = `${depId}->${stepId}`;
+        if (elseBranchEdges.has(edgeKey)) {
+          edge.querySelector('.wf-edge')?.classList.add('wf-edge--else');
+        }
+        // Mark edges to skipped nodes
+        if (wfState.executionState[stepId] === 'skipped') {
+          edge.querySelector('.wf-edge')?.classList.add('wf-edge--skipped');
+        }
         edgeGroup.appendChild(edge);
       }
     });
@@ -10397,14 +10428,27 @@ function wfDrawNode(step, x, y, state, hasDeps, hasDependents) {
     });
   }
 
-  // Background rect
-  const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-  rect.setAttribute('width', WF_NODE_W);
-  rect.setAttribute('height', WF_NODE_H);
-  rect.setAttribute('fill', meta.color);
-  rect.setAttribute('stroke', meta.color);
-  rect.setAttribute('opacity', '0.85');
-  g.appendChild(rect);
+  // Background shape: diamond for conditional, rounded rect for others
+  if (meta.shape === 'diamond') {
+    const diamond = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+    const cx = WF_NODE_W / 2, cy = WF_NODE_H / 2;
+    const rx = WF_NODE_W / 2 + 8, ry = WF_NODE_H / 2 + 4;
+    diamond.setAttribute('points', `${cx},${cy - ry} ${cx + rx},${cy} ${cx},${cy + ry} ${cx - rx},${cy}`);
+    diamond.setAttribute('fill', meta.color);
+    diamond.setAttribute('stroke', meta.color);
+    diamond.setAttribute('opacity', '0.85');
+    g.appendChild(diamond);
+  } else {
+    const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    rect.setAttribute('width', WF_NODE_W);
+    rect.setAttribute('height', WF_NODE_H);
+    rect.setAttribute('rx', '6');
+    rect.setAttribute('ry', '6');
+    rect.setAttribute('fill', meta.color);
+    rect.setAttribute('stroke', meta.color);
+    rect.setAttribute('opacity', '0.85');
+    g.appendChild(rect);
+  }
 
   // Input port (left side): show in builder mode always, otherwise only if has deps
   const showInPort = wfState.builderMode || hasDeps;
@@ -11517,10 +11561,16 @@ const WF_INPUT_DEFS = {
   filter:      [{ key: 'input', type: 'text', required: true, placeholder: '{{ step.output }}' }, { key: 'condition', type: 'text', required: true, placeholder: 'item.score > 0.5' }],
   transform:   [{ key: 'input', type: 'text', required: true, placeholder: '{{ step.output }}' }, { key: 'expression', type: 'text', required: true, placeholder: 'item.text' }],
   generate:    [{ key: 'prompt', type: 'textarea', required: true, placeholder: 'Generate a summary of...' }, { key: 'context', type: 'text', required: false, placeholder: '{{ step.output }}' }],
+  conditional: [{ key: 'condition', type: 'text', required: true, placeholder: '{{ step.output.results.length > 0 }}' }, { key: 'then', type: 'json', required: true, placeholder: '["step_a"]' }, { key: 'else', type: 'json', required: false, placeholder: '["step_b"]' }],
+  loop:        [{ key: 'items', type: 'text', required: true, placeholder: '{{ step.output.results }}' }, { key: 'as', type: 'text', required: true, placeholder: 'item' }, { key: 'step', type: 'json', required: true, placeholder: '{"tool":"template","inputs":{"text":"{{ item }}"}}' }, { key: 'maxIterations', type: 'number', required: false, placeholder: '100' }],
+  template:    [{ key: 'text', type: 'textarea', required: true, placeholder: 'Compose text with {{ step.output }} references' }],
+  chunk:       [{ key: 'text', type: 'textarea', required: true, placeholder: '{{ step.output.text }}' }, { key: 'strategy', type: 'select', required: false, options: ['fixed','sentence','paragraph','recursive','markdown'] }, { key: 'size', type: 'number', required: false, placeholder: '512' }, { key: 'overlap', type: 'number', required: false, placeholder: '50' }, { key: 'source', type: 'text', required: false, placeholder: 'document.md' }],
+  aggregate:   [{ key: 'pipeline', type: 'json', required: true, placeholder: '[{"$group":{"_id":"$field","count":{"$sum":1}}}]' }, { key: 'collection', type: 'text', required: false }, { key: 'db', type: 'text', required: false }],
+  http:        [{ key: 'url', type: 'text', required: true, placeholder: 'https://api.example.com/data' }, { key: 'method', type: 'select', required: false, options: ['GET','POST','PUT','PATCH','DELETE'] }, { key: 'headers', type: 'json', required: false, placeholder: '{"Authorization":"Bearer ..."}' }, { key: 'body', type: 'json', required: false, placeholder: '{}' }, { key: 'timeout', type: 'number', required: false, placeholder: '30000' }],
 };
 
-const WF_CATEGORY_ORDER = ['retrieval', 'embedding', 'management', 'utility', 'control', 'generation'];
-const WF_CATEGORY_LABELS = { retrieval: 'Retrieval', embedding: 'Embedding', management: 'Management', utility: 'Utility', control: 'Control Flow', generation: 'Generation' };
+const WF_CATEGORY_ORDER = ['retrieval', 'embedding', 'processing', 'control', 'generation', 'integration', 'management', 'utility'];
+const WF_CATEGORY_LABELS = { retrieval: 'Retrieval', embedding: 'Embedding', management: 'Management', utility: 'Utility', control: 'Control Flow', generation: 'Generation', processing: 'Processing', integration: 'Integration' };
 
 // ── Builder: Library/Palette tab toggle ──
 function wfSwitchLibTab(tab) {
