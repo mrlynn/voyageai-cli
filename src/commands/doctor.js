@@ -4,7 +4,7 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const pc = require('picocolors');
-const { getConfigValue } = require('../lib/config');
+const { getConfigValue, setConfigValue, CONFIG_DIR, CONFIG_PATH } = require('../lib/config');
 const { getApiBase } = require('../lib/api');
 
 /**
@@ -240,15 +240,83 @@ async function checkConfig() {
   };
 }
 
+// ── Fix functions (for --fix mode) ──
+
+async function fixApiKey() {
+  const readline = require('readline');
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+
+  return new Promise((resolve) => {
+    console.log(pc.cyan('\n  Fixing: Voyage AI API Key'));
+    console.log(pc.dim('  Get a key at: https://dash.voyageai.com/api-keys\n'));
+
+    rl.question('  Enter your Voyage AI API key: ', (key) => {
+      rl.close();
+      const trimmed = (key || '').trim();
+      if (!trimmed) {
+        console.log(pc.yellow('  Skipped (no key entered)'));
+        resolve(false);
+        return;
+      }
+      try {
+        setConfigValue('apiKey', trimmed);
+        // Also set in env for the current session so the connection check passes
+        process.env.VOYAGE_API_KEY = trimmed;
+        console.log(pc.green('  ✓ API key saved to ~/.vai/config.json'));
+        resolve(true);
+      } catch (err) {
+        console.log(pc.red(`  ✗ Failed to save: ${err.message}`));
+        resolve(false);
+      }
+    });
+  });
+}
+
+function fixConfigPermissions() {
+  try {
+    fs.chmodSync(CONFIG_PATH, 0o600);
+    console.log(pc.green('  ✓ Fixed ~/.vai/config.json permissions to 600'));
+    return true;
+  } catch (err) {
+    console.log(pc.red(`  ✗ Failed to fix permissions: ${err.message}`));
+    return false;
+  }
+}
+
+function fixConfigDir() {
+  try {
+    fs.mkdirSync(CONFIG_DIR, { recursive: true });
+    console.log(pc.green('  ✓ Created ~/.vai/ directory'));
+    return true;
+  } catch (err) {
+    console.log(pc.red(`  ✗ Failed to create directory: ${err.message}`));
+    return false;
+  }
+}
+
+async function fixPdfParse() {
+  const { execSync } = require('child_process');
+  console.log(pc.cyan('\n  Installing pdf-parse...'));
+  try {
+    execSync('npm install pdf-parse', { stdio: 'pipe' });
+    console.log(pc.green('  ✓ pdf-parse installed'));
+    return true;
+  } catch (err) {
+    console.log(pc.red(`  ✗ Failed to install: ${err.message}`));
+    return false;
+  }
+}
+
 async function runDoctor(options = {}) {
-  const { json, verbose } = options;
-  
+  const { json, verbose, fix } = options;
+
   console.log(pc.bold('\n🩺 Voyage AI CLI Health Check\n'));
-  
+
   const results = {};
   let hasError = false;
   let hasWarning = false;
-  
+  const fixable = [];
+
   // Run all checks
   const checks = [
     { key: 'node', fn: checkNodeVersion },
@@ -258,12 +326,12 @@ async function runDoctor(options = {}) {
     { key: 'pdfParse', fn: checkPdfParse },
     { key: 'config', fn: checkConfig },
   ];
-  
+
   for (const { key, fn } of checks) {
     const check = CHECKS[key];
     const result = await fn();
     results[key] = result;
-    
+
     // Determine status icon
     let icon;
     if (result.ok === true) {
@@ -276,15 +344,23 @@ async function runDoctor(options = {}) {
       icon = warnMark();
       hasWarning = true;
     }
-    
+
     // Print result
     console.log(`  ${icon} ${pc.bold(check.name)}: ${result.message}`);
-    
+
     if (result.hint && (verbose || result.ok === false)) {
       console.log(`      ${pc.dim(result.hint)}`);
     }
+
+    // Track fixable issues
+    if (result.ok !== true) {
+      if (key === 'apiKey' && result.ok === false) fixable.push('apiKey');
+      if (key === 'pdfParse' && result.ok === null) fixable.push('pdfParse');
+      if (key === 'config' && result.message && result.message.includes('permissions')) fixable.push('configPerms');
+      if (key === 'config' && result.ok === null) fixable.push('configDir');
+    }
   }
-  
+
   // Summary
   console.log('');
   if (hasError) {
@@ -294,7 +370,43 @@ async function runDoctor(options = {}) {
   } else {
     console.log(pc.green('  ✓ All checks passed. vai is ready to use!\n'));
   }
-  
+
+  // --fix mode: attempt automatic repairs
+  if (fix && fixable.length > 0) {
+    console.log(pc.bold('  🔧 Attempting fixes...\n'));
+    let fixed = 0;
+
+    for (const item of fixable) {
+      if (item === 'configDir') {
+        if (fixConfigDir()) fixed++;
+      }
+      if (item === 'apiKey') {
+        if (await fixApiKey()) fixed++;
+      }
+      if (item === 'configPerms') {
+        if (fixConfigPermissions()) fixed++;
+      }
+      if (item === 'pdfParse') {
+        if (await fixPdfParse()) fixed++;
+      }
+    }
+
+    console.log('');
+    if (fixed > 0) {
+      console.log(pc.green(`  ✓ Fixed ${fixed} issue${fixed === 1 ? '' : 's'}. Run ${pc.bold('vai doctor')} again to verify.\n`));
+    } else {
+      console.log(pc.yellow('  No issues were fixed. See hints above for manual steps.\n'));
+    }
+    return 0;
+  } else if (fix && fixable.length === 0 && (hasError || hasWarning)) {
+    console.log(pc.dim('  No auto-fixable issues found. See hints above for manual steps.\n'));
+  }
+
+  // Suggest --fix if there are fixable issues and not in fix mode
+  if (!fix && fixable.length > 0) {
+    console.log(pc.dim(`  Tip: run ${pc.bold('vai doctor --fix')} to attempt automatic repairs\n`));
+  }
+
   // Suggest next steps
   if (!hasError) {
     console.log(pc.dim('  Next steps:'));
@@ -302,11 +414,11 @@ async function runDoctor(options = {}) {
     console.log(pc.dim('    vai quickstart  — Zero-to-search tutorial'));
     console.log(pc.dim('    vai explain     — Learn key concepts\n'));
   }
-  
+
   if (json) {
     console.log(JSON.stringify(results, null, 2));
   }
-  
+
   return hasError ? 1 : 0;
 }
 
@@ -316,10 +428,41 @@ function register(program) {
     .description('Run health checks on your vai setup')
     .option('--json', 'Output results as JSON')
     .option('-v, --verbose', 'Show hints for all checks')
+    .option('-f, --fix', 'Attempt to fix issues automatically')
     .action(async (options) => {
       const exitCode = await runDoctor(options);
       if (exitCode !== 0) process.exit(exitCode);
     });
 }
 
-module.exports = { register, runDoctor };
+/**
+ * Run all checks programmatically and return structured results.
+ * Used by the playground /api/doctor endpoint.
+ */
+async function runChecks() {
+  const checks = [
+    { key: 'node', fn: checkNodeVersion },
+    { key: 'apiKey', fn: checkApiKey },
+    { key: 'apiConnection', fn: checkApiConnection },
+    { key: 'mongodb', fn: checkMongoDB },
+    { key: 'pdfParse', fn: checkPdfParse },
+    { key: 'config', fn: checkConfig },
+  ];
+
+  const results = {};
+  for (const { key, fn } of checks) {
+    const result = await fn();
+    // Strip picocolors ANSI codes from messages for JSON output
+    const clean = (s) => typeof s === 'string' ? s.replace(/\x1b\[[0-9;]*m/g, '') : s;
+    results[key] = {
+      name: CHECKS[key].name,
+      required: CHECKS[key].required,
+      ok: result.ok,
+      message: clean(result.message),
+      hint: result.hint ? clean(result.hint) : null,
+    };
+  }
+  return results;
+}
+
+module.exports = { register, runDoctor, runChecks };
