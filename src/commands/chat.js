@@ -3,7 +3,7 @@
 const readline = require('readline');
 const { createLLMProvider, resolveLLMConfig } = require('../lib/llm');
 const { ChatHistory } = require('../lib/history');
-const { chatTurn } = require('../lib/chat');
+const { chatTurn, agentChatTurn } = require('../lib/chat');
 const { loadProject } = require('../lib/project');
 const { getMongoCollection } = require('../lib/mongo');
 const { setConfigValue } = require('../lib/config');
@@ -29,6 +29,7 @@ function registerChat(program) {
     .option('--llm-model <name>', 'Specific LLM model to use')
     .option('--llm-api-key <key>', 'LLM API key')
     .option('--llm-base-url <url>', 'LLM API base URL (Ollama)')
+    .option('--mode <mode>', 'Chat mode: pipeline (fixed RAG) or agent (tool-calling)', 'pipeline')
     .option('--max-context-docs <n>', 'Max retrieved documents for context', (v) => parseInt(v, 10), 5)
     .option('--max-turns <n>', 'Max conversation turns before truncation', (v) => parseInt(v, 10), 20)
     .option('--no-history', 'Disable MongoDB persistence (in-memory only)')
@@ -63,12 +64,18 @@ async function runChat(opts) {
   const doStream = opts.stream !== false;
   const systemPrompt = opts.systemPrompt || chatConf.systemPrompt;
 
-  // Validate DB + collection
-  if (!db || !collection) {
-    console.error(ui.error('Database and collection required.'));
+  // Resolve mode
+  const mode = opts.mode || chatConf.mode || 'pipeline';
+  const isAgent = mode === 'agent';
+
+  // Validate DB + collection (required for pipeline, recommended for agent)
+  if (!isAgent && (!db || !collection)) {
+    console.error(ui.error('Database and collection required for pipeline mode.'));
     console.error('');
     console.error('  Use --db and --collection, or configure .vai.json:');
     console.error('    vai init');
+    console.error('');
+    console.error('  Or use --mode agent to let the LLM discover collections.');
     console.error('');
     process.exit(1);
   }
@@ -131,8 +138,17 @@ async function runChat(opts) {
 
   const llm = createLLMProvider(opts);
 
-  // Preflight: verify the RAG pipeline is ready
-  if (!opts.json) {
+  // Check tool support for agent mode
+  if (isAgent && !llm.supportsTools) {
+    if (!opts.quiet && !opts.json) {
+      console.log(ui.warn(`LLM provider "${llm.name}" does not support tool calling. Falling back to pipeline mode.`));
+    }
+    // Fall through to pipeline mode
+    return runChat({ ...opts, mode: 'pipeline' });
+  }
+
+  // Preflight: verify the RAG pipeline is ready (pipeline mode only)
+  if (!isAgent && !opts.json) {
     const { runPreflight, formatPreflight, waitForIndex } = require('../lib/preflight');
     const { checks, ready } = await runPreflight({
       db, collection,
@@ -184,7 +200,7 @@ async function runChat(opts) {
     try {
       const historyCollection = chatConf.historyCollection ||
         process.env.VAI_CHAT_HISTORY || 'vai_chat_history';
-      const { client, collection: coll } = await getMongoCollection(db, historyCollection);
+      const { client, collection: coll } = await getMongoCollection(db || 'vai', historyCollection);
       historyMongo = { client, collection: coll };
       await ChatHistory.ensureIndexes(coll);
     } catch {
@@ -207,12 +223,22 @@ async function runChat(opts) {
     }
   }
 
+  // Track tool calls from last agent response (for /tools and /export-workflow)
+  let lastToolCalls = [];
+
   // Print header
   if (!opts.quiet && !opts.json) {
     console.log('');
     console.log(`${pc.bold('vai chat')} v${getVersion()}`);
     console.log(ui.label('Provider', `${llmConfig.provider} (${llmConfig.model})`));
-    console.log(ui.label('Knowledge base', `${db}.${collection}`));
+    if (isAgent) {
+      console.log(ui.label('Mode', 'agent (tool-calling)'));
+      if (db) console.log(ui.label('Default DB', db));
+      if (collection) console.log(ui.label('Default collection', collection));
+    } else {
+      console.log(ui.label('Mode', 'pipeline (fixed RAG)'));
+      console.log(ui.label('Knowledge base', `${db}.${collection}`));
+    }
     console.log(ui.label('Session', pc.dim(history.sessionId)));
     console.log(pc.dim('Type /help for commands, /quit to exit.'));
     console.log('');
@@ -237,7 +263,10 @@ async function runChat(opts) {
 
     // Handle slash commands
     if (input.startsWith('/')) {
-      const handled = await handleSlashCommand(input, { history, opts, db, collection, llm, rl, historyMongo });
+      const handled = await handleSlashCommand(input, {
+        history, opts, db, collection, llm, rl, historyMongo,
+        isAgent, lastToolCalls,
+      });
       if (handled === 'quit') {
         await cleanup(historyMongo);
         process.exit(0);
@@ -248,70 +277,15 @@ async function runChat(opts) {
 
     // Execute chat turn
     try {
-      let turnNum = Math.floor(history.turns.length / 2) + 1;
-
-      if (opts.json) {
-        // JSON mode — collect everything then output
-        let fullResponse = '';
-        let sources = [];
-        let metadata = {};
-
-        for await (const event of chatTurn({
-          query: input, db, collection, llm, history,
-          opts: { maxDocs, rerank: doRerank, stream: false, systemPrompt, textField, filter: opts.filter },
-        })) {
-          if (event.type === 'chunk') fullResponse += event.data;
-          if (event.type === 'done') {
-            sources = event.data.sources;
-            metadata = event.data.metadata;
-          }
-        }
-
-        console.log(JSON.stringify({
-          sessionId: history.sessionId,
-          turn: turnNum,
-          query: input,
-          response: fullResponse,
-          sources,
-          metadata,
-        }));
+      if (isAgent) {
+        lastToolCalls = await handleAgentTurn(input, {
+          llm, history, opts, db, collection, systemPrompt, chatConf,
+        });
       } else {
-        // Interactive mode — stream output
-        let retrievalShown = false;
-
-        for await (const event of chatTurn({
-          query: input, db, collection, llm, history,
-          opts: { maxDocs, rerank: doRerank, stream: doStream, systemPrompt, textField, filter: opts.filter },
-        })) {
-          if (event.type === 'retrieval' && !opts.quiet) {
-            const { docs, timeMs } = event.data;
-            if (!retrievalShown) {
-              console.log(pc.dim(`  [${docs.length} docs retrieved in ${timeMs}ms]`));
-              console.log('');
-              retrievalShown = true;
-            }
-          }
-
-          if (event.type === 'chunk') {
-            process.stdout.write(event.data);
-          }
-
-          if (event.type === 'done') {
-            console.log(''); // End the streamed response line
-
-            // Show sources
-            const { sources, metadata } = event.data;
-            if (sources.length > 0 && chatConf.showSources !== false) {
-              console.log('');
-              console.log(pc.dim('Sources:'));
-              for (let i = 0; i < sources.length; i++) {
-                const s = sources[i];
-                console.log(pc.dim(`  [${i + 1}] ${s.source} (relevance: ${s.score?.toFixed(2) || 'N/A'})`));
-              }
-            }
-            console.log('');
-          }
-        }
+        await handlePipelineTurn(input, {
+          db, collection, llm, history, opts,
+          maxDocs, doRerank, doStream, systemPrompt, textField, chatConf,
+        });
       }
     } catch (err) {
       console.error('');
@@ -336,11 +310,159 @@ async function runChat(opts) {
 }
 
 /**
+ * Handle a single pipeline mode turn.
+ */
+async function handlePipelineTurn(input, ctx) {
+  const { db, collection, llm, history, opts, maxDocs, doRerank, doStream, systemPrompt, textField, chatConf } = ctx;
+  const turnNum = Math.floor(history.turns.length / 2) + 1;
+
+  if (opts.json) {
+    // JSON mode — collect everything then output
+    let fullResponse = '';
+    let sources = [];
+    let metadata = {};
+
+    for await (const event of chatTurn({
+      query: input, db, collection, llm, history,
+      opts: { maxDocs, rerank: doRerank, stream: false, systemPrompt, textField, filter: opts.filter },
+    })) {
+      if (event.type === 'chunk') fullResponse += event.data;
+      if (event.type === 'done') {
+        sources = event.data.sources;
+        metadata = event.data.metadata;
+      }
+    }
+
+    console.log(JSON.stringify({
+      sessionId: history.sessionId,
+      turn: turnNum,
+      query: input,
+      response: fullResponse,
+      sources,
+      metadata,
+    }));
+  } else {
+    // Interactive mode — stream output
+    let retrievalShown = false;
+
+    for await (const event of chatTurn({
+      query: input, db, collection, llm, history,
+      opts: { maxDocs, rerank: doRerank, stream: doStream, systemPrompt, textField, filter: opts.filter },
+    })) {
+      if (event.type === 'retrieval' && !opts.quiet) {
+        const { docs, timeMs } = event.data;
+        if (!retrievalShown) {
+          console.log(pc.dim(`  [${docs.length} docs retrieved in ${timeMs}ms]`));
+          console.log('');
+          retrievalShown = true;
+        }
+      }
+
+      if (event.type === 'chunk') {
+        process.stdout.write(event.data);
+      }
+
+      if (event.type === 'done') {
+        console.log(''); // End the streamed response line
+
+        // Show sources
+        const { sources, metadata } = event.data;
+        if (sources.length > 0 && chatConf.showSources !== false) {
+          console.log('');
+          console.log(pc.dim('Sources:'));
+          for (let i = 0; i < sources.length; i++) {
+            const s = sources[i];
+            console.log(pc.dim(`  [${i + 1}] ${s.source} (relevance: ${s.score?.toFixed(2) || 'N/A'})`));
+          }
+        }
+        console.log('');
+      }
+    }
+  }
+}
+
+/**
+ * Handle a single agent mode turn.
+ * @returns {Array} Tool calls from this turn (for /tools and /export-workflow)
+ */
+async function handleAgentTurn(input, ctx) {
+  const { llm, history, opts, db, collection, systemPrompt, chatConf } = ctx;
+  const showToolCalls = chatConf.showToolCalls !== undefined ? chatConf.showToolCalls : true;
+  const toolCalls = [];
+
+  if (opts.json) {
+    // JSON mode — collect everything then output
+    let fullResponse = '';
+    let metadata = {};
+
+    for await (const event of agentChatTurn({
+      query: input, llm, history,
+      opts: { systemPrompt, db, collection },
+    })) {
+      if (event.type === 'tool_call') {
+        toolCalls.push(event.data);
+      }
+      if (event.type === 'chunk') fullResponse += event.data;
+      if (event.type === 'done') {
+        metadata = event.data.metadata;
+      }
+    }
+
+    console.log(JSON.stringify({
+      sessionId: history.sessionId,
+      query: input,
+      response: fullResponse,
+      toolCalls,
+      metadata,
+    }));
+  } else {
+    // Interactive mode
+    for await (const event of agentChatTurn({
+      query: input, llm, history,
+      opts: { systemPrompt, db, collection },
+    })) {
+      if (event.type === 'tool_call') {
+        toolCalls.push(event.data);
+        if (showToolCalls) {
+          const { name, timeMs, error } = event.data;
+          if (error) {
+            console.log(pc.dim(`  [tool] ${name} ${pc.red('failed')} (${timeMs}ms): ${error}`));
+          } else if (showToolCalls === 'verbose') {
+            console.log(pc.dim(`  [tool] ${name} (${timeMs}ms)`));
+            const result = event.data.result;
+            if (result) {
+              const preview = JSON.stringify(result).substring(0, 200);
+              console.log(pc.dim(`    ${preview}${JSON.stringify(result).length > 200 ? '...' : ''}`));
+            }
+          } else {
+            console.log(pc.dim(`  [tool] ${name} (${timeMs}ms)`));
+          }
+        }
+      }
+
+      if (event.type === 'chunk') {
+        if (toolCalls.length > 0 && !opts.quiet) {
+          console.log(''); // Visual separator after tool calls
+        }
+        process.stdout.write(event.data);
+      }
+
+      if (event.type === 'done') {
+        console.log(''); // End the response line
+        console.log('');
+      }
+    }
+  }
+
+  return toolCalls;
+}
+
+/**
  * Handle slash commands within the REPL.
  * @returns {'quit'|true|false} - 'quit' to exit, true if handled, false if unknown
  */
 async function handleSlashCommand(input, ctx) {
-  const { history, opts, db, collection, llm, rl } = ctx;
+  const { history, opts, db, collection, llm, rl, isAgent, lastToolCalls } = ctx;
   const parts = input.split(/\s+/);
   const cmd = parts[0].toLowerCase();
 
@@ -360,6 +482,10 @@ async function handleSlashCommand(input, ctx) {
       console.log('  /clear      Clear conversation history');
       console.log('  /model      Show or switch LLM model (/model <name>)');
       console.log('  /export     Export conversation (markdown or json)');
+      if (isAgent) {
+        console.log('  /tools      Show tool calls from last response');
+        console.log('  /export-workflow  Export last tool sequence as workflow');
+      }
       console.log('  /help       Show this help');
       console.log('  /quit       Exit chat');
       console.log('');
@@ -382,15 +508,20 @@ async function handleSlashCommand(input, ctx) {
     case '/session':
       console.log(`  Session: ${history.sessionId}`);
       console.log(`  Turns: ${Math.floor(history.turns.length / 2)}`);
+      if (isAgent) {
+        console.log(`  Mode: agent (tool-calling)`);
+      } else {
+        console.log(`  Mode: pipeline (fixed RAG)`);
+      }
       return true;
 
     case '/context': {
-      const ctx = history.getLastContext();
-      if (!ctx) {
+      const lastCtx = history.getLastContext();
+      if (!lastCtx) {
         console.log(pc.dim('  No context available yet.'));
       } else {
         console.log('');
-        for (const doc of ctx) {
+        for (const doc of lastCtx) {
           console.log(pc.bold(`  [${doc.source}]`));
           const preview = (doc.text || '').substring(0, 300);
           console.log(`  ${preview}${doc.text?.length > 300 ? '...' : ''}`);
@@ -413,7 +544,7 @@ async function handleSlashCommand(input, ctx) {
         } else {
           console.log('');
           for (const s of sessions) {
-            const active = s.sessionId === history.sessionId ? pc.green(' ← current') : '';
+            const active = s.sessionId === history.sessionId ? pc.green(' <- current') : '';
             const date = s.lastActivity ? new Date(s.lastActivity).toLocaleString() : 'unknown';
             const preview = (s.firstMessage || '').substring(0, 60);
             console.log(`  ${pc.bold(s.sessionId.slice(0, 8))}  ${pc.dim(date)}  ${s.turnCount} turns${active}`);
@@ -448,7 +579,7 @@ async function handleSlashCommand(input, ctx) {
             console.log('');
             console.log(`  Available models:`);
             for (const m of models) {
-              const current = m.id === llm.model ? pc.green(' ← current') : '';
+              const current = m.id === llm.model ? pc.green(' <- current') : '';
               let info = m.name || m.id;
               if (m.size) info += pc.dim(` (${m.size})`);
               if (m.parameterSize) info += pc.dim(` [${m.parameterSize}]`);
@@ -476,6 +607,78 @@ async function handleSlashCommand(input, ctx) {
         fs.writeFileSync(filename, md);
         console.log(ui.success(`Exported to ${filename}`));
       }
+      return true;
+    }
+
+    case '/tools': {
+      if (!isAgent) {
+        console.log(pc.dim('  /tools is only available in agent mode (--mode agent).'));
+        return true;
+      }
+      if (!lastToolCalls || lastToolCalls.length === 0) {
+        console.log(pc.dim('  No tool calls from the last response.'));
+        return true;
+      }
+      console.log('');
+      console.log(pc.bold(`  Tool calls (${lastToolCalls.length}):`));
+      console.log('');
+      for (let i = 0; i < lastToolCalls.length; i++) {
+        const tc = lastToolCalls[i];
+        const status = tc.error ? pc.red('FAILED') : pc.green('OK');
+        console.log(`  ${i + 1}. ${pc.bold(tc.name)} [${status}] (${tc.timeMs}ms)`);
+
+        // Show args
+        const argKeys = Object.keys(tc.args || {});
+        if (argKeys.length > 0) {
+          const argStr = argKeys.map(k => `${k}=${JSON.stringify(tc.args[k])}`).join(', ');
+          const preview = argStr.substring(0, 120);
+          console.log(pc.dim(`     Args: ${preview}${argStr.length > 120 ? '...' : ''}`));
+        }
+
+        // Show result summary
+        if (tc.error) {
+          console.log(pc.dim(`     Error: ${tc.error}`));
+        } else if (tc.result) {
+          const resultStr = JSON.stringify(tc.result);
+          const preview = resultStr.substring(0, 120);
+          console.log(pc.dim(`     Result: ${preview}${resultStr.length > 120 ? '...' : ''}`));
+        }
+        console.log('');
+      }
+      return true;
+    }
+
+    case '/export-workflow': {
+      if (!isAgent) {
+        console.log(pc.dim('  /export-workflow is only available in agent mode (--mode agent).'));
+        return true;
+      }
+      if (!lastToolCalls || lastToolCalls.length === 0) {
+        console.log(pc.dim('  No tool calls to export. Ask a question first.'));
+        return true;
+      }
+
+      const workflow = {
+        name: `agent-workflow-${Date.now()}`,
+        description: 'Workflow exported from vai chat agent session',
+        version: '1.0.0',
+        steps: lastToolCalls.map((tc, i) => ({
+          id: `step_${i + 1}`,
+          tool: tc.name,
+          args: tc.args,
+          description: `Step ${i + 1}: ${tc.name}`,
+        })),
+        metadata: {
+          exportedAt: new Date().toISOString(),
+          sessionId: history.sessionId,
+          llmProvider: llm.name,
+          llmModel: llm.model,
+        },
+      };
+
+      const filename = `agent-workflow-${history.sessionId.slice(0, 8)}.vai-workflow.json`;
+      fs.writeFileSync(filename, JSON.stringify(workflow, null, 2) + '\n');
+      console.log(ui.success(`Exported ${lastToolCalls.length} tool calls to ${filename}`));
       return true;
     }
 

@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * Get MongoDB URI or exit with a helpful error.
+ * Get MongoDB URI or throw with a helpful error.
  * Checks: env var → config file.
  * @returns {string}
  */
@@ -9,11 +9,11 @@ function requireMongoUri() {
   const { getConfigValue } = require('./config');
   const uri = process.env.MONGODB_URI || getConfigValue('mongodbUri');
   if (!uri) {
-    console.error('Error: MONGODB_URI is not set.');
-    console.error('');
-    console.error('Option 1: export MONGODB_URI="mongodb+srv://user:pass@cluster.mongodb.net/"');
-    console.error('Option 2: vai config set mongodb-uri "mongodb+srv://user:pass@cluster.mongodb.net/"');
-    process.exit(1);
+    throw new Error(
+      'MONGODB_URI is not set.\n' +
+      'Option 1: export MONGODB_URI="mongodb+srv://user:pass@cluster.mongodb.net/"\n' +
+      'Option 2: vai config set mongodb-uri "mongodb+srv://user:pass@cluster.mongodb.net/"'
+    );
   }
   return uri;
 }

@@ -154,7 +154,7 @@ describe('MCP management — vai_collections handler', () => {
     assert.equal(tools.vai_collections.constructor.name, 'AsyncFunction');
   });
 
-  // Skip live test if no MongoDB URI — requireMongoUri() calls process.exit(1)
+  // Skip live test if no MongoDB URI — requireMongoUri() throws when not set
   it('connects to MongoDB when URI is configured', { skip: !hasMongoUri ? 'MONGODB_URI not set' : false }, async () => {
     const schemas = require('../../src/mcp/schemas');
     const { registerManagementTools } = require('../../src/mcp/tools/management');

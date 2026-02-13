@@ -3,8 +3,9 @@
 /**
  * Chat Orchestrator
  *
- * Coordinates the retrieval pipeline (embed → search → rerank)
+ * Coordinates the retrieval pipeline (embed -> search -> rerank)
  * with LLM generation and history management.
+ * Supports both pipeline mode (fixed RAG) and agent mode (tool-calling).
  */
 
 const { generateEmbeddings, apiRequest } = require('./api');
@@ -32,12 +33,12 @@ function resolveSourceLabel(doc) {
   return doc.source || meta.source || doc._id?.toString() || 'unknown';
 }
 const { getMongoCollection } = require('./mongo');
-const { buildMessages } = require('./prompt');
+const { buildMessages, buildAgentMessages } = require('./prompt');
 const { getDefaultModel, DEFAULT_RERANK_MODEL } = require('./catalog');
 const { loadProject } = require('./project');
 
 /**
- * Perform retrieval: embed query → vector search → optional rerank.
+ * Perform retrieval: embed query -> vector search -> optional rerank.
  *
  * @param {object} params
  * @param {string} params.query - User's question
@@ -154,7 +155,7 @@ async function retrieve({ query, db, collection, opts = {} }) {
 }
 
 /**
- * Execute a single chat turn: retrieve context → build prompt → generate response.
+ * Execute a single chat turn: retrieve context -> build prompt -> generate response.
  *
  * @param {object} params
  * @param {string} params.query - User's question
@@ -246,7 +247,172 @@ async function* chatTurn({ query, db, collection, llm, history, opts = {} }) {
   };
 }
 
+/**
+ * Execute a single agent chat turn: LLM decides which tools to call.
+ *
+ * @param {object} params
+ * @param {string} params.query - User's question
+ * @param {object} params.llm - LLM provider instance (must have chatWithTools)
+ * @param {import('./history').ChatHistory} params.history - Chat history
+ * @param {object} [params.opts] - Additional options
+ * @param {string} [params.opts.systemPrompt] - Override agent system prompt
+ * @param {number} [params.opts.maxIterations] - Max tool-calling iterations (default 10)
+ * @param {string} [params.opts.db] - Default database for tool calls
+ * @param {string} [params.opts.collection] - Default collection for tool calls
+ * @returns {AsyncGenerator<{type: string, data: any}>}
+ *   Yields: { type: 'tool_call', data: { name, args, result, error, timeMs } }
+ *           { type: 'chunk', data: string }
+ *           { type: 'done', data: { fullResponse, toolCalls, metadata } }
+ */
+async function* agentChatTurn({ query, llm, history, opts = {} }) {
+  const { getToolDefinitions, executeTool } = require('./tool-registry');
+
+  const maxIterations = opts.maxIterations || 10;
+  const start = Date.now();
+
+  // 1. Build initial messages
+  const initialMessages = buildAgentMessages({
+    query,
+    history: history.getMessagesWithBudget(8000),
+    systemPrompt: opts.systemPrompt,
+  });
+
+  // 2. Get tool definitions for this provider
+  const format = llm.name === 'anthropic' ? 'anthropic' : 'openai';
+  const tools = getToolDefinitions(format);
+
+  // Track messages for the tool-calling loop (mutable copy)
+  const messages = [...initialMessages];
+  const toolCallLog = [];
+
+  // 3. Agent loop
+  for (let iteration = 0; iteration < maxIterations; iteration++) {
+    const response = await llm.chatWithTools(messages, tools);
+
+    // Text response: done
+    if (response.type === 'text') {
+      const fullResponse = response.content;
+      yield { type: 'chunk', data: fullResponse };
+
+      const totalTimeMs = Date.now() - start;
+
+      // Store turns in history
+      await history.addTurn({ role: 'user', content: query });
+      await history.addTurn({
+        role: 'assistant',
+        content: fullResponse,
+        metadata: {
+          mode: 'agent',
+          llmProvider: llm.name,
+          llmModel: llm.model,
+          toolCallCount: toolCallLog.length,
+          iterationCount: iteration + 1,
+          totalTimeMs,
+        },
+      });
+
+      yield {
+        type: 'done',
+        data: {
+          fullResponse,
+          toolCalls: toolCallLog,
+          metadata: {
+            mode: 'agent',
+            iterationCount: iteration + 1,
+            toolCallCount: toolCallLog.length,
+            totalTimeMs,
+          },
+        },
+      };
+      return;
+    }
+
+    // Tool calls: execute each and continue loop
+    if (response.type === 'tool_calls') {
+      // Append assistant tool-call message
+      messages.push(llm.formatAssistantToolCall(response));
+
+      for (const call of response.calls) {
+        const callStart = Date.now();
+        let result;
+        let error = null;
+
+        // Inject default db/collection if not provided
+        const args = { ...call.arguments };
+        if (opts.db && !args.db) args.db = opts.db;
+        if (opts.collection && !args.collection) args.collection = opts.collection;
+
+        try {
+          result = await executeTool(call.name, args);
+        } catch (err) {
+          error = err.message;
+          result = { content: [{ type: 'text', text: `Error: ${err.message}` }] };
+        }
+
+        const callTimeMs = Date.now() - callStart;
+
+        // Extract text content from result for the LLM
+        const resultText = result.content
+          ? result.content.map(c => c.text || JSON.stringify(c)).join('\n')
+          : JSON.stringify(result.structuredContent || {});
+
+        // Append tool result message
+        messages.push(llm.formatToolResult(call.id, resultText, !!error));
+
+        const logEntry = {
+          name: call.name,
+          args,
+          result: result.structuredContent || null,
+          error,
+          timeMs: callTimeMs,
+        };
+        toolCallLog.push(logEntry);
+
+        yield { type: 'tool_call', data: logEntry };
+      }
+
+      // Continue loop to let LLM see results and decide next action
+      continue;
+    }
+  }
+
+  // Max iterations reached: yield a fallback message
+  const fallback = 'I reached the maximum number of tool-calling iterations. Here is what I found so far based on the tool results above.';
+  yield { type: 'chunk', data: fallback };
+
+  await history.addTurn({ role: 'user', content: query });
+  await history.addTurn({
+    role: 'assistant',
+    content: fallback,
+    metadata: {
+      mode: 'agent',
+      llmProvider: llm.name,
+      llmModel: llm.model,
+      toolCallCount: toolCallLog.length,
+      iterationCount: maxIterations,
+      totalTimeMs: Date.now() - start,
+      maxIterationsReached: true,
+    },
+  });
+
+  yield {
+    type: 'done',
+    data: {
+      fullResponse: fallback,
+      toolCalls: toolCallLog,
+      metadata: {
+        mode: 'agent',
+        iterationCount: maxIterations,
+        toolCallCount: toolCallLog.length,
+        totalTimeMs: Date.now() - start,
+        maxIterationsReached: true,
+      },
+    },
+  };
+}
+
 module.exports = {
   retrieve,
   chatTurn,
+  agentChatTurn,
 };

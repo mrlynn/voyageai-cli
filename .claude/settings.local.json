@@ -19,5 +19,9 @@
       "Bash(npx create-docusaurus@latest vai-docs classic --typescript:*)",
       "Bash(test:*)"
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "vai"
+  ],
+  "enableAllProjectMcpServers": true
 }
