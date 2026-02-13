@@ -3030,6 +3030,24 @@ select:focus { outline: none; border-color: var(--accent); }
   font-size: 10px; color: var(--text-muted); margin-top: 4px;
   display: flex; gap: 8px;
 }
+/* Collapsible examples section */
+.wf-library-section { padding: 0; margin-top: 4px; }
+.wf-library-section-toggle {
+  display: flex; align-items: center; gap: 6px;
+  width: 100%; padding: 8px 12px; border: none; background: none;
+  color: var(--text-muted); font-size: 11px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer;
+  transition: color 0.15s;
+}
+.wf-library-section-toggle:hover { color: var(--text); }
+.wf-library-section-toggle .arrow {
+  font-size: 8px; transition: transform 0.2s; display: inline-block;
+}
+.wf-library-section-toggle.open .arrow { transform: rotate(90deg); }
+.wf-library-category {
+  font-size: 10px; font-weight: 600; color: var(--text-muted);
+  padding: 8px 12px 2px; text-transform: uppercase; letter-spacing: 0.5px;
+}
 .wf-canvas-area {
   flex: 1; position: relative; overflow: hidden;
   background: var(--bg);
@@ -3060,9 +3078,70 @@ select:focus { outline: none; border-color: var(--accent); }
 }
 .wf-canvas-toolbar .wf-run-btn:hover { opacity: 0.9; }
 .wf-canvas-toolbar .wf-run-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.wf-canvas-toolbar .wf-new-btn {
+  width: auto; padding: 0 12px; gap: 4px;
+  font-weight: 600; font-size: 12px;
+  background: var(--bg-card); border: 1px solid var(--accent);
+  color: var(--accent);
+}
+.wf-canvas-toolbar .wf-new-btn:hover { background: var(--accent); color: #fff; }
+.wf-canvas-toolbar .wf-edit-btn {
+  width: auto; padding: 0 12px; gap: 4px;
+  font-weight: 600; font-size: 12px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  color: var(--text-muted);
+}
+.wf-canvas-toolbar .wf-edit-btn:hover { border-color: var(--accent); color: var(--accent); }
+.wf-canvas-toolbar .wf-edit-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.wf-canvas-toolbar .wf-edit-btn:disabled:hover { border-color: var(--border); color: var(--text-muted); }
 .wf-toolbar-sep {
   width: 1px; height: 20px; background: var(--border); margin: 0 2px;
 }
+/* Library / Palette tabs */
+.wf-library-tabs {
+  display: flex; gap: 2px; width: 100%;
+  background: var(--bg-input); border-radius: 6px; padding: 2px;
+}
+.wf-lib-tab {
+  flex: 1; padding: 5px 0; border: none; border-radius: 4px;
+  background: transparent; color: var(--text-muted); cursor: pointer;
+  font-size: 11px; font-weight: 600; font-family: var(--font);
+  transition: background 0.15s, color 0.15s; text-align: center;
+}
+.wf-lib-tab.active { background: var(--accent); color: #fff; }
+.wf-lib-tab:hover:not(.active) { color: var(--text); }
+/* Palette items */
+.wf-palette-category { margin-bottom: 8px; }
+.wf-palette-category-title {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.5px; color: var(--text-muted);
+  padding: 4px 12px; margin-bottom: 2px;
+}
+.wf-palette-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 12px; border-radius: 6px; cursor: grab;
+  font-size: 12px; color: var(--text); transition: background 0.15s;
+}
+.wf-palette-item:hover { background: var(--bg-card); }
+.wf-palette-item:active { cursor: grabbing; }
+.wf-palette-icon { font-size: 14px; width: 20px; text-align: center; }
+.wf-palette-label { font-weight: 500; }
+/* Builder port styles */
+.wf-port-builder { cursor: crosshair; transition: r 0.15s; pointer-events: all !important; }
+.wf-port-builder:hover { r: 9; filter: brightness(1.4); }
+.wf-inspector-delete-btn {
+  width: 100%; padding: 8px 0; border: none; border-radius: 6px;
+  background: var(--error); color: #fff; cursor: pointer;
+  font-size: 12px; font-weight: 600; margin-top: 12px;
+  transition: opacity 0.15s;
+}
+.wf-inspector-delete-btn:hover { opacity: 0.85; }
+.wf-validation-errors {
+  background: rgba(255,105,96,0.08); border: 1px solid var(--error);
+  border-radius: 6px; padding: 10px 12px; margin-bottom: 12px;
+  font-size: 11px; color: var(--error);
+}
+.wf-validation-errors ul { margin: 4px 0 0 16px; }
 /* Dry-run plan overlay */
 .wf-dryrun-overlay {
   position: absolute; top: 0; left: 0; right: 0; bottom: 0;
@@ -3195,6 +3274,59 @@ select:focus { outline: none; border-color: var(--accent); }
   transition: color 0.15s, border-color 0.15s;
 }
 .wf-output-expand-btn:hover { color: var(--text); border-color: var(--text-muted); }
+/* Input modal (pre-execution) */
+.wf-input-modal-backdrop {
+  position: fixed; inset: 0; z-index: 9999;
+  background: rgba(0,0,0,0.55); display: flex;
+  align-items: center; justify-content: center;
+}
+.wf-input-modal {
+  background: var(--bg-surface, var(--bg)); border: 1px solid var(--border);
+  border-radius: 10px; width: 440px; max-width: 90vw;
+  max-height: 80vh; display: flex; flex-direction: column;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+}
+.wf-input-modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 20px; border-bottom: 1px solid var(--border);
+}
+.wf-input-modal-title { font-weight: 700; font-size: 14px; color: var(--text); }
+.wf-input-modal-body {
+  flex: 1; overflow-y: auto; padding: 16px 20px;
+}
+.wf-input-modal-field { margin-bottom: 14px; }
+.wf-input-modal-label {
+  font-size: 12px; font-weight: 600; color: var(--text); margin-bottom: 4px;
+}
+.wf-input-modal-desc {
+  font-size: 11px; color: var(--text-muted); margin-bottom: 4px; line-height: 1.3;
+}
+.wf-input-modal-input {
+  width: 100%; box-sizing: border-box; padding: 6px 10px;
+  border: 1px solid var(--border); border-radius: 6px;
+  background: var(--bg); color: var(--text); font-size: 13px;
+  font-family: inherit; outline: none;
+  transition: border-color 0.15s;
+}
+.wf-input-modal-input:focus { border-color: var(--accent, #6c63ff); }
+.wf-input-modal-input.error { border-color: #e74c3c; }
+.wf-input-modal-error { font-size: 11px; color: #e74c3c; margin-top: 3px; display: none; }
+.wf-input-modal-footer {
+  display: flex; align-items: center; justify-content: flex-end; gap: 8px;
+  padding: 12px 20px; border-top: 1px solid var(--border);
+}
+.wf-input-modal-cancel {
+  padding: 6px 16px; border: 1px solid var(--border); border-radius: 6px;
+  background: transparent; color: var(--text); font-size: 12px; cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.wf-input-modal-cancel:hover { background: var(--bg); border-color: var(--text-muted); }
+.wf-input-modal-run {
+  padding: 6px 16px; border: none; border-radius: 6px;
+  background: var(--accent, #6c63ff); color: #fff; font-size: 12px;
+  font-weight: 600; cursor: pointer; transition: filter 0.15s;
+}
+.wf-input-modal-run:hover { filter: brightness(1.15); }
 #wf-canvas {
   width: 100%; height: 100%; display: block; position: relative; z-index: 1;
 }
@@ -3396,6 +3528,8 @@ select:focus { outline: none; border-color: var(--accent); }
 [data-theme="light"] .wf-exec-status { box-shadow: 0 2px 8px rgba(0,30,43,0.08); }
 [data-theme="light"] .wf-run-btn { background: var(--accent); }
 [data-theme="light"] .wf-output-modal { box-shadow: 0 8px 32px rgba(0,30,43,0.15); }
+[data-theme="light"] .wf-input-modal { box-shadow: 0 8px 32px rgba(0,30,43,0.15); }
+[data-theme="light"] .wf-input-modal-backdrop { background: rgba(0,0,0,0.3); }
 @keyframes wf-pulse-light {
   0%, 100% { filter: drop-shadow(0 0 4px rgba(0,158,128,0.3)); }
   50% { filter: drop-shadow(0 0 12px rgba(0,158,128,0.6)); }
@@ -4351,11 +4485,15 @@ Reranking models rescore initial search results to improve relevance ordering.</
   <div class="wf-container">
     <div class="wf-library">
       <div class="wf-library-header">
-        <span>Workflows</span>
+        <div class="wf-library-tabs">
+          <button class="wf-lib-tab active" data-lib-tab="library" onclick="wfSwitchLibTab('library')">Library</button>
+          <button class="wf-lib-tab" data-lib-tab="palette" onclick="wfSwitchLibTab('palette')">Palette</button>
+        </div>
       </div>
       <div class="wf-library-list" id="wfLibraryList">
         <div style="padding: 16px; color: var(--text-muted); font-size: 12px;">Loading...</div>
       </div>
+      <div class="wf-palette-list" id="wfPaletteList" style="display:none; flex:1; overflow-y:auto; padding:8px;"></div>
       <div class="wf-library-footer">
         <button class="wf-load-file-btn" onclick="wfLoadFromFile()" title="Load workflow JSON from file">
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 14h10M8 2v9M5 8l3 3 3-3"/></svg>
@@ -4366,6 +4504,9 @@ Reranking models rescore initial search results to improve relevance ordering.</
     </div>
     <div class="wf-canvas-area">
       <div class="wf-canvas-toolbar" id="wfToolbar">
+        <button class="wf-new-btn" onclick="wfNewWorkflow()" title="Create new workflow">+ New</button>
+        <button class="wf-edit-btn" id="wfEditBtn" onclick="wfEditWorkflow()" disabled title="Edit current workflow">&#9998; Edit</button>
+        <span class="wf-toolbar-sep"></span>
         <button onclick="wfZoom(1)" title="Zoom in">+</button>
         <button onclick="wfZoom(-1)" title="Zoom out">&minus;</button>
         <button onclick="wfFitToView()" title="Fit to view">&#8862;</button>
@@ -4390,7 +4531,7 @@ Reranking models rescore initial search results to improve relevance ordering.</
         <div class="wf-canvas-empty-text">Select a workflow from the library</div>
       </div>
       <div class="wf-canvas-watermark" id="wfCanvasWatermark"><img src="/icons/watermark.png" alt=""></div>
-      <svg id="wf-canvas" xmlns="http://www.w3.org/2000/svg"></svg>
+      <svg id="wf-canvas" xmlns="http://www.w3.org/2000/svg" ondragover="event.preventDefault()" ondrop="wfCanvasDrop(event)"></svg>
     </div>
     <div class="wf-inspector collapsed" id="wfInspector">
       <button class="wf-inspector-toggle" id="wfInspectorToggle" onclick="wfToggleInspector()" title="Toggle inspector">&lsaquo;</button>
@@ -4418,6 +4559,21 @@ Reranking models rescore initial search results to improve relevance ordering.</
       </div>
     </div>
     <pre class="wf-output-modal-body" id="wfOutputModalBody"></pre>
+  </div>
+</div>
+
+<!-- ── Workflow Input Modal (pre-execution) ── -->
+<div class="wf-input-modal-backdrop" id="wfInputModalBackdrop" style="display:none;" onclick="wfCloseInputModal()">
+  <div class="wf-input-modal" onclick="event.stopPropagation()">
+    <div class="wf-input-modal-header">
+      <span class="wf-input-modal-title" id="wfInputModalTitle">Workflow Inputs</span>
+      <button class="wf-output-modal-btn close" onclick="wfCloseInputModal()" title="Close">&times;</button>
+    </div>
+    <div class="wf-input-modal-body" id="wfInputModalBody"></div>
+    <div class="wf-input-modal-footer">
+      <button class="wf-input-modal-cancel" onclick="wfCloseInputModal()">Cancel</button>
+      <button class="wf-input-modal-run" onclick="wfInputModalSubmit()">Run Workflow</button>
+    </div>
   </div>
 </div>
 
@@ -9822,6 +9978,7 @@ const WF_PORT_R = 5; // Port circle radius
 
 let wfState = {
   workflows: [],
+  examples: [],
   activeWorkflow: null,
   selectedNodeId: null,
   executionState: {},
@@ -9835,14 +9992,24 @@ let wfState = {
   isPanning: false,
   panStart: { x: 0, y: 0 },
   executing: false,
+  // Builder state
+  builderMode: false,
+  draggingEdge: null,
+  dragNode: null,
+  dirtyFlag: false,
 };
 
 // ── Library ──
 async function wfLoadLibrary() {
   try {
-    const res = await fetch('/api/workflows');
-    const data = await res.json();
-    wfState.workflows = data.workflows || [];
+    const [wfRes, exRes] = await Promise.all([
+      fetch('/api/workflows'),
+      fetch('/api/workflows/examples'),
+    ]);
+    const wfData = await wfRes.json();
+    const exData = await exRes.json();
+    wfState.workflows = wfData.workflows || [];
+    wfState.examples = exData.examples || [];
     wfRenderLibrary();
   } catch (err) {
     const list = document.getElementById('wfLibraryList');
@@ -9853,19 +10020,53 @@ async function wfLoadLibrary() {
 function wfRenderLibrary() {
   const list = document.getElementById('wfLibraryList');
   if (!list) return;
-  if (wfState.workflows.length === 0) {
+  if (wfState.workflows.length === 0 && (!wfState.examples || wfState.examples.length === 0)) {
     list.innerHTML = '<div style="padding:16px;color:var(--text-muted);font-size:12px;">No workflows found</div>';
     return;
   }
-  list.innerHTML = wfState.workflows.map(w => {
-    // w.name is the file stem (e.g., "multi-collection-search")
-    // w.description comes from the workflow JSON's description field
+
+  // Built-in templates
+  let html = wfState.workflows.map(w => {
     const displayName = w.name.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
     return `<div class="wf-library-item" data-wf-name="${w.name}" onclick="wfSelectWorkflow('${w.name}')">
       <div class="wf-library-item-name">${displayName}</div>
       <div class="wf-library-item-desc">${w.description || ''}</div>
     </div>`;
   }).join('');
+
+  // Collapsible examples section
+  const examples = wfState.examples || [];
+  if (examples.length > 0) {
+    html += `<div class="wf-library-section">
+      <button class="wf-library-section-toggle" onclick="wfToggleExamples(this)">
+        <span class="arrow">&#9654;</span> Examples (${examples.length})
+      </button>
+      <div class="wf-examples-content" style="display:none;">`;
+
+    const categories = ['Retrieval', 'RAG', 'Ingestion', 'Analysis', 'Other'];
+    for (const cat of categories) {
+      const items = examples.filter(e => e.category === cat);
+      if (items.length === 0) continue;
+      html += `<div class="wf-library-category">${cat}</div>`;
+      html += items.map(w => {
+        const displayName = w.name.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+        return `<div class="wf-library-item" data-wf-name="${w.name}" onclick="wfSelectWorkflow('${w.name}')">
+          <div class="wf-library-item-name">${displayName}</div>
+          <div class="wf-library-item-desc">${w.description || ''}</div>
+        </div>`;
+      }).join('');
+    }
+    html += '</div></div>';
+  }
+
+  list.innerHTML = html;
+}
+
+function wfToggleExamples(btn) {
+  const content = btn.nextElementSibling;
+  const isOpen = content.style.display !== 'none';
+  content.style.display = isOpen ? 'none' : '';
+  btn.classList.toggle('open', !isOpen);
 }
 
 async function wfSelectWorkflow(name) {
@@ -9878,12 +10079,14 @@ async function wfSelectWorkflow(name) {
     const res = await fetch('/api/workflows/' + encodeURIComponent(name));
     const data = await res.json();
     wfState.activeWorkflow = data.definition;
+    wfState.builderMode = false;
     wfState.selectedNodeId = null;
     wfState.executionState = {};
     wfState.executionResults = {};
     wfSetToolbarEnabled(true);
     document.getElementById('wfCanvasEmpty').style.display = 'none';
     await wfRenderWorkflow(data.definition);
+    wfSwitchLibTab('library');
     wfOpenInspector();
     wfUpdateInspector();
   } catch (err) {
@@ -10046,6 +10249,39 @@ function wfDrawNode(step, x, y, state, hasDeps, hasDependents) {
     wfSelectNode(step.id);
   });
 
+  // Builder: node drag
+  if (wfState.builderMode) {
+    g.style.cursor = 'move';
+    g.addEventListener('mousedown', (e) => {
+      // Don't drag if clicking a port
+      if (e.target.classList.contains('wf-port')) return;
+      e.stopPropagation();
+      const svg = document.getElementById('wf-canvas');
+      const rect = svg.getBoundingClientRect();
+      const startSvgX = (e.clientX - rect.left) / wfState.zoom + wfState.panX;
+      const startSvgY = (e.clientY - rect.top) / wfState.zoom + wfState.panY;
+      const pos = wfState.nodePositions[step.id];
+      if (!pos) return;
+      const offX = startSvgX - pos.x;
+      const offY = startSvgY - pos.y;
+      wfState.dragNode = step.id;
+
+      function onMove(ev) {
+        const mx = (ev.clientX - rect.left) / wfState.zoom + wfState.panX;
+        const my = (ev.clientY - rect.top) / wfState.zoom + wfState.panY;
+        wfState.nodePositions[step.id] = { x: mx - offX, y: my - offY };
+        wfRefreshNodes();
+      }
+      function onUp() {
+        wfState.dragNode = null;
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+      }
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    });
+  }
+
   // Background rect
   const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
   rect.setAttribute('width', WF_NODE_W);
@@ -10055,27 +10291,46 @@ function wfDrawNode(step, x, y, state, hasDeps, hasDependents) {
   rect.setAttribute('opacity', '0.85');
   g.appendChild(rect);
 
-  // Input port (left side): only if this node has dependencies
-  if (hasDeps) {
+  // Input port (left side): show in builder mode always, otherwise only if has deps
+  const showInPort = wfState.builderMode || hasDeps;
+  if (showInPort) {
     const inPort = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
     inPort.classList.add('wf-port', 'wf-port-in');
+    if (wfState.builderMode) inPort.classList.add('wf-port-builder');
     inPort.setAttribute('cx', 0);
     inPort.setAttribute('cy', WF_NODE_H / 2);
-    inPort.setAttribute('r', WF_PORT_R);
+    inPort.setAttribute('r', wfState.builderMode ? 7 : WF_PORT_R);
     inPort.setAttribute('stroke', meta.color);
     inPort.setAttribute('stroke-width', '2');
+    inPort.setAttribute('pointer-events', 'all');
+    if (wfState.builderMode) {
+      inPort.addEventListener('mouseup', () => {
+        if (wfState.draggingEdge) wfEdgeDropOnInput(step.id);
+      });
+    }
     g.appendChild(inPort);
   }
 
-  // Output port (right side): only if other nodes depend on this one
-  if (hasDependents) {
+  // Output port (right side): show in builder mode always, otherwise only if has dependents
+  const showOutPort = wfState.builderMode || hasDependents;
+  if (showOutPort) {
     const outPort = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
     outPort.classList.add('wf-port', 'wf-port-out');
+    if (wfState.builderMode) outPort.classList.add('wf-port-builder');
     outPort.setAttribute('cx', WF_NODE_W);
     outPort.setAttribute('cy', WF_NODE_H / 2);
-    outPort.setAttribute('r', WF_PORT_R);
+    outPort.setAttribute('r', wfState.builderMode ? 7 : WF_PORT_R);
     outPort.setAttribute('fill', meta.color);
     outPort.setAttribute('stroke-width', '2');
+    outPort.setAttribute('pointer-events', 'all');
+    if (wfState.builderMode) {
+      outPort.addEventListener('mousedown', (e) => {
+        e.stopPropagation();
+        const pos = wfState.nodePositions[step.id];
+        if (!pos) return;
+        wfEdgeDragStart(step.id, pos.x + WF_NODE_W, pos.y + WF_NODE_H / 2);
+      });
+    }
     g.appendChild(outPort);
   }
 
@@ -10252,44 +10507,69 @@ function wfUpdateInspector() {
     header.textContent = def.name || 'Workflow';
     let html = '';
 
-    // Description
-    if (def.description) {
+    if (wfState.builderMode) {
+      // Builder: editable workflow fields
+      html += `<div class="wf-inspector-section">
+        <div class="wf-inspector-section-title">Name</div>
+        <input class="wf-inspector-input" value="${escapeHtml(def.name || '')}" onchange="wfEditWorkflowField('name', this.value); document.getElementById('wfInspectorHeader').textContent = this.value || 'Workflow';">
+      </div>`;
       html += `<div class="wf-inspector-section">
         <div class="wf-inspector-section-title">Description</div>
-        <div style="font-size:12px;color:var(--text);line-height:1.4;">${escapeHtml(def.description)}</div>
+        <textarea class="wf-inspector-input" rows="2" style="resize:vertical;" onchange="wfEditWorkflowField('description', this.value)">${escapeHtml(def.description || '')}</textarea>
       </div>`;
-    }
-
-    // Inputs
-    if (def.inputs && Object.keys(def.inputs).length > 0) {
-      html += '<div class="wf-inspector-section"><div class="wf-inspector-section-title">Inputs</div>';
-      for (const [key, spec] of Object.entries(def.inputs)) {
-        const req = spec.required ? ' <span style="color:#e74c3c">*</span>' : '';
-        const defVal = spec.default !== undefined ? ` (default: ${spec.default})` : '';
-        html += `<div style="margin-bottom:8px;">
-          <div style="font-size:12px;font-weight:600;color:var(--text);">${escapeHtml(key)}${req}</div>
-          <div style="font-size:11px;color:var(--text-muted);">${escapeHtml(spec.description || spec.type || '')}${defVal}</div>
-          <input class="wf-inspector-input" id="wf-input-${key}" placeholder="${escapeHtml(key)}" value="${spec.default !== undefined ? spec.default : ''}">
+      html += `<div class="wf-inspector-section">
+        <div class="wf-inspector-section-title">Steps</div>
+        <div style="font-size:12px;color:var(--text);">${def.steps.length} step${def.steps.length !== 1 ? 's' : ''}</div>
+      </div>`;
+      if (def.steps.length > 0) {
+        html += `<div class="wf-inspector-section">
+          <div class="wf-inspector-section-title">Output Mapping</div>
+          <textarea class="wf-inspector-input" rows="3" style="resize:vertical;font-family:monospace;font-size:11px;" onchange="try { wfEditWorkflowField('output', JSON.parse(this.value)); } catch(e) {}">${escapeHtml(JSON.stringify(def.output || {}, null, 2))}</textarea>
         </div>`;
       }
-      html += '</div>';
-    }
-
-    // Steps summary
-    html += `<div class="wf-inspector-section">
-      <div class="wf-inspector-section-title">Steps</div>
-      <div style="font-size:12px;color:var(--text);">${def.steps.length} step${def.steps.length !== 1 ? 's' : ''}${wfState.layers ? ' in ' + wfState.layers.length + ' layer' + (wfState.layers.length !== 1 ? 's' : '') : ''}</div>
-    </div>`;
-
-    // Output mapping
-    if (def.output) {
-      html += `<div class="wf-inspector-section">
-        <div class="wf-inspector-section-title">Output</div>
-        <div class="wf-inspector-code">${escapeHtml(JSON.stringify(def.output, null, 2))}</div>
+      html += `<div class="wf-inspector-section" style="margin-top:8px;">
+        <div style="font-size:10px;color:var(--text-muted);">Add steps from the Palette tab, then drag between ports to connect them.</div>
       </div>`;
+    } else {
+      // Read-only: Description
+      if (def.description) {
+        html += `<div class="wf-inspector-section">
+          <div class="wf-inspector-section-title">Description</div>
+          <div style="font-size:12px;color:var(--text);line-height:1.4;">${escapeHtml(def.description)}</div>
+        </div>`;
+      }
+
+      // Read-only: Inputs
+      if (def.inputs && Object.keys(def.inputs).length > 0) {
+        html += '<div class="wf-inspector-section"><div class="wf-inspector-section-title">Inputs</div>';
+        for (const [key, spec] of Object.entries(def.inputs)) {
+          const req = spec.required ? ' <span style="color:#e74c3c">*</span>' : '';
+          const defVal = spec.default !== undefined ? ` (default: ${spec.default})` : '';
+          html += `<div style="margin-bottom:8px;">
+            <div style="font-size:12px;font-weight:600;color:var(--text);">${escapeHtml(key)}${req}</div>
+            <div style="font-size:11px;color:var(--text-muted);">${escapeHtml(spec.description || spec.type || '')}${defVal}</div>
+            <input class="wf-inspector-input" id="wf-input-${key}" placeholder="${escapeHtml(key)}" value="${spec.default !== undefined ? spec.default : ''}">
+          </div>`;
+        }
+        html += '</div>';
+      }
+
+      // Steps summary
+      html += `<div class="wf-inspector-section">
+        <div class="wf-inspector-section-title">Steps</div>
+        <div style="font-size:12px;color:var(--text);">${def.steps.length} step${def.steps.length !== 1 ? 's' : ''}${wfState.layers ? ' in ' + wfState.layers.length + ' layer' + (wfState.layers.length !== 1 ? 's' : '') : ''}</div>
+      </div>`;
+
+      // Output mapping
+      if (def.output) {
+        html += `<div class="wf-inspector-section">
+          <div class="wf-inspector-section-title">Output</div>
+          <div class="wf-inspector-code">${escapeHtml(JSON.stringify(def.output, null, 2))}</div>
+        </div>`;
+      }
     }
 
-    // Execution result
+    // Execution result (shown in both modes)
     if (wfState.executionResults._done) {
       const r = wfState.executionResults._done;
       const doneJson = JSON.stringify(r.output, null, 2);
@@ -10320,49 +10600,104 @@ function wfUpdateInspector() {
 
   let html = '';
 
-  // Tool badge
+  // Tool badge (always shown)
   html += `<div class="wf-inspector-section">
     <div class="wf-inspector-section-title">Tool</div>
     <span class="wf-tool-badge" style="background:${meta.color}">${meta.icon} ${meta.label}</span>
   </div>`;
 
-  // Step ID
-  html += `<div class="wf-inspector-section">
-    <div class="wf-inspector-section-title">ID</div>
-    <div style="font-size:12px;color:var(--text);font-family:monospace;">${escapeHtml(step.id)}</div>
-  </div>`;
-
-  // Inputs
-  if (step.inputs) {
+  if (wfState.builderMode) {
+    // Builder: editable step fields
+    const sid = escapeHtml(step.id);
     html += `<div class="wf-inspector-section">
-      <div class="wf-inspector-section-title">Inputs</div>`;
-    for (const [key, val] of Object.entries(step.inputs)) {
-      const display = typeof val === 'string' ? val : JSON.stringify(val);
-      html += `<div class="wf-inspector-field">
-        <span class="wf-inspector-field-label">${escapeHtml(key)}</span>
-        <span class="wf-inspector-field-value" style="font-family:monospace;font-size:11px;">${escapeHtml(display)}</span>
+      <div class="wf-inspector-section-title">Step ID</div>
+      <input class="wf-inspector-input" value="${sid}" style="font-family:monospace;" onchange="wfEditStepId('${sid}', this.value)">
+    </div>`;
+    html += `<div class="wf-inspector-section">
+      <div class="wf-inspector-section-title">Name</div>
+      <input class="wf-inspector-input" value="${escapeHtml(step.name || '')}" onchange="wfEditStepField('${sid}', 'name', this.value)">
+    </div>`;
+
+    // Inputs from WF_INPUT_DEFS
+    const inputDefs = WF_INPUT_DEFS[step.tool] || [];
+    if (inputDefs.length > 0) {
+      html += `<div class="wf-inspector-section"><div class="wf-inspector-section-title">Inputs</div>`;
+      for (const d of inputDefs) {
+        const val = step.inputs?.[d.key] ?? '';
+        const display = typeof val === 'string' ? val : JSON.stringify(val);
+        const req = d.required ? ' <span style="color:#e74c3c;font-size:10px;">required</span>' : '';
+        html += `<div style="margin-bottom:8px;">
+          <div style="font-size:11px;font-weight:600;color:var(--text);">${escapeHtml(d.key)}${req}</div>`;
+
+        if (d.type === 'textarea' || d.type === 'json') {
+          html += `<textarea class="wf-inspector-input" rows="2" style="resize:vertical;font-family:monospace;font-size:11px;" placeholder="${escapeHtml(d.placeholder || '')}" onchange="wfEditStepInput('${sid}','${d.key}',this.value)">${escapeHtml(display)}</textarea>`;
+        } else if (d.type === 'select' && d.options) {
+          html += `<select class="wf-inspector-input" onchange="wfEditStepInput('${sid}','${d.key}',this.value)">
+            <option value="">--</option>`;
+          for (const opt of d.options) {
+            html += `<option value="${escapeHtml(opt)}" ${val === opt ? 'selected' : ''}>${escapeHtml(opt)}</option>`;
+          }
+          html += `</select>`;
+        } else if (d.type === 'number') {
+          html += `<input class="wf-inspector-input" type="number" value="${escapeHtml(String(val))}" placeholder="${escapeHtml(d.placeholder || '')}" onchange="wfEditStepInput('${sid}','${d.key}',this.value)">`;
+        } else {
+          html += `<input class="wf-inspector-input" value="${escapeHtml(display)}" placeholder="${escapeHtml(d.placeholder || '')}" onchange="wfEditStepInput('${sid}','${d.key}',this.value)">`;
+        }
+        html += `</div>`;
+      }
+      html += '</div>';
+    }
+
+    // Condition
+    html += `<div class="wf-inspector-section">
+      <div class="wf-inspector-section-title">Condition <span style="font-size:10px;color:var(--text-muted)">(optional)</span></div>
+      <input class="wf-inspector-input" value="${escapeHtml(step.condition || '')}" placeholder="e.g. results.length > 0" onchange="wfEditStepField('${sid}', 'condition', this.value || undefined)">
+    </div>`;
+
+    // continueOnError toggle
+    html += `<div class="wf-inspector-section" style="display:flex;align-items:center;gap:8px;">
+      <input type="checkbox" id="wf-coe-${sid}" ${step.continueOnError ? 'checked' : ''} onchange="wfEditStepField('${sid}', 'continueOnError', this.checked)">
+      <label for="wf-coe-${sid}" style="font-size:11px;color:var(--text);cursor:pointer;">Continue on error</label>
+    </div>`;
+
+    // Delete button
+    html += `<button class="wf-inspector-delete-btn" onclick="if(confirm('Delete step ${sid}?')) wfDeleteStep('${sid}')">Delete Step</button>`;
+  } else {
+    // Read-only step view
+    html += `<div class="wf-inspector-section">
+      <div class="wf-inspector-section-title">ID</div>
+      <div style="font-size:12px;color:var(--text);font-family:monospace;">${escapeHtml(step.id)}</div>
+    </div>`;
+
+    if (step.inputs) {
+      html += `<div class="wf-inspector-section">
+        <div class="wf-inspector-section-title">Inputs</div>`;
+      for (const [key, val] of Object.entries(step.inputs)) {
+        const display = typeof val === 'string' ? val : JSON.stringify(val);
+        html += `<div class="wf-inspector-field">
+          <span class="wf-inspector-field-label">${escapeHtml(key)}</span>
+          <span class="wf-inspector-field-value" style="font-family:monospace;font-size:11px;">${escapeHtml(display)}</span>
+        </div>`;
+      }
+      html += '</div>';
+    }
+
+    if (step.condition) {
+      html += `<div class="wf-inspector-section">
+        <div class="wf-inspector-section-title">Condition \u26A1</div>
+        <div class="wf-inspector-code">${escapeHtml(step.condition)}</div>
       </div>`;
     }
-    html += '</div>';
+
+    if (step.forEach) {
+      html += `<div class="wf-inspector-section">
+        <div class="wf-inspector-section-title">ForEach</div>
+        <div class="wf-inspector-code">${escapeHtml(JSON.stringify(step.forEach, null, 2))}</div>
+      </div>`;
+    }
   }
 
-  // Condition
-  if (step.condition) {
-    html += `<div class="wf-inspector-section">
-      <div class="wf-inspector-section-title">Condition \u26A1</div>
-      <div class="wf-inspector-code">${escapeHtml(step.condition)}</div>
-    </div>`;
-  }
-
-  // ForEach
-  if (step.forEach) {
-    html += `<div class="wf-inspector-section">
-      <div class="wf-inspector-section-title">ForEach</div>
-      <div class="wf-inspector-code">${escapeHtml(JSON.stringify(step.forEach, null, 2))}</div>
-    </div>`;
-  }
-
-  // Execution result for this step
+  // Execution result for this step (shown in both modes)
   const result = wfState.executionResults[step.id];
   const state = wfState.executionState[step.id];
   if (state === 'completed' && result) {
@@ -10426,6 +10761,7 @@ function wfSetToolbarEnabled(enabled) {
   document.getElementById('wfRunBtn').disabled = !enabled;
   document.getElementById('wfDryRunBtn').disabled = !enabled;
   document.getElementById('wfExportBtn').disabled = !enabled;
+  document.getElementById('wfEditBtn').disabled = !enabled;
 }
 
 // ── Export workflow JSON ──
@@ -10611,26 +10947,127 @@ function wfStopExecution(reason) {
   wfUpdateInspector();
 }
 
+// ── Input Modal (pre-execution) ──
+
+function wfShowInputModal() {
+  const def = wfState.activeWorkflow;
+  if (!def || !def.inputs) return;
+  const entries = Object.entries(def.inputs);
+  if (entries.length === 0) { wfExecuteWithInputs({}); return; }
+
+  document.getElementById('wfInputModalTitle').textContent = (def.name || 'Workflow') + ' Inputs';
+  let html = '';
+  for (const [key, spec] of entries) {
+    const req = spec.required ? ' <span style="color:#e74c3c">*</span>' : '';
+    const desc = spec.description ? `<div class="wf-input-modal-desc">${escapeHtml(spec.description)}</div>` : '';
+    // Pre-fill from inspector fields if available, then from defaults
+    const inspectorEl = document.getElementById('wf-input-' + key);
+    let prefill = inspectorEl ? inspectorEl.value : '';
+    if (!prefill && spec.default !== undefined) prefill = String(spec.default);
+    const placeholder = spec.type === 'number' ? 'number' : (spec.type || 'string');
+    html += `<div class="wf-input-modal-field">
+      <div class="wf-input-modal-label">${escapeHtml(key)}${req}</div>
+      ${desc}
+      <input class="wf-input-modal-input" id="wf-modal-input-${key}" placeholder="${escapeHtml(placeholder)}" value="${escapeHtml(prefill)}" data-key="${escapeHtml(key)}" data-type="${spec.type || 'string'}" data-required="${!!spec.required}">
+      <div class="wf-input-modal-error" id="wf-modal-err-${key}">This field is required</div>
+    </div>`;
+  }
+  document.getElementById('wfInputModalBody').innerHTML = html;
+  document.getElementById('wfInputModalBackdrop').style.display = '';
+
+  // Focus first empty required field, or first field
+  const firstEmpty = entries.find(([k, s]) => {
+    const el = document.getElementById('wf-modal-input-' + k);
+    return s.required && el && !el.value;
+  });
+  const focusKey = firstEmpty ? firstEmpty[0] : entries[0][0];
+  const focusEl = document.getElementById('wf-modal-input-' + focusKey);
+  if (focusEl) setTimeout(() => focusEl.focus(), 50);
+}
+
+function wfCloseInputModal() {
+  document.getElementById('wfInputModalBackdrop').style.display = 'none';
+}
+
+function wfInputModalSubmit() {
+  const def = wfState.activeWorkflow;
+  if (!def || !def.inputs) return;
+
+  const inputs = {};
+  let hasError = false;
+
+  for (const [key, spec] of Object.entries(def.inputs)) {
+    const el = document.getElementById('wf-modal-input-' + key);
+    const errEl = document.getElementById('wf-modal-err-' + key);
+    if (!el) continue;
+
+    let val = el.value.trim();
+
+    // Clear previous error
+    el.classList.remove('error');
+    if (errEl) errEl.style.display = 'none';
+
+    // Required check
+    if (!val && spec.required && spec.default === undefined) {
+      el.classList.add('error');
+      if (errEl) { errEl.textContent = 'This field is required'; errEl.style.display = ''; }
+      hasError = true;
+      continue;
+    }
+
+    // Use default if empty
+    if (!val && spec.default !== undefined) val = String(spec.default);
+
+    // Type validation
+    if (spec.type === 'number' && val && isNaN(Number(val))) {
+      el.classList.add('error');
+      if (errEl) { errEl.textContent = 'Must be a number'; errEl.style.display = ''; }
+      hasError = true;
+      continue;
+    }
+
+    // Coerce
+    if (spec.type === 'number' && val) val = Number(val);
+    if (val !== undefined && val !== '') inputs[key] = val;
+  }
+
+  if (hasError) return;
+
+  // Also update inspector fields to keep them in sync
+  for (const [key, val] of Object.entries(inputs)) {
+    const inspEl = document.getElementById('wf-input-' + key);
+    if (inspEl) inspEl.value = typeof val === 'number' ? String(val) : val;
+  }
+
+  wfCloseInputModal();
+  wfExecuteWithInputs(inputs);
+}
+
+// Keyboard handler for input modal
+document.addEventListener('keydown', (e) => {
+  const backdrop = document.getElementById('wfInputModalBackdrop');
+  if (!backdrop || backdrop.style.display === 'none') return;
+  if (e.key === 'Escape') { wfCloseInputModal(); e.preventDefault(); }
+  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { wfInputModalSubmit(); e.preventDefault(); }
+});
+
 async function wfExecute() {
   const def = wfState.activeWorkflow;
   if (!def || wfState.executing) return;
 
-  // Collect inputs
-  const inputs = {};
-  if (def.inputs) {
-    for (const [key, spec] of Object.entries(def.inputs)) {
-      const el = document.getElementById('wf-input-' + key);
-      let val = el ? el.value : (spec.default !== undefined ? spec.default : undefined);
-      if (val === '' && spec.default !== undefined) val = spec.default;
-      if (val === '' && spec.required) {
-        alert('Input "' + key + '" is required');
-        return;
-      }
-      // Type coerce
-      if (spec.type === 'number' && val !== undefined && val !== '') val = Number(val);
-      if (val !== undefined && val !== '') inputs[key] = val;
-    }
+  // If workflow has inputs, show the input modal instead of executing directly
+  if (def.inputs && Object.keys(def.inputs).length > 0) {
+    wfShowInputModal();
+    return;
   }
+
+  // No inputs needed, execute directly
+  wfExecuteWithInputs({});
+}
+
+async function wfExecuteWithInputs(inputs) {
+  const def = wfState.activeWorkflow;
+  if (!def || wfState.executing) return;
 
   wfState.executing = true;
   wfState.executionResults = {};
@@ -10917,7 +11354,7 @@ function wfInitPan() {
   // Scroll wheel zoom, centered on cursor position
   svg.addEventListener('wheel', (e) => {
     e.preventDefault();
-    const factor = e.deltaY < 0 ? 1.08 : 1 / 1.08;
+    const factor = e.deltaY < 0 ? 1.03 : 1 / 1.03;
     const oldZoom = wfState.zoom;
     const newZoom = Math.max(0.2, Math.min(5, oldZoom * factor));
     // Zoom toward cursor: keep the SVG point under the mouse fixed
@@ -10936,6 +11373,446 @@ function wfInitPan() {
       wfDeselectNode();
     }
   });
+}
+
+// ── Builder: Input Definitions ──
+const WF_INPUT_DEFS = {
+  query:       [{ key: 'query', type: 'text', required: true, placeholder: 'Search query' }, { key: 'collection', type: 'text', required: false, placeholder: 'Collection name' }, { key: 'db', type: 'text', required: false, placeholder: 'Database name' }, { key: 'limit', type: 'number', required: false, placeholder: '5' }, { key: 'filter', type: 'json', required: false, placeholder: '{}' }],
+  search:      [{ key: 'query', type: 'text', required: true, placeholder: 'Search query' }, { key: 'collection', type: 'text', required: false }, { key: 'db', type: 'text', required: false }, { key: 'limit', type: 'number', required: false, placeholder: '10' }, { key: 'filter', type: 'json', required: false, placeholder: '{}' }],
+  rerank:      [{ key: 'query', type: 'text', required: true }, { key: 'documents', type: 'json', required: true, placeholder: '["doc1","doc2"]' }, { key: 'model', type: 'text', required: false, placeholder: 'rerank-2.5' }],
+  ingest:      [{ key: 'text', type: 'textarea', required: true }, { key: 'collection', type: 'text', required: false }, { key: 'db', type: 'text', required: false }, { key: 'source', type: 'text', required: false }, { key: 'chunkSize', type: 'number', required: false, placeholder: '512' }, { key: 'chunkStrategy', type: 'select', required: false, options: ['fixed','sentence','paragraph','recursive','markdown'] }],
+  embed:       [{ key: 'text', type: 'text', required: true, placeholder: 'Text to embed' }, { key: 'model', type: 'text', required: false, placeholder: 'voyage-3-large' }, { key: 'inputType', type: 'select', required: false, options: ['document','query'] }],
+  similarity:  [{ key: 'text1', type: 'text', required: true }, { key: 'text2', type: 'text', required: true }, { key: 'model', type: 'text', required: false }],
+  collections: [{ key: 'db', type: 'text', required: false }],
+  models:      [{ key: 'category', type: 'select', required: false, options: ['embedding','rerank','all'] }],
+  estimate:    [{ key: 'docs', type: 'number', required: true, placeholder: '1000' }, { key: 'queries', type: 'number', required: false, placeholder: '0' }, { key: 'months', type: 'number', required: false, placeholder: '12' }],
+  explain:     [{ key: 'topic', type: 'text', required: true }],
+  topics:      [{ key: 'search', type: 'text', required: false }],
+  merge:       [{ key: 'sources', type: 'json', required: true, placeholder: '["step1.output","step2.output"]' }, { key: 'strategy', type: 'select', required: false, options: ['concat','interleave','unique'] }],
+  filter:      [{ key: 'input', type: 'text', required: true, placeholder: '{{ step.output }}' }, { key: 'condition', type: 'text', required: true, placeholder: 'item.score > 0.5' }],
+  transform:   [{ key: 'input', type: 'text', required: true, placeholder: '{{ step.output }}' }, { key: 'expression', type: 'text', required: true, placeholder: 'item.text' }],
+  generate:    [{ key: 'prompt', type: 'textarea', required: true, placeholder: 'Generate a summary of...' }, { key: 'context', type: 'text', required: false, placeholder: '{{ step.output }}' }],
+};
+
+const WF_CATEGORY_ORDER = ['retrieval', 'embedding', 'management', 'utility', 'control', 'generation'];
+const WF_CATEGORY_LABELS = { retrieval: 'Retrieval', embedding: 'Embedding', management: 'Management', utility: 'Utility', control: 'Control Flow', generation: 'Generation' };
+
+// ── Builder: Library/Palette tab toggle ──
+function wfSwitchLibTab(tab) {
+  const libraryList = document.getElementById('wfLibraryList');
+  const paletteList = document.getElementById('wfPaletteList');
+  document.querySelectorAll('.wf-lib-tab').forEach(b => b.classList.toggle('active', b.dataset.libTab === tab));
+  if (libraryList) libraryList.style.display = tab === 'library' ? '' : 'none';
+  if (paletteList) paletteList.style.display = tab === 'palette' ? '' : 'none';
+  if (tab === 'palette') wfRenderPalette();
+}
+
+// ── Builder: Palette rendering ──
+function wfRenderPalette() {
+  const container = document.getElementById('wfPaletteList');
+  if (!container) return;
+  const grouped = {};
+  for (const [tool, meta] of Object.entries(WF_NODE_META)) {
+    const cat = meta.category || 'unknown';
+    if (!grouped[cat]) grouped[cat] = [];
+    grouped[cat].push({ tool, ...meta });
+  }
+  let html = '';
+  for (const cat of WF_CATEGORY_ORDER) {
+    const items = grouped[cat];
+    if (!items) continue;
+    html += `<div class="wf-palette-category"><div class="wf-palette-category-title">${WF_CATEGORY_LABELS[cat] || cat}</div>`;
+    for (const item of items) {
+      html += `<div class="wf-palette-item" draggable="true" ondragstart="event.dataTransfer.setData('text/plain','${item.tool}')" onclick="wfAddNodeFromPalette('${item.tool}')">
+        <span class="wf-palette-icon" style="color:${item.color}">${item.icon}</span>
+        <span class="wf-palette-label">${item.label}</span>
+      </div>`;
+    }
+    html += '</div>';
+  }
+  container.innerHTML = html;
+}
+
+// ── Builder: New Workflow ──
+function wfNewWorkflow() {
+  wfState.activeWorkflow = {
+    name: 'Untitled Workflow',
+    description: '',
+    steps: [],
+    inputs: {},
+    defaults: {},
+    output: {}
+  };
+  wfState.builderMode = true;
+  wfState.dirtyFlag = false;
+  wfState.selectedNodeId = null;
+  wfState.executionState = {};
+  wfState.executionResults = {};
+  wfState.nodePositions = {};
+  wfState.layers = [];
+  wfState.graph = {};
+  wfState.zoom = 1;
+  wfState.panX = 0;
+  wfState.panY = 0;
+  wfState.draggingEdge = null;
+  wfState.dragNode = null;
+
+  // Clear canvas
+  const svg = document.getElementById('wf-canvas');
+  if (svg) svg.querySelectorAll('.wf-node, .wf-edge-group').forEach(el => el.remove());
+  document.getElementById('wfCanvasEmpty').style.display = 'none';
+  svg.style.display = '';
+
+  // Enable toolbar buttons
+  document.getElementById('wfDryRunBtn').disabled = false;
+  document.getElementById('wfRunBtn').disabled = false;
+  document.getElementById('wfExportBtn').disabled = false;
+
+  // Switch to palette tab
+  wfSwitchLibTab('palette');
+
+  // Open inspector for workflow-level editing
+  wfOpenInspector();
+  wfUpdateInspector();
+
+  // Set viewBox
+  wfApplyViewBox();
+}
+
+// ── Builder: Edit current workflow ──
+function wfEditWorkflow() {
+  if (!wfState.activeWorkflow) return;
+  wfState.builderMode = true;
+  wfState.dirtyFlag = false;
+  wfState.selectedNodeId = null;
+  wfState.draggingEdge = null;
+  wfState.dragNode = null;
+
+  // Re-render nodes with builder ports and drag handles
+  wfRefreshNodes();
+
+  // Switch to palette tab and open inspector for workflow-level editing
+  wfSwitchLibTab('palette');
+  wfOpenInspector();
+  wfUpdateInspector();
+}
+
+// ── Builder: Add node from palette ──
+function wfAddNodeFromPalette(tool) {
+  if (!wfState.activeWorkflow) wfNewWorkflow();
+  wfState.builderMode = true;
+  const def = wfState.activeWorkflow;
+
+  // Generate unique step ID
+  let baseId = tool;
+  let id = baseId;
+  let counter = 2;
+  const existingIds = new Set(def.steps.map(s => s.id));
+  while (existingIds.has(id)) { id = baseId + '_' + counter; counter++; }
+
+  // Build default inputs
+  const inputDefs = WF_INPUT_DEFS[tool] || [];
+  const inputs = {};
+  for (const d of inputDefs) {
+    if (d.required) inputs[d.key] = '';
+  }
+
+  const meta = WF_NODE_META[tool] || {};
+  const step = {
+    id,
+    name: meta.label || tool,
+    tool,
+    inputs,
+  };
+  def.steps.push(step);
+
+  // Position: place to the right of all existing nodes
+  let maxX = WF_PAD;
+  for (const pos of Object.values(wfState.nodePositions)) {
+    if (pos.x + WF_NODE_W + WF_LAYER_GAP > maxX) maxX = pos.x + WF_NODE_W + WF_LAYER_GAP;
+  }
+  let y = WF_PAD;
+  // Stack vertically if there are nodes in the same column
+  const nodesAtX = Object.values(wfState.nodePositions).filter(p => Math.abs(p.x - maxX) < 20);
+  if (nodesAtX.length > 0) {
+    y = Math.max(...nodesAtX.map(p => p.y)) + WF_NODE_H + WF_NODE_GAP;
+  }
+  wfState.nodePositions[id] = { x: maxX, y };
+
+  // Rebuild graph
+  wfBuildGraph();
+  wfRefreshNodes();
+  wfSelectNode(id);
+  wfState.dirtyFlag = true;
+}
+
+// ── Builder: Build graph from step inputs (template references) ──
+function wfBuildGraph() {
+  const def = wfState.activeWorkflow;
+  if (!def) return;
+  const graph = {};
+  const stepIds = new Set(def.steps.map(s => s.id));
+  for (const step of def.steps) {
+    const deps = new Set();
+    // Scan all input values for {{ stepId.xxx }} references
+    for (const val of Object.values(step.inputs || {})) {
+      const str = typeof val === 'string' ? val : JSON.stringify(val);
+      const matches = str.matchAll(/\{\{\s*([a-zA-Z_][a-zA-Z0-9_]*)\./g);
+      for (const m of matches) {
+        if (stepIds.has(m[1]) && m[1] !== step.id) deps.add(m[1]);
+      }
+    }
+    graph[step.id] = Array.from(deps);
+  }
+  wfState.graph = graph;
+}
+
+// ── Builder: Canvas drop (from palette drag) ──
+function wfCanvasDrop(e) {
+  e.preventDefault();
+  const tool = e.dataTransfer.getData('text/plain');
+  if (!tool || !WF_NODE_META[tool]) return;
+  if (!wfState.activeWorkflow) wfNewWorkflow();
+  wfState.builderMode = true;
+  const def = wfState.activeWorkflow;
+
+  // Generate unique ID
+  let id = tool;
+  let counter = 2;
+  const existingIds = new Set(def.steps.map(s => s.id));
+  while (existingIds.has(id)) { id = tool + '_' + counter; counter++; }
+
+  // Inputs
+  const inputDefs = WF_INPUT_DEFS[tool] || [];
+  const inputs = {};
+  for (const d of inputDefs) { if (d.required) inputs[d.key] = ''; }
+
+  const meta = WF_NODE_META[tool] || {};
+  const step = { id, name: meta.label || tool, tool, inputs };
+  def.steps.push(step);
+
+  // Convert drop coordinates to SVG space
+  const svg = document.getElementById('wf-canvas');
+  const rect = svg.getBoundingClientRect();
+  const svgX = (e.clientX - rect.left) / wfState.zoom + wfState.panX;
+  const svgY = (e.clientY - rect.top) / wfState.zoom + wfState.panY;
+  wfState.nodePositions[id] = { x: svgX, y: svgY };
+
+  wfBuildGraph();
+  wfRefreshNodes();
+  wfSelectNode(id);
+  wfState.dirtyFlag = true;
+}
+
+// ── Builder: Mutation helpers ──
+function wfEditStepField(stepId, field, value) {
+  const step = wfState.activeWorkflow?.steps.find(s => s.id === stepId);
+  if (!step) return;
+  step[field] = value;
+  wfState.dirtyFlag = true;
+  if (field === 'name') wfRefreshNodes();
+}
+
+function wfEditStepInput(stepId, key, value) {
+  const step = wfState.activeWorkflow?.steps.find(s => s.id === stepId);
+  if (!step) return;
+  if (!step.inputs) step.inputs = {};
+  step.inputs[key] = value;
+  wfState.dirtyFlag = true;
+  // Rebuild graph in case template refs changed
+  wfBuildGraph();
+  wfRefreshNodes();
+}
+
+function wfEditStepId(oldId, newId) {
+  const def = wfState.activeWorkflow;
+  if (!def) return;
+  newId = newId.trim().replace(/[^a-zA-Z0-9_]/g, '_');
+  if (!newId || newId === oldId) return;
+  if (def.steps.some(s => s.id === newId)) return; // duplicate
+
+  const step = def.steps.find(s => s.id === oldId);
+  if (!step) return;
+  step.id = newId;
+
+  // Update position map
+  if (wfState.nodePositions[oldId]) {
+    wfState.nodePositions[newId] = wfState.nodePositions[oldId];
+    delete wfState.nodePositions[oldId];
+  }
+  // Update template references in other steps
+  for (const s of def.steps) {
+    for (const [k, v] of Object.entries(s.inputs || {})) {
+      if (typeof v === 'string' && v.includes('{{ ' + oldId + '.')) {
+        s.inputs[k] = v.replaceAll('{{ ' + oldId + '.', '{{ ' + newId + '.');
+      }
+    }
+  }
+  if (wfState.selectedNodeId === oldId) wfState.selectedNodeId = newId;
+  wfState.dirtyFlag = true;
+  wfBuildGraph();
+  wfRefreshNodes();
+  wfUpdateInspector();
+}
+
+function wfDeleteStep(stepId) {
+  const def = wfState.activeWorkflow;
+  if (!def) return;
+  def.steps = def.steps.filter(s => s.id !== stepId);
+  delete wfState.nodePositions[stepId];
+  if (wfState.selectedNodeId === stepId) wfState.selectedNodeId = null;
+  wfState.dirtyFlag = true;
+  wfBuildGraph();
+  wfRefreshNodes();
+  wfUpdateInspector();
+}
+
+function wfEditWorkflowField(field, value) {
+  if (!wfState.activeWorkflow) return;
+  wfState.activeWorkflow[field] = value;
+  wfState.dirtyFlag = true;
+}
+
+// ── Builder: Validate ──
+async function wfValidateBuilder() {
+  const def = wfState.activeWorkflow;
+  if (!def) return null;
+  try {
+    const res = await fetch('/api/workflows/validate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(def),
+    });
+    return await res.json();
+  } catch (err) {
+    return { valid: false, errors: [err.message] };
+  }
+}
+
+// ── Builder: Edge drag ──
+function wfEdgeDragStart(fromId, fromX, fromY) {
+  const svg = document.getElementById('wf-canvas');
+  if (!svg) return;
+  wfState.draggingEdge = { fromId, fromX, fromY };
+
+  // Create temp edge (dashed bezier), pointer-events: none so it doesn't block port hit-testing
+  const tempPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  tempPath.setAttribute('id', 'wf-temp-edge');
+  tempPath.setAttribute('fill', 'none');
+  tempPath.setAttribute('stroke', 'var(--accent)');
+  tempPath.setAttribute('stroke-width', '2');
+  tempPath.setAttribute('stroke-dasharray', '6 4');
+  tempPath.setAttribute('pointer-events', 'none');
+  tempPath.setAttribute('d', `M${fromX},${fromY} L${fromX},${fromY}`);
+  svg.appendChild(tempPath);
+
+  function onMove(e) {
+    const rect = svg.getBoundingClientRect();
+    const mx = (e.clientX - rect.left) / wfState.zoom + wfState.panX;
+    const my = (e.clientY - rect.top) / wfState.zoom + wfState.panY;
+    const dx = Math.abs(mx - fromX) * 0.5;
+    tempPath.setAttribute('d', `M${fromX},${fromY} C${fromX + dx},${fromY} ${mx - dx},${my} ${mx},${my}`);
+  }
+
+  function onUp() {
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('mouseup', onUp);
+    const el = document.getElementById('wf-temp-edge');
+    if (el) el.remove();
+    wfState.draggingEdge = null;
+  }
+
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('mouseup', onUp);
+}
+
+function wfEdgeDropOnInput(toId) {
+  if (!wfState.draggingEdge) return;
+  const fromId = wfState.draggingEdge.fromId;
+  if (fromId === toId) return; // no self-connections
+
+  // Add template reference to the target step's first empty required input
+  const def = wfState.activeWorkflow;
+  if (!def) return;
+  const targetStep = def.steps.find(s => s.id === toId);
+  if (!targetStep) return;
+
+  const inputDefs = WF_INPUT_DEFS[targetStep.tool] || [];
+  let connected = false;
+
+  // Try to fill the first empty required input with a template reference
+  for (const d of inputDefs) {
+    if (!targetStep.inputs) targetStep.inputs = {};
+    const current = targetStep.inputs[d.key];
+    if (!current || current === '') {
+      targetStep.inputs[d.key] = `{{ ${fromId}.output }}`;
+      connected = true;
+      break;
+    }
+  }
+
+  // If no empty required input, try first empty optional input
+  if (!connected) {
+    for (const d of inputDefs) {
+      const current = targetStep.inputs?.[d.key];
+      if (!current || current === '') {
+        if (!targetStep.inputs) targetStep.inputs = {};
+        targetStep.inputs[d.key] = `{{ ${fromId}.output }}`;
+        connected = true;
+        break;
+      }
+    }
+  }
+
+  if (connected) {
+    wfState.dirtyFlag = true;
+    wfBuildGraph();
+    wfRelayout();
+    wfRefreshNodes();
+    if (wfState.selectedNodeId === toId) wfUpdateInspector();
+  }
+
+  // Clean up drag state
+  wfState.draggingEdge = null;
+  const el = document.getElementById('wf-temp-edge');
+  if (el) el.remove();
+}
+
+// ── Builder: Relayout via topological sort ──
+async function wfRelayout() {
+  const def = wfState.activeWorkflow;
+  if (!def || def.steps.length === 0) return;
+
+  try {
+    const res = await fetch('/api/workflows/plan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(def),
+    });
+    const data = await res.json();
+    if (data.layers && data.layers.length > 0) {
+      wfState.layers = data.layers;
+      // Reposition nodes based on layers
+      const positions = {};
+      data.layers.forEach((layer, li) => {
+        layer.forEach((stepId, ni) => {
+          positions[stepId] = {
+            x: WF_PAD + li * WF_LAYER_GAP,
+            y: WF_PAD + ni * (WF_NODE_H + WF_NODE_GAP),
+          };
+        });
+      });
+      // Keep orphan nodes (not in any layer) at their current position
+      for (const step of def.steps) {
+        if (!positions[step.id] && wfState.nodePositions[step.id]) {
+          positions[step.id] = wfState.nodePositions[step.id];
+        }
+      }
+      wfState.nodePositions = positions;
+    }
+  } catch (err) {
+    console.warn('Relayout failed:', err.message);
+  }
 }
 
 // ── Docs shortcut (F1) ──
@@ -10966,6 +11843,22 @@ document.addEventListener('keydown', (e) => {
 document.addEventListener('keydown', (e) => {
   const activeTab = document.querySelector('.tab-btn.active');
   if (!activeTab || activeTab.dataset.tab !== 'workflows') return;
+
+  // Ctrl/Cmd+S to save/export in builder mode (works even in inputs)
+  if ((e.ctrlKey || e.metaKey) && e.key === 's' && wfState.builderMode) {
+    e.preventDefault();
+    wfExportJson();
+    return;
+  }
+
+  // Delete/Backspace to remove selected node in builder mode
+  if ((e.key === 'Delete' || e.key === 'Backspace') && wfState.builderMode && wfState.selectedNodeId) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    e.preventDefault();
+    wfDeleteStep(wfState.selectedNodeId);
+    return;
+  }
+
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
 
   const PAN_STEP = 40;
