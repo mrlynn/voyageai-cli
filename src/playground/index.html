@@ -2421,21 +2421,160 @@ select:focus { outline: none; border-color: var(--accent); }
   margin: 12px 0;
 }
 
-.chat-tool-calls {
-  display: flex; flex-direction: column; gap: 4px;
-  margin-bottom: 4px; align-self: flex-start; max-width: 85%;
+/* Agent thinking panel */
+.chat-thinking {
+  align-self: flex-start;
+  max-width: 85%;
+  margin-bottom: 2px;
+  font-size: 13px;
 }
-.chat-tool-call {
-  font-size: 12px; color: var(--text-muted);
-  padding: 6px 12px; border-radius: 8px;
-  background: var(--bg-card); border: 1px dashed var(--border);
-  display: flex; align-items: center; gap: 6px;
+.chat-thinking summary {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 13px;
+  transition: background 0.15s, border-color 0.15s;
+  user-select: none;
 }
-.chat-tool-call .tool-icon { opacity: 0.5; font-size: 11px; }
-.chat-tool-call .tool-name { font-weight: 600; }
-.chat-tool-call .tool-time { opacity: 0.5; }
-.chat-tool-call.error { border-color: #e74c3c; }
-.chat-tool-call .tool-error { color: #e74c3c; font-size: 11px; }
+.chat-thinking summary::-webkit-details-marker { display: none; }
+.chat-thinking summary:hover {
+  background: var(--bg-surface);
+  border-color: var(--accent-dim, #009E80);
+}
+.chat-thinking[open] summary {
+  border-radius: 10px 10px 0 0;
+  border-bottom-color: transparent;
+}
+.chat-thinking .thinking-icon {
+  font-size: 14px;
+  line-height: 1;
+}
+.chat-thinking .thinking-label {
+  font-weight: 500;
+}
+.chat-thinking .thinking-chevron {
+  margin-left: auto;
+  font-size: 10px;
+  opacity: 0.5;
+  transition: transform 0.15s;
+}
+.chat-thinking[open] .thinking-chevron {
+  transform: rotate(90deg);
+}
+.chat-thinking .thinking-count {
+  background: var(--bg-input, #112733);
+  color: var(--text-muted);
+  font-size: 11px;
+  padding: 1px 7px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+.chat-thinking .thinking-elapsed {
+  font-size: 11px;
+  opacity: 0.45;
+}
+.chat-thinking .thinking-timeline {
+  border: 1px solid var(--border);
+  border-top: none;
+  border-radius: 0 0 10px 10px;
+  padding: 10px 14px;
+  background: var(--bg-card);
+}
+.thinking-step {
+  display: flex;
+  gap: 10px;
+  padding: 7px 0;
+  position: relative;
+  animation: thinkingSlideIn 0.25s ease-out;
+}
+@keyframes thinkingSlideIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.thinking-step + .thinking-step {
+  border-top: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
+}
+.thinking-step-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+  background: var(--bg-input, #112733);
+  border: 1px solid var(--border);
+}
+.thinking-step.active .thinking-step-icon {
+  border-color: var(--accent);
+  animation: thinkingPulse 1.2s ease-in-out infinite;
+}
+@keyframes thinkingPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(0, 212, 170, 0.25); }
+  50% { box-shadow: 0 0 0 6px rgba(0, 212, 170, 0); }
+}
+.thinking-step.error .thinking-step-icon {
+  border-color: #e74c3c;
+  background: rgba(231, 76, 60, 0.08);
+}
+.thinking-step.done .thinking-step-icon {
+  border-color: var(--accent-dim, #009E80);
+  opacity: 0.7;
+}
+.thinking-step-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+}
+.thinking-step-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.thinking-step-name {
+  font-weight: 600;
+  color: var(--text);
+  font-size: 12.5px;
+}
+.thinking-step-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+  opacity: 0.7;
+}
+.thinking-step-time {
+  font-size: 11px;
+  opacity: 0.45;
+  margin-left: auto;
+  white-space: nowrap;
+}
+.thinking-step-detail {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  margin-top: 2px;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.thinking-step-detail code {
+  font-size: 11px;
+  background: var(--bg-input, #112733);
+  padding: 1px 4px;
+  border-radius: 3px;
+}
 .chat-input-area {
   padding: 12px 16px;
   border-top: 1px solid var(--border);
@@ -8341,6 +8480,145 @@ function renderMarkdown(md) {
   return result.join('\n');
 }
 
+/**
+ * Tool metadata: icon, label, and a function to summarize the call for the thinking panel.
+ */
+const TOOL_META = {
+  vai_query:       { icon: '\uD83D\uDD0D', label: 'RAG Query',          verb: 'Searching',       descFn: a => a.query ? `"${a.query}"` : '' },
+  vai_search:      { icon: '\uD83D\uDD0E', label: 'Vector Search',      verb: 'Searching vectors', descFn: a => a.query ? `"${a.query}"` : '' },
+  vai_rerank:      { icon: '\u2195\uFE0F', label: 'Rerank',             verb: 'Reranking',       descFn: a => a.query ? `${a.documents?.length || '?'} docs for "${a.query}"` : '' },
+  vai_embed:       { icon: '\uD83E\uDDE0', label: 'Embed',              verb: 'Embedding',       descFn: a => a.text ? `"${a.text.slice(0, 60)}${a.text.length > 60 ? '...' : ''}"` : '' },
+  vai_similarity:  { icon: '\uD83C\uDFAF', label: 'Similarity',         verb: 'Comparing',       descFn: a => a.text1 ? `two texts` : '' },
+  vai_collections: { icon: '\uD83D\uDDC4\uFE0F', label: 'Collections',  verb: 'Discovering',     descFn: a => a.db ? `in ${a.db}` : 'available databases' },
+  vai_models:      { icon: '\uD83E\uDD16', label: 'Models',             verb: 'Listing',         descFn: () => 'available models' },
+  vai_topics:      { icon: '\uD83D\uDCDA', label: 'Topics',             verb: 'Browsing',        descFn: () => 'educational topics' },
+  vai_explain:     { icon: '\uD83D\uDCA1', label: 'Explain',            verb: 'Explaining',      descFn: a => a.topic || '' },
+  vai_estimate:    { icon: '\uD83D\uDCB0', label: 'Cost Estimate',      verb: 'Estimating',      descFn: a => a.docs ? `${a.docs} docs` : '' },
+  vai_ingest:      { icon: '\uD83D\uDCE5', label: 'Ingest',             verb: 'Ingesting',       descFn: a => a.source || 'document' },
+};
+const DEFAULT_TOOL_META = { icon: '\u2699\uFE0F', label: '', verb: 'Running', descFn: () => '' };
+
+/**
+ * Create the thinking panel <details> element.
+ * Returns { panel, timeline, addStep, finalize }.
+ */
+function createThinkingPanel() {
+  const panel = document.createElement('details');
+  panel.className = 'chat-thinking';
+  panel.open = true;
+
+  const summary = document.createElement('summary');
+  summary.innerHTML =
+    '<span class="thinking-icon">\uD83E\uDDE0</span>' +
+    '<span class="thinking-label">Thinking</span>' +
+    '<span class="thinking-count">0</span>' +
+    '<span class="thinking-elapsed"></span>' +
+    '<span class="thinking-chevron">\u25B6</span>';
+  panel.appendChild(summary);
+
+  const timeline = document.createElement('div');
+  timeline.className = 'thinking-timeline';
+  panel.appendChild(timeline);
+
+  let stepCount = 0;
+  let activeStep = null;
+  const startTime = Date.now();
+  let elapsedTimer = null;
+
+  // Update the elapsed time in the summary
+  function tickElapsed() {
+    const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+    summary.querySelector('.thinking-elapsed').textContent = elapsed + 's';
+  }
+  elapsedTimer = setInterval(tickElapsed, 200);
+  tickElapsed();
+
+  function addStep(data) {
+    const meta = TOOL_META[data.name] || DEFAULT_TOOL_META;
+    const desc = meta.descFn(data.args || {});
+
+    // Mark previous active step as done
+    if (activeStep) {
+      activeStep.classList.remove('active');
+      activeStep.classList.add('done');
+    }
+
+    stepCount++;
+    summary.querySelector('.thinking-count').textContent = stepCount;
+
+    const step = document.createElement('div');
+    step.className = 'thinking-step active';
+    if (data.error) step.className = 'thinking-step error';
+
+    const iconDiv = document.createElement('div');
+    iconDiv.className = 'thinking-step-icon';
+    iconDiv.textContent = meta.icon;
+    step.appendChild(iconDiv);
+
+    const body = document.createElement('div');
+    body.className = 'thinking-step-body';
+
+    const header = document.createElement('div');
+    header.className = 'thinking-step-header';
+    const nameSpan = document.createElement('span');
+    nameSpan.className = 'thinking-step-name';
+    nameSpan.textContent = meta.verb + (desc ? ' ' : '') + (meta.label || data.name);
+    header.appendChild(nameSpan);
+
+    if (data.timeMs !== undefined) {
+      const timeSpan = document.createElement('span');
+      timeSpan.className = 'thinking-step-time';
+      timeSpan.textContent = data.timeMs + 'ms';
+      header.appendChild(timeSpan);
+    }
+    body.appendChild(header);
+
+    if (desc) {
+      const descDiv = document.createElement('div');
+      descDiv.className = 'thinking-step-desc';
+      descDiv.textContent = desc;
+      body.appendChild(descDiv);
+    }
+
+    if (data.error) {
+      const errDiv = document.createElement('div');
+      errDiv.className = 'thinking-step-detail';
+      errDiv.style.color = '#e74c3c';
+      errDiv.textContent = data.error;
+      body.appendChild(errDiv);
+    } else if (data.resultSummary) {
+      const detailDiv = document.createElement('div');
+      detailDiv.className = 'thinking-step-detail';
+      detailDiv.innerHTML = data.resultSummary;
+      body.appendChild(detailDiv);
+    }
+
+    step.appendChild(body);
+    timeline.appendChild(step);
+
+    if (!data.error) activeStep = step;
+
+    return step;
+  }
+
+  function finalize() {
+    clearInterval(elapsedTimer);
+    // Final elapsed
+    const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+    summary.querySelector('.thinking-elapsed').textContent = elapsed + 's';
+    summary.querySelector('.thinking-label').textContent = 'Thought for ' + elapsed + 's';
+    summary.querySelector('.thinking-icon').textContent = '\u2728';
+    // Mark last step done and collapse
+    if (activeStep) {
+      activeStep.classList.remove('active');
+      activeStep.classList.add('done');
+    }
+    panel.open = false;
+  }
+
+  return { panel, addStep, finalize };
+}
+
 function addChatMessage(role, content, sources) {
   const container = document.getElementById('chatMessages');
   const div = document.createElement('div');
@@ -8433,7 +8711,7 @@ async function sendChatMessage() {
     let assistantDiv = null;
     let fullText = '';
     let sources = [];
-    let toolCallsDiv = null;
+    let thinkingPanel = null;
 
     while (true) {
       const { done, value } = await reader.read();
@@ -8457,33 +8735,13 @@ async function sendChatMessage() {
           }
 
           if (currentEvent === 'tool_call') {
-            if (!toolCallsDiv) {
-              toolCallsDiv = document.createElement('div');
-              toolCallsDiv.className = 'chat-tool-calls';
-              document.getElementById('chatMessages').appendChild(toolCallsDiv);
+            // Create thinking panel on first tool call
+            if (!thinkingPanel) {
+              typing.remove();
+              thinkingPanel = createThinkingPanel();
+              document.getElementById('chatMessages').appendChild(thinkingPanel.panel);
             }
-            const tc = document.createElement('div');
-            tc.className = 'chat-tool-call' + (data.error ? ' error' : '');
-            const icon = document.createElement('span');
-            icon.className = 'tool-icon';
-            icon.textContent = '\u2699';
-            tc.appendChild(icon);
-            const nameSpan = document.createElement('span');
-            nameSpan.className = 'tool-name';
-            nameSpan.textContent = data.name;
-            tc.appendChild(nameSpan);
-            const timeSpan = document.createElement('span');
-            timeSpan.className = 'tool-time';
-            timeSpan.textContent = (data.timeMs || 0) + 'ms';
-            tc.appendChild(timeSpan);
-            if (data.error) {
-              const errSpan = document.createElement('span');
-              errSpan.className = 'tool-error';
-              errSpan.textContent = data.error;
-              tc.appendChild(errSpan);
-            }
-            toolCallsDiv.appendChild(tc);
-            typing.textContent = 'Calling ' + data.name + '...';
+            thinkingPanel.addStep(data);
             document.getElementById('chatMessages').scrollTop = document.getElementById('chatMessages').scrollHeight;
           }
 
@@ -8498,6 +8756,8 @@ async function sendChatMessage() {
           }
 
           if (currentEvent === 'done') {
+            // Finalize the thinking panel (collapse, show elapsed)
+            if (thinkingPanel) thinkingPanel.finalize();
             // Render accumulated text as markdown for assistant messages
             if (assistantDiv && fullText) {
               const contentEl = assistantDiv.querySelector('.chat-message-content');
@@ -8537,6 +8797,7 @@ async function sendChatMessage() {
 
   } catch (err) {
     if (typing.parentNode) typing.remove();
+    if (thinkingPanel) thinkingPanel.finalize();
     addChatMessage('system-msg', `Error: ${err.message}`);
   } finally {
     sendBtn.disabled = false;
