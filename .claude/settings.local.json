@@ -34,7 +34,10 @@
       "Bash(PATH=\"/opt/homebrew/bin:/usr/local/bin:/bin:/usr/bin:$PATH\" gh pr create:*)",
       "Bash(git branch:*)",
       "Bash(git remote:*)",
-      "Bash(PATH=\"/opt/homebrew/bin:/usr/local/bin:/bin:/usr/bin:$PATH\" gh pr list:*)"
+      "Bash(PATH=\"/opt/homebrew/bin:/usr/local/bin:/bin:/usr/bin:$PATH\" gh pr list:*)",
+      "Bash(PATH=\"/opt/homebrew/bin:/usr/local/bin:/bin:/usr/bin:$PATH\" gh pr view:*)",
+      "Bash(PATH=\"/opt/homebrew/bin:/usr/local/bin:/bin:/usr/bin:$PATH\" gh pr merge:*)",
+      "Bash(git pull:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
