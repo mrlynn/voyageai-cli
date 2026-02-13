@@ -1,0 +1,52 @@
+{
+  "name": "question-answer-with-citations",
+  "description": "Search for relevant documents, build a cited context, and generate an answer with source references",
+  "version": "1.0.0",
+  "inputs": {
+    "question": { "type": "string", "required": true, "description": "User question to answer" },
+    "limit": { "type": "number", "default": 5, "description": "Number of documents to retrieve" }
+  },
+  "steps": [
+    {
+      "id": "search",
+      "tool": "query",
+      "name": "Retrieve relevant documents",
+      "inputs": {
+        "query": "{{ inputs.question }}",
+        "limit": "{{ inputs.limit }}"
+      }
+    },
+    {
+      "id": "extract_sources",
+      "tool": "transform",
+      "name": "Extract source metadata",
+      "inputs": {
+        "array": "{{ search.output.results }}",
+        "fields": ["text", "source", "score"]
+      }
+    },
+    {
+      "id": "build_cited_context",
+      "tool": "template",
+      "name": "Build context with citation markers",
+      "inputs": {
+        "text": "Answer the question using the numbered sources below. Cite sources using [1], [2], etc.\n\n{{ extract_sources.output.results }}"
+      }
+    },
+    {
+      "id": "generate_answer",
+      "tool": "generate",
+      "name": "Generate cited answer",
+      "inputs": {
+        "prompt": "{{ inputs.question }}",
+        "context": "{{ build_cited_context.output.text }}",
+        "systemPrompt": "You are a research assistant. Answer questions using only the provided sources. Always cite your sources using bracket notation like [1], [2]. If the sources do not contain relevant information, say so."
+      }
+    }
+  ],
+  "output": {
+    "answer": "{{ generate_answer.output.text }}",
+    "sources": "{{ extract_sources.output.results }}",
+    "sourceCount": "{{ search.output.resultCount }}"
+  }
+}
