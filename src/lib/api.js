@@ -5,48 +5,37 @@ const VOYAGE_API_BASE = 'https://api.voyageai.com/v1';
 const MAX_RETRIES = 3;
 
 /**
- * Detect the correct base URL for a given API key based on its prefix.
- * - Keys starting with 'pa-' → Voyage AI direct (api.voyageai.com)
- * - Keys starting with 'al-' → MongoDB Atlas (ai.mongodb.com)
- * @param {string} key
+ * Resolve the API base URL.
+ * Priority: VOYAGE_API_BASE env → config baseUrl → auto-detect from key prefix.
+ * Keys starting with 'pa-' that work on Voyage platform use VOYAGE_API_BASE.
  * @returns {string}
  */
-function autoDetectBase(key) {
-  if (key.startsWith('pa-')) return VOYAGE_API_BASE;
-  if (key.startsWith('al-')) return ATLAS_API_BASE;
-  // Unknown prefix — fall back to Atlas
+function getApiBase() {
+  const { getConfigValue } = require('./config');
+
+  // Explicit override wins
+  const envBase = process.env.VOYAGE_API_BASE;
+  if (envBase) return envBase.replace(/\/+$/, '');
+
+  const configBase = getConfigValue('baseUrl');
+  if (configBase) return configBase.replace(/\/+$/, '');
+
+  // Default to Atlas endpoint
   return ATLAS_API_BASE;
 }
 
+// Legacy export for backward compat
+const API_BASE = ATLAS_API_BASE;
+
 /**
- * Resolve the API key and matching base URL as a pair.
- *
- * Key resolution: VOYAGE_API_KEY env → config apiKey → config apiKey2 (fallback)
- * Base resolution: VOYAGE_API_BASE env → config baseUrl → auto-detect from key prefix
- *
- * When both apiKey and apiKey2 are set and no explicit baseUrl is configured,
- * the key is chosen to match the endpoint (or vice versa). This lets users
- * store both an Atlas key and a Voyage AI key in the same config.
- *
- * @returns {{ apiKey: string, apiBase: string }}
+ * Get the Voyage API key or exit with a helpful error.
+ * Checks: env var → config file.
+ * @returns {string}
  */
-function resolveApiCredentials() {
+function requireApiKey() {
   const { getConfigValue } = require('./config');
-
-  // Explicit env var for key always wins
-  const envKey = process.env.VOYAGE_API_KEY;
-  if (envKey) {
-    const envBase = process.env.VOYAGE_API_BASE;
-    if (envBase) return { apiKey: envKey, apiBase: envBase.replace(/\/+$/, '') };
-    const configBase = getConfigValue('baseUrl');
-    if (configBase) return { apiKey: envKey, apiBase: configBase.replace(/\/+$/, '') };
-    return { apiKey: envKey, apiBase: autoDetectBase(envKey) };
-  }
-
-  const key1 = getConfigValue('apiKey');
-  const key2 = getConfigValue('apiKey2');
-
-  if (!key1 && !key2) {
+  const key = process.env.VOYAGE_API_KEY || getConfigValue('apiKey');
+  if (!key) {
     const msg = 'VOYAGE_API_KEY is not set.\n\n' +
       'Option 1: export VOYAGE_API_KEY="your-key-here"\n' +
       'Option 2: vai config set api-key <your-key>\n\n' +
@@ -54,50 +43,7 @@ function resolveApiCredentials() {
       '       or Voyage AI platform > Dashboard > API Keys';
     throw new Error(msg);
   }
-
-  // Explicit env/config base URL — pick the key that matches it
-  const envBase = process.env.VOYAGE_API_BASE;
-  const configBase = getConfigValue('baseUrl');
-  const explicitBase = (envBase || configBase || '').replace(/\/+$/, '');
-
-  if (explicitBase && key1 && key2) {
-    const isVoyageBase = explicitBase.includes('api.voyageai.com');
-    const isAtlasBase = explicitBase.includes('ai.mongodb.com');
-
-    // Pick the key that matches the explicit base URL
-    if (isVoyageBase) {
-      const voyageKey = [key1, key2].find(k => k.startsWith('pa-'));
-      if (voyageKey) return { apiKey: voyageKey, apiBase: explicitBase };
-    }
-    if (isAtlasBase) {
-      const atlasKey = [key1, key2].find(k => k.startsWith('al-'));
-      if (atlasKey) return { apiKey: atlasKey, apiBase: explicitBase };
-    }
-  }
-
-  // Single key or no explicit base — auto-detect
-  const key = key1 || key2;
-  const base = explicitBase || autoDetectBase(key);
-  return { apiKey: key, apiBase: base };
-}
-
-/**
- * Resolve the API base URL (auto-matched to the active key).
- * @returns {string}
- */
-function getApiBase() {
-  return resolveApiCredentials().apiBase;
-}
-
-// Legacy export for backward compat
-const API_BASE = ATLAS_API_BASE;
-
-/**
- * Get the Voyage API key (auto-matched to the configured base URL).
- * @returns {string}
- */
-function requireApiKey() {
-  return resolveApiCredentials().apiKey;
+  return key;
 }
 
 /**
@@ -218,8 +164,6 @@ module.exports = {
   VOYAGE_API_BASE,
   getApiBase,
   requireApiKey,
-  resolveApiCredentials,
-  autoDetectBase,
   apiRequest,
   generateEmbeddings,
 };
