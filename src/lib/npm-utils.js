@@ -51,7 +51,7 @@ async function searchNpm(query, options = {}) {
   }
 
   const data = await res.json();
-  const results = (data.objects || [])
+  let results = (data.objects || [])
     .filter(obj => isWorkflowPackage(obj.package.name))
     .map(obj => ({
       name: obj.package.name,
@@ -61,8 +61,24 @@ async function searchNpm(query, options = {}) {
       date: obj.package.date,
       keywords: obj.package.keywords || [],
       official: isOfficialPackage(obj.package.name),
-    }))
-    .slice(0, options.limit || limit);
+    }));
+
+  // Client-side filtering: npm keyword search returns all vai-workflow packages,
+  // so we filter locally by matching query against name, description, and keywords
+  if (query) {
+    const q = query.toLowerCase();
+    const terms = q.split(/\s+/).filter(Boolean);
+    results = results.filter(pkg => {
+      const haystack = [
+        pkg.name,
+        pkg.description,
+        ...pkg.keywords,
+      ].join(' ').toLowerCase();
+      return terms.every(term => haystack.includes(term));
+    });
+  }
+
+  results = results.slice(0, options.limit || limit);
 
   // Sort: official first, then by name
   results.sort((a, b) => {
