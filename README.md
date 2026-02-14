@@ -123,7 +123,7 @@ Download the latest release for your platform from [GitHub Releases](https://git
 | Windows | `.exe` installer |
 | Linux | `.AppImage` / `.deb` |
 
-> **Prefer the CLI?** Install with `curl -fsSL https://vaicli.com/install.sh | sh` or `brew install mrlynn/tap/voyageai-cli`
+> **Prefer the CLI?** Install with `curl -fsSL https://vaicli.com/install.sh | sh` or `brew install mrlynn/vai/vai`
 
 ---
 
@@ -166,7 +166,7 @@ curl -fsSL https://vaicli.com/install.sh | sh
 npm install -g voyageai-cli
 
 # Via Homebrew
-brew install mrlynn/tap/voyageai-cli
+brew install mrlynn/vai/vai
 ```
 
 ### 5-Minute RAG Pipeline
