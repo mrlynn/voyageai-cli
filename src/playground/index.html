@@ -3241,6 +3241,9 @@ select:focus { outline: none; border-color: var(--accent); }
 .wf-store-featured-content h3 { font-family: var(--mono); font-size: 14px; font-weight: 700; margin-bottom: 4px; color: #fff; }
 .wf-store-featured-content p { font-size: 12px; color: rgba(255,255,255,.65); line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .wf-store-featured-dl { position: absolute; top: 12px; right: 14px; z-index: 2; font-family: var(--mono); font-size: 10px; color: rgba(255,255,255,.5); }
+.wf-store-featured-author { position: relative; z-index: 2; display: flex; align-items: center; gap: 6px; margin-top: 6px; font-size: 11px; color: rgba(255,255,255,.55); }
+.wf-store-featured-avatar { width: 18px; height: 18px; border-radius: 50%; background: rgba(255,255,255,.2); display: flex; align-items: center; justify-content: center; font-size: 9px; color: #fff; font-weight: 700; overflow: hidden; }
+.wf-store-featured-avatar img { width: 100%; height: 100%; object-fit: cover; }
 /* Workflow cards grid */
 .wf-store-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; }
 .wf-store-card {
@@ -3255,7 +3258,8 @@ select:focus { outline: none; border-color: var(--accent); }
 .wf-store-card-badges { display: flex; gap: 4px; }
 .wf-store-badge-official { font-family: var(--mono); font-size: 9px; padding: 2px 7px; border-radius: 100px; background: rgba(0,212,170,.1); color: var(--accent); border: 1px solid rgba(0,212,170,.15); white-space: nowrap; }
 .wf-store-badge-installed { font-family: var(--mono); font-size: 9px; padding: 2px 7px; border-radius: 100px; background: rgba(16,185,129,.1); color: #10B981; border: 1px solid rgba(16,185,129,.15); white-space: nowrap; }
-.wf-store-card-desc { font-size: 12px; color: var(--text-dim); line-height: 1.5; margin-bottom: 10px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.wf-store-card-desc { font-size: 12px; color: var(--text-dim); line-height: 1.5; margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.wf-store-card-author { font-size: 11px; color: var(--text-muted); margin-bottom: 10px; }
 .wf-store-card-meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .wf-store-card-cat { font-family: var(--mono); font-size: 10px; padding: 2px 8px; background: var(--bg-card); border-radius: 100px; color: var(--text-muted); }
 .wf-store-card-dots { display: flex; gap: 2px; }
@@ -3311,6 +3315,17 @@ select:focus { outline: none; border-color: var(--accent); }
 }
 .wf-store-detail-cmd:hover { border-color: var(--accent); }
 .wf-store-detail-cmd-hint { font-size: 10px; color: var(--text-muted); flex-shrink: 0; }
+.wf-store-detail-author { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
+.wf-store-detail-avatar { width: 24px; height: 24px; border-radius: 50%; background: var(--bg-card); display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text-muted); font-weight: 700; overflow: hidden; flex-shrink: 0; }
+.wf-store-detail-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.wf-store-detail-author-name { font-size: 13px; color: var(--text-dim); }
+.wf-store-detail-author-name a { color: var(--accent); text-decoration: none; }
+.wf-store-detail-author-name a:hover { text-decoration: underline; }
+.wf-store-detail-inputs-table { width: 100%; border-collapse: collapse; font-size: 12px; font-family: var(--mono); }
+.wf-store-detail-inputs-table th { text-align: left; padding: 6px 10px; color: var(--text-muted); font-weight: 600; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border); }
+.wf-store-detail-inputs-table td { padding: 6px 10px; color: var(--text-dim); border-bottom: 1px solid var(--border); }
+.wf-store-detail-screenshots { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 6px; }
+.wf-store-detail-screenshots img { height: 180px; border-radius: 8px; border: 1px solid var(--border); flex-shrink: 0; }
 .wf-store-detail-actions { display: flex; gap: 8px; margin-top: 16px; }
 .wf-store-detail-btn {
   flex: 1; padding: 10px; border-radius: 8px; font-family: var(--mono); font-size: 12px;
@@ -12508,9 +12523,14 @@ function wfStoreRender() {
     html += '<div class="wf-store-section-label">Featured</div>';
     html += '<div class="wf-store-featured-grid">';
     featured.forEach(wf => {
+      const featAuthor = wf.author && wf.author.name && wf.author.name !== 'unknown' ? wf.author : null;
+      const featAvatarHtml = featAuthor ? (featAuthor.avatar
+        ? `<div class="wf-store-featured-avatar"><img src="${featAuthor.avatar}" onerror="this.parentNode.textContent='${featAuthor.name.charAt(0).toUpperCase()}'"></div>`
+        : `<div class="wf-store-featured-avatar">${featAuthor.name.charAt(0).toUpperCase()}</div>`) : '';
+      const featAuthorHtml = featAuthor ? `<div class="wf-store-featured-author">${featAvatarHtml} by ${featAuthor.name}</div>` : '';
       html += `<div class="wf-store-featured-card" style="background:${wf.gradient}" onclick="wfStoreShowDetail('${wf.name}')">
         <div class="wf-store-featured-dl">↓ ${(wf.downloads||0).toLocaleString()}</div>
-        <div class="wf-store-featured-content"><h3>${wf.name}</h3><p>${wf.description||''}</p></div>
+        <div class="wf-store-featured-content"><h3>${wf.name}</h3><p>${wf.description||''}</p>${featAuthorHtml}</div>
       </div>`;
     });
     html += '</div>';
@@ -12537,6 +12557,7 @@ function wfStoreRender() {
           <div class="wf-store-card-badges">${badges}</div>
         </div>
         <div class="wf-store-card-desc">${wf.description||''}</div>
+        ${wf.author && wf.author.name && wf.author.name !== 'unknown' ? `<div class="wf-store-card-author">by ${wf.author.name}</div>` : ''}
         <div class="wf-store-card-meta">
           <span class="wf-store-card-cat">${wf.category||'utility'}</span>
           <div class="wf-store-card-dots">${dots}</div>
@@ -12586,7 +12607,23 @@ function wfStoreShowDetail(name) {
       </div>
     </div>
     <div class="wf-store-detail-body">
+      ${(() => {
+        const a = wf.author && wf.author.name && wf.author.name !== 'unknown' ? wf.author : null;
+        if (!a) return '';
+        const avatarInner = a.avatar
+          ? `<img src="${a.avatar}" onerror="this.parentNode.textContent='${a.name.charAt(0).toUpperCase()}'">` 
+          : a.name.charAt(0).toUpperCase();
+        const nameHtml = a.url
+          ? `<a href="${a.url}" target="_blank" rel="noopener">${a.name}</a>`
+          : a.name;
+        return `<div class="wf-store-detail-author"><div class="wf-store-detail-avatar">${avatarInner}</div><div class="wf-store-detail-author-name">${nameHtml}</div></div>`;
+      })()}
       <p class="wf-store-detail-desc">${wf.description||''}</p>
+      ${wf.assets && wf.assets.screenshots && wf.assets.screenshots.length > 0 ? `
+      <div class="wf-store-detail-section">
+        <div class="wf-store-detail-label">Screenshots</div>
+        <div class="wf-store-detail-screenshots">${wf.assets.screenshots.map(s => `<img src="${s}" alt="Screenshot">`).join('')}</div>
+      </div>` : ''}
       <div class="wf-store-detail-section">
         <div class="wf-store-detail-label">Stats</div>
         <div class="wf-store-detail-stats">
@@ -12603,6 +12640,14 @@ function wfStoreShowDetail(name) {
         <div class="wf-store-detail-label">Tags</div>
         <div class="wf-store-detail-tags">${tagsHtml}</div>
       </div>
+      ${wf.inputs && wf.inputs.length > 0 ? `
+      <div class="wf-store-detail-section">
+        <div class="wf-store-detail-label">Input Parameters</div>
+        <table class="wf-store-detail-inputs-table">
+          <thead><tr><th>Name</th><th>Type</th><th>Required / Default</th></tr></thead>
+          <tbody>${wf.inputs.map(inp => `<tr><td>${inp.name}</td><td>${inp.type}</td><td>${inp.required ? 'required' : inp.default !== undefined ? 'default: ' + inp.default : 'optional'}</td></tr>`).join('')}</tbody>
+        </table>
+      </div>` : ''}
       <div class="wf-store-detail-install">
         <div class="wf-store-detail-label">Install</div>
         <div class="wf-store-detail-cmd" onclick="navigator.clipboard.writeText('${ic}');this.querySelector('.wf-store-detail-cmd-hint').textContent='✓ copied';setTimeout(()=>this.querySelector('.wf-store-detail-cmd-hint').textContent='copy',2000)">

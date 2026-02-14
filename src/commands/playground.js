@@ -388,6 +388,25 @@ function createPlaygroundServer() {
             // npm unreachable — fall back to installed only
           }
 
+          // Fetch full package metadata from npm registry for each package (for vai field, inputs, etc.)
+          const metadataCache = {};
+          await Promise.all(npmWorkflows.map(async (r) => {
+            try {
+              const encodedName = r.name.startsWith('@')
+                ? `@${encodeURIComponent(r.name.slice(1))}`
+                : encodeURIComponent(r.name);
+              const regRes = await fetch(`https://registry.npmjs.org/${encodedName}/latest`, {
+                headers: { 'Accept': 'application/json' },
+                signal: AbortSignal.timeout(10000),
+              });
+              if (regRes.ok) {
+                metadataCache[r.name] = await regRes.json();
+              }
+            } catch {
+              // Fall back to basic data from search
+            }
+          }));
+
           // Static gradient/featured config
           const GRADIENTS = {
             'model-shootout': 'linear-gradient(135deg, #0D9488, #06B6D4)',
@@ -416,11 +435,49 @@ function createPlaygroundServer() {
 
           const workflows = npmWorkflows.map(r => {
             const shortName = (r.name || '').replace(/^@vaicli\/vai-workflow-/, '').replace(/^vai-workflow-/, '');
-            const vai = r.vai || {};
+            const meta = metadataCache[r.name]; // raw registry JSON
+            const vai = (meta && meta.vai) || r.vai || {};
+            const vaiAuthor = vai.author || null;
+            const version = (meta && meta.version) || r.version || '1.0.0';
+
+            // Author attribution: vai.author > package.json author
+            let author = { name: 'unknown' };
+            if (vaiAuthor && vaiAuthor.name) {
+              author = { name: vaiAuthor.name, url: vaiAuthor.url || undefined };
+              if (vaiAuthor.avatar) {
+                author.avatar = `https://unpkg.com/${r.name}@${version}/${vaiAuthor.avatar}`;
+              }
+            } else if (meta && meta.author) {
+              const rawAuthor = meta.author;
+              author = { name: typeof rawAuthor === 'string' ? rawAuthor : (rawAuthor.name || 'unknown') };
+            } else if (r.author) {
+              author = { name: r.author };
+            }
+
+            // Assets: construct CDN URLs from vai.assets paths
+            const vaiAssets = vai.assets || {};
+            const assets = {};
+            if (vaiAssets.icon) assets.icon = `https://unpkg.com/${r.name}@${version}/${vaiAssets.icon}`;
+            if (vaiAssets.banner) assets.banner = `https://unpkg.com/${r.name}@${version}/${vaiAssets.banner}`;
+            if (vaiAssets.screenshots && Array.isArray(vaiAssets.screenshots)) {
+              assets.screenshots = vaiAssets.screenshots.map(s => `https://unpkg.com/${r.name}@${version}/${s}`);
+            }
+
+            // Inputs: extract from vai-workflow field (has inputs map), fall back to vai.inputs
+            const vaiWorkflowField = meta && meta['vai-workflow'] ? meta['vai-workflow'] : {};
+            const rawInputs = vaiWorkflowField.inputs || vai.inputs || {};
+            const inputs = Object.entries(rawInputs).map(([name, def]) => ({
+              name,
+              type: def.type || 'string',
+              required: !!def.required,
+              default: def.default !== undefined ? def.default : undefined,
+              description: def.description || '',
+            }));
+
             return {
               name: shortName,
               packageName: r.name,
-              version: r.version || '1.0.0',
+              version,
               description: r.description || '',
               category: vai.category || 'utility',
               tags: vai.tags || [],
@@ -432,6 +489,9 @@ function createPlaygroundServer() {
               featured: FEATURED.includes(shortName),
               installed: installedNames.has(r.name),
               gradient: GRADIENTS[shortName] || DEFAULT_GRADIENT,
+              author,
+              assets,
+              inputs,
             };
           });
 
