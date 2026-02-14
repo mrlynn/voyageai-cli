@@ -208,6 +208,8 @@ function registerIngest(program) {
     .option('--json', 'Machine-readable JSON output')
     .option('-q, --quiet', 'Suppress progress, show only final summary')
     .action(async (opts) => {
+      const telemetry = require('../lib/telemetry');
+      const done = telemetry.timer('cli_ingest');
       const startTime = Date.now();
 
       // Validate file exists
@@ -394,7 +396,9 @@ function registerIngest(program) {
             }
           }
         }
+        done({ format, docCount: succeeded });
       } catch (err) {
+        telemetry.send('cli_error', { command: 'ingest', errorType: err.constructor.name });
         console.error(ui.error(err.message));
         process.exit(1);
       } finally {

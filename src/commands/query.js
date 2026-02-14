@@ -33,6 +33,7 @@ function registerQuery(program) {
     .option('-q, --quiet', 'Suppress non-essential output')
     .action(async (text, opts) => {
       let client;
+      const telemetry = require('../lib/telemetry');
       try {
         // Merge project config
         const { config: proj } = loadProject();
@@ -50,6 +51,14 @@ function registerQuery(program) {
           console.error(ui.error('Database and collection required. Use --db and --collection, or create .vai.json with "vai init".'));
           process.exit(1);
         }
+
+        const done = telemetry.timer('cli_query', {
+          model,
+          rerankModel: doRerank ? rerankModel : undefined,
+          rerank: doRerank,
+          limit: opts.limit,
+          topK: opts.topK,
+        });
 
         const useColor = !opts.json;
         const useSpinner = useColor && !opts.quiet;
@@ -243,7 +252,10 @@ function registerQuery(program) {
           const totalTokens = embedTokens + rerankTokens;
           console.log(ui.dim(`  Tokens: ${totalTokens} (embed: ${embedTokens}${rerankTokens ? `, rerank: ${rerankTokens}` : ''})`));
         }
+
+        done({ resultCount: finalResults.length });
       } catch (err) {
+        telemetry.send('cli_error', { command: 'query', errorType: err.constructor.name });
         console.error(ui.error(err.message));
         process.exit(1);
       } finally {

@@ -1112,6 +1112,20 @@ function formatBytes(bytes) {
  * Register the benchmark command tree on a Commander program.
  * @param {import('commander').Command} program
  */
+function withTelemetry(subcommand, fn) {
+  return async (...args) => {
+    const telemetry = require('../lib/telemetry');
+    const done = telemetry.timer('cli_benchmark', { subcommand });
+    try {
+      await fn(...args);
+      done();
+    } catch (err) {
+      telemetry.send('cli_error', { command: 'benchmark', errorType: err.constructor.name });
+      throw err;
+    }
+  };
+}
+
 function registerBenchmark(program) {
   const bench = program
     .command('benchmark')
@@ -1131,7 +1145,7 @@ function registerBenchmark(program) {
     .option('--json', 'Machine-readable JSON output')
     .option('-q, --quiet', 'Suppress non-essential output')
     .option('-s, --save [path]', 'Save results to JSON file')
-    .action(benchmarkEmbed);
+    .action(withTelemetry("embed", benchmarkEmbed));
 
   // ── benchmark rerank ──
   bench
@@ -1145,7 +1159,7 @@ function registerBenchmark(program) {
     .option('--json', 'Machine-readable JSON output')
     .option('-q, --quiet', 'Suppress non-essential output')
     .option('-s, --save [path]', 'Save results to JSON file')
-    .action(benchmarkRerank);
+    .action(withTelemetry("rerank", benchmarkRerank));
 
   // ── benchmark similarity ──
   bench
@@ -1158,7 +1172,7 @@ function registerBenchmark(program) {
     .option('-d, --dimensions <n>', 'Output dimensions')
     .option('--json', 'Machine-readable JSON output')
     .option('-q, --quiet', 'Suppress non-essential output')
-    .action(benchmarkSimilarity);
+    .action(withTelemetry("similarity", benchmarkSimilarity));
 
   // ── benchmark cost ──
   bench
@@ -1170,7 +1184,7 @@ function registerBenchmark(program) {
     .option('--volumes <list>', 'Comma-separated daily query volumes', '100,1000,10000,100000')
     .option('--json', 'Machine-readable JSON output')
     .option('-q, --quiet', 'Suppress non-essential output')
-    .action(benchmarkCost);
+    .action(withTelemetry("cost", benchmarkCost));
 
   // ── benchmark batch ──
   bench
@@ -1182,7 +1196,7 @@ function registerBenchmark(program) {
     .option('-f, --file <path>', 'Load texts from file')
     .option('--json', 'Machine-readable JSON output')
     .option('-q, --quiet', 'Suppress non-essential output')
-    .action(benchmarkBatch);
+    .action(withTelemetry("batch", benchmarkBatch));
 
   // ── benchmark quantization ──
   bench
@@ -1198,7 +1212,7 @@ function registerBenchmark(program) {
     .option('--json', 'Machine-readable JSON output')
     .option('-q, --quiet', 'Suppress non-essential output')
     .option('-s, --save [path]', 'Save results to JSON file')
-    .action(benchmarkQuantization);
+    .action(withTelemetry("quantization", benchmarkQuantization));
 
   // ── benchmark asymmetric ──
   bench
@@ -1211,7 +1225,7 @@ function registerBenchmark(program) {
     .option('-k, --top-k <n>', 'Show top K results', '5')
     .option('--json', 'Machine-readable JSON output')
     .option('-q, --quiet', 'Suppress non-essential output')
-    .action(benchmarkAsymmetric);
+    .action(withTelemetry("asymmetric", benchmarkAsymmetric));
 
   // ── benchmark space ──
   bench
@@ -1223,7 +1237,7 @@ function registerBenchmark(program) {
     .option('-d, --dimensions <n>', 'Output dimensions (must be supported by all models)')
     .option('--json', 'Machine-readable JSON output')
     .option('-q, --quiet', 'Suppress non-essential output')
-    .action(benchmarkSpace);
+    .action(withTelemetry("space", benchmarkSpace));
 }
 
 /**

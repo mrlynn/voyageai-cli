@@ -188,6 +188,12 @@ function registerWorkflow(program) {
       }
 
       // Execute workflow
+      const telemetry = require('../lib/telemetry');
+      const wfDone = telemetry.timer('cli_workflow_run', {
+        workflowName,
+        stepCount: definition.steps?.length || 0,
+        isBuiltin: !!(definition._source === 'builtin'),
+      });
       try {
         const result = await executeWorkflow(definition, {
           inputs: opts.input,
@@ -223,6 +229,8 @@ function registerWorkflow(program) {
           console.error(`${pc.dim('Complete.')} ${result.steps.length} steps, ${result.totalTimeMs}ms total.`);
           console.error();
         }
+
+        wfDone();
 
         // Output
         if (opts.json) {
@@ -404,9 +412,11 @@ function registerWorkflow(program) {
         packageName = WORKFLOW_PREFIX + packageName;
       }
 
+      const telemetry = require('../lib/telemetry');
       console.log(`Installing ${pc.cyan(packageName)}...`);
 
       try {
+        telemetry.send('cli_workflow_install', { packageName });
         const result = installPackage(packageName, { global: opts.global });
         console.log(`${pc.green('✔')} Downloaded ${pc.cyan(packageName)}@${result.version}`);
 
@@ -479,11 +489,13 @@ function registerWorkflow(program) {
     .action(async (query, opts) => {
       const { searchNpm } = require('../lib/npm-utils');
 
+      const telemetry = require('../lib/telemetry');
       console.log(`Searching npm for vai-workflow packages matching "${query}"...`);
       console.log();
 
       try {
         const results = await searchNpm(query, { limit: parseInt(opts.limit, 10) });
+        telemetry.send('cli_workflow_search', { query: query.slice(0, 50), resultCount: results.length });
 
         if (opts.json) {
           console.log(JSON.stringify(results, null, 2));

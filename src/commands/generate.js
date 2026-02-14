@@ -123,7 +123,9 @@ function registerGenerate(program) {
     .option('-l, --list', 'List available components')
     .option('-q, --quiet', 'Suppress hints and metadata')
     .action(async (component, opts) => {
+      const telemetry = require('../lib/telemetry');
       try {
+        telemetry.send('cli_generate', { provider: opts.target, model: opts.model });
         // Determine target
         const target = opts.target || detectTarget();
         

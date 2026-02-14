@@ -105,6 +105,8 @@ function registerDemo(program) {
     .option('--skip-pipeline', 'Skip the full pipeline step (Step 5)')
     .option('--keep', 'Keep the demo collection after pipeline step')
     .action(async (opts) => {
+      const telemetry = require('../lib/telemetry');
+      const demoStart = Date.now();
       const noPause = !opts.pause;
 
       // ── Preflight: check API key ──
@@ -425,6 +427,8 @@ function registerDemo(program) {
       console.log('');
       console.log('  Happy searching! 🚀');
       console.log('');
+
+      telemetry.send('cli_demo', { durationMs: Date.now() - demoStart });
     });
 }
 

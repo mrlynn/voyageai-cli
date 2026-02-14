@@ -3283,11 +3283,14 @@ select:focus { outline: none; border-color: var(--accent); }
 @keyframes wfStoreDetailSlideIn { from { transform: translateY(20px); opacity: 0; } }
 .wf-store-detail-panel {
   background: var(--bg-surface); border: 1px solid var(--border); border-radius: 18px;
-  width: 100%; max-width: 580px; max-height: 82vh; overflow-y: auto;
-  animation: wfStoreDetailSlideIn 0.18s ease-out;
+  width: 100%; max-width: 580px; max-height: 82vh; overflow: hidden;
+  animation: wfStoreDetailSlideIn 0.18s ease-out; display: flex; flex-direction: column;
 }
-.wf-store-detail-panel::-webkit-scrollbar { width: 4px; }
-.wf-store-detail-panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+.wf-store-detail-scroll {
+  overflow-y: auto; flex: 1; min-height: 0;
+}
+.wf-store-detail-scroll::-webkit-scrollbar { width: 4px; }
+.wf-store-detail-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
 .wf-store-detail-hero { padding: 28px 28px 20px; border-radius: 18px 18px 0 0; position: relative; }
 .wf-store-detail-hero::before { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 25%, var(--bg-surface) 100%); border-radius: 18px 18px 0 0; }
 .wf-store-detail-hero-inner { position: relative; z-index: 1; display: flex; align-items: center; gap: 14px; }
@@ -6581,6 +6584,17 @@ function sendTelemetry(event, extra = {}) {
   } catch { /* telemetry should never break the app */ }
 }
 
+function telemetryTimer(event, baseFields = {}) {
+  const start = performance.now();
+  return (extra = {}) => {
+    sendTelemetry(event, {
+      ...baseFields,
+      ...extra,
+      durationMs: Math.round(performance.now() - start),
+    });
+  };
+}
+
 function initTelemetryToggle() {
   const toggle = document.getElementById('settingsTelemetry');
   if (!toggle) return;
@@ -6613,6 +6627,7 @@ async function init() {
   // Telemetry
   initTelemetryToggle();
   sendTelemetry('app_launch');
+  sendTelemetry('playground_open');
 }
 
 // ── Tabs ──
@@ -6679,6 +6694,7 @@ function switchTab(tab) {
   if (settingsBtn) settingsBtn.classList.toggle('active', tab === 'settings');
   // Track tab views
   sendTelemetry('tab_view', { tab });
+  sendTelemetry('playground_tab', { tab });
   
   // Initialize Home page if switching to it
   if (tab === 'home') {
@@ -7174,11 +7190,13 @@ window.doEmbed = async function() {
   hideError('embedError');
   const text = document.getElementById('embedInput').value.trim();
   if (!text) { showError('embedError', 'Enter some text to embed'); return; }
-  sendTelemetry('api_call', { endpoint: 'embed', model: document.getElementById('embedModel').value });
+  const _embedModel = document.getElementById('embedModel').value;
+  sendTelemetry('api_call', { endpoint: 'embed', model: _embedModel });
+  const _embedDone = telemetryTimer('playground_embed', { model: _embedModel, inputType: document.getElementById('embedInputType').value || undefined });
 
   setLoading('embedBtn', true);
   try {
-    const model = document.getElementById('embedModel').value;
+    const model = _embedModel;
     const inputType = document.getElementById('embedInputType').value || undefined;
     const dims = document.getElementById('embedDimensions').value;
     const dimensions = dims ? parseInt(dims, 10) : undefined;
@@ -7216,6 +7234,7 @@ window.doEmbed = async function() {
     buildHeatmap(emb, document.getElementById('embedHeatmap'));
 
     document.getElementById('embedResult').classList.add('visible');
+    _embedDone();
   } catch (err) {
     showError('embedError', err.message);
   } finally {
@@ -7258,6 +7277,7 @@ function buildHeatmap(vec, container) {
 window.doCompare = async function() {
   hideError('compareError');
   sendTelemetry('api_call', { endpoint: 'compare', model: document.getElementById('compareModel').value });
+  const _compareDone = telemetryTimer('playground_similarity', { model: document.getElementById('compareModel').value });
   const a = document.getElementById('compareA').value.trim();
   const b = document.getElementById('compareB').value.trim();
   if (!a || !b) { showError('compareError', 'Enter text in both fields'); return; }
@@ -7340,6 +7360,7 @@ window.doCompare = async function() {
     `;
 
     document.getElementById('compareResult').classList.add('visible');
+    _compareDone();
   } catch (err) {
     showError('compareError', err.message);
   } finally {
@@ -7351,6 +7372,7 @@ window.doCompare = async function() {
 window.doSearch = async function(withRerank) {
   hideError('searchError');
   sendTelemetry('api_call', { endpoint: withRerank ? 'rerank' : 'search' });
+  const _searchDone = telemetryTimer(withRerank ? 'playground_rerank' : 'playground_search', { model: document.getElementById('searchEmbedModel').value });
   const query = document.getElementById('searchQuery').value.trim();
   const docsText = document.getElementById('searchDocs').value.trim();
   if (!query || !docsText) { showError('searchError', 'Enter a query and documents'); return; }
@@ -7395,6 +7417,7 @@ window.doSearch = async function(withRerank) {
 
     renderSearchResults(embeddingResults, rerankResults);
     document.getElementById('searchResult').classList.add('visible');
+    _searchDone();
   } catch (err) {
     showError('searchError', err.message);
   } finally {
@@ -13893,6 +13916,7 @@ function wfStoreShowDetail(name) {
   modal.className = 'wf-store-detail-bg';
   modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
   modal.innerHTML = `<div class="wf-store-detail-panel" onclick="event.stopPropagation()">
+    <div class="wf-store-detail-scroll">
     <div class="wf-store-detail-hero" style="background:${wf.gradient}">
       <button class="wf-store-detail-close" onclick="document.getElementById('wfStoreDetail').remove()">×</button>
       <div class="wf-store-detail-hero-inner">
@@ -13960,6 +13984,7 @@ function wfStoreShowDetail(name) {
         <button class="wf-store-detail-btn wf-store-detail-btn-secondary" onclick="wfStoreRun('${wf.name}')">Run</button>
         <button class="wf-store-detail-btn wf-store-detail-btn-secondary" onclick="wfStoreCanvas('${wf.name}')">Canvas</button>
       </div>
+    </div>
     </div>
   </div>`;
   document.body.appendChild(modal);

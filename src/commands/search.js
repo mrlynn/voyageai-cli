@@ -29,7 +29,13 @@ function registerSearch(program) {
     .option('-q, --quiet', 'Suppress non-essential output')
     .action(async (opts) => {
       let client;
+      const telemetry = require('../lib/telemetry');
       try {
+        const done = telemetry.timer('cli_search', {
+          model: opts.model,
+          limit: opts.limit,
+        });
+
         const useColor = !opts.json;
         const useSpinner = useColor && !opts.quiet;
         let spin;
@@ -96,6 +102,8 @@ function registerSearch(program) {
           console.log('');
         }
 
+        done({ resultCount: cleanResults.length });
+
         if (cleanResults.length === 0) {
           console.log(ui.yellow('No results found.'));
           return;
@@ -113,6 +121,7 @@ function registerSearch(program) {
           console.log('');
         }
       } catch (err) {
+        telemetry.send('cli_error', { command: 'search', errorType: err.constructor.name });
         console.error(ui.error(err.message));
         process.exit(1);
       } finally {

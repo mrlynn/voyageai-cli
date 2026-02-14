@@ -67,6 +67,7 @@ function registerPipeline(program) {
     .option('-q, --quiet', 'Suppress non-essential output')
     .action(async (input, opts) => {
       let client;
+      const telemetry = require('../lib/telemetry');
       try {
         // Merge project config
         const { config: proj } = loadProject();
@@ -88,6 +89,13 @@ function registerPipeline(program) {
           console.error(ui.error('Database and collection required. Use --db/--collection or "vai init".'));
           process.exit(1);
         }
+
+        const done = telemetry.timer('cli_pipeline', {
+          model,
+          chunkStrategy: strategy,
+          chunkSize,
+          createIndex: !!opts.createIndex,
+        });
 
         if (!STRATEGIES.includes(strategy)) {
           console.error(ui.error(`Unknown strategy: "${strategy}". Available: ${STRATEGIES.join(', ')}`));
@@ -313,7 +321,14 @@ function registerPipeline(program) {
           console.log('');
           console.log(ui.dim('  Next: vai query "your search" --db ' + db + ' --collection ' + collection));
         }
+
+        done({
+          fileCount: files.length,
+          chunkCount: allChunks.length,
+          docCount: insertResult.insertedCount,
+        });
       } catch (err) {
+        telemetry.send('cli_error', { command: 'pipeline', errorType: err.constructor.name });
         console.error(ui.error(err.message));
         process.exit(1);
       } finally {

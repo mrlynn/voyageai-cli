@@ -51,6 +51,7 @@ function registerChunk(program) {
     .option('--json', 'Machine-readable JSON output')
     .option('-q, --quiet', 'Suppress non-essential output')
     .action(async (input, opts) => {
+      const telemetry = require('../lib/telemetry');
       try {
         // Load project config, merge with CLI opts
         const { config: projectConfig } = loadProject();
@@ -61,6 +62,12 @@ function registerChunk(program) {
         const overlap = opts.overlap != null ? opts.overlap : (chunkConfig.overlap != null ? chunkConfig.overlap : DEFAULTS.overlap);
         const minSize = opts.minSize || chunkConfig.minSize || DEFAULTS.minSize;
         const textField = opts.textField || 'text';
+
+        const done = telemetry.timer('cli_chunk', {
+          strategy,
+          chunkSize,
+          overlap,
+        });
 
         if (!STRATEGIES.includes(strategy)) {
           console.error(ui.error(`Unknown strategy: "${strategy}". Available: ${STRATEGIES.join(', ')}`));
@@ -227,7 +234,10 @@ function registerChunk(program) {
             console.log(ui.label('Est. cost', ui.dim(`~$${cost < 0.01 ? cost.toFixed(4) : cost.toFixed(2)} with voyage-4-large`)));
           }
         }
+
+        done({ chunkCount: allChunks.length });
       } catch (err) {
+        telemetry.send('cli_error', { command: 'chunk', errorType: err.constructor.name });
         console.error(ui.error(err.message));
         process.exit(1);
       }

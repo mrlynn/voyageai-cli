@@ -17,6 +17,8 @@ function registerMcpServer(program) {
     .option('--no-sse', 'Disable SSE transport (SSE is enabled by default for HTTP)')
     .option('--verbose', 'Enable debug logging to stderr')
     .action(async (opts) => {
+      const telemetry = require('../lib/telemetry');
+      telemetry.send('cli_mcp_start', { transport: opts.transport });
       if (opts.verbose) {
         process.env.VAI_MCP_VERBOSE = '1';
       }

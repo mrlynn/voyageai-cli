@@ -23,6 +23,7 @@ function registerSimilarity(program) {
     .option('--json', 'Machine-readable JSON output')
     .option('-q, --quiet', 'Suppress non-essential output')
     .action(async (texts, opts) => {
+      const telemetry = require('../lib/telemetry');
       try {
         let textA = null;
         let compareTexts = [];
@@ -56,6 +57,8 @@ function registerSimilarity(program) {
           console.error(ui.error('Need at least two texts to compare. Provide a second text, --file2, or --against.'));
           process.exit(1);
         }
+
+        const done = telemetry.timer('cli_similarity', { model: opts.model });
 
         // Batch all texts into one API call
         const allTexts = [textA, ...compareTexts];
@@ -154,7 +157,10 @@ function registerSimilarity(program) {
           console.log(`  ${ui.dim(`${results.length} comparisons, ${tokens} tokens`)}`);
           console.log('');
         }
+
+        done();
       } catch (err) {
+        telemetry.send('cli_error', { command: 'similarity', errorType: err.constructor.name });
         console.error(ui.error(err.message));
         process.exit(1);
       }

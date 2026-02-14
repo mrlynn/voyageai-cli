@@ -21,6 +21,8 @@ function registerInit(program) {
     .option('--json', 'Output created config as JSON (non-interactive)')
     .option('-q, --quiet', 'Suppress non-essential output')
     .action(async (opts) => {
+      const telemetry = require('../lib/telemetry');
+      telemetry.send('cli_init');
       // Check for existing config
       const existing = findProjectFile();
       if (existing && !opts.force) {
