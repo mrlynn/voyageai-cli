@@ -98,6 +98,7 @@
     "electron-builder": "^25.0.0"
   },
   "dependencies": {
+    "@vaicli/vai-workflow-contract-clause-finder": "^1.0.0",
     "electron-updater": "^6.7.3",
     "picocolors": "^1.0.0"
   }
