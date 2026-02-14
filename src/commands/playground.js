@@ -67,6 +67,10 @@ function createPlaygroundServer() {
   // Chat history — scoped to the server lifetime (in-memory, no persistence)
   let _chatHistory = null;
 
+  // Workflow store catalog cache (15 min TTL)
+  let _catalogCache = null;
+  let _catalogCacheTime = 0;
+
   const server = http.createServer(async (req, res) => {
     // CORS headers for local dev
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -352,6 +356,95 @@ function createPlaygroundServer() {
 
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify(origins));
+        return;
+      }
+
+      // API: Workflow Store catalog (cached 15 min)
+      if (req.method === 'GET' && req.url === '/api/workflows/catalog') {
+        try {
+          // Check cache
+          if (_catalogCache && (Date.now() - _catalogCacheTime < 15 * 60 * 1000)) {
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify(_catalogCache));
+            return;
+          }
+
+          const { getRegistry } = require('../lib/workflow-registry');
+          const registry = getRegistry({ force: true });
+
+          // Build set of installed package names
+          const installedNames = new Set();
+          for (const c of [...(registry.official || []), ...(registry.community || [])]) {
+            if (c.name) installedNames.add(c.name);
+          }
+
+          // Try to fetch from npm
+          let npmWorkflows = [];
+          try {
+            const { searchNpm } = require('../lib/npm-utils');
+            const results = await searchNpm('', { limit: 50 });
+            npmWorkflows = results || [];
+          } catch (e) {
+            // npm unreachable — fall back to installed only
+          }
+
+          // Static gradient/featured config
+          const GRADIENTS = {
+            'model-shootout': 'linear-gradient(135deg, #0D9488, #06B6D4)',
+            'asymmetric-search': 'linear-gradient(135deg, #00D4AA, #40E0FF)',
+            'cost-optimizer': 'linear-gradient(135deg, #F59E0B, #EF4444)',
+            'question-decomposition': 'linear-gradient(135deg, #8B5CF6, #EC4899)',
+            'contract-clause-finder': 'linear-gradient(135deg, #1E40AF, #7C3AED)',
+            'knowledge-base-bootstrap': 'linear-gradient(135deg, #059669, #10B981)',
+            'embedding-drift-detector': 'linear-gradient(135deg, #DC2626, #F97316)',
+            'multilingual-search': 'linear-gradient(135deg, #0EA5E9, #6366F1)',
+            'financial-risk-scanner': 'linear-gradient(135deg, #B45309, #D97706)',
+            'doc-freshness': 'linear-gradient(135deg, #4338CA, #7C3AED)',
+            'incremental-sync': 'linear-gradient(135deg, #15803D, #4ADE80)',
+            'rag-ab-test': 'linear-gradient(135deg, #BE185D, #F472B6)',
+            'hybrid-precision-search': 'linear-gradient(135deg, #0891B2, #22D3EE)',
+            'code-migration-helper': 'linear-gradient(135deg, #475569, #94A3B8)',
+            'meeting-action-items': 'linear-gradient(135deg, #7C2D12, #EA580C)',
+            'collection-overlap-audit': 'linear-gradient(135deg, #6D28D9, #A78BFA)',
+            'query-quality-scorer': 'linear-gradient(135deg, #9333EA, #C084FC)',
+            'clinical-protocol-match': 'linear-gradient(135deg, #0F766E, #2DD4BF)',
+            'batch-quality-gate': 'linear-gradient(135deg, #166534, #86EFAC)',
+            'index-health-check': 'linear-gradient(135deg, #1D4ED8, #60A5FA)',
+          };
+          const FEATURED = ['model-shootout', 'asymmetric-search', 'cost-optimizer'];
+          const DEFAULT_GRADIENT = 'linear-gradient(135deg, #334155, #64748B)';
+
+          const workflows = npmWorkflows.map(r => {
+            const shortName = (r.name || '').replace(/^@vaicli\/vai-workflow-/, '').replace(/^vai-workflow-/, '');
+            const vai = r.vai || {};
+            return {
+              name: shortName,
+              packageName: r.name,
+              version: r.version || '1.0.0',
+              description: r.description || '',
+              category: vai.category || 'utility',
+              tags: vai.tags || [],
+              tools: vai.tools || [],
+              steps: vai.steps || 0,
+              layers: vai.layers || 0,
+              tier: (r.name || '').startsWith('@vaicli/') ? 'official' : 'community',
+              downloads: r.downloads || 0,
+              featured: FEATURED.includes(shortName),
+              installed: installedNames.has(r.name),
+              gradient: GRADIENTS[shortName] || DEFAULT_GRADIENT,
+            };
+          });
+
+          const result = { workflows, lastUpdated: new Date().toISOString() };
+          _catalogCache = result;
+          _catalogCacheTime = Date.now();
+
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify(result));
+        } catch (err) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: err.message }));
+        }
         return;
       }
 
