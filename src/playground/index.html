@@ -11293,6 +11293,7 @@ async function sendChatMessage() {
     let fullText = '';
     let sources = [];
     let thinkingPanel = null;
+    let retrievalCostTracked = false;
 
     while (true) {
       const { done, value } = await reader.read();
@@ -11313,6 +11314,14 @@ async function sendChatMessage() {
 
           if (currentEvent === 'retrieval') {
             typing.textContent = `Retrieved ${data.docs?.length || 0} docs (${data.timeMs}ms)`;
+            // Track embedding cost from retrieval (flag to avoid double-counting with done)
+            if (data.tokens?.embed) {
+              CostTracker.addOperation('chat-embed', 'voyage-4-lite', data.tokens.embed);
+              retrievalCostTracked = true;
+            }
+            if (data.tokens?.rerank) {
+              CostTracker.addOperation('chat-rerank', 'rerank-2.5', data.tokens.rerank);
+            }
           }
 
           if (currentEvent === 'tool_call') {
@@ -11337,6 +11346,20 @@ async function sendChatMessage() {
           }
 
           if (currentEvent === 'done') {
+            // Track costs from done metadata (only if retrieval event didn't already)
+            const meta = data.metadata || {};
+            if (!retrievalCostTracked && meta.tokens?.embed) {
+              CostTracker.addOperation('chat-embed', 'voyage-4-lite', meta.tokens.embed);
+            }
+            if (!retrievalCostTracked && meta.tokens?.rerank) {
+              CostTracker.addOperation('chat-rerank', 'rerank-2.5', meta.tokens.rerank);
+            }
+            // Agent mode: track tool call tokens from steps/layers
+            if (data.steps) {
+              for (const step of data.steps) {
+                if (step.tokens) CostTracker.addOperation('chat-tool', step.model || 'voyage-4-lite', step.tokens);
+              }
+            }
             // Finalize the thinking panel (collapse, show elapsed)
             if (thinkingPanel) thinkingPanel.finalize();
             // Render accumulated text as markdown for assistant messages
