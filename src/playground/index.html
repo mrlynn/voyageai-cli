@@ -7234,6 +7234,7 @@ window.doEmbed = async function() {
     buildHeatmap(emb, document.getElementById('embedHeatmap'));
 
     document.getElementById('embedResult').classList.add('visible');
+    CostTracker.addOperation('embed', model, data.usage?.total_tokens || 0);
     _embedDone();
   } catch (err) {
     showError('embedError', err.message);
@@ -7360,6 +7361,7 @@ window.doCompare = async function() {
     `;
 
     document.getElementById('compareResult').classList.add('visible');
+    CostTracker.addOperation('compare', data.model || model, data.usage?.total_tokens || 0);
     _compareDone();
   } catch (err) {
     showError('compareError', err.message);
@@ -7405,9 +7407,10 @@ window.doSearch = async function(withRerank) {
     const embeddingResults = scores.slice(0, topK);
 
     let rerankResults = null;
+    let rerankData = null;
     if (withRerank) {
       const rerankModel = document.getElementById('searchRerankModel').value;
-      const rerankData = await apiPost('/api/rerank', { query, documents, model: rerankModel, topK });
+      rerankData = await apiPost('/api/rerank', { query, documents, model: rerankModel, topK });
       rerankResults = rerankData.data.map(r => ({
         index: r.index,
         text: documents[r.index],
@@ -7417,6 +7420,11 @@ window.doSearch = async function(withRerank) {
 
     renderSearchResults(embeddingResults, rerankResults);
     document.getElementById('searchResult').classList.add('visible');
+    CostTracker.addOperation('search', embedModel, embedData.usage?.total_tokens || 0);
+    if (withRerank && rerankResults) {
+      const rerankModel = document.getElementById('searchRerankModel').value;
+      CostTracker.addOperation('rerank', rerankModel, rerankData?.usage?.total_tokens || 0);
+    }
     _searchDone();
   } catch (err) {
     showError('searchError', err.message);
@@ -8071,6 +8079,7 @@ window.doBenchLatency = async function() {
         latencies.push(data.elapsed);
         tokens = data.tokens;
         dims = data.dimensions;
+        CostTracker.addOperation('bench-latency', model, data.tokens || 0);
       } catch (err) {
         document.getElementById(`bench-stats-${mi}`).textContent = 'Error';
         document.getElementById(`bench-bar-${mi}`).classList.remove('running');
@@ -8164,6 +8173,8 @@ window.doBenchRanking = async function() {
 
       rankedA = rankBySimilarity(dataA.embeddings, documents, topK);
       rankedB = rankBySimilarity(dataB.embeddings, documents, topK);
+      CostTracker.addOperation('bench-ranking', modelA, dataA.tokens || 0);
+      CostTracker.addOperation('bench-ranking', modelB, dataB.tokens || 0);
     } else {
       // Rerank mode
       const [dataA, dataB] = await Promise.all([
@@ -8181,6 +8192,8 @@ window.doBenchRanking = async function() {
         text: documents[r.index],
         score: r.relevance_score,
       }));
+      CostTracker.addOperation('bench-ranking', modelA, dataA.usage?.total_tokens || 0);
+      CostTracker.addOperation('bench-ranking', modelB, dataB.usage?.total_tokens || 0);
     }
 
     // Render comparison
@@ -8321,6 +8334,7 @@ window.doBenchQuantization = async function() {
       const start = performance.now();
       const data = await apiPost('/api/embed', body);
       const elapsed = performance.now() - start;
+      CostTracker.addOperation('bench-quantization', model, data.usage?.total_tokens || 0);
 
       const embeddings = data.data.map(d => d.embedding);
       const queryEmbed = embeddings[0];
@@ -9882,6 +9896,7 @@ window.doMultimodalCompare = async function() {
     }
 
     document.getElementById('mmResult').classList.add('visible');
+    CostTracker.addOperation('multimodal-compare', data.model || model, usage.total_tokens || 0);
   } catch (err) {
     showError('mmError', err.message);
   } finally {
@@ -10085,6 +10100,7 @@ window.doMultimodalSearch = async function() {
     });
 
     document.getElementById('mmSearchResult').classList.add('visible');
+    CostTracker.addOperation('multimodal-search', model, data.usage?.total_tokens || 0);
   } catch (err) {
     showError('mmSearchError', err.message);
   } finally {
@@ -11482,6 +11498,57 @@ init();
 .bug-success h3{margin:0 0 12px;color:var(--accent-text);font-size:20px}
 .bug-success p{margin:8px 0;color:var(--text-muted)}
 .bug-success code{background:rgba(255,255,255,0.1);padding:4px 8px;border-radius:4px;font-size:12px;color:var(--accent)}
+
+/* ── Cost Dashboard ── */
+#costStatusBar {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 9999;
+  background: var(--bg-surface); border-top: 1px solid var(--border);
+  padding: 8px 16px; font-size: 13px; color: var(--text-dim);
+  display: flex; align-items: center; gap: 12px; backdrop-filter: blur(8px);
+  opacity: 0.95; font-family: 'SF Mono', 'Fira Code', monospace;
+}
+#costStatusBar .cost-sep { color: var(--border); }
+#costStatusBar .cost-savings { color: var(--green, #00D4AA); }
+#costStatusBar .cost-more { color: var(--red, #FF6960); }
+#costStatusBar .cost-val { color: var(--accent); font-weight: 600; }
+#costDetailsToggle {
+  margin-left: auto; cursor: pointer; color: var(--accent);
+  background: none; border: 1px solid var(--border); border-radius: 6px;
+  padding: 3px 10px; font-size: 12px; font-family: inherit;
+}
+#costDetailsToggle:hover { background: var(--bg-card); }
+#costDetailPanel {
+  position: fixed; bottom: 40px; left: 0; right: 0; z-index: 9998;
+  background: var(--bg-surface); border-top: 1px solid var(--border);
+  max-height: 0; overflow: hidden; transition: max-height 0.3s ease;
+}
+#costDetailPanel.open { max-height: 50vh; overflow-y: auto; }
+#costDetailPanel .cost-panel-inner { padding: 16px 20px; }
+#costDetailPanel table {
+  width: 100%; border-collapse: collapse; font-size: 12px; font-family: 'SF Mono', 'Fira Code', monospace;
+}
+#costDetailPanel th { text-align: left; color: var(--text-muted); font-weight: 500; padding: 4px 8px; border-bottom: 1px solid var(--border); }
+#costDetailPanel td { padding: 4px 8px; color: var(--text-dim); border-bottom: 1px solid var(--border); }
+#costDetailPanel .cost-panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+#costDetailPanel .cost-panel-header h3 { margin: 0; font-size: 14px; color: var(--text); }
+#costResetBtn {
+  background: none; border: 1px solid var(--border); border-radius: 6px;
+  padding: 3px 10px; font-size: 12px; color: var(--text-dim); cursor: pointer; font-family: inherit;
+}
+#costResetBtn:hover { background: var(--bg-card); color: var(--text); }
+.cost-projection { margin-top: 12px; font-size: 12px; color: var(--text-muted); }
+.cost-projection span { color: var(--accent); font-weight: 600; }
+.cost-toast {
+  position: fixed; bottom: 52px; left: 50%; transform: translateX(-50%);
+  background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px;
+  padding: 8px 16px; font-size: 12px; color: var(--text-dim); z-index: 10000;
+  font-family: 'SF Mono', 'Fira Code', monospace; white-space: nowrap;
+  animation: costToastIn 0.2s ease, costToastOut 0.3s ease 2.7s forwards;
+  pointer-events: none;
+}
+@keyframes costToastIn { from { opacity: 0; transform: translateX(-50%) translateY(10px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+@keyframes costToastOut { from { opacity: 1; } to { opacity: 0; transform: translateX(-50%) translateY(-10px); } }
+body { padding-bottom: 44px; }
 </style>
 
 <!-- Bug button moved to sidebar footer -->
@@ -14199,6 +14266,159 @@ let wfInitialized = false;
   document.getElementById('bugSubmit').addEventListener('click', submitBug);
   document.getElementById('bugGithub').addEventListener('click', openGithub);
   document.getElementById('bugSuccessClose').addEventListener('click', hideBugReporter);
+})();
+</script>
+
+<!-- Cost Dashboard -->
+<div id="costDetailPanel">
+  <div class="cost-panel-inner">
+    <div class="cost-panel-header">
+      <h3>💰 Cost Dashboard</h3>
+      <button id="costResetBtn" onclick="CostTracker.reset()">Reset Session</button>
+    </div>
+    <table id="costOpsTable">
+      <thead><tr><th>Time</th><th>Operation</th><th>Model</th><th>Tokens</th><th>Cost</th><th>If v4-large</th><th>If OpenAI</th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <div class="cost-projection" id="costProjection"></div>
+  </div>
+</div>
+<div id="costStatusBar">
+  <span>💰 Session: <span class="cost-val" id="costTotal">$0.000000</span></span>
+  <span class="cost-sep">│</span>
+  <span><span id="costTokens">0</span> tokens</span>
+  <span class="cost-sep">│</span>
+  <span><span id="costOps">0</span> ops</span>
+  <span class="cost-sep">│</span>
+  <span>If symmetric: <span id="costSymmetric">$0.000000</span> <span id="costSymDelta"></span></span>
+  <span class="cost-sep">│</span>
+  <span>If OpenAI: <span id="costCompetitor">$0.000000</span> <span id="costCompDelta"></span></span>
+  <button id="costDetailsToggle" onclick="CostTracker.togglePanel()">Details ▾</button>
+</div>
+
+<script>
+(function() {
+  const PRICING = {
+    'voyage-4-large': 0.12, 'voyage-4': 0.06, 'voyage-4-lite': 0.02,
+    'voyage-code-3': 0.18, 'voyage-finance-2': 0.12, 'voyage-law-2': 0.12,
+    'rerank-2.5': 0.05, 'rerank-2.5-lite': 0.02,
+    'voyage-multimodal-3': 0.12,
+  };
+  const LARGE_PRICE = 0.12;
+  const OPENAI_PRICE = 0.13;
+
+  function getPrice(model) {
+    if (PRICING[model] != null) return PRICING[model];
+    // fuzzy match
+    for (const k of Object.keys(PRICING)) {
+      if (model.includes(k) || k.includes(model)) return PRICING[k];
+    }
+    return 0.06; // default fallback
+  }
+
+  function costForTokens(pricePerMillion, tokens) {
+    return (pricePerMillion / 1_000_000) * tokens;
+  }
+
+  const session = { operations: [], totalCost: 0, totalTokens: 0, totalOperations: 0, symmetricCost: 0, competitorCost: 0 };
+
+  window.CostTracker = {
+    addOperation(op, model, tokens) {
+      if (!tokens || tokens <= 0) return;
+      const price = getPrice(model);
+      const cost = costForTokens(price, tokens);
+      const largeCost = costForTokens(LARGE_PRICE, tokens);
+      const competitorCost = costForTokens(OPENAI_PRICE, tokens);
+
+      session.operations.push({
+        timestamp: new Date(), operation: op, model, tokens, cost, hypotheticalLargeCost: largeCost, hypotheticalCompetitorCost: competitorCost
+      });
+      session.totalCost += cost;
+      session.totalTokens += tokens;
+      session.totalOperations++;
+      session.symmetricCost += largeCost;
+      session.competitorCost += competitorCost;
+
+      this._updateUI();
+      this._showToast(op, model, tokens, cost, largeCost);
+    },
+
+    reset() {
+      session.operations.length = 0;
+      session.totalCost = 0; session.totalTokens = 0; session.totalOperations = 0;
+      session.symmetricCost = 0; session.competitorCost = 0;
+      this._updateUI();
+    },
+
+    getProjectedMonthlyCost(queriesPerMonth) {
+      if (session.totalOperations === 0) return { actual: 0, symmetric: 0, competitor: 0 };
+      const avgCost = session.totalCost / session.totalOperations;
+      const avgSym = session.symmetricCost / session.totalOperations;
+      const avgComp = session.competitorCost / session.totalOperations;
+      return { actual: avgCost * queriesPerMonth, symmetric: avgSym * queriesPerMonth, competitor: avgComp * queriesPerMonth };
+    },
+
+    togglePanel() {
+      const panel = document.getElementById('costDetailPanel');
+      const btn = document.getElementById('costDetailsToggle');
+      const isOpen = panel.classList.toggle('open');
+      btn.textContent = isOpen ? 'Details ▴' : 'Details ▾';
+      if (isOpen && typeof sendTelemetry === 'function') sendTelemetry('cost_panel_viewed');
+    },
+
+    _updateUI() {
+      document.getElementById('costTotal').textContent = '$' + session.totalCost.toFixed(6);
+      document.getElementById('costTokens').textContent = session.totalTokens.toLocaleString();
+      document.getElementById('costOps').textContent = session.totalOperations;
+      document.getElementById('costSymmetric').textContent = '$' + session.symmetricCost.toFixed(6);
+      document.getElementById('costCompetitor').textContent = '$' + session.competitorCost.toFixed(6);
+
+      // Deltas
+      const symDelta = document.getElementById('costSymDelta');
+      const compDelta = document.getElementById('costCompDelta');
+      if (session.totalCost > 0) {
+        const symPct = ((session.symmetricCost - session.totalCost) / session.totalCost * 100).toFixed(0);
+        const compPct = ((session.competitorCost - session.totalCost) / session.totalCost * 100).toFixed(0);
+        symDelta.textContent = symPct > 0 ? `(+${symPct}%)` : `(${symPct}%)`;
+        symDelta.className = symPct > 0 ? 'cost-more' : 'cost-savings';
+        compDelta.textContent = compPct > 0 ? `(+${compPct}%)` : `(${compPct}%)`;
+        compDelta.className = compPct > 0 ? 'cost-more' : 'cost-savings';
+      } else {
+        symDelta.textContent = ''; compDelta.textContent = '';
+      }
+
+      // Table
+      const tbody = document.querySelector('#costOpsTable tbody');
+      tbody.innerHTML = session.operations.map(o => `<tr>
+        <td>${o.timestamp.toLocaleTimeString()}</td>
+        <td>${o.operation}</td>
+        <td>${o.model}</td>
+        <td>${o.tokens.toLocaleString()}</td>
+        <td>$${o.cost.toFixed(6)}</td>
+        <td>$${o.hypotheticalLargeCost.toFixed(6)}</td>
+        <td>$${o.hypotheticalCompetitorCost.toFixed(6)}</td>
+      </tr>`).join('');
+
+      // Projection
+      const proj = this.getProjectedMonthlyCost(1_000_000);
+      const projEl = document.getElementById('costProjection');
+      if (session.totalOperations > 0) {
+        projEl.innerHTML = `📊 Projected at 1M queries/month: <span>$${proj.actual.toFixed(2)}</span> actual │ $${proj.symmetric.toFixed(2)} symmetric │ $${proj.competitor.toFixed(2)} OpenAI`;
+      } else {
+        projEl.innerHTML = '';
+      }
+    },
+
+    _showToast(op, model, tokens, cost, largeCost) {
+      const saved = largeCost > 0 ? Math.round((1 - cost / largeCost) * 100) : 0;
+      const savingsText = saved > 0 ? ` — saved ${saved}% vs v4-large` : '';
+      const toast = document.createElement('div');
+      toast.className = 'cost-toast';
+      toast.textContent = `✅ ${op} — $${cost.toFixed(6)} (${model}, ${tokens.toLocaleString()} tokens)${savingsText}`;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 3100);
+    }
+  };
 })();
 </script>
 
