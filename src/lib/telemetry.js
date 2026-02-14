@@ -69,4 +69,26 @@ function send(event, extra = {}) {
   } catch { /* telemetry should never break the CLI */ }
 }
 
-module.exports = { send, isEnabled };
+/**
+ * Create a timer that auto-sends a telemetry event on completion.
+ * Usage:
+ *   const done = telemetry.timer('cli_query', { model: 'voyage-4-large' });
+ *   // ... do work ...
+ *   done({ resultCount: 5 });  // sends event with durationMs calculated
+ *
+ * @param {string} event - Event name
+ * @param {object} [baseFields] - Fields known at start time
+ * @returns {function} done(extraFields) - Call to send the event
+ */
+function timer(event, baseFields = {}) {
+  const start = Date.now();
+  return (extraFields = {}) => {
+    send(event, {
+      ...baseFields,
+      ...extraFields,
+      durationMs: Date.now() - start,
+    });
+  };
+}
+
+module.exports = { send, isEnabled, timer };

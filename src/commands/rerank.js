@@ -25,6 +25,7 @@ function registerRerank(program) {
     .option('--json', 'Machine-readable JSON output')
     .option('-q, --quiet', 'Suppress non-essential output')
     .action(async (opts) => {
+      const telemetry = require('../lib/telemetry');
       try {
         let documents = opts.documents;
 
@@ -81,6 +82,12 @@ function registerRerank(program) {
           opts.model = chosenModel;
         }
 
+        const done = telemetry.timer('cli_rerank', {
+          model: opts.model,
+          docCount: documents.length,
+          topK: opts.topK,
+        });
+
         const body = {
           query: opts.query,
           documents,
@@ -134,7 +141,10 @@ function registerRerank(program) {
 
         console.log('');
         console.log(ui.success('Reranking complete'));
+
+        done();
       } catch (err) {
+        telemetry.send('cli_error', { command: 'rerank', errorType: err.constructor.name });
         console.error(ui.error(err.message));
         process.exit(1);
       }

@@ -223,6 +223,11 @@ async function runChat(opts) {
     }
   }
 
+  // Telemetry: track session
+  const telemetry = require('../lib/telemetry');
+  const chatStartTime = Date.now();
+  let turnCount = 0;
+
   // Track tool calls from last agent response (for /tools and /export-workflow)
   let lastToolCalls = [];
 
@@ -276,6 +281,7 @@ async function runChat(opts) {
     }
 
     // Execute chat turn
+    turnCount++;
     try {
       if (isAgent) {
         lastToolCalls = await handleAgentTurn(input, {
@@ -296,13 +302,25 @@ async function runChat(opts) {
     rl.prompt();
   });
 
+  function sendChatTelemetry() {
+    telemetry.send('cli_chat', {
+      provider: llmConfig.provider,
+      llmModel: llmConfig.model,
+      embeddingModel: proj.model || undefined,
+      turnCount,
+      durationMs: Date.now() - chatStartTime,
+    });
+  }
+
   rl.on('close', async () => {
+    sendChatTelemetry();
     await cleanup(historyMongo);
     process.exit(0);
   });
 
   // Handle Ctrl+C gracefully
   rl.on('SIGINT', async () => {
+    sendChatTelemetry();
     console.log('');
     await cleanup(historyMongo);
     process.exit(0);

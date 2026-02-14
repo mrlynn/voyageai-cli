@@ -26,6 +26,7 @@ function registerEmbed(program) {
     .option('-q, --quiet', 'Suppress non-essential output')
     .action(async (text, opts) => {
       try {
+        const telemetry = require('../lib/telemetry');
         const texts = await resolveTextInput(text, opts.file);
 
         // --estimate: show cost comparison, optionally switch model
@@ -44,6 +45,13 @@ function registerEmbed(program) {
         if (!opts.inputType && !opts.json && !opts.quiet && process.stdout.isTTY) {
           console.error(ui.dim('ℹ Tip: Use --input-type query or --input-type document for better retrieval accuracy.'));
         }
+
+        const done = telemetry.timer('cli_embed', {
+          model: opts.model,
+          inputType: opts.inputType || undefined,
+          textCount: texts.length,
+          outputDtype: opts.outputDtype,
+        });
 
         let spin;
         if (useSpinner) {
@@ -101,7 +109,10 @@ function registerEmbed(program) {
 
         console.log('');
         console.log(ui.success('Embeddings generated'));
+
+        done({ dimensions: result.data[0]?.embedding?.length });
       } catch (err) {
+        telemetry.send('cli_error', { command: 'embed', errorType: err.constructor.name });
         console.error(ui.error(err.message));
         process.exit(1);
       }
