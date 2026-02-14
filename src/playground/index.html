@@ -10306,9 +10306,21 @@ async function wfSearchNpm() {
 
 async function wfInstallPkg(name) {
   const results = document.getElementById('wfInstallResults');
-  // Find and disable the button
+  // Find the clicked button and show installing state
   const btns = results.querySelectorAll('button');
-  btns.forEach(b => { if (b.textContent === 'Install') b.disabled = true; });
+  let clickedBtn = null;
+  btns.forEach(b => {
+    if (b.textContent === 'Install' && !clickedBtn) {
+      // Find the button in the same row as the package name
+      const row = b.closest('div[style*="border-bottom"]');
+      if (row && row.textContent.includes(name)) {
+        clickedBtn = b;
+        b.textContent = 'Installing...';
+        b.disabled = true;
+        b.style.opacity = '0.7';
+      }
+    }
+  });
 
   try {
     const res = await fetch('/api/workflows/community/install', {
@@ -10316,18 +10328,23 @@ async function wfInstallPkg(name) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name })
     });
-    const data = await res.json();
+    const text = await res.text();
+    let data;
+    try { data = JSON.parse(text); } catch { data = { error: text || 'Empty response' }; }
     if (data.success) {
-      await wfLoadLibrary(); // Refresh the library
-      // Re-run search to update button states
+      if (clickedBtn) { clickedBtn.textContent = '✓ Installed'; clickedBtn.style.opacity = '1'; }
+      await wfLoadLibrary();
       await wfSearchNpm();
     } else {
-      alert('Install failed: ' + (data.error || 'Unknown error'));
-      btns.forEach(b => b.disabled = false);
+      const errMsg = data.error || 'Unknown error';
+      if (clickedBtn) { clickedBtn.textContent = 'Install'; clickedBtn.disabled = false; clickedBtn.style.opacity = '1'; }
+      console.error('Install failed:', errMsg);
+      alert('Install failed: ' + errMsg);
     }
   } catch (err) {
+    if (clickedBtn) { clickedBtn.textContent = 'Install'; clickedBtn.disabled = false; clickedBtn.style.opacity = '1'; }
+    console.error('Install error:', err);
     alert('Install failed: ' + err.message);
-    btns.forEach(b => b.disabled = false);
   }
 }
 

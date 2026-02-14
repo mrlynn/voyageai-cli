@@ -102,18 +102,25 @@ function installPackage(packageName, options = {}) {
     );
   }
 
-  const globalFlag = options.global ? '-g' : '';
-  const cmd = `npm install ${packageName} ${globalFlag} --save --ignore-scripts 2>&1`;
+  // Determine install location: use global if explicitly requested,
+  // or if there's no local package.json (e.g. running inside Electron app)
+  const hasLocalPkg = !options.global && (() => {
+    try { return require('fs').existsSync(require('path').join(process.cwd(), 'package.json')); }
+    catch { return false; }
+  })();
+  const useGlobal = options.global || !hasLocalPkg;
+  const globalFlag = useGlobal ? '-g' : '';
+  const cmd = `npm install ${packageName} ${globalFlag} ${useGlobal ? '' : '--save'} --ignore-scripts 2>&1`;
 
   try {
     const output = execSync(cmd, {
       encoding: 'utf8',
       timeout: 60000,
-      cwd: options.global ? undefined : process.cwd(),
+      cwd: useGlobal ? undefined : process.cwd(),
     });
 
     // Find installed version from node_modules
-    const pkgPath = resolvePackagePath(packageName, options.global);
+    const pkgPath = resolvePackagePath(packageName, useGlobal);
     let version = 'unknown';
     if (pkgPath) {
       try {
