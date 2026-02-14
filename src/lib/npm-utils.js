@@ -36,8 +36,10 @@ function isWorkflowPackage(name) {
 async function searchNpm(query, options = {}) {
   const limit = options.limit || 10;
   // Search for both scoped and unscoped packages
-  const searchText = `vai-workflow ${query}`;
-  const url = `${NPM_SEARCH_URL}?text=${encodeURIComponent(searchText)}&size=${limit * 2}`;
+  const searchText = query
+    ? `keywords:vai-workflow ${query}`
+    : `keywords:vai-workflow`;
+  const url = `${NPM_SEARCH_URL}?text=${encodeURIComponent(searchText)}&size=${limit * 3}`;
 
   const res = await fetch(url, {
     headers: { 'Accept': 'application/json' },
