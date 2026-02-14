@@ -10230,7 +10230,105 @@ function wfRenderLibrary() {
   }
   html += '</div>';
 
+  // Install from npm button
+  html += `<div style="padding:8px 12px;">
+    <button onclick="wfShowInstallDialog()" style="background:none;border:1px dashed var(--border);color:var(--accent);cursor:pointer;padding:6px 12px;border-radius:6px;font-size:11px;width:100%;text-align:center;">+ Install from npm</button>
+  </div>`;
+
   list.innerHTML = html;
+}
+
+// ── Install Dialog ──
+function wfShowInstallDialog() {
+  let modal = document.getElementById('wfInstallModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'wfInstallModal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:9999;';
+    modal.innerHTML = `
+      <div style="background:var(--bg-panel);border:1px solid var(--border);border-radius:12px;padding:24px;width:480px;max-height:70vh;display:flex;flex-direction:column;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <h3 style="margin:0;font-size:16px;">Install Workflow Package</h3>
+          <button onclick="wfCloseInstallDialog()" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:18px;">✕</button>
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:12px;">
+          <input id="wfInstallSearch" type="text" placeholder="Search vai workflows on npm..." style="flex:1;padding:8px 12px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;" onkeydown="if(event.key==='Enter')wfSearchNpm()">
+          <button onclick="wfSearchNpm()" style="padding:8px 16px;background:var(--accent);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;">Search</button>
+        </div>
+        <div id="wfInstallResults" style="overflow-y:auto;flex:1;min-height:100px;"></div>
+      </div>`;
+    document.body.appendChild(modal);
+    modal.addEventListener('click', (e) => { if (e.target === modal) wfCloseInstallDialog(); });
+  }
+  modal.style.display = 'flex';
+  document.getElementById('wfInstallSearch').value = '';
+  document.getElementById('wfInstallResults').innerHTML = '<div style="padding:16px;color:var(--text-muted);font-size:12px;text-align:center;">Search for vai-workflow packages on npm</div>';
+  document.getElementById('wfInstallSearch').focus();
+}
+
+function wfCloseInstallDialog() {
+  const modal = document.getElementById('wfInstallModal');
+  if (modal) modal.style.display = 'none';
+}
+
+async function wfSearchNpm() {
+  const query = document.getElementById('wfInstallSearch').value.trim();
+  const results = document.getElementById('wfInstallResults');
+  if (!query) return;
+  results.innerHTML = '<div style="padding:16px;color:var(--text-muted);font-size:12px;text-align:center;">Searching...</div>';
+  try {
+    const res = await fetch('/api/workflows/community/search?q=' + encodeURIComponent(query) + '&limit=10');
+    const data = await res.json();
+    if (!data.results || data.results.length === 0) {
+      results.innerHTML = '<div style="padding:16px;color:var(--text-muted);font-size:12px;text-align:center;">No packages found</div>';
+      return;
+    }
+    results.innerHTML = data.results.map(r => {
+      const isOfficial = r.name.startsWith('@vaicli/');
+      const badge = isOfficial ? '<span style="background:var(--accent);color:#fff;font-size:9px;padding:1px 5px;border-radius:3px;margin-left:6px;">OFFICIAL</span>' : '';
+      const installed = [...(wfState.official||[]), ...(wfState.community||[])].some(w => w.name === r.name);
+      const btn = installed
+        ? '<button disabled style="padding:4px 10px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text-muted);font-size:11px;cursor:default;">Installed</button>'
+        : `<button onclick="wfInstallPkg('${r.name.replace(/'/g,"\\'")}')" style="padding:4px 10px;background:var(--accent);color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:11px;">Install</button>`;
+      return `<div style="padding:10px 12px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;">
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;font-weight:500;">${r.name}${badge}</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">${r.description || ''}</div>
+          <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">v${r.version || '?'}</div>
+        </div>
+        <div style="margin-left:12px;flex-shrink:0;">${btn}</div>
+      </div>`;
+    }).join('');
+  } catch (err) {
+    results.innerHTML = `<div style="padding:16px;color:#f44;font-size:12px;text-align:center;">Search failed: ${err.message}</div>`;
+  }
+}
+
+async function wfInstallPkg(name) {
+  const results = document.getElementById('wfInstallResults');
+  // Find and disable the button
+  const btns = results.querySelectorAll('button');
+  btns.forEach(b => { if (b.textContent === 'Install') b.disabled = true; });
+
+  try {
+    const res = await fetch('/api/workflows/community/install', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name })
+    });
+    const data = await res.json();
+    if (data.success) {
+      await wfLoadLibrary(); // Refresh the library
+      // Re-run search to update button states
+      await wfSearchNpm();
+    } else {
+      alert('Install failed: ' + (data.error || 'Unknown error'));
+      btns.forEach(b => b.disabled = false);
+    }
+  } catch (err) {
+    alert('Install failed: ' + err.message);
+    btns.forEach(b => b.disabled = false);
+  }
 }
 
 function wfToggleExamples(btn) {
