@@ -2,6 +2,10 @@
   "name": "intelligent-ingest",
   "description": "Chunk, deduplicate, and selectively ingest documents",
   "version": "1.0.0",
+  "branding": {
+    "icon": "brain",
+    "color": "#0D9488"
+  },
   "inputs": {
     "text": { "type": "string", "required": true, "description": "Document text to process" },
     "source": { "type": "string", "required": true, "description": "Source identifier" },

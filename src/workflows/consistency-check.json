@@ -3,6 +3,10 @@
   "name": "Consistency Check",
   "description": "Compare content about the same topic across two collections using semantic similarity",
   "version": "1.0.0",
+  "branding": {
+    "icon": "check-circle",
+    "color": "#166534"
+  },
   "inputs": {
     "topic": {
       "type": "string",

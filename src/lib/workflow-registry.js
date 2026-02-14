@@ -292,15 +292,17 @@ function resolveWorkflow(name) {
   const registry = getRegistry();
 
   // Helper to find in a list by exact name or prefixed name
+  // Note: We allow packages with errors as long as they have a valid definition
+  // (errors may be warnings like "missing vai field" that don't prevent execution)
   const findInList = (list, searchName) => {
     // Exact match first
-    let match = list.find(c => c.name === searchName && c.errors.length === 0 && c.definition);
+    let match = list.find(c => c.name === searchName && c.definition);
     if (match) return match;
 
     // Try with prefix for unscoped
     if (!searchName.startsWith(WORKFLOW_PREFIX) && !searchName.startsWith('@')) {
       const prefixed = WORKFLOW_PREFIX + searchName;
-      match = list.find(c => c.name === prefixed && c.errors.length === 0 && c.definition);
+      match = list.find(c => c.name === prefixed && c.definition);
       if (match) return match;
     }
 

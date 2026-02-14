@@ -8,6 +8,53 @@ const { validateWorkflow, ALL_TOOLS } = require('./workflow');
 const CATEGORIES = ['retrieval', 'analysis', 'ingestion', 'domain-specific', 'utility', 'integration'];
 
 /**
+ * Predefined Lucide icon names available for workflow branding.
+ * These map to SVG paths served by the playground/store.
+ */
+const BRANDING_ICONS = [
+  'trophy', 'search', 'dollar-sign', 'split', 'file-search', 'database',
+  'activity', 'globe', 'shield-alert', 'timer', 'refresh-cw', 'flask-conical',
+  'target', 'code', 'clipboard-list', 'layers', 'bar-chart-3', 'heart-pulse',
+  'brain', 'check-circle', 'zap', 'package', 'microscope', 'sparkle',
+  'scale', 'file-text', 'filter',
+];
+
+/**
+ * Default branding colors per category.
+ */
+const CATEGORY_COLORS = {
+  retrieval: '#00D4AA',
+  analysis: '#8B5CF6',
+  ingestion: '#059669',
+  'domain-specific': '#1E40AF',
+  utility: '#0D9488',
+  integration: '#0EA5E9',
+};
+
+/**
+ * Suggest a branding icon based on category and tools.
+ * @param {string} category
+ * @param {string[]} tools
+ * @returns {string}
+ */
+function suggestBrandingIcon(category, tools) {
+  const t = new Set(tools);
+  if (t.has('estimate') && t.has('similarity')) return 'trophy';
+  if (t.has('ingest')) return 'database';
+  if (t.has('generate') && t.has('query')) return 'sparkle';
+  if (t.has('rerank') && t.has('search')) return 'target';
+  if (t.has('search')) return 'search';
+  if (t.has('similarity')) return 'scale';
+  if (t.has('generate')) return 'brain';
+  if (t.has('http')) return 'globe';
+  const catMap = {
+    retrieval: 'search', analysis: 'bar-chart-3', ingestion: 'database',
+    'domain-specific': 'target', utility: 'zap', integration: 'package',
+  };
+  return catMap[category] || 'zap';
+}
+
+/**
  * Guess a category based on the tools a workflow uses.
  * @param {string[]} tools
  * @returns {string}
@@ -185,6 +232,10 @@ function scaffoldPackage(options) {
       category: guessedCategory,
       tags: tags || [],
       tools,
+      branding: {
+        icon: suggestBrandingIcon(guessedCategory, tools),
+        color: CATEGORY_COLORS[guessedCategory] || '#0D9488',
+      },
       inputs: {},
     },
     files: ['workflow.json', 'README.md'],
@@ -260,7 +311,9 @@ module.exports = {
   generateReadme,
   extractTools,
   guessCategory,
+  suggestBrandingIcon,
   toPackageName,
   emptyWorkflowTemplate,
   CATEGORIES,
+  BRANDING_ICONS,
 };

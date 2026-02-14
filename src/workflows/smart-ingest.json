@@ -3,6 +3,10 @@
   "name": "Smart Ingest",
   "description": "Check if a document is novel before ingesting (avoid duplicates)",
   "version": "1.0.0",
+  "branding": {
+    "icon": "database",
+    "color": "#059669"
+  },
   "inputs": {
     "text": {
       "type": "string",

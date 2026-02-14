@@ -3,6 +3,10 @@
   "name": "Multi-Collection Search",
   "description": "Search multiple collections, merge results, and rerank for best relevance",
   "version": "1.0.0",
+  "branding": {
+    "icon": "layers",
+    "color": "#0EA5E9"
+  },
   "inputs": {
     "query": {
       "type": "string",

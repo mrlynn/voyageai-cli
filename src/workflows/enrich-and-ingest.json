@@ -2,6 +2,10 @@
   "name": "enrich-and-ingest",
   "description": "Fetch external metadata, enrich document, then ingest",
   "version": "1.0.0",
+  "branding": {
+    "icon": "database",
+    "color": "#15803D"
+  },
   "inputs": {
     "document_url": { "type": "string", "required": true, "description": "URL to fetch document metadata from" },
     "text": { "type": "string", "required": true, "description": "Document text to ingest" }

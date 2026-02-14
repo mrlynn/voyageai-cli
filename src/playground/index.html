@@ -3240,6 +3240,8 @@ select:focus { outline: none; border-color: var(--accent); }
 .wf-store-featured-content { position: relative; z-index: 2; }
 .wf-store-featured-content h3 { font-family: var(--mono); font-size: 14px; font-weight: 700; margin-bottom: 4px; color: #fff; }
 .wf-store-featured-content p { font-size: 12px; color: rgba(255,255,255,.65); line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.wf-store-featured-icon { position: absolute; top: 14px; left: 16px; z-index: 2; width: 36px; height: 36px; border-radius: 10px; background: rgba(255,255,255,.18); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; }
+.wf-store-featured-icon svg { width: 20px; height: 20px; color: #fff; }
 .wf-store-featured-dl { position: absolute; top: 12px; right: 14px; z-index: 2; font-family: var(--mono); font-size: 10px; color: rgba(255,255,255,.5); }
 .wf-store-featured-author { position: relative; z-index: 2; display: flex; align-items: center; gap: 6px; margin-top: 6px; font-size: 11px; color: rgba(255,255,255,.55); }
 .wf-store-featured-avatar { width: 18px; height: 18px; border-radius: 50%; background: rgba(255,255,255,.2); display: flex; align-items: center; justify-content: center; font-size: 9px; color: #fff; font-weight: 700; overflow: hidden; }
@@ -3254,6 +3256,9 @@ select:focus { outline: none; border-color: var(--accent); }
 .wf-store-card-bar { position: absolute; top: 0; left: 0; right: 0; height: 2px; opacity: 0; transition: opacity 0.15s; }
 .wf-store-card:hover .wf-store-card-bar { opacity: 1; }
 .wf-store-card-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 6px; gap: 8px; }
+.wf-store-card-icon { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.wf-store-card-icon svg { width: 16px; height: 16px; }
+.wf-store-card-name-wrap { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .wf-store-card-name { font-family: var(--mono); font-size: 13px; font-weight: 700; color: var(--text); }
 .wf-store-card-badges { display: flex; gap: 4px; }
 .wf-store-badge-official { font-family: var(--mono); font-size: 9px; padding: 2px 7px; border-radius: 100px; background: rgba(0,212,170,.1); color: var(--accent); border: 1px solid rgba(0,212,170,.15); white-space: nowrap; }
@@ -3285,7 +3290,9 @@ select:focus { outline: none; border-color: var(--accent); }
 .wf-store-detail-panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
 .wf-store-detail-hero { padding: 28px 28px 20px; border-radius: 18px 18px 0 0; position: relative; }
 .wf-store-detail-hero::before { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 25%, var(--bg-surface) 100%); border-radius: 18px 18px 0 0; }
-.wf-store-detail-hero-inner { position: relative; z-index: 1; }
+.wf-store-detail-hero-inner { position: relative; z-index: 1; display: flex; align-items: center; gap: 14px; }
+.wf-store-detail-hero-icon { width: 48px; height: 48px; border-radius: 12px; background: rgba(255,255,255,.18); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.wf-store-detail-hero-icon svg { width: 26px; height: 26px; color: #fff; }
 .wf-store-detail-close {
   position: absolute; top: 14px; right: 14px; z-index: 2; width: 28px; height: 28px;
   border-radius: 50%; background: rgba(0,0,0,.35); border: none; color: #fff; font-size: 16px;
@@ -3799,6 +3806,13 @@ select:focus { outline: none; border-color: var(--accent); }
 .home-logo {
   width: 32px;
   height: 32px;
+}
+
+.home-header-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.01em;
 }
 
 .home-version-badge {
@@ -4585,23 +4599,13 @@ select:focus { outline: none; border-color: var(--accent); }
   <!-- Header Bar -->
   <div class="home-header">
     <div class="home-header-left">
-      <svg class="home-logo" viewBox="0 0 100 100">
-        <defs>
-          <linearGradient id="vai-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" style="stop-color:#00ED64"/>
-            <stop offset="100%" style="stop-color:#00C2FF"/>
-          </linearGradient>
-        </defs>
-        <path d="M20 15 L50 75 L80 15 L65 15 L50 45 L35 15 Z" fill="url(#vai-gradient)"/>
-      </svg>
+      <img class="home-logo" id="homeLogo" src="/icons/V.png" alt="Vai" onerror="this.src='/icons/dark/64.png'">
+      <span class="home-header-title">Voyage AI Playground</span>
       <span class="home-version-badge" id="homeVersionBadge">v1.0.0</span>
     </div>
     <div class="home-header-right">
       <button class="home-settings-btn" onclick="switchTab('settings')" title="Settings">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
-          <circle cx="12" cy="12" r="3"/>
-          <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1m16.95-4.95L19.07 8.93M4.93 4.93L2.05 7.05M19.07 15.07l-2.12-2.12M4.93 19.07L2.05 16.95"/>
-        </svg>
+        <svg width="20" height="20" viewBox="0 0 24 24"><use href="#lg-config"/></svg>
       </button>
     </div>
   </div>
@@ -4741,7 +4745,7 @@ select:focus { outline: none; border-color: var(--accent); }
         <a href="https://docs.vaicli.com" target="_blank" rel="noopener">Documentation</a>
         <a href="https://github.com/mrlynn/voyageai-cli" target="_blank" rel="noopener">GitHub</a>
         <a href="#" onclick="reportBug()">Report Bug</a>
-        <a href="#" target="_blank" rel="noopener">Community / Discord</a>
+        <!-- <a href="#" target="_blank" rel="noopener">Community / Discord</a> -->
       </div>
       <div class="home-footer-branding">
         <span>Built with Voyage AI + MongoDB Atlas</span>
@@ -6701,33 +6705,66 @@ async function homeInit() {
   
   try {
     // Load version info
-    updateHomeVersionInfo();
-    
+    await updateHomeVersionInfo();
+
     // Check API key status and show warning if needed
     checkApiKeyStatus();
     
-    // Load all data
+    // Load announcements and releases first (fast, local data)
     await Promise.all([
       loadAnnouncements(),
       loadReleases(),
-      loadMarketplaceData()
     ]);
     
-    // Render all sections
+    // Render available sections immediately
     renderAnnouncements();
     renderReleases();
-    renderFeaturedWorkflows();
-    renderCommunityWorkflows();
+
+    // Load marketplace data in background (slower, network-dependent)
+    loadMarketplaceData().then(() => {
+      renderFeaturedWorkflows();
+      renderCommunityWorkflows();
+    }).catch(() => {});
     
   } catch (err) {
     console.error('Failed to initialize Home page:', err);
   }
 }
 
-function updateHomeVersionInfo() {
-  const version = window.appVersion || '1.0.0';
+async function updateHomeVersionInfo() {
+  let version = window.appVersion;
+
+  // If version not set yet, try to fetch from Electron
+  if (!version && window.vai && window.vai.getVersion) {
+    try {
+      const v = await window.vai.getVersion();
+      if (v) {
+        version = typeof v === 'object' ? v.app : v;
+        window.appVersion = version;
+      }
+    } catch (e) {
+      console.warn('Failed to get version:', e);
+    }
+  }
+
+  // Fallback for web mode: try to get from CLI package.json via API
+  if (!version) {
+    try {
+      const res = await fetch('/api/version');
+      if (res.ok) {
+        const data = await res.json();
+        version = data.version || data.app;
+        if (version) window.appVersion = version;
+      }
+    } catch (e) {
+      // Ignore fetch errors in web mode
+    }
+  }
+
+  version = version || 'dev';
   document.getElementById('homeVersionBadge').textContent = `v${version}`;
-  document.getElementById('homeFooterVersion').textContent = `Version ${version} • © 2026 VAI`;
+  const footerEl = document.getElementById('homeFooterVersion');
+  if (footerEl) footerEl.textContent = `Version ${version} • © 2026 VAI`;
 }
 
 async function checkApiKeyStatus() {
@@ -6768,23 +6805,30 @@ async function loadReleases() {
     const cached = localStorage.getItem('vai-releases-cache');
     if (cached) {
       const { data, timestamp } = JSON.parse(cached);
-      // Use cache if less than 30 minutes old
-      if (Date.now() - timestamp < 30 * 60 * 1000) {
+      // Use cache if less than 30 minutes old AND it has real data (not fallback)
+      const hasRealData = data && data.length > 0 && !data[0].version?.includes('1.0.0');
+      if (hasRealData && Date.now() - timestamp < 30 * 60 * 1000) {
         homeData.releases = data;
         return;
       }
     }
-    
+
     const res = await fetch('/api/home/releases');
     const data = await res.json();
     homeData.releases = data.releases;
-    
-    // Cache the result
-    localStorage.setItem('vai-releases-cache', JSON.stringify({
-      data: data.releases,
-      timestamp: Date.now()
-    }));
-    
+
+    // Only cache if we got real data (not fallback)
+    const hasRealData = data.releases && data.releases.length > 0 && !data.releases[0].version?.includes('1.0.0');
+    if (hasRealData) {
+      localStorage.setItem('vai-releases-cache', JSON.stringify({
+        data: data.releases,
+        timestamp: Date.now()
+      }));
+    } else {
+      // Clear stale cache if we got fallback data
+      localStorage.removeItem('vai-releases-cache');
+    }
+
   } catch (err) {
     console.error('Failed to load releases:', err);
     homeData.releases = [];
@@ -6877,7 +6921,7 @@ function dismissAnnouncement(id) {
 function renderReleases() {
   const container = document.getElementById('releasesTimeline');
   
-  const releases = homeData.releases.slice(0, 3); // Show latest 3
+  const releases = homeData.releases.slice(0, 1); // Show only the latest release
   container.innerHTML = releases.map(release => `
     <div class="home-release-item">
       <div>
@@ -6901,15 +6945,15 @@ function renderFeaturedWorkflows() {
   
   container.innerHTML = homeData.featuredWorkflows.map(workflow => `
     <div class="home-workflow-card">
-      <h5>${workflow.name}</h5>
-      <p>${workflow.description}</p>
+      <h5>${workflow.name || 'Untitled'}</h5>
+      <p>${workflow.description || 'No description available'}</p>
       <div class="home-workflow-meta">
-        <div class="home-workflow-domain">${workflow.domain}</div>
-        <div class="home-workflow-author">by ${workflow.author}</div>
+        <div class="home-workflow-domain">${workflow.category || 'utility'}</div>
+        <div class="home-workflow-author">by ${workflow.author?.name || 'unknown'}</div>
       </div>
       <div class="home-workflow-actions">
-        <button class="home-workflow-btn" onclick="installWorkflow('${workflow.id}')">Install</button>
-        <button class="home-workflow-btn" onclick="viewWorkflowDetails('${workflow.id}')">Details</button>
+        <button class="home-workflow-btn" onclick="installWorkflow('${workflow.packageName}')">Install</button>
+        <button class="home-workflow-btn" onclick="viewWorkflowDetails('${workflow.packageName}')">Details</button>
       </div>
     </div>
   `).join('');
@@ -6924,31 +6968,33 @@ function renderCommunityWorkflows() {
   }
   
   let workflows = [...homeData.communityWorkflows];
-  
+
   // Sort based on current mode
   switch (homeData.sortMode) {
     case 'trending':
-      workflows.sort((a, b) => (b.installs * 2 + b.rating * 10) - (a.installs * 2 + a.rating * 10));
+      // Use downloads as proxy for trending
+      workflows.sort((a, b) => (b.downloads || 0) - (a.downloads || 0));
       break;
     case 'newest':
-      workflows.sort((a, b) => new Date(b.published) - new Date(a.published));
+      // Sort by name alphabetically as fallback (no publish date available)
+      workflows.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
       break;
     case 'installs':
-      workflows.sort((a, b) => b.installs - a.installs);
+      workflows.sort((a, b) => (b.downloads || 0) - (a.downloads || 0));
       break;
   }
   
   container.innerHTML = workflows.slice(0, 6).map(workflow => `
     <div class="home-workflow-card">
-      <h5>${workflow.name}</h5>
-      <p>${workflow.description}</p>
+      <h5>${workflow.name || 'Untitled'}</h5>
+      <p>${workflow.description || 'No description available'}</p>
       <div class="home-workflow-meta">
-        <div class="home-workflow-domain">${workflow.domain}</div>
-        <div class="home-workflow-author">by ${workflow.author}</div>
+        <div class="home-workflow-domain">${workflow.category || 'utility'}</div>
+        <div class="home-workflow-author">by ${workflow.author?.name || 'unknown'}</div>
       </div>
       <div class="home-workflow-actions">
-        <button class="home-workflow-btn" onclick="installWorkflow('${workflow.id}')">Install</button>
-        <button class="home-workflow-btn" onclick="viewWorkflowDetails('${workflow.id}')">Details</button>
+        <button class="home-workflow-btn" onclick="installWorkflow('${workflow.packageName}')">Install</button>
+        <button class="home-workflow-btn" onclick="viewWorkflowDetails('${workflow.packageName}')">Details</button>
       </div>
     </div>
   `).join('');
@@ -6972,16 +7018,22 @@ function filterAndSwitchWorkflows(domain) {
   console.log('Filtering workflows by domain:', domain);
 }
 
-function installWorkflow(id) {
-  // TODO: Implement workflow installation
-  console.log('Installing workflow:', id);
-  alert('Workflow installation will be implemented in the marketplace.');
+function installWorkflow(packageName) {
+  // Use the workflow store install function
+  wfStoreInstall(packageName, null);
 }
 
-function viewWorkflowDetails(id) {
-  // TODO: Switch to workflow details view
-  console.log('Viewing workflow details:', id);
-  switchTab('workflows');
+function viewWorkflowDetails(packageName) {
+  // Find the workflow by packageName and show its details
+  const allWorkflows = [...(homeData.featuredWorkflows || []), ...(homeData.communityWorkflows || [])];
+  const wf = allWorkflows.find(w => w.packageName === packageName);
+  if (wf) {
+    // Use the workflow store detail modal
+    wfStoreShowDetail(wf.name);
+  } else {
+    // Fallback: switch to workflows tab
+    switchTab('workflows');
+  }
 }
 
 function publishWorkflow() {
@@ -13631,27 +13683,52 @@ const WF_STORE_CATEGORIES = [
 ];
 // Hardcoded fallback data matching the spec's 20 workflows
 const WF_STORE_FALLBACK = [
-  { name:'model-shootout', packageName:'@vaicli/vai-workflow-model-shootout', description:'Compare voyage-4-large, voyage-4, and voyage-4-lite side-by-side on your data.', category:'utility', tags:['benchmarking','model-comparison','cost','shared-space'], tools:['query','estimate','similarity','generate'], steps:7, layers:2, tier:'official', downloads:3241, featured:true, installed:false, gradient:'linear-gradient(135deg, #0D9488, #06B6D4)' },
-  { name:'asymmetric-search', packageName:'@vaicli/vai-workflow-asymmetric-search', description:'The canonical shared embedding space demo. Embed with voyage-4-large, query with voyage-4-lite. ~83% cost reduction.', category:'retrieval', tags:['asymmetric','shared-space','cost-savings'], tools:['embed','search','rerank'], steps:3, layers:2, tier:'official', downloads:4812, featured:true, installed:false, gradient:'linear-gradient(135deg, #00D4AA, #40E0FF)' },
-  { name:'cost-optimizer', packageName:'@vaicli/vai-workflow-cost-optimizer', description:'Quantify the exact cost savings of asymmetric retrieval on your collection.', category:'utility', tags:['cost','optimization','asymmetric'], tools:['query','estimate','similarity','generate'], steps:6, layers:3, tier:'official', downloads:2918, featured:true, installed:false, gradient:'linear-gradient(135deg, #F59E0B, #EF4444)' },
-  { name:'question-decomposition', packageName:'@vaicli/vai-workflow-question-decomposition', description:'Break complex questions into focused sub-queries, search each in parallel, merge and rerank.', category:'retrieval', tags:['decomposition','fan-out','synthesis'], tools:['generate','query','merge','rerank'], steps:6, layers:4, tier:'official', downloads:1876, installed:false, gradient:'linear-gradient(135deg, #8B5CF6, #EC4899)' },
-  { name:'contract-clause-finder', packageName:'@vaicli/vai-workflow-contract-clause-finder', description:'Search legal documents for specific clause types using voyage-law-2.', category:'domain-specific', tags:['legal','contracts','voyage-law-2'], tools:['query','rerank','generate'], steps:3, layers:3, tier:'official', downloads:1543, installed:false, gradient:'linear-gradient(135deg, #1E40AF, #7C3AED)' },
-  { name:'knowledge-base-bootstrap', packageName:'@vaicli/vai-workflow-knowledge-base-bootstrap', description:'End-to-end onboarding: ingest documents, verify, test a query, and generate a status report.', category:'integration', tags:['onboarding','bootstrap','end-to-end'], tools:['ingest','collections','query','generate'], steps:4, layers:3, tier:'official', downloads:3654, installed:false, gradient:'linear-gradient(135deg, #059669, #10B981)' },
-  { name:'embedding-drift-detector', packageName:'@vaicli/vai-workflow-embedding-drift-detector', description:'Monitor embedding quality over time. Re-embed sample documents and compare against stored vectors.', category:'analysis', tags:['monitoring','drift','operations'], tools:['search','embed','similarity','generate'], steps:5, layers:3, tier:'official', downloads:987, installed:false, gradient:'linear-gradient(135deg, #DC2626, #F97316)' },
-  { name:'multilingual-search', packageName:'@vaicli/vai-workflow-multilingual-search', description:'Translate your query into multiple languages, search each in parallel, merge and rerank.', category:'retrieval', tags:['multilingual','translation','cross-lingual'], tools:['generate','query','merge','rerank'], steps:5, layers:4, tier:'official', downloads:1234, installed:false, gradient:'linear-gradient(135deg, #0EA5E9, #6366F1)' },
-  { name:'financial-risk-scanner', packageName:'@vaicli/vai-workflow-financial-risk-scanner', description:'Scan financial documents for risk signals using voyage-finance-2.', category:'domain-specific', tags:['finance','risk','voyage-finance-2'], tools:['query','rerank','filter','generate'], steps:4, layers:3, tier:'official', downloads:1102, installed:false, gradient:'linear-gradient(135deg, #B45309, #D97706)' },
-  { name:'doc-freshness', packageName:'@vaicli/vai-workflow-doc-freshness', description:'Audit your knowledge base for stale content. Gathers metadata from 5 tools in parallel.', category:'utility', tags:['freshness','maintenance','monitoring'], tools:['collections','models','search','explain','estimate','generate'], steps:6, layers:2, tier:'official', downloads:1456, installed:false, gradient:'linear-gradient(135deg, #4338CA, #7C3AED)' },
-  { name:'incremental-sync', packageName:'@vaicli/vai-workflow-incremental-sync', description:'Smart ingestion with deduplication. Checks similarity before storing.', category:'ingestion', tags:['dedup','sync','conditional'], tools:['search','similarity','ingest','filter','generate'], steps:5, layers:3, tier:'official', downloads:2103, installed:false, gradient:'linear-gradient(135deg, #15803D, #4ADE80)' },
-  { name:'rag-ab-test', packageName:'@vaicli/vai-workflow-rag-ab-test', description:'Run the same query through two RAG configurations side-by-side.', category:'integration', tags:['ab-test','comparison','evaluation'], tools:['query','generate'], steps:5, layers:3, tier:'official', downloads:1678, installed:false, gradient:'linear-gradient(135deg, #BE185D, #F472B6)' },
-  { name:'hybrid-precision-search', packageName:'@vaicli/vai-workflow-hybrid-precision-search', description:'Three retrieval strategies in parallel — lite, large, and filtered — merged and reranked.', category:'retrieval', tags:['hybrid','parallel','precision'], tools:['query','search','merge','rerank'], steps:5, layers:3, tier:'official', downloads:1890, installed:false, gradient:'linear-gradient(135deg, #0891B2, #22D3EE)' },
-  { name:'code-migration-helper', packageName:'@vaicli/vai-workflow-code-migration-helper', description:'Find similar code patterns across your codebase using voyage-code-3.', category:'domain-specific', tags:['code','migration','voyage-code-3'], tools:['query','rerank','generate'], steps:3, layers:3, tier:'official', downloads:932, installed:false, gradient:'linear-gradient(135deg, #475569, #94A3B8)' },
-  { name:'meeting-action-items', packageName:'@vaicli/vai-workflow-meeting-action-items', description:'Ingest meeting notes and extract structured action items with owners, deadlines, and context.', category:'domain-specific', tags:['meetings','action-items','productivity'], tools:['ingest','query','generate'], steps:3, layers:2, tier:'official', downloads:2567, installed:false, gradient:'linear-gradient(135deg, #7C2D12, #EA580C)' },
-  { name:'collection-overlap-audit', packageName:'@vaicli/vai-workflow-collection-overlap-audit', description:'Detect duplicate content across two collections.', category:'analysis', tags:['dedup','overlap','audit'], tools:['search','similarity','merge','filter','generate'], steps:5, layers:3, tier:'official', downloads:678, installed:false, gradient:'linear-gradient(135deg, #6D28D9, #A78BFA)' },
-  { name:'query-quality-scorer', packageName:'@vaicli/vai-workflow-query-quality-scorer', description:'Evaluate retrieval quality without ground truth labels.', category:'analysis', tags:['evaluation','quality','scoring'], tools:['query','similarity','transform','generate'], steps:4, layers:3, tier:'official', downloads:823, installed:false, gradient:'linear-gradient(135deg, #9333EA, #C084FC)' },
-  { name:'clinical-protocol-match', packageName:'@vaicli/vai-workflow-clinical-protocol-match', description:'Match clinical presentations to treatment protocols.', category:'domain-specific', tags:['clinical','healthcare','protocols'], tools:['query','rerank','generate'], steps:3, layers:3, tier:'official', downloads:712, installed:false, gradient:'linear-gradient(135deg, #0F766E, #2DD4BF)' },
-  { name:'batch-quality-gate', packageName:'@vaicli/vai-workflow-batch-quality-gate', description:'Quality-filtered ingestion. Only ingest content that meets your similarity threshold.', category:'ingestion', tags:['quality','gate','filtering'], tools:['search','embed','similarity','ingest','filter','generate'], steps:5, layers:3, tier:'official', downloads:543, installed:false, gradient:'linear-gradient(135deg, #166534, #86EFAC)' },
-  { name:'index-health-check', packageName:'@vaicli/vai-workflow-index-health-check', description:'Diagnostic pipeline for your vector index.', category:'utility', tags:['diagnostics','health','index'], tools:['collections','search','query','estimate','generate'], steps:5, layers:3, tier:'official', downloads:1345, installed:false, gradient:'linear-gradient(135deg, #1D4ED8, #60A5FA)' },
+  { name:'model-shootout', packageName:'@vaicli/vai-workflow-model-shootout', description:'Compare voyage-4-large, voyage-4, and voyage-4-lite side-by-side on your data.', category:'utility', tags:['benchmarking','model-comparison','cost','shared-space'], tools:['query','estimate','similarity','generate'], steps:7, tier:'official', downloads:3241, featured:true, installed:false, gradient:'linear-gradient(135deg, #0D9488, #06B6D4)' },
+  { name:'asymmetric-search', packageName:'@vaicli/vai-workflow-asymmetric-search', description:'The canonical shared embedding space demo. Embed with voyage-4-large, query with voyage-4-lite. ~83% cost reduction.', category:'retrieval', tags:['asymmetric','shared-space','cost-savings'], tools:['embed','search','rerank'], steps:3, tier:'official', downloads:4812, featured:true, installed:false, gradient:'linear-gradient(135deg, #00D4AA, #40E0FF)' },
+  { name:'cost-optimizer', packageName:'@vaicli/vai-workflow-cost-optimizer', description:'Quantify the exact cost savings of asymmetric retrieval on your collection.', category:'utility', tags:['cost','optimization','asymmetric'], tools:['query','estimate','similarity','generate'], steps:6, tier:'official', downloads:2918, featured:true, installed:false, gradient:'linear-gradient(135deg, #F59E0B, #EF4444)' },
+  { name:'question-decomposition', packageName:'@vaicli/vai-workflow-question-decomposition', description:'Break complex questions into focused sub-queries, search each in parallel, merge and rerank.', category:'retrieval', tags:['decomposition','fan-out','synthesis'], tools:['generate','query','merge','rerank'], steps:6, tier:'official', downloads:1876, installed:false, gradient:'linear-gradient(135deg, #8B5CF6, #EC4899)' },
+  { name:'contract-clause-finder', packageName:'@vaicli/vai-workflow-contract-clause-finder', description:'Search legal documents for specific clause types using voyage-law-2.', category:'domain-specific', tags:['legal','contracts','voyage-law-2'], tools:['query','rerank','generate'], steps:3, tier:'official', downloads:1543, installed:false, gradient:'linear-gradient(135deg, #1E40AF, #7C3AED)' },
+  { name:'knowledge-base-bootstrap', packageName:'@vaicli/vai-workflow-knowledge-base-bootstrap', description:'End-to-end onboarding: ingest documents, verify, test a query, and generate a status report.', category:'integration', tags:['onboarding','bootstrap','end-to-end'], tools:['ingest','collections','query','generate'], steps:4, tier:'official', downloads:3654, installed:false, gradient:'linear-gradient(135deg, #059669, #10B981)' },
+  { name:'embedding-drift-detector', packageName:'@vaicli/vai-workflow-embedding-drift-detector', description:'Monitor embedding quality over time. Re-embed sample documents and compare against stored vectors.', category:'analysis', tags:['monitoring','drift','operations'], tools:['search','embed','similarity','generate'], steps:5, tier:'official', downloads:987, installed:false, gradient:'linear-gradient(135deg, #DC2626, #F97316)' },
+  { name:'multilingual-search', packageName:'@vaicli/vai-workflow-multilingual-search', description:'Translate your query into multiple languages, search each in parallel, merge and rerank.', category:'retrieval', tags:['multilingual','translation','cross-lingual'], tools:['generate','query','merge','rerank'], steps:5, tier:'official', downloads:1234, installed:false, gradient:'linear-gradient(135deg, #0EA5E9, #6366F1)' },
+  { name:'financial-risk-scanner', packageName:'@vaicli/vai-workflow-financial-risk-scanner', description:'Scan financial documents for risk signals using voyage-finance-2.', category:'domain-specific', tags:['finance','risk','voyage-finance-2'], tools:['query','rerank','filter','generate'], steps:4, tier:'official', downloads:1102, installed:false, gradient:'linear-gradient(135deg, #B45309, #D97706)' },
+  { name:'doc-freshness', packageName:'@vaicli/vai-workflow-doc-freshness', description:'Audit your knowledge base for stale content. Gathers metadata from 5 tools in parallel.', category:'utility', tags:['freshness','maintenance','monitoring'], tools:['collections','models','search','explain','estimate','generate'], steps:6, tier:'official', downloads:1456, installed:false, gradient:'linear-gradient(135deg, #4338CA, #7C3AED)' },
+  { name:'incremental-sync', packageName:'@vaicli/vai-workflow-incremental-sync', description:'Smart ingestion with deduplication. Checks similarity before storing.', category:'ingestion', tags:['dedup','sync','conditional'], tools:['search','similarity','ingest','filter','generate'], steps:5, tier:'official', downloads:2103, installed:false, gradient:'linear-gradient(135deg, #15803D, #4ADE80)' },
+  { name:'rag-ab-test', packageName:'@vaicli/vai-workflow-rag-ab-test', description:'Run the same query through two RAG configurations side-by-side.', category:'integration', tags:['ab-test','comparison','evaluation'], tools:['query','generate'], steps:5, tier:'official', downloads:1678, installed:false, gradient:'linear-gradient(135deg, #BE185D, #F472B6)' },
+  { name:'hybrid-precision-search', packageName:'@vaicli/vai-workflow-hybrid-precision-search', description:'Three retrieval strategies in parallel — lite, large, and filtered — merged and reranked.', category:'retrieval', tags:['hybrid','parallel','precision'], tools:['query','search','merge','rerank'], steps:5, tier:'official', downloads:1890, installed:false, gradient:'linear-gradient(135deg, #0891B2, #22D3EE)' },
+  { name:'code-migration-helper', packageName:'@vaicli/vai-workflow-code-migration-helper', description:'Find similar code patterns across your codebase using voyage-code-3.', category:'domain-specific', tags:['code','migration','voyage-code-3'], tools:['query','rerank','generate'], steps:3, tier:'official', downloads:932, installed:false, gradient:'linear-gradient(135deg, #475569, #94A3B8)' },
+  { name:'meeting-action-items', packageName:'@vaicli/vai-workflow-meeting-action-items', description:'Ingest meeting notes and extract structured action items with owners, deadlines, and context.', category:'domain-specific', tags:['meetings','action-items','productivity'], tools:['ingest','query','generate'], steps:3, tier:'official', downloads:2567, installed:false, gradient:'linear-gradient(135deg, #7C2D12, #EA580C)' },
+  { name:'collection-overlap-audit', packageName:'@vaicli/vai-workflow-collection-overlap-audit', description:'Detect duplicate content across two collections.', category:'analysis', tags:['dedup','overlap','audit'], tools:['search','similarity','merge','filter','generate'], steps:5, tier:'official', downloads:678, installed:false, gradient:'linear-gradient(135deg, #6D28D9, #A78BFA)' },
+  { name:'query-quality-scorer', packageName:'@vaicli/vai-workflow-query-quality-scorer', description:'Evaluate retrieval quality without ground truth labels.', category:'analysis', tags:['evaluation','quality','scoring'], tools:['query','similarity','transform','generate'], steps:4, tier:'official', downloads:823, installed:false, gradient:'linear-gradient(135deg, #9333EA, #C084FC)' },
+  { name:'clinical-protocol-match', packageName:'@vaicli/vai-workflow-clinical-protocol-match', description:'Match clinical presentations to treatment protocols.', category:'domain-specific', tags:['clinical','healthcare','protocols'], tools:['query','rerank','generate'], steps:3, tier:'official', downloads:712, installed:false, gradient:'linear-gradient(135deg, #0F766E, #2DD4BF)' },
+  { name:'batch-quality-gate', packageName:'@vaicli/vai-workflow-batch-quality-gate', description:'Quality-filtered ingestion. Only ingest content that meets your similarity threshold.', category:'ingestion', tags:['quality','gate','filtering'], tools:['search','embed','similarity','ingest','filter','generate'], steps:5, tier:'official', downloads:543, installed:false, gradient:'linear-gradient(135deg, #166534, #86EFAC)' },
+  { name:'index-health-check', packageName:'@vaicli/vai-workflow-index-health-check', description:'Diagnostic pipeline for your vector index.', category:'utility', tags:['diagnostics','health','index'], tools:['collections','search','query','estimate','generate'], steps:5, tier:'official', downloads:1345, installed:false, gradient:'linear-gradient(135deg, #1D4ED8, #60A5FA)' },
 ];
+
+// Inject branding into fallback data (matches DEFAULT_BRANDING in catalog API)
+const _WF_FALLBACK_BRANDING = {
+  'model-shootout':           { icon:'trophy',        color:'#0D9488',  iconPath:'M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22M18 2H6v7a6 6 0 0 0 12 0V2z' },
+  'asymmetric-search':        { icon:'split',         color:'#00D4AA',  iconPath:'M16 3h5v5M8 3H3v5M12 22v-8.3a4 4 0 0 0-1.172-2.872L3 3M21 3l-7.828 7.828A4 4 0 0 0 12 13.7V22' },
+  'cost-optimizer':           { icon:'dollar-sign',   color:'#F59E0B',  iconPath:'M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6' },
+  'question-decomposition':   { icon:'sparkle',       color:'#8B5CF6',  iconPath:'M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z' },
+  'contract-clause-finder':   { icon:'file-search',   color:'#1E40AF',  iconPath:'M14 2v4a2 2 0 0 0 2 2h4M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7zM9.5 12.5a2.5 2.5 0 1 0 5 0 2.5 2.5 0 1 0-5 0M13.3 14.3 15 16' },
+  'knowledge-base-bootstrap': { icon:'database',      color:'#059669',  iconPath:'M21 5c0 1.1-3.134 3-9 3S3 6.1 3 5M21 5c0-1.1-3.134-3-9-3S3 3.9 3 5M21 5v14c0 1.1-3.134 3-9 3s-9-1.9-9-3V5M21 12c0 1.1-3.134 3-9 3s-9-1.9-9-3' },
+  'embedding-drift-detector': { icon:'activity',      color:'#DC2626',  iconPath:'M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36-3.18-19.64A2 2 0 0 0 10.12 1h-.24a2 2 0 0 0-1.94 1.55L5.18 12H2' },
+  'multilingual-search':      { icon:'globe',         color:'#0EA5E9',  iconPath:'M12 12m-10 0a10 10 0 1 0 20 0 10 10 0 1 0-20 0M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z' },
+  'financial-risk-scanner':   { icon:'shield-alert',  color:'#B45309',  iconPath:'M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 .5-.87l7-4a1 1 0 0 1 1 0l7 4A1 1 0 0 1 20 6zM12 8v4M12 16h.01' },
+  'doc-freshness':            { icon:'timer',         color:'#4338CA',  iconPath:'M10 2h4M12 14l3-3M12 22a8 8 0 1 0 0-16 8 8 0 0 0 0 16z' },
+  'incremental-sync':         { icon:'refresh-cw',    color:'#15803D',  iconPath:'M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16' },
+  'rag-ab-test':              { icon:'flask-conical', color:'#BE185D',  iconPath:'M10 2v7.527a2 2 0 0 1-.211.896L4.72 20.55a1 1 0 0 0 .9 1.45h12.76a1 1 0 0 0 .9-1.45l-5.069-10.127A2 2 0 0 1 14 9.527V2M8.5 2h7M7 16h10' },
+  'hybrid-precision-search':  { icon:'target',        color:'#0891B2',  iconPath:'M12 12m-10 0a10 10 0 1 0 20 0 10 10 0 1 0-20 0M12 12m-6 0a6 6 0 1 0 12 0 6 6 0 1 0-12 0M12 12m-2 0a2 2 0 1 0 4 0 2 2 0 1 0-4 0' },
+  'code-migration-helper':    { icon:'code',          color:'#475569',  iconPath:'M16 18l6-6-6-6M8 6l-6 6 6 6' },
+  'meeting-action-items':     { icon:'clipboard-list',color:'#7C2D12',  iconPath:'M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2M9 2h6a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1zM12 11h4M12 16h4M8 11h.01M8 16h.01' },
+  'collection-overlap-audit': { icon:'layers',        color:'#6D28D9',  iconPath:'M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.84zM2 12l8.58 3.91a2 2 0 0 0 1.66 0L22 12M2 17l8.58 3.91a2 2 0 0 0 1.66 0L22 17' },
+  'query-quality-scorer':     { icon:'microscope',    color:'#9333EA',  iconPath:'M6 18h8M3 22h18M14 22a7 7 0 1 0 0-14h-1M9 14h2M9 12a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2z' },
+  'clinical-protocol-match':  { icon:'heart-pulse',   color:'#0F766E',  iconPath:'M19.5 12.572l-7.5 7.428-7.5-7.428A5 5 0 0 1 7.5 5c1.8 0 3.3.9 4.5 2.7C13.2 5.9 14.7 5 16.5 5a5 5 0 0 1 3 9.572zM12 6l-1 4h4l-1 4' },
+  'batch-quality-gate':       { icon:'check-circle',  color:'#166534',  iconPath:'M22 11.08V12a10 10 0 1 1-5.93-9.14M22 4 12 14.01l-3-3' },
+  'index-health-check':       { icon:'bar-chart-3',   color:'#1D4ED8',  iconPath:'M12 20V10M18 20V4M6 20v-4' },
+};
+WF_STORE_FALLBACK.forEach(wf => { wf.branding = _WF_FALLBACK_BRANDING[wf.name] || { icon:'zap', color:'#64748B', iconPath:'M13 2 3 14h9l-1 8 10-12h-9l1-8z' }; });
 
 let _wfStoreCatalog = null;
 let _wfStoreCat = 'all';
@@ -13673,10 +13750,22 @@ function wfStoreClose() {
   if (detail) detail.remove();
 }
 
+// Store icons map (populated from API response or used from inline fallback)
+let _wfStoreIcons = {};
+
+// Render a branding icon as inline SVG
+function wfBrandingIcon(wf, size = 16) {
+  const b = wf.branding || {};
+  const iconPath = b.iconPath || _wfStoreIcons[b.icon] || '';
+  if (!iconPath) return '';
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="${iconPath}"/></svg>`;
+}
+
 async function wfStoreFetchCatalog() {
   try {
     const res = await fetch('/api/workflows/catalog');
     const data = await res.json();
+    if (data.icons) _wfStoreIcons = data.icons;
     if (data.workflows && data.workflows.length > 0) {
       _wfStoreCatalog = data.workflows;
     } else {
@@ -13722,7 +13811,9 @@ function wfStoreRender() {
         ? `<div class="wf-store-featured-avatar"><img src="${featAuthor.avatar}" onerror="this.parentNode.textContent='${featAuthor.name.charAt(0).toUpperCase()}'"></div>`
         : `<div class="wf-store-featured-avatar">${featAuthor.name.charAt(0).toUpperCase()}</div>`) : '';
       const featAuthorHtml = featAuthor ? `<div class="wf-store-featured-author">${featAvatarHtml} by ${featAuthor.name}</div>` : '';
+      const featIconHtml = wfBrandingIcon(wf, 20) ? `<div class="wf-store-featured-icon">${wfBrandingIcon(wf, 20)}</div>` : '';
       html += `<div class="wf-store-featured-card" style="background:${wf.gradient}" onclick="wfStoreShowDetail('${wf.name}')">
+        ${featIconHtml}
         <div class="wf-store-featured-dl">↓ ${(wf.downloads||0).toLocaleString()}</div>
         <div class="wf-store-featured-content"><h3>${wf.name}</h3><p>${wf.description||''}</p>${featAuthorHtml}</div>
       </div>`;
@@ -13744,10 +13835,15 @@ function wfStoreRender() {
       ).join('') + ((wf.tools||[]).length > 5 ? `<span style="font-family:var(--mono);font-size:9px;color:var(--text-muted);margin-left:2px">+${wf.tools.length-5}</span>` : '');
       const badges = (wf.installed ? '<span class="wf-store-badge-installed">installed</span>' : '') +
         `<span class="wf-store-badge-official">${wf.tier==='official' ? '✓ OFFICIAL' : 'COMMUNITY'}</span>`;
+      const cardIconColor = (wf.branding && wf.branding.color) || '#64748B';
+      const cardIconSvg = wfBrandingIcon(wf, 16);
+      const cardIconHtml = cardIconSvg
+        ? `<div class="wf-store-card-icon" style="background:${cardIconColor}18;color:${cardIconColor}">${cardIconSvg}</div>`
+        : '';
       html += `<div class="wf-store-card" onclick="wfStoreShowDetail('${wf.name}')">
         <div class="wf-store-card-bar" style="background:${wf.gradient}"></div>
         <div class="wf-store-card-top">
-          <span class="wf-store-card-name">${wf.name}</span>
+          <div class="wf-store-card-name-wrap">${cardIconHtml}<span class="wf-store-card-name">${wf.name}</span></div>
           <div class="wf-store-card-badges">${badges}</div>
         </div>
         <div class="wf-store-card-desc">${wf.description||''}</div>
@@ -13755,7 +13851,7 @@ function wfStoreRender() {
         <div class="wf-store-card-meta">
           <span class="wf-store-card-cat">${wf.category||'utility'}</span>
           <div class="wf-store-card-dots">${dots}</div>
-          <span class="wf-store-card-complexity">${wf.steps||0}s·${wf.layers||0}L</span>
+          <span class="wf-store-card-complexity">${wf.steps||0}s·${wf.toolCount||(Array.isArray(wf.tools)?wf.tools.length:0)}t</span>
           <span class="wf-store-card-downloads">↓ ${(wf.downloads||0).toLocaleString()}</span>
         </div>
       </div>`;
@@ -13774,7 +13870,11 @@ function wfStoreShowDetail(name) {
   if (existing) existing.remove();
 
   const ic = `vai workflow install ${wf.packageName}`;
-  const rc = `vai workflow run ${wf.packageName} --input query="..."`;
+  const rc = `vai workflow run ${wf.packageName}`;
+
+  // Escape for use in HTML attributes (single-quoted onclick handlers)
+  const icEsc = ic.replace(/'/g, "\\'");
+  const rcEsc = rc.replace(/'/g, "\\'");
 
   const toolsHtml = (wf.tools||[]).map(t => {
     const c = WF_STORE_TOOL_COLORS[t] || '#666';
@@ -13796,8 +13896,11 @@ function wfStoreShowDetail(name) {
     <div class="wf-store-detail-hero" style="background:${wf.gradient}">
       <button class="wf-store-detail-close" onclick="document.getElementById('wfStoreDetail').remove()">×</button>
       <div class="wf-store-detail-hero-inner">
-        <div class="wf-store-detail-name">${wf.name}</div>
-        <div class="wf-store-detail-pkg">${wf.packageName}</div>
+        ${wfBrandingIcon(wf, 26) ? `<div class="wf-store-detail-hero-icon">${wfBrandingIcon(wf, 26)}</div>` : ''}
+        <div>
+          <div class="wf-store-detail-name">${wf.name}</div>
+          <div class="wf-store-detail-pkg">${wf.packageName}</div>
+        </div>
       </div>
     </div>
     <div class="wf-store-detail-body">
@@ -13822,7 +13925,7 @@ function wfStoreShowDetail(name) {
         <div class="wf-store-detail-label">Stats</div>
         <div class="wf-store-detail-stats">
           <div class="wf-store-detail-stat"><div class="wf-store-detail-stat-val">${wf.steps||0}</div><div class="wf-store-detail-stat-lbl">Steps</div></div>
-          <div class="wf-store-detail-stat"><div class="wf-store-detail-stat-val">${wf.layers||0}</div><div class="wf-store-detail-stat-lbl">Layers</div></div>
+          <div class="wf-store-detail-stat"><div class="wf-store-detail-stat-val">${wf.toolCount||(Array.isArray(wf.tools)?wf.tools.length:0)}</div><div class="wf-store-detail-stat-lbl">Tools</div></div>
           <div class="wf-store-detail-stat"><div class="wf-store-detail-stat-val">${(wf.downloads||0).toLocaleString()}</div><div class="wf-store-detail-stat-lbl">Downloads</div></div>
         </div>
       </div>
@@ -13844,11 +13947,11 @@ function wfStoreShowDetail(name) {
       </div>` : ''}
       <div class="wf-store-detail-install">
         <div class="wf-store-detail-label">Install</div>
-        <div class="wf-store-detail-cmd" onclick="navigator.clipboard.writeText('${ic}');this.querySelector('.wf-store-detail-cmd-hint').textContent='✓ copied';setTimeout(()=>this.querySelector('.wf-store-detail-cmd-hint').textContent='copy',2000)">
+        <div class="wf-store-detail-cmd" onclick="navigator.clipboard.writeText('${icEsc}');this.querySelector('.wf-store-detail-cmd-hint').textContent='✓ copied';setTimeout(()=>this.querySelector('.wf-store-detail-cmd-hint').textContent='copy',2000)">
           <span>$ ${ic}</span><span class="wf-store-detail-cmd-hint">copy</span>
         </div>
         <div class="wf-store-detail-label" style="margin-top:12px">Run</div>
-        <div class="wf-store-detail-cmd" style="color:var(--text-dim)" onclick="navigator.clipboard.writeText('${rc}');this.querySelector('.wf-store-detail-cmd-hint').textContent='✓ copied';setTimeout(()=>this.querySelector('.wf-store-detail-cmd-hint').textContent='copy',2000)">
+        <div class="wf-store-detail-cmd" style="color:var(--text-dim)" onclick="navigator.clipboard.writeText('${rcEsc}');this.querySelector('.wf-store-detail-cmd-hint').textContent='✓ copied';setTimeout(()=>this.querySelector('.wf-store-detail-cmd-hint').textContent='copy',2000)">
           <span>$ ${rc}</span><span class="wf-store-detail-cmd-hint">copy</span>
         </div>
       </div>
@@ -13892,13 +13995,40 @@ async function wfStoreInstall(packageName, btn) {
   }
 }
 
-function wfStoreRun(name) {
+async function wfStoreRun(name) {
   const detail = document.getElementById('wfStoreDetail');
   if (detail) detail.remove();
   wfStoreClose();
-  // Find the package name and select it
+
+  // Find the workflow in catalog
   const wf = (_wfStoreCatalog||[]).find(w => w.name === name);
-  if (wf) wfSelectWorkflow(wf.packageName.replace(/^@vaicli\/vai-workflow-/, ''));
+  if (!wf) {
+    alert('Workflow not found: ' + name);
+    return;
+  }
+
+  // Check if installed
+  if (!wf.installed) {
+    const doInstall = confirm(`"${wf.name}" is not installed. Install it now?`);
+    if (doInstall) {
+      await wfStoreInstall(wf.packageName, null);
+      // Refresh catalog to update installed status
+      await wfStoreFetchCatalog();
+      // Check again
+      const updated = (_wfStoreCatalog||[]).find(w => w.name === name);
+      if (!updated || !updated.installed) {
+        alert('Installation may have failed. Please try again.');
+        return;
+      }
+    } else {
+      return;
+    }
+  }
+
+  // Switch to workflows tab and load the workflow
+  switchTab('workflows');
+  // Use the full package name for resolution
+  wfSelectWorkflow(wf.packageName);
 }
 
 function wfStoreCanvas(name) {

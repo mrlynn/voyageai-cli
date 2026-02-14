@@ -2,6 +2,10 @@
   "name": "search-with-fallback",
   "description": "Search primary collection, fall back to secondary if empty",
   "version": "1.0.0",
+  "branding": {
+    "icon": "search",
+    "color": "#0891B2"
+  },
   "inputs": {
     "query": { "type": "string", "required": true, "description": "Search query" },
     "primary_collection": { "type": "string", "default": "api_docs", "description": "Primary collection to search" },
