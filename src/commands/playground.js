@@ -358,10 +358,65 @@ function createPlaygroundServer() {
       // API: List built-in workflows
       if (req.method === 'GET' && req.url === '/api/workflows') {
         try {
-          const { listBuiltinWorkflows } = require('../lib/workflow');
-          const workflows = listBuiltinWorkflows();
+          const { getRegistry } = require('../lib/workflow-registry');
+          const registry = getRegistry({ force: true });
+          const workflows = registry.builtIn;
+          const community = registry.community
+            .filter(c => c.errors.length === 0)
+            .map(c => ({
+              name: c.name,
+              description: c.pkg?.description || c.definition?.description || '',
+              version: c.pkg?.version,
+              author: typeof c.pkg?.author === 'string' ? c.pkg.author : c.pkg?.author?.name || '',
+              category: c.pkg?.vai?.category || 'utility',
+              tags: c.pkg?.vai?.tags || [],
+              tools: c.pkg?.vai?.tools || [],
+              source: 'community',
+              scope: c.scope,
+            }));
           res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ workflows }));
+          res.end(JSON.stringify({ workflows, community }));
+        } catch (err) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: err.message }));
+        }
+        return;
+      }
+
+      // API: Community workflow operations
+      if (req.method === 'GET' && req.url === '/api/workflows/community') {
+        try {
+          const { getRegistry } = require('../lib/workflow-registry');
+          const registry = getRegistry({ force: true });
+          const community = registry.community.map(c => ({
+            name: c.name,
+            description: c.pkg?.description || '',
+            version: c.pkg?.version,
+            author: typeof c.pkg?.author === 'string' ? c.pkg.author : c.pkg?.author?.name || '',
+            category: c.pkg?.vai?.category || 'utility',
+            tags: c.pkg?.vai?.tags || [],
+            valid: c.errors.length === 0,
+            errors: c.errors,
+            warnings: c.warnings,
+          }));
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ community }));
+        } catch (err) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: err.message }));
+        }
+        return;
+      }
+
+      if (req.method === 'GET' && req.url?.startsWith('/api/workflows/community/search?')) {
+        try {
+          const { searchNpm } = require('../lib/npm-utils');
+          const urlObj = new URL(req.url, `http://localhost`);
+          const query = urlObj.searchParams.get('q') || '';
+          const limit = parseInt(urlObj.searchParams.get('limit') || '10', 10);
+          const results = await searchNpm(query, { limit });
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ results }));
         } catch (err) {
           res.writeHead(500, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: err.message }));
@@ -383,7 +438,7 @@ function createPlaygroundServer() {
         return;
       }
 
-      // API: Get a specific workflow by name
+      // API: Get a specific workflow by name (built-in, community, or example)
       if (req.method === 'GET' && req.url?.startsWith('/api/workflows/')) {
         const name = decodeURIComponent(req.url.replace('/api/workflows/', ''));
         if (!name) {
@@ -392,10 +447,10 @@ function createPlaygroundServer() {
           return;
         }
         try {
-          const { loadWorkflow } = require('../lib/workflow');
-          const definition = loadWorkflow(name);
+          const { resolveWorkflow } = require('../lib/workflow-registry');
+          const resolved = resolveWorkflow(name);
           res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ definition }));
+          res.end(JSON.stringify({ definition: resolved.definition, source: resolved.source, metadata: resolved.metadata }));
         } catch (err) {
           res.writeHead(404, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: err.message }));
@@ -444,6 +499,51 @@ function createPlaygroundServer() {
       }
 
       // Parse JSON body for POST routes
+      // Community workflow install (no API key needed)
+      if (req.method === 'POST' && req.url === '/api/workflows/community/install') {
+        try {
+          const body = await readBody(req);
+          const { name } = JSON.parse(body);
+          if (!name) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Package name is required' }));
+            return;
+          }
+          const { installPackage, WORKFLOW_PREFIX } = require('../lib/npm-utils');
+          const { validatePackage, clearRegistryCache } = require('../lib/workflow-registry');
+          const packageName = name.startsWith(WORKFLOW_PREFIX) ? name : WORKFLOW_PREFIX + name;
+          const result = installPackage(packageName);
+          clearRegistryCache();
+          let validation = null;
+          if (result.path) {
+            validation = validatePackage(result.path);
+          }
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: true, version: result.version, validation: validation ? { valid: validation.errors.length === 0, errors: validation.errors, warnings: validation.warnings } : null }));
+        } catch (err) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: err.message }));
+        }
+        return;
+      }
+
+      // Community workflow uninstall (no API key needed)
+      if (req.method === 'DELETE' && req.url?.startsWith('/api/workflows/community/')) {
+        try {
+          const packageName = decodeURIComponent(req.url.replace('/api/workflows/community/', ''));
+          const { uninstallPackage } = require('../lib/npm-utils');
+          const { clearRegistryCache } = require('../lib/workflow-registry');
+          uninstallPackage(packageName);
+          clearRegistryCache();
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: true }));
+        } catch (err) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: err.message }));
+        }
+        return;
+      }
+
       if (req.method === 'POST') {
         // Check for API key before processing any API calls
         const apiKeyConfigured = !!(process.env.VOYAGE_API_KEY || getConfigValue('apiKey'));
