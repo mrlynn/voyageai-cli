@@ -10133,6 +10133,7 @@ async function wfLoadLibrary() {
     const wfData = await wfRes.json();
     const exData = await exRes.json();
     wfState.workflows = wfData.workflows || [];
+    wfState.official = wfData.official || [];
     wfState.community = wfData.community || [];
     wfState.examples = exData.examples || [];
     wfRenderLibrary();
@@ -10183,6 +10184,28 @@ function wfRenderLibrary() {
     }
     html += '</div></div>';
   }
+
+  // Official catalog section
+  const official = wfState.official || [];
+  html += `<div class="wf-library-section">
+    <div class="wf-library-category" style="display:flex;align-items:center;justify-content:space-between;">
+      <span>Official Catalog (@vaicli) (${official.length})</span>
+    </div>`;
+  if (official.length === 0) {
+    html += '<div style="padding:8px 12px;color:var(--text-muted);font-size:11px;">No official workflows installed.</div>';
+  } else {
+    html += official.map(w => {
+      const displayName = w.name.replace(/^@vaicli\/vai-workflow-/, '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+      const authorLine = w.author ? `<span style="color:var(--text-muted);font-size:10px;">by ${w.author}${w.version ? ' · v' + w.version : ''}</span>` : '';
+      const tagLine = (w.tags || []).length ? `<div style="margin-top:2px;font-size:10px;color:var(--text-muted);">${w.tags.join(' · ')}</div>` : '';
+      return `<div class="wf-library-item" data-wf-name="${w.name}" onclick="wfSelectWorkflow('${w.name}')">
+        <div class="wf-library-item-name">✓ ${displayName}</div>
+        <div class="wf-library-item-desc">${w.description || ''}</div>
+        ${authorLine}${tagLine}
+      </div>`;
+    }).join('');
+  }
+  html += '</div>';
 
   // Community workflows section
   const community = wfState.community || [];

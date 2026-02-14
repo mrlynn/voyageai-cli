@@ -3,15 +3,15 @@
 const path = require('path');
 const fs = require('fs');
 const { validateWorkflow, listBuiltinWorkflows, loadWorkflow, listExampleWorkflows } = require('./workflow');
-const { findLocalNodeModules, findGlobalNodeModules, WORKFLOW_PREFIX } = require('./npm-utils');
+const { findLocalNodeModules, findGlobalNodeModules, WORKFLOW_PREFIX, VAICLI_SCOPE, VAICLI_WORKFLOW_PREFIX, isOfficialPackage } = require('./npm-utils');
 
 // In-memory cache for the duration of the process
 let _registryCache = null;
 
 /**
- * Scan a node_modules directory for vai-workflow-* packages.
+ * Scan a node_modules directory for vai-workflow-* packages (both scoped and unscoped).
  * @param {string} nodeModulesDir
- * @returns {Array<{ name: string, packagePath: string, pkg: object, definition: object, errors: string[], warnings: string[] }>}
+ * @returns {Array<{ name: string, packagePath: string, pkg: object, definition: object, errors: string[], warnings: string[], tier: string }>}
  */
 function scanNodeModules(nodeModulesDir) {
   const results = [];
@@ -24,6 +24,7 @@ function scanNodeModules(nodeModulesDir) {
     return results;
   }
 
+  // Scan unscoped vai-workflow-* packages
   for (const entry of entries) {
     if (!entry.startsWith(WORKFLOW_PREFIX)) continue;
 
@@ -35,6 +36,7 @@ function scanNodeModules(nodeModulesDir) {
     try {
       const pkg = JSON.parse(fs.readFileSync(pkgJsonPath, 'utf8'));
       const result = validatePackage(packagePath, pkg);
+      result.tier = 'community';
       results.push(result);
     } catch (err) {
       results.push({
@@ -44,7 +46,45 @@ function scanNodeModules(nodeModulesDir) {
         definition: null,
         errors: [`Failed to read package: ${err.message}`],
         warnings: [],
+        tier: 'community',
       });
+    }
+  }
+
+  // Scan @vaicli/ scoped packages
+  const vaicliDir = path.join(nodeModulesDir, '@vaicli');
+  if (fs.existsSync(vaicliDir)) {
+    let scopedEntries;
+    try {
+      scopedEntries = fs.readdirSync(vaicliDir);
+    } catch {
+      scopedEntries = [];
+    }
+
+    for (const entry of scopedEntries) {
+      if (!entry.startsWith(WORKFLOW_PREFIX)) continue;
+
+      const packagePath = path.join(vaicliDir, entry);
+      const pkgJsonPath = path.join(packagePath, 'package.json');
+
+      if (!fs.existsSync(pkgJsonPath)) continue;
+
+      try {
+        const pkg = JSON.parse(fs.readFileSync(pkgJsonPath, 'utf8'));
+        const result = validatePackage(packagePath, pkg);
+        result.tier = 'official';
+        results.push(result);
+      } catch (err) {
+        results.push({
+          name: `${VAICLI_SCOPE}${entry}`,
+          packagePath,
+          pkg: null,
+          definition: null,
+          errors: [`Failed to read package: ${err.message}`],
+          warnings: [],
+          tier: 'official',
+        });
+      }
     }
   }
 
@@ -147,10 +187,25 @@ function compareVersions(a, b) {
 }
 
 /**
- * Get the full workflow registry (built-in + community).
+ * Extract the workflow name (without prefix/scope) from a package name.
+ * @param {string} packageName - e.g. '@vaicli/vai-workflow-foo' or 'vai-workflow-foo'
+ * @returns {string} - e.g. 'foo'
+ */
+function extractWorkflowName(packageName) {
+  if (packageName.startsWith(VAICLI_WORKFLOW_PREFIX)) {
+    return packageName.slice(VAICLI_WORKFLOW_PREFIX.length);
+  }
+  if (packageName.startsWith(WORKFLOW_PREFIX)) {
+    return packageName.slice(WORKFLOW_PREFIX.length);
+  }
+  return packageName;
+}
+
+/**
+ * Get the full workflow registry (built-in + official + community).
  * Results are cached in-memory for the process duration.
  * @param {{ force?: boolean }} options
- * @returns {{ builtIn: Array, community: Array }}
+ * @returns {{ builtIn: Array, official: Array, community: Array }}
  */
 function getRegistry(options = {}) {
   if (_registryCache && !options.force) return _registryCache;
@@ -161,7 +216,8 @@ function getRegistry(options = {}) {
     source: 'built-in',
   }));
 
-  // Community workflows from local + global node_modules
+  // Official and community workflows from local + global node_modules
+  const official = [];
   const community = [];
   const seen = new Set();
 
@@ -171,7 +227,8 @@ function getRegistry(options = {}) {
     for (const pkg of scanNodeModules(localNM)) {
       if (!seen.has(pkg.name)) {
         seen.add(pkg.name);
-        community.push({ ...pkg, source: 'community', scope: 'local' });
+        const target = pkg.tier === 'official' ? official : community;
+        target.push({ ...pkg, source: pkg.tier, scope: 'local' });
       }
     }
   }
@@ -182,12 +239,13 @@ function getRegistry(options = {}) {
     for (const pkg of scanNodeModules(globalNM)) {
       if (!seen.has(pkg.name)) {
         seen.add(pkg.name);
-        community.push({ ...pkg, source: 'community', scope: 'global' });
+        const target = pkg.tier === 'official' ? official : community;
+        target.push({ ...pkg, source: pkg.tier, scope: 'global' });
       }
     }
   }
 
-  _registryCache = { builtIn, community };
+  _registryCache = { builtIn, official, community };
   return _registryCache;
 }
 
@@ -202,8 +260,10 @@ function clearRegistryCache() {
  * Resolve a workflow by name using the priority chain:
  * 1. Local file path
  * 2. Built-in template
- * 3. Community package (local node_modules)
- * 4. Community package (global node_modules)
+ * 3. Official package (local node_modules) — @vaicli/vai-workflow-*
+ * 4. Community package (local node_modules) — vai-workflow-*
+ * 5. Official package (global node_modules)
+ * 6. Community package (global node_modules)
  *
  * @param {string} name - Workflow name, package name, or file path
  * @returns {{ definition: object, source: string, metadata: object|null }}
@@ -211,72 +271,111 @@ function clearRegistryCache() {
 function resolveWorkflow(name) {
   // 1. Try as file path (if it exists or has extension)
   if (name.includes('/') || name.includes('\\') || name.endsWith('.json')) {
-    try {
-      const definition = loadWorkflow(name);
-      return { definition, source: 'file', metadata: null };
-    } catch { /* fall through */ }
-  }
-
-  // 2. Try built-in (loadWorkflow handles this)
-  try {
-    const definition = loadWorkflow(name);
-    return { definition, source: 'built-in', metadata: null };
-  } catch { /* fall through */ }
-
-  // 3 & 4. Try community packages
-  const registry = getRegistry();
-  const communityMatch = registry.community.find(
-    c => c.name === name && c.errors.length === 0 && c.definition
-  );
-  if (communityMatch) {
-    return {
-      definition: communityMatch.definition,
-      source: 'community',
-      metadata: {
-        package: communityMatch.pkg,
-        path: communityMatch.packagePath,
-        scope: communityMatch.scope,
-        warnings: communityMatch.warnings,
-      },
-    };
-  }
-
-  // Also try without prefix
-  if (!name.startsWith(WORKFLOW_PREFIX)) {
-    const prefixed = WORKFLOW_PREFIX + name;
-    const match = registry.community.find(
-      c => c.name === prefixed && c.errors.length === 0 && c.definition
-    );
-    if (match) {
-      return {
-        definition: match.definition,
-        source: 'community',
-        metadata: {
-          package: match.pkg,
-          path: match.packagePath,
-          scope: match.scope,
-          warnings: match.warnings,
-        },
-      };
+    // But not scoped package names like @vaicli/vai-workflow-foo
+    if (!name.startsWith('@')) {
+      try {
+        const definition = loadWorkflow(name);
+        return { definition, source: 'file', metadata: null };
+      } catch { /* fall through */ }
     }
   }
 
+  // 2. Try built-in (loadWorkflow handles this) — skip for scoped names
+  if (!name.startsWith('@')) {
+    try {
+      const definition = loadWorkflow(name);
+      return { definition, source: 'built-in', metadata: null };
+    } catch { /* fall through */ }
+  }
+
+  // 3-6. Try official then community packages
+  const registry = getRegistry();
+
+  // Helper to find in a list by exact name or prefixed name
+  const findInList = (list, searchName) => {
+    // Exact match first
+    let match = list.find(c => c.name === searchName && c.errors.length === 0 && c.definition);
+    if (match) return match;
+
+    // Try with prefix for unscoped
+    if (!searchName.startsWith(WORKFLOW_PREFIX) && !searchName.startsWith('@')) {
+      const prefixed = WORKFLOW_PREFIX + searchName;
+      match = list.find(c => c.name === prefixed && c.errors.length === 0 && c.definition);
+      if (match) return match;
+    }
+
+    return null;
+  };
+
+  // 3. Official local
+  const officialLocal = registry.official.filter(c => c.scope === 'local');
+  let match = findInList(officialLocal, name);
+  if (match) return makeResult(match, 'official');
+
+  // Also try @vaicli/vai-workflow-<name> if name is a short name
+  if (!name.startsWith('@') && !name.startsWith(WORKFLOW_PREFIX)) {
+    const scopedName = `@vaicli/${WORKFLOW_PREFIX}${name}`;
+    match = findInList(officialLocal, scopedName);
+    if (match) return makeResult(match, 'official');
+  }
+
+  // 4. Community local
+  const communityLocal = registry.community.filter(c => c.scope === 'local');
+  match = findInList(communityLocal, name);
+  if (match) return makeResult(match, 'community');
+
+  // 5. Official global
+  const officialGlobal = registry.official.filter(c => c.scope === 'global');
+  match = findInList(officialGlobal, name);
+  if (match) return makeResult(match, 'official');
+
+  if (!name.startsWith('@') && !name.startsWith(WORKFLOW_PREFIX)) {
+    const scopedName = `@vaicli/${WORKFLOW_PREFIX}${name}`;
+    match = findInList(officialGlobal, scopedName);
+    if (match) return makeResult(match, 'official');
+  }
+
+  // 6. Community global
+  const communityGlobal = registry.community.filter(c => c.scope === 'global');
+  match = findInList(communityGlobal, name);
+  if (match) return makeResult(match, 'community');
+
   throw new Error(
     `Workflow not found: "${name}"\n` +
-    `Provide a file path, built-in template name, or installed community package name.\n` +
+    `Provide a file path, built-in template name, or installed package name.\n` +
     `See: vai workflow list`
   );
 }
 
 /**
- * Search installed community workflows by query.
+ * Build a resolve result from a registry entry.
+ * @param {object} entry - Registry entry
+ * @param {string} source - 'official' or 'community'
+ * @returns {{ definition: object, source: string, metadata: object }}
+ */
+function makeResult(entry, source) {
+  return {
+    definition: entry.definition,
+    source,
+    metadata: {
+      package: entry.pkg,
+      path: entry.packagePath,
+      scope: entry.scope,
+      warnings: entry.warnings,
+    },
+  };
+}
+
+/**
+ * Search installed workflows (official + community) by query.
  * @param {string} query
  * @returns {Array}
  */
 function searchLocal(query) {
   const registry = getRegistry();
   const q = query.toLowerCase();
-  return registry.community.filter(c => {
+  const all = [...registry.official, ...registry.community];
+  return all.filter(c => {
     if (c.errors.length > 0) return false;
     const name = (c.name || '').toLowerCase();
     const desc = (c.pkg?.description || '').toLowerCase();
@@ -287,13 +386,14 @@ function searchLocal(query) {
 }
 
 /**
- * Get category counts from installed community workflows.
+ * Get category counts from installed workflows (official + community).
  * @returns {object} { category: count }
  */
 function getCategories() {
   const registry = getRegistry();
   const counts = {};
-  for (const c of registry.community) {
+  const all = [...registry.official, ...registry.community];
+  for (const c of all) {
     if (c.errors.length > 0) continue;
     const cat = c.pkg?.vai?.category || 'utility';
     counts[cat] = (counts[cat] || 0) + 1;
@@ -310,4 +410,5 @@ module.exports = {
   validatePackage,
   scanNodeModules,
   compareVersions,
+  extractWorkflowName,
 };

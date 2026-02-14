@@ -56,6 +56,14 @@ describe('toPackageName', () => {
   it('lowercases', () => {
     assert.equal(toPackageName('Legal-Research'), 'vai-workflow-legal-research');
   });
+
+  it('adds @vaicli scope when scope is vaicli', () => {
+    assert.equal(toPackageName('my-workflow', { scope: 'vaicli' }), '@vaicli/vai-workflow-my-workflow');
+  });
+
+  it('does not double-prefix with vaicli scope', () => {
+    assert.equal(toPackageName('vai-workflow-already', { scope: 'vaicli' }), '@vaicli/vai-workflow-already');
+  });
 });
 
 // ── extractTools ──
@@ -195,6 +203,27 @@ describe('scaffoldPackage', () => {
     assert.equal(pkg.vai.category, 'retrieval'); // query + rerank → retrieval
   });
 
+  it('creates scoped package with publishConfig when scope is vaicli', () => {
+    const dir = path.join(os.tmpdir(), `vai-scaffold-scope-${Date.now()}`);
+    tempDirs.push(dir);
+
+    const result = scaffoldPackage({
+      definition: VALID_DEFINITION,
+      name: 'scoped-test',
+      author: 'VaiCLI Team',
+      description: 'Scoped test',
+      scope: 'vaicli',
+      outputDir: dir,
+    });
+
+    const pkg = JSON.parse(fs.readFileSync(path.join(dir, 'package.json'), 'utf8'));
+    assert.equal(pkg.name, '@vaicli/vai-workflow-scoped-test');
+    assert.deepEqual(pkg.publishConfig, { access: 'public' });
+    assert.ok(pkg.repository);
+    assert.equal(pkg.repository.type, 'git');
+    assert.ok(pkg.repository.directory.includes('vai-workflow-scoped-test'));
+  });
+
   it('populates vai.inputs from workflow definition', () => {
     const dir = path.join(os.tmpdir(), `vai-scaffold-inputs-${Date.now()}`);
     tempDirs.push(dir);
@@ -209,6 +238,43 @@ describe('scaffoldPackage', () => {
     assert.ok(pkg.vai.inputs.query);
     assert.equal(pkg.vai.inputs.query.required, true);
     assert.equal(pkg.vai.inputs.limit.default, 10);
+  });
+});
+
+// ── toPackageName with scope ──
+
+describe('toPackageName with scope', () => {
+  it('generates @vaicli scoped name when scope is vaicli', () => {
+    assert.equal(toPackageName('model-shootout', { scope: 'vaicli' }), '@vaicli/vai-workflow-model-shootout');
+  });
+
+  it('generates unscoped name when no scope', () => {
+    assert.equal(toPackageName('model-shootout'), 'vai-workflow-model-shootout');
+  });
+
+  it('generates unscoped name when scope is undefined', () => {
+    assert.equal(toPackageName('test', {}), 'vai-workflow-test');
+  });
+});
+
+// ── scaffoldPackage with scope ──
+
+describe('scaffoldPackage with scope', () => {
+  it('creates @vaicli scoped package with publishConfig', () => {
+    const dir = path.join(os.tmpdir(), `vai-scaffold-scope-${Date.now()}`);
+    tempDirs.push(dir);
+
+    scaffoldPackage({
+      definition: VALID_DEFINITION,
+      name: 'scoped-test',
+      author: 'Michael Lynn',
+      scope: 'vaicli',
+      outputDir: dir,
+    });
+
+    const pkg = JSON.parse(fs.readFileSync(path.join(dir, 'package.json'), 'utf8'));
+    assert.equal(pkg.name, '@vaicli/vai-workflow-scoped-test');
+    assert.deepEqual(pkg.publishConfig, { access: 'public' });
   });
 });
 
