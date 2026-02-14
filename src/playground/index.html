@@ -2569,7 +2569,10 @@ select:focus { outline: none; border-color: var(--accent); }
 .chat-thinking .thinking-icon {
   font-size: 14px;
   line-height: 1;
+  display: flex;
+  align-items: center;
 }
+.chat-thinking .thinking-icon svg { color: var(--accent); }
 .chat-thinking .thinking-label {
   font-weight: 500;
 }
@@ -2627,6 +2630,7 @@ select:focus { outline: none; border-color: var(--accent); }
   background: var(--bg-input, #112733);
   border: 1px solid var(--border);
 }
+.thinking-step-icon svg { color: var(--text-dim); }
 .thinking-step.active .thinking-step-icon {
   border-color: var(--accent);
   animation: thinkingPulse 1.2s ease-in-out infinite;
@@ -4523,6 +4527,42 @@ select:focus { outline: none; border-color: var(--accent); }
   <!-- Activity (Pulse) -->
   <symbol id="lg-pulse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
     <path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36-3.18-19.64A2 2 0 0 0 10.12 1h-.24a2 2 0 0 0-1.94 1.55L5.18 12H2"/>
+  </symbol>
+  <!-- Brain (Thinking) -->
+  <symbol id="lg-brain" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/><path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"/><path d="M17.599 6.5a3 3 0 0 0 .399-1.375"/><path d="M6.003 5.125A3 3 0 0 0 6.401 6.5"/><path d="M3.477 10.896a4 4 0 0 1 .585-.396"/><path d="M19.938 10.5a4 4 0 0 1 .585.396"/><path d="M6 18a4 4 0 0 1-1.967-.516"/><path d="M19.967 17.484A4 4 0 0 1 18 18"/>
+  </symbol>
+  <!-- Sparkles -->
+  <symbol id="lg-sparkles" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/><path d="M4 17v2"/><path d="M5 18H3"/>
+  </symbol>
+  <!-- Target (Similarity) -->
+  <symbol id="lg-target" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>
+  </symbol>
+  <!-- Database (Collections) -->
+  <symbol id="lg-database" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/>
+  </symbol>
+  <!-- Bot (Models) -->
+  <symbol id="lg-bot" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/>
+  </symbol>
+  <!-- ArrowUpDown (Rerank) -->
+  <symbol id="lg-arrow-up-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/>
+  </symbol>
+  <!-- Coins (Cost) -->
+  <symbol id="lg-coins" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="8" cy="8" r="6"/><path d="M18.09 10.37A6 6 0 1 1 10.34 18"/><path d="M7 6h1v4"/><path d="m16.71 13.88.7.71-2.82 2.82"/>
+  </symbol>
+  <!-- Inbox (Ingest) -->
+  <symbol id="lg-inbox" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>
+  </symbol>
+  <!-- SearchCode (Vector Search) -->
+  <symbol id="lg-search-code" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="m13 13.5 2-2.5-2-2.5"/><path d="m9 8.5-2 2.5 2 2.5"/><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
   </symbol>
 </svg>
 
@@ -11000,20 +11040,24 @@ function renderMarkdown(md) {
 /**
  * Tool metadata: icon, label, and a function to summarize the call for the thinking panel.
  */
+function lucideIcon(id, size = 16) {
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" style="color:var(--accent)"><use href="#${id}"/></svg>`;
+}
+
 const TOOL_META = {
-  vai_query:       { icon: '\uD83D\uDD0D', label: 'RAG Query',          verb: 'Searching',       descFn: a => a.query ? `"${a.query}"` : '' },
-  vai_search:      { icon: '\uD83D\uDD0E', label: 'Vector Search',      verb: 'Searching vectors', descFn: a => a.query ? `"${a.query}"` : '' },
-  vai_rerank:      { icon: '\u2195\uFE0F', label: 'Rerank',             verb: 'Reranking',       descFn: a => a.query ? `${a.documents?.length || '?'} docs for "${a.query}"` : '' },
-  vai_embed:       { icon: '\uD83E\uDDE0', label: 'Embed',              verb: 'Embedding',       descFn: a => a.text ? `"${a.text.slice(0, 60)}${a.text.length > 60 ? '...' : ''}"` : '' },
-  vai_similarity:  { icon: '\uD83C\uDFAF', label: 'Similarity',         verb: 'Comparing',       descFn: a => a.text1 ? `two texts` : '' },
-  vai_collections: { icon: '\uD83D\uDDC4\uFE0F', label: 'Collections',  verb: 'Discovering',     descFn: a => a.db ? `in ${a.db}` : 'available databases' },
-  vai_models:      { icon: '\uD83E\uDD16', label: 'Models',             verb: 'Listing',         descFn: () => 'available models' },
-  vai_topics:      { icon: '\uD83D\uDCDA', label: 'Topics',             verb: 'Browsing',        descFn: () => 'educational topics' },
-  vai_explain:     { icon: '\uD83D\uDCA1', label: 'Explain',            verb: 'Explaining',      descFn: a => a.topic || '' },
-  vai_estimate:    { icon: '\uD83D\uDCB0', label: 'Cost Estimate',      verb: 'Estimating',      descFn: a => a.docs ? `${a.docs} docs` : '' },
-  vai_ingest:      { icon: '\uD83D\uDCE5', label: 'Ingest',             verb: 'Ingesting',       descFn: a => a.source || 'document' },
+  vai_query:       { iconId: 'lg-search',      label: 'RAG Query',      verb: 'Searching',         descFn: a => a.query ? `"${a.query}"` : '' },
+  vai_search:      { iconId: 'lg-search-code',  label: 'Vector Search',  verb: 'Searching vectors', descFn: a => a.query ? `"${a.query}"` : '' },
+  vai_rerank:      { iconId: 'lg-arrow-up-down', label: 'Rerank',        verb: 'Reranking',         descFn: a => a.query ? `${a.documents?.length || '?'} docs for "${a.query}"` : '' },
+  vai_embed:       { iconId: 'lg-lightning',    label: 'Embed',          verb: 'Embedding',         descFn: a => a.text ? `"${a.text.slice(0, 60)}${a.text.length > 60 ? '...' : ''}"` : '' },
+  vai_similarity:  { iconId: 'lg-target',       label: 'Similarity',     verb: 'Comparing',         descFn: a => a.text1 ? `two texts` : '' },
+  vai_collections: { iconId: 'lg-database',     label: 'Collections',    verb: 'Discovering',       descFn: a => a.db ? `in ${a.db}` : 'available databases' },
+  vai_models:      { iconId: 'lg-bot',          label: 'Models',         verb: 'Listing',           descFn: () => 'available models' },
+  vai_topics:      { iconId: 'lg-cube',         label: 'Topics',         verb: 'Browsing',          descFn: () => 'educational topics' },
+  vai_explain:     { iconId: 'lg-bulb',         label: 'Explain',        verb: 'Explaining',        descFn: a => a.topic || '' },
+  vai_estimate:    { iconId: 'lg-coins',        label: 'Cost Estimate',  verb: 'Estimating',        descFn: a => a.docs ? `${a.docs} docs` : '' },
+  vai_ingest:      { iconId: 'lg-inbox',        label: 'Ingest',         verb: 'Ingesting',         descFn: a => a.source || 'document' },
 };
-const DEFAULT_TOOL_META = { icon: '\u2699\uFE0F', label: '', verb: 'Running', descFn: () => '' };
+const DEFAULT_TOOL_META = { iconId: 'lg-config', label: '', verb: 'Running', descFn: () => '' };
 
 /**
  * Create the thinking panel <details> element.
@@ -11026,7 +11070,7 @@ function createThinkingPanel() {
 
   const summary = document.createElement('summary');
   summary.innerHTML =
-    '<span class="thinking-icon">\uD83E\uDDE0</span>' +
+    '<span class="thinking-icon">' + lucideIcon('lg-brain', 14) + '</span>' +
     '<span class="thinking-label">Thinking</span>' +
     '<span class="thinking-count">0</span>' +
     '<span class="thinking-elapsed"></span>' +
@@ -11069,7 +11113,7 @@ function createThinkingPanel() {
 
     const iconDiv = document.createElement('div');
     iconDiv.className = 'thinking-step-icon';
-    iconDiv.textContent = meta.icon;
+    iconDiv.innerHTML = lucideIcon(meta.iconId, 14);
     step.appendChild(iconDiv);
 
     const body = document.createElement('div');
@@ -11124,7 +11168,7 @@ function createThinkingPanel() {
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
     summary.querySelector('.thinking-elapsed').textContent = elapsed + 's';
     summary.querySelector('.thinking-label').textContent = 'Thought for ' + elapsed + 's';
-    summary.querySelector('.thinking-icon').textContent = '\u2728';
+    summary.querySelector('.thinking-icon').innerHTML = lucideIcon('lg-sparkles', 14);
     // Mark last step done and collapse
     if (activeStep) {
       activeStep.classList.remove('active');
