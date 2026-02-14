@@ -55,7 +55,8 @@
       "WebFetch(domain:docs.brew.sh)",
       "Bash(/opt/homebrew/bin/npx docusaurus build)",
       "Bash(npx docusaurus build:*)",
-      "Bash(/usr/bin/tail:*)"
+      "Bash(/usr/bin/tail:*)",
+      "Bash(PATH=\"/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH\")"
     ]
   },
   "enableAllProjectMcpServers": true,
