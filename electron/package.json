@@ -98,6 +98,7 @@
     "electron-builder": "^25.0.0"
   },
   "dependencies": {
+    "@vaicli/vai-workflow-batch-quality-gate": "^1.0.0",
     "@vaicli/vai-workflow-contract-clause-finder": "^1.0.0",
     "@vaicli/vai-workflow-financial-risk-scanner": "^1.0.0",
     "@vaicli/vai-workflow-knowledge-base-bootstrap": "^1.0.0",
