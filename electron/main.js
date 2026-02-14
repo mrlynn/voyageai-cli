@@ -827,6 +827,15 @@ app.whenReady().then(async () => {
   try {
     await startPlaygroundServer();
     createWindow();
+    // Desktop telemetry
+    try {
+      const telemetry = require('../src/lib/telemetry');
+      telemetry.send('desktop_launch', {
+        context: 'desktop',
+        electronVersion: process.versions.electron,
+        appVersion: app.getVersion(),
+      });
+    } catch { /* telemetry should never break the app */ }
   } catch (err) {
     dialog.showErrorBox('Server Error', `Failed to start playground server:\n${err.message}`);
     app.quit();

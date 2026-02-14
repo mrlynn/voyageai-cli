@@ -67,6 +67,7 @@ function registerEstimate(program) {
     .option('--json', 'Machine-readable JSON output')
     .option('-q, --quiet', 'Suppress non-essential output')
     .action((opts) => {
+      const telemetry = require('../lib/telemetry');
       const numDocs = parseShorthand(opts.docs);
       const numQueries = parseShorthand(opts.queries);
       const docTokens = parseInt(opts.docTokens, 10) || DEFAULT_DOC_TOKENS;
@@ -91,6 +92,8 @@ function registerEstimate(program) {
         console.error(ui.error(`Unknown or unpriced model: ${opts.queryModel}`));
         process.exit(1);
       }
+
+      telemetry.send('cli_estimate', { model: opts.docModel, tokenCount: numDocs * docTokens });
 
       const docTotalTokens = numDocs * docTokens;
       const queryTotalTokensPerMonth = numQueries * queryTokens;

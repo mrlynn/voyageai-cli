@@ -192,9 +192,13 @@ function registerEval(program) {
     .option('--json', 'Machine-readable JSON output')
     .option('-q, --quiet', 'Suppress non-essential output')
     .action(async (opts) => {
+      const telemetry = require('../lib/telemetry');
+      const done = telemetry.timer('cli_eval');
+
       // Dispatch to rerank eval mode
       if (opts.mode === 'rerank') {
         await evalRerank(opts);
+        done();
         return;
       }
 
@@ -438,7 +442,9 @@ function registerEval(program) {
           console.log(ui.dim('  💡 Low recall? Try: increasing --limit, different chunking strategy, or review your test set'));
         }
         console.log(ui.dim('  💡 Evaluate reranking quality: vai eval --mode rerank --test-set rerank-test.jsonl'));
+        done();
       } catch (err) {
+        telemetry.send('cli_error', { command: 'eval', errorType: err.constructor.name });
         console.error(ui.error(err.message));
         process.exit(1);
       } finally {

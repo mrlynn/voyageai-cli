@@ -159,7 +159,9 @@ function createPlaygroundServer() {
     try {
       // Serve HTML
       if (req.method === 'GET' && (req.url === '/' || req.url === '/index.html')) {
-        const html = fs.readFileSync(htmlPath, 'utf8');
+        const { getVersion } = require('../lib/banner');
+        let html = fs.readFileSync(htmlPath, 'utf8');
+        html = html.replace('</head>', `<script>window.__VAI_VERSION__="${getVersion()}";</script></head>`);
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
         res.end(html);
         return;

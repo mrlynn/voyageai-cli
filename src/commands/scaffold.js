@@ -55,7 +55,9 @@ function registerScaffold(program) {
     .option('--dry-run', 'Show what would be created without writing')
     .option('-q, --quiet', 'Suppress non-essential output')
     .action(async (name, opts) => {
+      const telemetry = require('../lib/telemetry');
       try {
+        telemetry.send('cli_scaffold', { template: opts.target });
         const target = opts.target;
         const projectDir = path.resolve(process.cwd(), name);
         

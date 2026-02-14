@@ -29,6 +29,8 @@ function registerStore(program) {
     .option('-q, --quiet', 'Suppress non-essential output')
     .action(async (opts) => {
       let client;
+      const telemetry = require('../lib/telemetry');
+      const done = telemetry.timer('cli_store', { model: opts.model });
       try {
         // Batch mode: .jsonl file
         if (opts.file && opts.file.endsWith('.jsonl')) {
@@ -102,7 +104,9 @@ function registerStore(program) {
             console.log(ui.label('Tokens', String(embedResult.usage.total_tokens)));
           }
         }
+        done();
       } catch (err) {
+        telemetry.send('cli_error', { command: 'store', errorType: err.constructor.name });
         console.error(ui.error(err.message));
         process.exit(1);
       } finally {

@@ -46,6 +46,8 @@ function registerModels(program) {
     .option('--json', 'Machine-readable JSON output')
     .option('-q, --quiet', 'Suppress non-essential output')
     .action((opts) => {
+      const telemetry = require('../lib/telemetry');
+      telemetry.send('cli_models', { category: opts.type });
       let models = MODEL_CATALOG;
 
       // Separate current and legacy models

@@ -15,6 +15,7 @@ function registerPing(program) {
     .option('-q, --quiet', 'Suppress non-essential output')
     .option('--mask', 'Mask sensitive info (cluster hostnames, endpoints) in output. Also enabled by VAI_MASK=1 env var.')
     .action(async (opts) => {
+      const telemetry = require('../lib/telemetry');
       // Support env var so all recordings are masked without remembering the flag
       if (process.env.VAI_MASK === '1' || process.env.VAI_MASK === 'true') {
         opts.mask = true;
@@ -241,6 +242,12 @@ function registerPing(program) {
           console.log(ui.warn('Chat requires a working LLM provider. Check your configuration.'));
         }
       }
+
+      // Telemetry
+      telemetry.send('cli_ping', {
+        voyageOk: !!results.voyage?.ok,
+        mongoOk: !!results.mongodb?.ok,
+      });
 
       // Emit JSON at the end with all results
       if (opts.json) {

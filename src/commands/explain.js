@@ -127,6 +127,8 @@ function registerExplain(program) {
     .description('Learn about embeddings, reranking, vector search, and more')
     .option('--json', 'Output in JSON format')
     .action((concept, opts) => {
+      const telemetry = require('../lib/telemetry');
+      telemetry.send('cli_explain', { topic: concept || 'list' });
       if (!concept) {
         // Show topic list
         if (opts.json) {
