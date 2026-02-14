@@ -37,7 +37,10 @@
       "Bash(PATH=\"/opt/homebrew/bin:/usr/local/bin:/bin:/usr/bin:$PATH\" gh pr list:*)",
       "Bash(PATH=\"/opt/homebrew/bin:/usr/local/bin:/bin:/usr/bin:$PATH\" gh pr view:*)",
       "Bash(PATH=\"/opt/homebrew/bin:/usr/local/bin:/bin:/usr/bin:$PATH\" gh pr merge:*)",
-      "Bash(git pull:*)"
+      "Bash(git pull:*)",
+      "Bash(cat:*)",
+      "Bash(git -C /Users/michael.lynn/code/voyageai-cli remote -v)",
+      "Bash(grep:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
