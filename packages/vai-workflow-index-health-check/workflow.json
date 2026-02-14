@@ -1,0 +1,73 @@
+{
+  "name": "index-health-check",
+  "description": "Run a comprehensive diagnostic on a collection: check document count, test retrieval quality, estimate costs, and generate a health report with recommendations.",
+  "version": "1.0.0",
+  "inputs": {
+    "collection": {
+      "type": "string",
+      "required": true
+    },
+    "test_query": {
+      "type": "string",
+      "required": true
+    }
+  },
+  "defaults": {},
+  "steps": [
+    {
+      "id": "collection_info",
+      "tool": "collections",
+      "name": "Get collection metadata",
+      "inputs": {}
+    },
+    {
+      "id": "broad_search",
+      "tool": "search",
+      "name": "Broad retrieval test",
+      "inputs": {
+        "query": "{{ inputs.test_query }}",
+        "collection": "{{ inputs.collection }}",
+        "limit": 20
+      }
+    },
+    {
+      "id": "precise_query",
+      "tool": "query",
+      "name": "Full pipeline retrieval test",
+      "inputs": {
+        "query": "{{ inputs.test_query }}",
+        "collection": "{{ inputs.collection }}",
+        "limit": 10
+      }
+    },
+    {
+      "id": "cost_estimate",
+      "tool": "estimate",
+      "name": "Estimate query costs",
+      "inputs": {
+        "text": "{{ inputs.test_query }}",
+        "model": "voyage-4-large"
+      }
+    },
+    {
+      "id": "health_report",
+      "tool": "generate",
+      "name": "Generate health assessment",
+      "inputs": {
+        "prompt": "You are a RAG pipeline diagnostic tool. Analyze the following collection health data and provide a comprehensive assessment.\n\nEvaluate:\n1. **Collection size**: Is the document count appropriate?\n2. **Retrieval quality**: Do the search results appear relevant to the test query?\n3. **Reranking impact**: Compare the raw search results vs the reranked results.\n4. **Cost efficiency**: Based on the cost estimate, is this collection cost-effective?\n5. **Recommendations**: Provide specific, actionable recommendations.\n\nTest query: {{ inputs.test_query }}\nCollection: {{ inputs.collection }}",
+        "context": {
+          "collection_metadata": "{{ collection_info.output }}",
+          "raw_search_results": "{{ broad_search.output }}",
+          "reranked_results": "{{ precise_query.output }}",
+          "cost_data": "{{ cost_estimate.output }}"
+        }
+      }
+    }
+  ],
+  "output": {
+    "health_report": "{{ health_report.output.response }}",
+    "collection_info": "{{ collection_info.output }}",
+    "search_results": "{{ broad_search.output }}",
+    "query_results": "{{ precise_query.output }}"
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "name": "vai-workflow-index-health-check",
+  "version": "1.0.0",
+  "description": "Run a comprehensive diagnostic on a collection: check document count, test retrieval quality, estimate costs, and generate a health report with recommendations.",
+  "keywords": [
+    "vai-workflow",
+    "utility",
+    "diagnostics",
+    "health",
+    "maintenance",
+    "monitoring"
+  ],
+  "author": "Michael Lynn",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mrlynn/voyageai-cli.git",
+    "directory": "packages/vai-workflow-index-health-check"
+  },
+  "files": [
+    "workflow.json",
+    "README.md",
+    "LICENSE"
+  ],
+  "vai-workflow": {
+    "engine": ">=1.0.0",
+    "category": "utility",
+    "tags": [
+      "diagnostics",
+      "health",
+      "maintenance",
+      "monitoring"
+    ],
+    "tools": [
+      "collections",
+      "query",
+      "search",
+      "estimate",
+      "generate"
+    ],
+    "inputs": {
+      "collection": {
+        "type": "string",
+        "required": true
+      },
+      "test_query": {
+        "type": "string",
+        "required": true
+      }
+    }
+  }
+}

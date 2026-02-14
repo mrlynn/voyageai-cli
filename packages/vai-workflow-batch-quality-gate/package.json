@@ -1,0 +1,60 @@
+{
+  "name": "vai-workflow-batch-quality-gate",
+  "version": "1.0.0",
+  "description": "Evaluate incoming documents against exemplar documents from the collection and only ingest those that meet a quality/relevance threshold.",
+  "keywords": [
+    "vai-workflow",
+    "ingestion",
+    "quality",
+    "gate",
+    "validation",
+    "ingestion"
+  ],
+  "author": "Michael Lynn",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mrlynn/voyageai-cli.git",
+    "directory": "packages/vai-workflow-batch-quality-gate"
+  },
+  "files": [
+    "workflow.json",
+    "README.md",
+    "LICENSE"
+  ],
+  "vai-workflow": {
+    "engine": ">=1.0.0",
+    "category": "ingestion",
+    "tags": [
+      "quality",
+      "gate",
+      "validation",
+      "ingestion"
+    ],
+    "tools": [
+      "embed",
+      "similarity",
+      "filter",
+      "ingest",
+      "generate"
+    ],
+    "inputs": {
+      "document": {
+        "type": "string",
+        "required": true
+      },
+      "collection": {
+        "type": "string",
+        "required": true
+      },
+      "exemplar_query": {
+        "type": "string",
+        "default": "high quality relevant content"
+      },
+      "quality_threshold": {
+        "type": "number",
+        "default": 0.6
+      }
+    }
+  }
+}

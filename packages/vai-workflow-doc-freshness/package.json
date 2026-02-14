@@ -1,0 +1,57 @@
+{
+  "name": "vai-workflow-doc-freshness",
+  "version": "1.0.0",
+  "description": "Audit a knowledge base for stale documents. Gathers collection metadata, model information, sample documents, and cost estimates, then generates a freshness report with recommendations.",
+  "keywords": [
+    "vai-workflow",
+    "utility",
+    "freshness",
+    "maintenance",
+    "stale-documents",
+    "monitoring"
+  ],
+  "author": "Michael Lynn",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mrlynn/voyageai-cli.git",
+    "directory": "packages/vai-workflow-doc-freshness"
+  },
+  "files": [
+    "workflow.json",
+    "README.md",
+    "LICENSE"
+  ],
+  "vai-workflow": {
+    "engine": ">=1.0.0",
+    "category": "utility",
+    "tags": [
+      "freshness",
+      "maintenance",
+      "stale-documents",
+      "monitoring"
+    ],
+    "tools": [
+      "collections",
+      "models",
+      "search",
+      "explain",
+      "estimate",
+      "generate"
+    ],
+    "inputs": {
+      "collection": {
+        "type": "string",
+        "required": true
+      },
+      "sample_query": {
+        "type": "string",
+        "default": "overview introduction getting started"
+      },
+      "staleness_days": {
+        "type": "number",
+        "default": 90
+      }
+    }
+  }
+}

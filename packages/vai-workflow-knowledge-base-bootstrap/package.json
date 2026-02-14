@@ -1,0 +1,55 @@
+{
+  "name": "vai-workflow-knowledge-base-bootstrap",
+  "version": "1.0.0",
+  "description": "One-command knowledge base setup: ingest a document, verify the collection, run a test query, and generate a status report confirming everything works.",
+  "keywords": [
+    "vai-workflow",
+    "integration",
+    "onboarding",
+    "setup",
+    "bootstrap",
+    "end-to-end"
+  ],
+  "author": "Michael Lynn",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mrlynn/voyageai-cli.git",
+    "directory": "packages/vai-workflow-knowledge-base-bootstrap"
+  },
+  "files": [
+    "workflow.json",
+    "README.md",
+    "LICENSE"
+  ],
+  "vai-workflow": {
+    "engine": ">=1.0.0",
+    "category": "integration",
+    "tags": [
+      "onboarding",
+      "setup",
+      "bootstrap",
+      "end-to-end"
+    ],
+    "tools": [
+      "ingest",
+      "query",
+      "collections",
+      "generate"
+    ],
+    "inputs": {
+      "document": {
+        "type": "string",
+        "required": true
+      },
+      "collection": {
+        "type": "string",
+        "required": true
+      },
+      "test_query": {
+        "type": "string",
+        "required": true
+      }
+    }
+  }
+}

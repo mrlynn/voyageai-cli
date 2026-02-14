@@ -1,0 +1,70 @@
+{
+  "name": "financial-risk-scanner",
+  "description": "Scan financial document collections for risk indicators related to a company or topic, with domain-specific retrieval and risk assessment.",
+  "version": "1.0.0",
+  "inputs": {
+    "topic": {
+      "type": "string",
+      "required": true
+    },
+    "collection": {
+      "type": "string",
+      "required": true
+    },
+    "risk_categories": {
+      "type": "string",
+      "default": "regulatory, operational, market, credit, liquidity"
+    },
+    "limit": {
+      "type": "number",
+      "default": 15
+    }
+  },
+  "defaults": {},
+  "steps": [
+    {
+      "id": "risk_search",
+      "tool": "query",
+      "name": "Search for risk-related documents",
+      "inputs": {
+        "query": "{{ inputs.topic }} risk exposure concerns warnings",
+        "collection": "{{ inputs.collection }}",
+        "model": "voyage-finance-2",
+        "limit": 25
+      }
+    },
+    {
+      "id": "rerank_risk",
+      "tool": "rerank",
+      "name": "Rerank by risk relevance",
+      "inputs": {
+        "query": "{{ inputs.topic }} financial risk assessment {{ inputs.risk_categories }}",
+        "documents": "{{ risk_search.output.results }}",
+        "model": "rerank-2.5",
+        "limit": "{{ inputs.limit }}"
+      }
+    },
+    {
+      "id": "filter_high_relevance",
+      "tool": "filter",
+      "name": "Filter for high-relevance results only",
+      "inputs": {
+        "array": "{{ rerank_risk.output.results }}",
+        "condition": "{{ item.score >= 0.7 }}"
+      }
+    },
+    {
+      "id": "risk_report",
+      "tool": "generate",
+      "name": "Generate risk assessment report",
+      "inputs": {
+        "prompt": "You are a financial risk analyst. Based on the following documents related to {{ inputs.topic }}, produce a structured risk assessment covering these categories: {{ inputs.risk_categories }}.\n\nFor each identified risk:\n1. Risk category and severity (low/medium/high/critical)\n2. Supporting evidence from the documents\n3. Potential financial impact\n4. Recommended monitoring actions\n\nConclude with an overall risk rating and a prioritized list of concerns.",
+        "context": "{{ filter_high_relevance.output.results }}"
+      }
+    }
+  ],
+  "output": {
+    "risk_assessment": "{{ risk_report.output.response }}",
+    "evidence": "{{ filter_high_relevance.output.results }}"
+  }
+}

@@ -1,0 +1,58 @@
+{
+  "name": "vai-workflow-code-migration-helper",
+  "version": "1.0.0",
+  "description": "Find similar code patterns across repositories and generate migration suggestions using code-domain embeddings.",
+  "keywords": [
+    "vai-workflow",
+    "domain-specific",
+    "code",
+    "migration",
+    "refactoring",
+    "voyage-code-3"
+  ],
+  "author": "Michael Lynn",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mrlynn/voyageai-cli.git",
+    "directory": "packages/vai-workflow-code-migration-helper"
+  },
+  "files": [
+    "workflow.json",
+    "README.md",
+    "LICENSE"
+  ],
+  "vai-workflow": {
+    "engine": ">=1.0.0",
+    "category": "domain-specific",
+    "tags": [
+      "code",
+      "migration",
+      "refactoring",
+      "voyage-code-3"
+    ],
+    "tools": [
+      "query",
+      "rerank",
+      "generate"
+    ],
+    "inputs": {
+      "code_snippet": {
+        "type": "string",
+        "required": true
+      },
+      "target_framework": {
+        "type": "string",
+        "required": true
+      },
+      "collection": {
+        "type": "string",
+        "required": true
+      },
+      "limit": {
+        "type": "number",
+        "default": 5
+      }
+    }
+  }
+}
