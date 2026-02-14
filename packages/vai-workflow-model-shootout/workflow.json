@@ -1,0 +1,110 @@
+{
+  "name": "model-shootout",
+  "description": "Compare voyage-4-large, voyage-4, and voyage-4-lite side-by-side on your data. Shows retrieval quality differences and cost savings for each model.",
+  "version": "1.0.0",
+  "inputs": {
+    "query": {
+      "type": "string",
+      "required": true
+    },
+    "collection": {
+      "type": "string",
+      "required": true
+    },
+    "limit": {
+      "type": "number",
+      "default": 5
+    }
+  },
+  "defaults": {},
+  "steps": [
+    {
+      "id": "search_large",
+      "tool": "query",
+      "name": "Search with voyage-4-large",
+      "inputs": {
+        "query": "{{ inputs.query }}",
+        "collection": "{{ inputs.collection }}",
+        "model": "voyage-4-large",
+        "limit": "{{ inputs.limit }}"
+      }
+    },
+    {
+      "id": "search_base",
+      "tool": "query",
+      "name": "Search with voyage-4",
+      "inputs": {
+        "query": "{{ inputs.query }}",
+        "collection": "{{ inputs.collection }}",
+        "model": "voyage-4",
+        "limit": "{{ inputs.limit }}"
+      }
+    },
+    {
+      "id": "search_lite",
+      "tool": "query",
+      "name": "Search with voyage-4-lite",
+      "inputs": {
+        "query": "{{ inputs.query }}",
+        "collection": "{{ inputs.collection }}",
+        "model": "voyage-4-lite",
+        "limit": "{{ inputs.limit }}"
+      }
+    },
+    {
+      "id": "cost_large",
+      "tool": "estimate",
+      "name": "Estimate cost for voyage-4-large",
+      "inputs": {
+        "text": "{{ inputs.query }}",
+        "model": "voyage-4-large"
+      }
+    },
+    {
+      "id": "cost_base",
+      "tool": "estimate",
+      "name": "Estimate cost for voyage-4",
+      "inputs": {
+        "text": "{{ inputs.query }}",
+        "model": "voyage-4"
+      }
+    },
+    {
+      "id": "cost_lite",
+      "tool": "estimate",
+      "name": "Estimate cost for voyage-4-lite",
+      "inputs": {
+        "text": "{{ inputs.query }}",
+        "model": "voyage-4-lite"
+      }
+    },
+    {
+      "id": "comparison_report",
+      "tool": "generate",
+      "name": "Generate side-by-side comparison report",
+      "inputs": {
+        "prompt": "Compare the retrieval results from three Voyage AI models tested on the same query and collection. Analyze:\n\n1. **Result overlap**: How many of the same documents appear across all three models?\n2. **Ranking differences**: Where do the models agree and disagree on document ordering?\n3. **Quality assessment**: Based on the results, which model appears to produce the most relevant results for this query?\n4. **Cost-quality tradeoff**: Given the cost differences, is the quality improvement from larger models justified?\n5. **Recommendation**: Which model would you recommend for this type of query and why?\n\nQuery: {{ inputs.query }}\n\nNote: All three models share the same embedding space, meaning documents embedded with voyage-4-large can be queried with voyage-4-lite. This enables embedding once with the best model and querying with the cheapest.",
+        "context": {
+          "voyage_4_large": {
+            "results": "{{ search_large.output.results }}",
+            "cost": "{{ cost_large.output }}"
+          },
+          "voyage_4": {
+            "results": "{{ search_base.output.results }}",
+            "cost": "{{ cost_base.output }}"
+          },
+          "voyage_4_lite": {
+            "results": "{{ search_lite.output.results }}",
+            "cost": "{{ cost_lite.output }}"
+          }
+        }
+      }
+    }
+  ],
+  "output": {
+    "report": "{{ comparison_report.output.response }}",
+    "results_large": "{{ search_large.output.results }}",
+    "results_base": "{{ search_base.output.results }}",
+    "results_lite": "{{ search_lite.output.results }}"
+  }
+}

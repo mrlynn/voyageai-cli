@@ -1,0 +1,58 @@
+{
+  "name": "vai-workflow-clinical-protocol-match",
+  "version": "1.0.0",
+  "description": "Match clinical presentations to relevant protocols and guidelines with structured recommendations and evidence citations.",
+  "keywords": [
+    "vai-workflow",
+    "domain-specific",
+    "clinical",
+    "healthcare",
+    "protocols",
+    "medical"
+  ],
+  "author": "Michael Lynn",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mrlynn/voyageai-cli.git",
+    "directory": "packages/vai-workflow-clinical-protocol-match"
+  },
+  "files": [
+    "workflow.json",
+    "README.md",
+    "LICENSE"
+  ],
+  "vai-workflow": {
+    "engine": ">=1.0.0",
+    "category": "domain-specific",
+    "tags": [
+      "clinical",
+      "healthcare",
+      "protocols",
+      "medical"
+    ],
+    "tools": [
+      "query",
+      "rerank",
+      "generate"
+    ],
+    "inputs": {
+      "presentation": {
+        "type": "string",
+        "required": true
+      },
+      "collection": {
+        "type": "string",
+        "required": true
+      },
+      "specialty": {
+        "type": "string",
+        "default": "general"
+      },
+      "limit": {
+        "type": "number",
+        "default": 5
+      }
+    }
+  }
+}

@@ -1,0 +1,73 @@
+{
+  "name": "collection-overlap-audit",
+  "description": "Compare two collections to find semantic duplicates. Samples documents from the source collection and searches for near-matches in the target.",
+  "version": "1.0.0",
+  "inputs": {
+    "source_collection": {
+      "type": "string",
+      "required": true
+    },
+    "target_collection": {
+      "type": "string",
+      "required": true
+    },
+    "sample_query": {
+      "type": "string",
+      "default": "general content"
+    },
+    "sample_size": {
+      "type": "number",
+      "default": 10
+    },
+    "similarity_threshold": {
+      "type": "number",
+      "default": 0.85
+    }
+  },
+  "defaults": {},
+  "steps": [
+    {
+      "id": "sample_source",
+      "tool": "search",
+      "name": "Sample documents from source collection",
+      "inputs": {
+        "query": "{{ inputs.sample_query }}",
+        "collection": "{{ inputs.source_collection }}",
+        "limit": "{{ inputs.sample_size }}"
+      }
+    },
+    {
+      "id": "cross_search",
+      "tool": "search",
+      "name": "Search target collection for each source document",
+      "inputs": {
+        "query": "{{ sample_source.output.results }}",
+        "collection": "{{ inputs.target_collection }}",
+        "limit": 5
+      }
+    },
+    {
+      "id": "filter_duplicates",
+      "tool": "filter",
+      "name": "Filter results above similarity threshold",
+      "inputs": {
+        "array": "{{ cross_search.output.results }}",
+        "condition": "{{ item.score >= inputs.similarity_threshold }}"
+      }
+    },
+    {
+      "id": "overlap_report",
+      "tool": "generate",
+      "name": "Generate overlap analysis report",
+      "inputs": {
+        "prompt": "Analyze the following cross-collection overlap results. For each pair of documents identified as potential duplicates, assess:\n1. Whether they are true duplicates, near-duplicates, or topically similar but distinct\n2. Which collection's version appears more complete or current\n3. Recommended action (merge, delete one, keep both)\n\nProvide a summary with: total overlap percentage, high-confidence duplicates, and a recommended deduplication plan.\n\nSource collection: {{ inputs.source_collection }}\nTarget collection: {{ inputs.target_collection }}\nSimilarity threshold: {{ inputs.similarity_threshold }}",
+        "context": "{{ filter_duplicates.output.results }}"
+      }
+    }
+  ],
+  "output": {
+    "report": "{{ overlap_report.output.response }}",
+    "duplicate_pairs": "{{ filter_duplicates.output.results }}",
+    "source_sample_size": "{{ inputs.sample_size }}"
+  }
+}

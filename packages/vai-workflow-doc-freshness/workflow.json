@@ -1,0 +1,84 @@
+{
+  "name": "doc-freshness",
+  "description": "Audit a knowledge base for stale documents. Gathers collection metadata, model information, sample documents, and cost estimates, then generates a freshness report with recommendations.",
+  "version": "1.0.0",
+  "inputs": {
+    "collection": {
+      "type": "string",
+      "required": true
+    },
+    "sample_query": {
+      "type": "string",
+      "default": "overview introduction getting started"
+    },
+    "staleness_days": {
+      "type": "number",
+      "default": 90
+    }
+  },
+  "defaults": {},
+  "steps": [
+    {
+      "id": "collection_stats",
+      "tool": "collections",
+      "name": "Get collection metadata and document count",
+      "inputs": {}
+    },
+    {
+      "id": "model_info",
+      "tool": "models",
+      "name": "Get current model capabilities and benchmarks",
+      "inputs": {
+        "category": "all"
+      }
+    },
+    {
+      "id": "embedding_context",
+      "tool": "explain",
+      "name": "Retrieve educational context about embedding freshness",
+      "inputs": {
+        "topic": "shared-space"
+      }
+    },
+    {
+      "id": "sample_docs",
+      "tool": "search",
+      "name": "Sample documents to inspect freshness metadata",
+      "inputs": {
+        "query": "{{ inputs.sample_query }}",
+        "collection": "{{ inputs.collection }}",
+        "limit": 20
+      }
+    },
+    {
+      "id": "reembed_cost",
+      "tool": "estimate",
+      "name": "Estimate cost to re-embed the collection",
+      "inputs": {
+        "text": "{{ inputs.sample_query }}",
+        "model": "voyage-4-large"
+      }
+    },
+    {
+      "id": "freshness_report",
+      "tool": "generate",
+      "name": "Generate freshness audit report",
+      "inputs": {
+        "prompt": "You are a knowledge base maintenance advisor. Generate a comprehensive freshness audit report for the collection.\n\nAnalyze:\n1. **Collection overview**: Document count, embedding model used, index configuration\n2. **Freshness assessment**: Based on the sampled documents' metadata, identify documents that may be older than {{ inputs.staleness_days }} days.\n3. **Model currency**: Is the collection using the latest recommended embedding model?\n4. **Stale content indicators**: Look for references to deprecated features, outdated versions, old dates\n5. **Re-embedding cost estimate**: Based on the collection size and the cost estimate data, what would it cost to re-embed?\n6. **Recommendations**: Prioritized list of actions\n\nStaleness threshold: {{ inputs.staleness_days }} days\nCollection: {{ inputs.collection }}",
+        "context": {
+          "collection_metadata": "{{ collection_stats.output }}",
+          "available_models": "{{ model_info.output }}",
+          "embedding_space_info": "{{ embedding_context.output }}",
+          "sampled_documents": "{{ sample_docs.output }}",
+          "cost_estimate": "{{ reembed_cost.output }}"
+        }
+      }
+    }
+  ],
+  "output": {
+    "report": "{{ freshness_report.output.response }}",
+    "collection_stats": "{{ collection_stats.output }}",
+    "sample_count": 20,
+    "staleness_threshold_days": "{{ inputs.staleness_days }}"
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "name": "vai-workflow-question-decomposition",
+  "version": "1.0.0",
+  "description": "Decompose a complex question into sub-queries, search each in parallel, merge results, and synthesize a comprehensive answer.",
+  "keywords": [
+    "vai-workflow",
+    "retrieval",
+    "decomposition",
+    "fan-out",
+    "synthesis",
+    "research"
+  ],
+  "author": "Michael Lynn",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mrlynn/voyageai-cli.git",
+    "directory": "packages/vai-workflow-question-decomposition"
+  },
+  "files": [
+    "workflow.json",
+    "README.md",
+    "LICENSE"
+  ],
+  "vai-workflow": {
+    "engine": ">=1.0.0",
+    "category": "retrieval",
+    "tags": [
+      "decomposition",
+      "fan-out",
+      "synthesis",
+      "research"
+    ],
+    "tools": [
+      "generate",
+      "query",
+      "merge",
+      "rerank"
+    ],
+    "inputs": {
+      "query": {
+        "type": "string",
+        "required": true
+      },
+      "collection": {
+        "type": "string",
+        "required": true
+      },
+      "limit": {
+        "type": "number",
+        "default": 10
+      }
+    }
+  }
+}

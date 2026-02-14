@@ -1,0 +1,59 @@
+{
+  "name": "vai-workflow-hybrid-precision-search",
+  "version": "1.0.0",
+  "description": "Run three retrieval strategies in parallel (broad, precise, filtered), merge results, and rerank for optimal relevance.",
+  "keywords": [
+    "vai-workflow",
+    "retrieval",
+    "multi-strategy",
+    "parallel",
+    "reranking",
+    "hybrid"
+  ],
+  "author": "Michael Lynn",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mrlynn/voyageai-cli.git",
+    "directory": "packages/vai-workflow-hybrid-precision-search"
+  },
+  "files": [
+    "workflow.json",
+    "README.md",
+    "LICENSE"
+  ],
+  "vai-workflow": {
+    "engine": ">=1.0.0",
+    "category": "retrieval",
+    "tags": [
+      "multi-strategy",
+      "parallel",
+      "reranking",
+      "hybrid"
+    ],
+    "tools": [
+      "search",
+      "query",
+      "merge",
+      "rerank"
+    ],
+    "inputs": {
+      "query": {
+        "type": "string",
+        "required": true
+      },
+      "collection": {
+        "type": "string",
+        "required": true
+      },
+      "filter": {
+        "type": "object",
+        "default": {}
+      },
+      "limit": {
+        "type": "number",
+        "default": 10
+      }
+    }
+  }
+}

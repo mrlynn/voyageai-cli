@@ -1,0 +1,92 @@
+{
+  "name": "cost-optimizer",
+  "description": "Quantify the cost savings of asymmetric retrieval (embed with voyage-4-large, query with voyage-4-lite) for your specific data by comparing result quality and calculating actual savings.",
+  "version": "1.0.0",
+  "inputs": {
+    "query": {
+      "type": "string",
+      "required": true
+    },
+    "collection": {
+      "type": "string",
+      "required": true
+    },
+    "limit": {
+      "type": "number",
+      "default": 10
+    }
+  },
+  "defaults": {},
+  "steps": [
+    {
+      "id": "search_large",
+      "tool": "query",
+      "name": "Baseline: query with voyage-4-large",
+      "inputs": {
+        "query": "{{ inputs.query }}",
+        "collection": "{{ inputs.collection }}",
+        "model": "voyage-4-large",
+        "limit": "{{ inputs.limit }}"
+      }
+    },
+    {
+      "id": "search_lite",
+      "tool": "query",
+      "name": "Optimized: query with voyage-4-lite",
+      "inputs": {
+        "query": "{{ inputs.query }}",
+        "collection": "{{ inputs.collection }}",
+        "model": "voyage-4-lite",
+        "limit": "{{ inputs.limit }}"
+      }
+    },
+    {
+      "id": "cost_large",
+      "tool": "estimate",
+      "name": "Estimate cost for voyage-4-large queries",
+      "inputs": {
+        "text": "{{ inputs.query }}",
+        "model": "voyage-4-large"
+      }
+    },
+    {
+      "id": "cost_lite",
+      "tool": "estimate",
+      "name": "Estimate cost for voyage-4-lite queries",
+      "inputs": {
+        "text": "{{ inputs.query }}",
+        "model": "voyage-4-lite"
+      }
+    },
+    {
+      "id": "compare_quality",
+      "tool": "similarity",
+      "name": "Compare result sets between models",
+      "inputs": {
+        "text1": "{{ search_large.output.results }}",
+        "text2": "{{ search_lite.output.results }}"
+      }
+    },
+    {
+      "id": "optimization_report",
+      "tool": "generate",
+      "name": "Generate cost optimization report",
+      "inputs": {
+        "prompt": "Analyze the cost optimization results for asymmetric retrieval (embedding documents with voyage-4-large, querying with voyage-4-lite).\n\nProvide:\n1. **Result quality comparison**: How similar are the results from voyage-4-large vs voyage-4-lite queries?\n2. **Cost savings**: Calculate the percentage cost reduction from using voyage-4-lite for queries\n3. **Quality-adjusted recommendation**: Is the quality difference acceptable given the cost savings?\n4. **Break-even analysis**: At what query volume do the savings become significant?\n5. **Final recommendation**: Should this user switch to asymmetric retrieval?\n\nKey insight: Because all Voyage 4 models share the same embedding space, documents embedded with voyage-4-large are perfectly searchable with voyage-4-lite. The only question is whether the query embedding quality from the lite model produces sufficiently good results.\n\nQuery tested: {{ inputs.query }}",
+        "context": {
+          "large_results": "{{ search_large.output.results }}",
+          "lite_results": "{{ search_lite.output.results }}",
+          "large_cost": "{{ cost_large.output }}",
+          "lite_cost": "{{ cost_lite.output }}",
+          "result_similarity": "{{ compare_quality.output }}"
+        }
+      }
+    }
+  ],
+  "output": {
+    "report": "{{ optimization_report.output.response }}",
+    "quality_similarity": "{{ compare_quality.output }}",
+    "cost_large": "{{ cost_large.output }}",
+    "cost_lite": "{{ cost_lite.output }}"
+  }
+}
