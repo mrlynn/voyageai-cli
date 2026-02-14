@@ -4,6 +4,7 @@ const fs = require('fs');
 const { DEFAULT_RERANK_MODEL } = require('../lib/catalog');
 const { apiRequest } = require('../lib/api');
 const ui = require('../lib/ui');
+const { showCostSummary } = require('../lib/cost-display');
 
 /**
  * Register the rerank command on a Commander program.
@@ -127,6 +128,7 @@ function registerRerank(program) {
           if (result.usage) {
             console.log(ui.label('Tokens', ui.dim(String(result.usage.total_tokens))));
           }
+          showCostSummary(result.model || opts.model, result.usage?.total_tokens || 0, opts);
           console.log('');
         }
 

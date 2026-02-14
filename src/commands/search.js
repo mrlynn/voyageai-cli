@@ -4,6 +4,7 @@ const { getDefaultModel } = require('../lib/catalog');
 const { generateEmbeddings } = require('../lib/api');
 const { getMongoCollection } = require('../lib/mongo');
 const ui = require('../lib/ui');
+const { showCostSummary } = require('../lib/cost-display');
 
 /**
  * Register the search command on a Commander program.
@@ -99,6 +100,7 @@ function registerSearch(program) {
         if (!opts.quiet) {
           console.log(ui.label('Query', ui.cyan(`"${opts.query}"`)));
           console.log(ui.label('Results', String(cleanResults.length)));
+          showCostSummary(opts.model, embedResult.usage?.total_tokens || 0, opts);
           console.log('');
         }
 

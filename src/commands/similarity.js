@@ -5,6 +5,7 @@ const { generateEmbeddings } = require('../lib/api');
 const { cosineSimilarity } = require('../lib/math');
 const { getDefaultModel } = require('../lib/catalog');
 const ui = require('../lib/ui');
+const { showCostSummary } = require('../lib/cost-display');
 
 /**
  * Register the similarity command on a Commander program.
@@ -116,6 +117,7 @@ function registerSimilarity(program) {
           console.log(ui.label('Text B', `"${truncate(compareTexts[0], 70)}"`));
           console.log(ui.label('Model', ui.cyan(model)));
           console.log(ui.label('Tokens', ui.dim(String(tokens))));
+          showCostSummary(model, tokens, opts);
           console.log('');
         } else {
           // One-vs-many comparison
@@ -155,6 +157,7 @@ function registerSimilarity(program) {
 
           console.log('');
           console.log(`  ${ui.dim(`${results.length} comparisons, ${tokens} tokens`)}`);
+          showCostSummary(model, tokens, opts);
           console.log('');
         }
 

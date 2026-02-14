@@ -5,6 +5,7 @@ const { generateEmbeddings, apiRequest } = require('../lib/api');
 const { getMongoCollection } = require('../lib/mongo');
 const { loadProject } = require('../lib/project');
 const ui = require('../lib/ui');
+const { showCombinedCostSummary } = require('../lib/cost-display');
 
 /**
  * Register the query command on a Commander program.
@@ -251,6 +252,9 @@ function registerQuery(program) {
         if (!opts.quiet) {
           const totalTokens = embedTokens + rerankTokens;
           console.log(ui.dim(`  Tokens: ${totalTokens} (embed: ${embedTokens}${rerankTokens ? `, rerank: ${rerankTokens}` : ''})`));
+          const costOps = [{ model, tokens: embedTokens, label: `embed (${model})` }];
+          if (rerankTokens) costOps.push({ model: rerankModel, tokens: rerankTokens, label: `rerank (${rerankModel})` });
+          showCombinedCostSummary(costOps, opts);
         }
 
         done({ resultCount: finalResults.length });

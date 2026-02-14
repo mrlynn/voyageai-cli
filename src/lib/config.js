@@ -18,6 +18,8 @@ const KEY_MAP = {
   'llm-api-key': 'llmApiKey',
   'llm-model': 'llmModel',
   'llm-base-url': 'llmBaseUrl',
+  'show-cost': 'show-cost',
+  'telemetry': 'telemetry',
 };
 
 // Keys whose values should be masked in output

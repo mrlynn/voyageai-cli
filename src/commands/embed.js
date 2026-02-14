@@ -4,6 +4,7 @@ const { getDefaultModel } = require('../lib/catalog');
 const { generateEmbeddings } = require('../lib/api');
 const { resolveTextInput } = require('../lib/input');
 const ui = require('../lib/ui');
+const { showCostSummary } = require('../lib/cost-display');
 
 /**
  * Register the embed command on a Commander program.
@@ -99,6 +100,7 @@ function registerEmbed(program) {
             console.log(ui.label('Tokens', ui.dim(String(result.usage.total_tokens))));
           }
           console.log(ui.label('Dimensions', ui.bold(String(result.data[0]?.embedding?.length || 'N/A'))));
+          showCostSummary(result.model || model, result.usage?.total_tokens || 0, opts);
           console.log('');
         }
 
