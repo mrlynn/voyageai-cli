@@ -589,9 +589,15 @@ const concepts = {
       ``,
       `${pc.bold('Validate it yourself:')} Use ${pc.cyan('vai benchmark space')} to embed identical text`,
       `with all Voyage 4 models and see the cross-model cosine similarities.`,
+      ``,
+      `${pc.bold('Interactive proof:')} Try the ${pc.cyan('Shared Space Explorer')} at`,
+      `${pc.cyan('vaicli.com/shared-space')} — embed text with all three models simultaneously`,
+      `and see 0.95+ cross-model similarity in a live 3×3 matrix, scatter plot, and`,
+      `cost comparison. Share your results directly to LinkedIn.`,
     ].join('\n'),
     links: [
       'https://blog.voyageai.com/2026/01/15/voyage-4-model-family/',
+      'https://vaicli.com/shared-space',
     ],
     tryIt: [
       'vai benchmark space',
