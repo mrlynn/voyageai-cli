@@ -40,7 +40,22 @@
       "Bash(git pull:*)",
       "Bash(cat:*)",
       "Bash(git -C /Users/michael.lynn/code/voyageai-cli remote -v)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(/usr/bin/mdfind:*)",
+      "Bash(/opt/homebrew/bin/vai:*)",
+      "Bash(/usr/local/bin/vai:*)",
+      "Bash(EXIT=$?)",
+      "Bash(echo:*)",
+      "Bash(/usr/local/bin/node:*)",
+      "Bash(/opt/homebrew/bin/node:*)",
+      "Bash(curl:*)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:developers.raycast.com)",
+      "WebFetch(domain:haya14busa.github.io)",
+      "WebFetch(domain:docs.brew.sh)",
+      "Bash(/opt/homebrew/bin/npx docusaurus build)",
+      "Bash(npx docusaurus build:*)",
+      "Bash(/usr/bin/tail:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

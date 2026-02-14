@@ -138,6 +138,21 @@ function registerApp(program) {
       const electronPkg = path.join(electronDir, 'package.json');
 
       if (!fs.existsSync(electronPkg)) {
+        // Check for system-installed Vai.app on macOS
+        if (process.platform === 'darwin') {
+          const appPaths = [
+            '/Applications/Vai.app',
+            path.join(process.env.HOME || '', 'Applications', 'Vai.app'),
+          ];
+          const installed = appPaths.find((p) => fs.existsSync(p));
+          if (installed) {
+            console.log('🧭 Launching Vai desktop app...');
+            spawn('open', ['-a', installed], { stdio: 'ignore', detached: true }).unref();
+            setTimeout(() => process.exit(0), 500);
+            return;
+          }
+        }
+
         console.log('');
         console.log('🖥️  The Vai desktop app is not installed locally.');
         console.log('');

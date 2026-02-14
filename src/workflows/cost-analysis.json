@@ -3,6 +3,10 @@
   "name": "Cost Analysis",
   "description": "Compare embedding costs across different models and scenarios",
   "version": "1.0.0",
+  "branding": {
+    "icon": "dollar-sign",
+    "color": "#F59E0B"
+  },
   "inputs": {
     "docs": {
       "type": "number",

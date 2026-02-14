@@ -3,6 +3,10 @@
   "name": "Research and Summarize",
   "description": "Search knowledge base, then use LLM to produce a structured summary",
   "version": "1.0.0",
+  "branding": {
+    "icon": "sparkle",
+    "color": "#8B5CF6"
+  },
   "inputs": {
     "question": {
       "type": "string",

@@ -2,6 +2,10 @@
   "name": "kb-health-report",
   "description": "Analyze knowledge base health: counts, coverage, staleness",
   "version": "1.0.0",
+  "branding": {
+    "icon": "activity",
+    "color": "#DC2626"
+  },
   "inputs": {
     "test_queries": {
       "type": "array",

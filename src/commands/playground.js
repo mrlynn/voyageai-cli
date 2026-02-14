@@ -6,6 +6,79 @@ const path = require('path');
 const { exec } = require('child_process');
 
 /**
+ * Load announcements from the markdown file.
+ * Format: Each announcement is separated by `---` and has YAML-like metadata
+ * followed by a ## title and description paragraph.
+ */
+function loadAnnouncementsFromMarkdown() {
+  const mdPath = path.join(__dirname, '..', 'playground', 'announcements.md');
+
+  if (!fs.existsSync(mdPath)) {
+    console.warn('Announcements file not found:', mdPath);
+    return [];
+  }
+
+  const content = fs.readFileSync(mdPath, 'utf-8');
+
+  // Split by --- separator (skip the header section before first ---)
+  const sections = content.split(/\n---\n/).slice(1);
+
+  const announcements = [];
+
+  for (const section of sections) {
+    const lines = section.trim().split('\n');
+    const metadata = {};
+    let titleIndex = -1;
+
+    // Parse metadata lines (key: value format)
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+
+      // Stop at the title (## heading)
+      if (line.startsWith('## ')) {
+        titleIndex = i;
+        break;
+      }
+
+      // Parse key: value
+      const match = line.match(/^([a-z_]+):\s*(.+)$/i);
+      if (match) {
+        metadata[match[1]] = match[2].trim();
+      }
+    }
+
+    if (titleIndex === -1 || !metadata.id) continue;
+
+    // Extract title (## heading)
+    const title = lines[titleIndex].replace(/^##\s*/, '').trim();
+
+    // Extract description (paragraphs after the title)
+    const descriptionLines = [];
+    for (let i = titleIndex + 1; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (line) descriptionLines.push(line);
+    }
+    const description = descriptionLines.join(' ');
+
+    announcements.push({
+      id: metadata.id,
+      title,
+      description,
+      badge: metadata.badge || 'Info',
+      published: metadata.published || new Date().toISOString().split('T')[0],
+      expires: metadata.expires || '2099-12-31',
+      cta: {
+        label: metadata.cta_label || 'Learn More',
+        action: metadata.cta_action || 'link',
+        target: metadata.cta_target || '#'
+      }
+    });
+  }
+
+  return announcements;
+}
+
+/**
  * Register the playground command on a Commander program.
  * @param {import('commander').Command} program
  */
@@ -105,6 +178,23 @@ function createPlaygroundServer() {
         } else {
           res.writeHead(404);
           res.end('Watermark not found');
+        }
+        return;
+      }
+
+      // Serve V.png logo
+      if (req.method === 'GET' && req.url === '/icons/V.png') {
+        const logoPath = path.join(__dirname, '..', 'playground', 'icons', 'V.png');
+        if (fs.existsSync(logoPath)) {
+          const data = fs.readFileSync(logoPath);
+          res.writeHead(200, {
+            'Content-Type': 'image/png',
+            'Cache-Control': 'public, max-age=86400',
+          });
+          res.end(data);
+        } else {
+          res.writeHead(404);
+          res.end('Logo not found');
         }
         return;
       }
@@ -316,6 +406,14 @@ function createPlaygroundServer() {
         return;
       }
 
+      // API: Version — return CLI package version
+      if (req.method === 'GET' && req.url === '/api/version') {
+        const pkg = require('../../package.json');
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ version: pkg.version }));
+        return;
+      }
+
       // API: Doctor health checks
       if (req.method === 'GET' && req.url === '/api/doctor') {
         try {
@@ -361,9 +459,11 @@ function createPlaygroundServer() {
 
       // API: Workflow Store catalog (cached 15 min)
       if (req.method === 'GET' && req.url === '/api/workflows/catalog') {
+        const _catStart = Date.now();
         try {
           // Check cache
           if (_catalogCache && (Date.now() - _catalogCacheTime < 15 * 60 * 1000)) {
+            console.log(`[catalog] served from cache in ${Date.now() - _catStart}ms`);
             res.writeHead(200, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify(_catalogCache));
             return;
@@ -388,7 +488,8 @@ function createPlaygroundServer() {
             // npm unreachable — fall back to installed only
           }
 
-          // Fetch full package metadata from npm registry for each package (for vai field, inputs, etc.)
+          // Fetch registry metadata (for vai-workflow field, inputs, author)
+          // Only one request per package — no unpkg or downloads API on the critical path
           const metadataCache = {};
           await Promise.all(npmWorkflows.map(async (r) => {
             try {
@@ -397,7 +498,7 @@ function createPlaygroundServer() {
                 : encodeURIComponent(r.name);
               const regRes = await fetch(`https://registry.npmjs.org/${encodedName}/latest`, {
                 headers: { 'Accept': 'application/json' },
-                signal: AbortSignal.timeout(10000),
+                signal: AbortSignal.timeout(5000),
               });
               if (regRes.ok) {
                 metadataCache[r.name] = await regRes.json();
@@ -406,6 +507,74 @@ function createPlaygroundServer() {
               // Fall back to basic data from search
             }
           }));
+
+          // ── Lucide icon paths for workflow branding ──
+          // Curated subset of Lucide icons (lucide.dev, MIT) for the store.
+          // Each value is an SVG path (or multiple paths separated by a convention
+          // that the client renders inside a 24x24 viewBox with stroke).
+          const STORE_ICONS = {
+            trophy:       'M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22M18 2H6v7a6 6 0 0 0 12 0V2z',
+            search:       'M21 21l-4.3-4.3M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16z',
+            'dollar-sign':'M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6',
+            split:        'M16 3h5v5M8 3H3v5M12 22v-8.3a4 4 0 0 0-1.172-2.872L3 3M21 3l-7.828 7.828A4 4 0 0 0 12 13.7V22',
+            'file-search': 'M14 2v4a2 2 0 0 0 2 2h4M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7zM9.5 12.5a2.5 2.5 0 1 0 5 0 2.5 2.5 0 1 0-5 0M13.3 14.3 15 16',
+            database:     'M21 5c0 1.1-3.134 3-9 3S3 6.1 3 5M21 5c0-1.1-3.134-3-9-3S3 3.9 3 5M21 5v14c0 1.1-3.134 3-9 3s-9-1.9-9-3V5M21 12c0 1.1-3.134 3-9 3s-9-1.9-9-3',
+            activity:     'M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36-3.18-19.64A2 2 0 0 0 10.12 1h-.24a2 2 0 0 0-1.94 1.55L5.18 12H2',
+            globe:        'M12 12m-10 0a10 10 0 1 0 20 0 10 10 0 1 0-20 0M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z',
+            'shield-alert':'M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 .5-.87l7-4a1 1 0 0 1 1 0l7 4A1 1 0 0 1 20 6zM12 8v4M12 16h.01',
+            timer:        'M10 2h4M12 14l3-3M12 22a8 8 0 1 0 0-16 8 8 0 0 0 0 16z',
+            'refresh-cw': 'M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16',
+            'flask-conical':'M10 2v7.527a2 2 0 0 1-.211.896L4.72 20.55a1 1 0 0 0 .9 1.45h12.76a1 1 0 0 0 .9-1.45l-5.069-10.127A2 2 0 0 1 14 9.527V2M8.5 2h7M7 16h10',
+            target:       'M12 12m-10 0a10 10 0 1 0 20 0 10 10 0 1 0-20 0M12 12m-6 0a6 6 0 1 0 12 0 6 6 0 1 0-12 0M12 12m-2 0a2 2 0 1 0 4 0 2 2 0 1 0-4 0',
+            code:         'M16 18l6-6-6-6M8 6l-6 6 6 6',
+            'clipboard-list':'M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2M9 2h6a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1zM12 11h4M12 16h4M8 11h.01M8 16h.01',
+            layers:       'M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.84zM2 12l8.58 3.91a2 2 0 0 0 1.66 0L22 12M2 17l8.58 3.91a2 2 0 0 0 1.66 0L22 17',
+            'bar-chart-3': 'M12 20V10M18 20V4M6 20v-4',
+            'heart-pulse': 'M19.5 12.572l-7.5 7.428-7.5-7.428A5 5 0 0 1 7.5 5c1.8 0 3.3.9 4.5 2.7C13.2 5.9 14.7 5 16.5 5a5 5 0 0 1 3 9.572zM12 6l-1 4h4l-1 4',
+            brain:        'M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2zM14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2z',
+            'check-circle':'M22 11.08V12a10 10 0 1 1-5.93-9.14M22 4 12 14.01l-3-3',
+            zap:          'M13 2 3 14h9l-1 8 10-12h-9l1-8z',
+            package:      'M16.5 9.4l-9-5.19M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16zM3.27 6.96 12 12.01l8.73-5.05M12 22.08V12',
+            microscope:   'M6 18h8M3 22h18M14 22a7 7 0 1 0 0-14h-1M9 14h2M9 12a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2z',
+            sparkle:      'M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z',
+            scale:        'M16 3h5v5M8 3H3v5M12 22v-8.3a4 4 0 0 0-1.172-2.872L3 3M21 3l-7.828 7.828A4 4 0 0 0 12 13.7V22',
+            'file-text':  'M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7zM14 2v4a2 2 0 0 0 2 2h4M10 13h4M10 17h4M10 9h1',
+            filter:       'M3 6h18M7 12h10M10 18h4',
+          };
+
+          // Category fallback icons (used when a workflow has no branding)
+          const CATEGORY_ICONS = {
+            retrieval: 'search',
+            analysis: 'bar-chart-3',
+            'domain-specific': 'target',
+            ingestion: 'database',
+            utility: 'zap',
+            integration: 'package',
+          };
+
+          // Default branding for the 20 official workflows
+          const DEFAULT_BRANDING = {
+            'model-shootout':            { icon: 'trophy',        color: '#0D9488' },
+            'asymmetric-search':         { icon: 'split',         color: '#00D4AA' },
+            'cost-optimizer':            { icon: 'dollar-sign',   color: '#F59E0B' },
+            'question-decomposition':    { icon: 'sparkle',       color: '#8B5CF6' },
+            'contract-clause-finder':    { icon: 'file-search',   color: '#1E40AF' },
+            'knowledge-base-bootstrap':  { icon: 'database',      color: '#059669' },
+            'embedding-drift-detector':  { icon: 'activity',      color: '#DC2626' },
+            'multilingual-search':       { icon: 'globe',         color: '#0EA5E9' },
+            'financial-risk-scanner':    { icon: 'shield-alert',  color: '#B45309' },
+            'doc-freshness':             { icon: 'timer',         color: '#4338CA' },
+            'incremental-sync':          { icon: 'refresh-cw',    color: '#15803D' },
+            'rag-ab-test':               { icon: 'flask-conical', color: '#BE185D' },
+            'hybrid-precision-search':   { icon: 'target',        color: '#0891B2' },
+            'code-migration-helper':     { icon: 'code',          color: '#475569' },
+            'meeting-action-items':      { icon: 'clipboard-list',color: '#7C2D12' },
+            'collection-overlap-audit':  { icon: 'layers',        color: '#6D28D9' },
+            'query-quality-scorer':      { icon: 'microscope',    color: '#9333EA' },
+            'clinical-protocol-match':   { icon: 'heart-pulse',   color: '#0F766E' },
+            'batch-quality-gate':        { icon: 'check-circle',  color: '#166534' },
+            'index-health-check':        { icon: 'bar-chart-3',   color: '#1D4ED8' },
+          };
 
           // Static gradient/featured config
           const GRADIENTS = {
@@ -436,7 +605,7 @@ function createPlaygroundServer() {
           const workflows = npmWorkflows.map(r => {
             const shortName = (r.name || '').replace(/^@vaicli\/vai-workflow-/, '').replace(/^vai-workflow-/, '');
             const meta = metadataCache[r.name]; // raw registry JSON
-            const vai = (meta && meta.vai) || r.vai || {};
+            const vai = (meta && meta['vai-workflow']) || (meta && meta.vai) || r.vai || {};
             const vaiAuthor = vai.author || null;
             const version = (meta && meta.version) || r.version || '1.0.0';
 
@@ -463,6 +632,19 @@ function createPlaygroundServer() {
               assets.screenshots = vaiAssets.screenshots.map(s => `https://unpkg.com/${r.name}@${version}/${s}`);
             }
 
+            // Branding: vai.branding from package > DEFAULT_BRANDING > category fallback
+            const vaiBranding = vai.branding || {};
+            const defaultBrand = DEFAULT_BRANDING[shortName] || {};
+            const category = vai.category || 'utility';
+            const brandingIcon = vaiBranding.icon || defaultBrand.icon || CATEGORY_ICONS[category] || 'zap';
+            const brandingColor = vaiBranding.color || defaultBrand.color || '#64748B';
+            const branding = {
+              icon: brandingIcon,
+              color: brandingColor,
+              // Resolve the icon name to its SVG path data for client rendering
+              iconPath: STORE_ICONS[brandingIcon] || STORE_ICONS.zap,
+            };
+
             // Inputs: extract from vai-workflow field (has inputs map), fall back to vai.inputs
             const vaiWorkflowField = meta && meta['vai-workflow'] ? meta['vai-workflow'] : {};
             const rawInputs = vaiWorkflowField.inputs || vai.inputs || {};
@@ -479,28 +661,72 @@ function createPlaygroundServer() {
               packageName: r.name,
               version,
               description: r.description || '',
-              category: vai.category || 'utility',
+              category,
               tags: vai.tags || [],
               tools: vai.tools || [],
-              steps: vai.steps || 0,
-              layers: vai.layers || 0,
+              steps: vai.steps || (vai.tools || []).length || 0,
+              tools: vai.tools || [],
+              toolCount: (vai.tools || []).length,
               tier: (r.name || '').startsWith('@vaicli/') ? 'official' : 'community',
-              downloads: r.downloads || 0,
+              downloads: 0,
               featured: FEATURED.includes(shortName),
               installed: installedNames.has(r.name),
               gradient: GRADIENTS[shortName] || DEFAULT_GRADIENT,
+              branding,
               author,
               assets,
               inputs,
             };
           });
 
-          const result = { workflows, lastUpdated: new Date().toISOString() };
+          const result = { workflows, icons: STORE_ICONS, lastUpdated: new Date().toISOString() };
           _catalogCache = result;
           _catalogCacheTime = Date.now();
 
+          console.log(`[catalog] built fresh in ${Date.now() - _catStart}ms (${workflows.length} workflows)`);
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify(result));
+
+          // Background enrichment: fetch real step counts + download stats
+          // Updates the cache silently — next client request gets enriched data
+          (async () => {
+            try {
+              let enriched = false;
+              await Promise.all(workflows.map(async (wf) => {
+                const [defRes, dlRes] = await Promise.all([
+                  fetch(`https://unpkg.com/${wf.packageName}@${wf.version || 'latest'}/workflow.json`, {
+                    headers: { 'Accept': 'application/json' },
+                    signal: AbortSignal.timeout(8000),
+                  }).catch(() => null),
+                  fetch(`https://api.npmjs.org/downloads/point/last-month/${encodeURIComponent(wf.packageName)}`, {
+                    headers: { 'Accept': 'application/json' },
+                    signal: AbortSignal.timeout(8000),
+                  }).catch(() => null),
+                ]);
+                if (defRes && defRes.ok) {
+                  try {
+                    const def = await defRes.json();
+                    if (def.steps && Array.isArray(def.steps) && def.steps.length > 0) {
+                      wf.steps = def.steps.length;
+                      enriched = true;
+                    }
+                  } catch {}
+                }
+                if (dlRes && dlRes.ok) {
+                  try {
+                    const dlData = await dlRes.json();
+                    if (dlData.downloads > 0) {
+                      wf.downloads = dlData.downloads;
+                      enriched = true;
+                    }
+                  } catch {}
+                }
+              }));
+              if (enriched) {
+                _catalogCache = { ...result, workflows, lastUpdated: new Date().toISOString() };
+              }
+            } catch {}
+          })();
         } catch (err) {
           res.writeHead(500, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: err.message }));
@@ -525,11 +751,13 @@ function createPlaygroundServer() {
             source,
             scope: c.scope,
           });
+          // Include workflows that have a definition, even if they have non-fatal errors
+          // (e.g., "Missing vai field" is a warning, not a blocker)
           const official = registry.official
-            .filter(c => c.errors.length === 0)
+            .filter(c => c.definition)
             .map(c => mapPkg(c, 'official'));
           const community = registry.community
-            .filter(c => c.errors.length === 0)
+            .filter(c => c.definition)
             .map(c => mapPkg(c, 'community'));
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ workflows, official, community }));
@@ -617,47 +845,25 @@ function createPlaygroundServer() {
         return;
       }
 
-      // API: Home announcements
+      // API: Home announcements (loaded from markdown file)
       if (req.method === 'GET' && req.url === '/api/home/announcements') {
-        const announcements = [
-          {
-            id: 'ann-001',
-            title: 'Voyage AI 4 Large Now Available',
-            description: 'The latest embedding model from Voyage AI is ready to benchmark in VAI.',
-            badge: 'New Model',
-            cta: { label: 'Try It Now', action: 'navigate', target: '/benchmark' },
-            published: '2026-02-14',
-            expires: '2026-03-15'
-          },
-          {
-            id: 'ann-002',
-            title: 'New Marketplace Workflows',
-            description: 'HIPAA-compliant document search, legal contract analysis, and more workflows are now available.',
-            badge: 'New',
-            cta: { label: 'Explore Marketplace', action: 'navigate', target: '/workflows' },
-            published: '2026-02-12',
-            expires: '2026-03-01'
-          },
-          {
-            id: 'ann-003',
-            title: 'VAI v1.3 Adds Bulk CSV Ingestion',
-            description: 'Import large datasets efficiently with the new bulk CSV ingestion feature.',
-            badge: 'Update',
-            cta: { label: 'Learn More', action: 'link', target: 'https://docs.vaicli.com/csv-import' },
-            published: '2026-02-10',
-            expires: '2026-04-01'
-          }
-        ];
-        
-        // Filter out expired announcements
-        const now = new Date();
-        const activeAnnouncements = announcements.filter(a => {
-          const expires = new Date(a.expires);
-          return expires > now;
-        });
-        
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ announcements: activeAnnouncements }));
+        try {
+          const announcements = loadAnnouncementsFromMarkdown();
+
+          // Filter out expired announcements
+          const now = new Date();
+          const activeAnnouncements = announcements.filter(a => {
+            const expires = new Date(a.expires);
+            return expires > now;
+          });
+
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ announcements: activeAnnouncements }));
+        } catch (err) {
+          console.error('Failed to load announcements:', err);
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ announcements: [] }));
+        }
         return;
       }
 
@@ -676,24 +882,42 @@ function createPlaygroundServer() {
           }
           
           const https = require('https');
-          const githubUrl = 'https://api.github.com/repos/mrlynn/voyageai-cli/releases?per_page=5';
-          
+
           const fetchGitHub = () => new Promise((resolve, reject) => {
-            const req = https.request(githubUrl, {
-              headers: { 'User-Agent': 'VAI-Playground' }
-            }, (res) => {
+            const options = {
+              hostname: 'api.github.com',
+              path: '/repos/mrlynn/voyageai-cli/releases?per_page=5',
+              method: 'GET',
+              headers: {
+                'User-Agent': 'VAI-Playground',
+                'Accept': 'application/vnd.github.v3+json'
+              }
+            };
+
+            const req = https.request(options, (response) => {
               let data = '';
-              res.on('data', chunk => data += chunk);
-              res.on('end', () => {
-                if (res.statusCode === 200) {
-                  resolve(JSON.parse(data));
+              response.on('data', chunk => data += chunk);
+              response.on('end', () => {
+                if (response.statusCode === 200) {
+                  try {
+                    resolve(JSON.parse(data));
+                  } catch (e) {
+                    reject(new Error('Failed to parse GitHub response'));
+                  }
                 } else {
-                  reject(new Error(`GitHub API returned ${res.statusCode}`));
+                  console.error(`GitHub API error: ${response.statusCode} - ${data.substring(0, 200)}`);
+                  reject(new Error(`GitHub API returned ${response.statusCode}`));
                 }
               });
             });
-            req.on('error', reject);
-            req.setTimeout(10000, () => reject(new Error('Request timeout')));
+            req.on('error', (err) => {
+              console.error('GitHub request error:', err.message);
+              reject(err);
+            });
+            req.setTimeout(10000, () => {
+              req.destroy();
+              reject(new Error('Request timeout'));
+            });
             req.end();
           });
           
