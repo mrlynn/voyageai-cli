@@ -38,26 +38,33 @@ vai quickstart    # Interactive tutorial — zero to semantic search in 2 minute
 
 <table>
 <tr>
-<td align="center" width="33%">
+<td align="center" width="25%">
 <h3>🖥️ CLI</h3>
 <code>vai</code><br/><br/>
 22 commands · 5 chunking strategies<br/>
 End-to-end RAG pipeline from your terminal<br/><br/>
-<code>npm install -g voyageai-cli</code>
+<code>curl -fsSL https://vaicli.com/install.sh | sh</code>
 </td>
-<td align="center" width="33%">
+<td align="center" width="25%">
 <h3>🌐 Web Playground</h3>
 <code>vai playground</code><br/><br/>
-7 interactive tabs for embedding,<br/>
-comparing, searching, and benchmarking<br/><br/>
+7 interactive tabs + Workflow Store<br/>
+with 20+ installable workflow packages<br/><br/>
 <em>Launches in your browser</em>
 </td>
-<td align="center" width="33%">
+<td align="center" width="25%">
 <h3>💻 Desktop App</h3>
 Standalone Electron app<br/><br/>
 Secure keychain storage, dark/light themes,<br/>
 MongoDB LeafyGreen design system<br/><br/>
 <a href="https://github.com/mrlynn/voyageai-cli/releases">Download from GitHub Releases</a>
+</td>
+<td align="center" width="25%">
+<h3>🏪 Workflow Store</h3>
+<code>vai store</code> or Playground<br/><br/>
+Browse, install, and run pre-built<br/>
+RAG workflows from npm<br/><br/>
+<em>Official + community packages</em>
 </td>
 </tr>
 </table>
@@ -81,6 +88,7 @@ MongoDB LeafyGreen design system<br/><br/>
   - [Environment & Auth](#environment--auth)
   - [Shell Completions](#shell-completions)
   - [All Commands](#all-commands)
+- [Workflow Store](#workflow-store)
 - [MCP Server](#mcp-server)
 - [Screenshots](#screenshots)
 - [Requirements](#requirements)
@@ -115,6 +123,8 @@ Download the latest release for your platform from [GitHub Releases](https://git
 | Windows | `.exe` installer |
 | Linux | `.AppImage` / `.deb` |
 
+> **Prefer the CLI?** Install with `curl -fsSL https://vaicli.com/install.sh | sh` or `brew install mrlynn/tap/voyageai-cli`
+
 ---
 
 ## Web Playground
@@ -125,7 +135,7 @@ An interactive, browser-based interface for exploring Voyage AI embeddings witho
 vai playground
 ```
 
-Your default browser opens with a full-featured UI organized into **7 tabs**:
+Your default browser opens with a full-featured UI:
 
 | Tab | What It Does |
 |-----|-------------|
@@ -134,6 +144,7 @@ Your default browser opens with a full-featured UI organized into **7 tabs**:
 | **Search** | Connect to MongoDB Atlas and run vector similarity searches with filters and reranking |
 | **Benchmark** | Compare model latency, cost, and quality across the Voyage 4 family on your own data |
 | **Explore** | Visualize embedding spaces with dimensionality reduction (PCA/t-SNE) and clustering |
+| **Workflow Store** | Browse, install, and run 20+ official and community workflow packages |
 | **About** | Project info, links, and version details |
 | **Settings** | Configure API keys, MongoDB URI, default model, and preferences |
 
@@ -143,12 +154,19 @@ The playground connects to the same backend as the CLI. Any API keys or MongoDB 
 
 ## CLI — Quick Start
 
-**22 commands · 312 tests · 5 chunking strategies · End-to-end RAG pipeline**
+**22 commands · 1,000+ tests · 5 chunking strategies · End-to-end RAG pipeline**
 
 ### Install
 
 ```bash
+# Fastest — one command, no dependencies
+curl -fsSL https://vaicli.com/install.sh | sh
+
+# Via npm
 npm install -g voyageai-cli
+
+# Via Homebrew
+brew install mrlynn/tap/voyageai-cli
 ```
 
 ### 5-Minute RAG Pipeline
@@ -535,6 +553,11 @@ Covers all 22 commands, subcommands, flags, model names, and explain topics.
 | `vai eval` | Evaluate retrieval quality (MRR, nDCG, Recall) |
 | `vai eval compare` | Compare configurations side-by-side |
 | `vai benchmark` | 8 subcommands for model comparison |
+| **Workflow Store** | |
+| `vai store list` | Browse available workflows (official + community) |
+| `vai store install` | Install a workflow package from npm |
+| `vai store run` | Run an installed workflow |
+| `vai store uninstall` | Remove an installed workflow |
 | **MCP Server** | |
 | `vai mcp` | Start the MCP server (expose vai tools to AI agents) |
 | `vai mcp install` | Install vai into AI tool configs (Claude, Cursor, etc.) |
@@ -551,6 +574,57 @@ Covers all 22 commands, subcommands, flags, model names, and explain topics.
 | `vai completions` | Shell completion scripts |
 | `vai about` | About this tool |
 | `vai version` | Print version |
+
+---
+
+## Workflow Store
+
+Browse, install, and run pre-built RAG workflows — from the Playground UI or the CLI. The Workflow Store features **20 official workflows** and a growing ecosystem of community packages published on npm.
+
+### Browse & Install
+
+```bash
+# Open the visual Workflow Store in the Playground
+vai playground    # Click the grid icon → Store
+
+# Or from the CLI
+vai store list                    # Browse available workflows
+vai store install model-shootout  # Install a workflow
+vai store run model-shootout      # Run it
+```
+
+### Official Workflows
+
+| Workflow | Category | What It Does |
+|----------|----------|-------------|
+| **model-shootout** | Utility | Compare voyage-4-large, voyage-4, and voyage-4-lite side-by-side on your data |
+| **asymmetric-search** | Retrieval | Embed with voyage-4-large, query with voyage-4-lite — ~83% cost reduction |
+| **cost-optimizer** | Utility | Quantify exact cost savings of asymmetric retrieval |
+| **question-decomposition** | Retrieval | Break complex questions into sub-queries, search in parallel, merge & rerank |
+| **knowledge-base-bootstrap** | Integration | End-to-end onboarding: ingest → verify → test query → status report |
+| **hybrid-precision-search** | Retrieval | Three retrieval strategies in parallel, merged and reranked |
+| **embedding-drift-detector** | Analysis | Monitor embedding quality over time |
+| **multilingual-search** | Retrieval | Translate queries into multiple languages, search each in parallel |
+
+Plus 12 more covering code migration, financial risk scanning, clinical protocol matching, meeting action items, and more.
+
+### Community Packages
+
+Anyone can publish a workflow to npm. Tag your package with `vai-workflow` and add a `vai-workflow` field to your `package.json`:
+
+```json
+{
+  "name": "vai-workflow-my-pipeline",
+  "keywords": ["vai-workflow"],
+  "vai-workflow": {
+    "category": "retrieval",
+    "tags": ["custom", "my-use-case"],
+    "tools": ["query", "rerank", "generate"]
+  }
+}
+```
+
+Community workflows appear automatically in the Store alongside official packages.
 
 ---
 
