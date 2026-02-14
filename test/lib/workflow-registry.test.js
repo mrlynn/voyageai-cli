@@ -29,6 +29,24 @@ describe('scanNodeModules', () => {
     assert.ok(!names.includes('not-a-workflow'));
   });
 
+  it('finds @vaicli scoped packages', () => {
+    const results = scanNodeModules(FIXTURES_NM);
+    const names = results.map(r => r.name);
+    assert.ok(names.includes('@vaicli/vai-workflow-test-official'));
+  });
+
+  it('tags unscoped packages as community tier', () => {
+    const results = scanNodeModules(FIXTURES_NM);
+    const valid = results.find(r => r.name === 'vai-workflow-test-valid');
+    assert.equal(valid.tier, 'community');
+  });
+
+  it('tags @vaicli packages as official tier', () => {
+    const results = scanNodeModules(FIXTURES_NM);
+    const official = results.find(r => r.name === '@vaicli/vai-workflow-test-official');
+    assert.equal(official.tier, 'official');
+  });
+
   it('returns empty for nonexistent directory', () => {
     const results = scanNodeModules('/tmp/nonexistent-dir-xyz');
     assert.deepEqual(results, []);
@@ -51,6 +69,15 @@ describe('validatePackage', () => {
     assert.ok(result.definition);
     assert.equal(result.definition.name, 'test-valid');
     assert.ok(result.pkg.vai);
+  });
+
+  it('validates an official scoped package with no errors', () => {
+    const pkgPath = path.join(FIXTURES_NM, '@vaicli', 'vai-workflow-test-official');
+    const result = validatePackage(pkgPath);
+    assert.equal(result.name, '@vaicli/vai-workflow-test-official');
+    assert.deepEqual(result.errors, []);
+    assert.ok(result.definition);
+    assert.equal(result.definition.name, 'test-official');
   });
 
   it('reports errors for invalid workflow definition', () => {
@@ -136,9 +163,10 @@ describe('resolveWorkflow', () => {
 describe('getRegistry', () => {
   beforeEach(() => clearRegistryCache());
 
-  it('returns builtIn and community arrays', () => {
+  it('returns builtIn, official, and community arrays', () => {
     const registry = getRegistry();
     assert.ok(Array.isArray(registry.builtIn));
+    assert.ok(Array.isArray(registry.official));
     assert.ok(Array.isArray(registry.community));
     assert.ok(registry.builtIn.length > 0); // Should have built-in templates
   });

@@ -1,0 +1,55 @@
+{
+  "name": "vai-workflow-query-quality-scorer",
+  "version": "1.0.0",
+  "description": "Evaluate retrieval quality for a query by measuring semantic similarity between the query and its top results. Provides a quality score and recommendations without requiring labeled ground truth.",
+  "keywords": [
+    "vai-workflow",
+    "analysis",
+    "evaluation",
+    "quality",
+    "benchmarking",
+    "tuning"
+  ],
+  "author": "Michael Lynn",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mrlynn/voyageai-cli.git",
+    "directory": "packages/vai-workflow-query-quality-scorer"
+  },
+  "files": [
+    "workflow.json",
+    "README.md",
+    "LICENSE"
+  ],
+  "vai-workflow": {
+    "engine": ">=1.0.0",
+    "category": "analysis",
+    "tags": [
+      "evaluation",
+      "quality",
+      "benchmarking",
+      "tuning"
+    ],
+    "tools": [
+      "query",
+      "similarity",
+      "transform",
+      "generate"
+    ],
+    "inputs": {
+      "query": {
+        "type": "string",
+        "required": true
+      },
+      "collection": {
+        "type": "string",
+        "required": true
+      },
+      "limit": {
+        "type": "number",
+        "default": 10
+      }
+    }
+  }
+}

@@ -2,7 +2,7 @@
 
 const path = require('path');
 const fs = require('fs');
-const { WORKFLOW_PREFIX } = require('./npm-utils');
+const { WORKFLOW_PREFIX, VAICLI_WORKFLOW_PREFIX } = require('./npm-utils');
 const { validateWorkflow, ALL_TOOLS } = require('./workflow');
 
 const CATEGORIES = ['retrieval', 'analysis', 'ingestion', 'domain-specific', 'utility', 'integration'];
@@ -45,16 +45,21 @@ function extractTools(definition) {
 /**
  * Generate a package name from a workflow name.
  * @param {string} name
+ * @param {{ scope?: string }} [options]
  * @returns {string}
  */
-function toPackageName(name) {
+function toPackageName(name, options = {}) {
   const slug = name
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '');
-  return slug.startsWith(WORKFLOW_PREFIX.slice(0, -1))
+  const base = slug.startsWith(WORKFLOW_PREFIX.slice(0, -1))
     ? slug
     : WORKFLOW_PREFIX + slug;
+  if (options.scope === 'vaicli') {
+    return `@vaicli/${base}`;
+  }
+  return base;
 }
 
 /**
@@ -146,14 +151,17 @@ function generateReadme(pkg, definition) {
  * @param {string} [options.description] - Package description
  * @param {string} [options.category] - Workflow category
  * @param {string[]} [options.tags] - Tags
+ * @param {string} [options.scope] - Scope ('vaicli' for official @vaicli packages)
  * @param {string} [options.outputDir] - Output directory (default: ./vai-workflow-<name>/)
  * @returns {{ dir: string, files: string[] }}
  */
 function scaffoldPackage(options) {
-  const { definition, name, author, description, category, tags } = options;
+  const { definition, name, author, description, category, tags, scope } = options;
 
-  const packageName = toPackageName(name);
-  const outputDir = options.outputDir || path.resolve(process.cwd(), packageName);
+  const packageName = toPackageName(name, { scope });
+  // For scoped packages, use the unscoped part as the directory name
+  const dirName = packageName.startsWith('@') ? packageName.split('/')[1] : packageName;
+  const outputDir = options.outputDir || path.resolve(process.cwd(), dirName);
 
   // Validate the workflow
   const errors = validateWorkflow(definition);
@@ -182,6 +190,16 @@ function scaffoldPackage(options) {
     files: ['workflow.json', 'README.md'],
     license: 'MIT',
   };
+
+  // Add publishConfig for scoped packages
+  if (scope === 'vaicli') {
+    pkg.publishConfig = { access: 'public' };
+    pkg.repository = {
+      type: 'git',
+      url: 'https://github.com/vaicli/workflows.git',
+      directory: `packages/${dirName}`,
+    };
+  }
 
   if (author) {
     pkg.author = author;

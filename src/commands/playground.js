@@ -361,21 +361,25 @@ function createPlaygroundServer() {
           const { getRegistry } = require('../lib/workflow-registry');
           const registry = getRegistry({ force: true });
           const workflows = registry.builtIn;
+          const mapPkg = (c, source) => ({
+            name: c.name,
+            description: c.pkg?.description || c.definition?.description || '',
+            version: c.pkg?.version,
+            author: typeof c.pkg?.author === 'string' ? c.pkg.author : c.pkg?.author?.name || '',
+            category: c.pkg?.vai?.category || 'utility',
+            tags: c.pkg?.vai?.tags || [],
+            tools: c.pkg?.vai?.tools || [],
+            source,
+            scope: c.scope,
+          });
+          const official = registry.official
+            .filter(c => c.errors.length === 0)
+            .map(c => mapPkg(c, 'official'));
           const community = registry.community
             .filter(c => c.errors.length === 0)
-            .map(c => ({
-              name: c.name,
-              description: c.pkg?.description || c.definition?.description || '',
-              version: c.pkg?.version,
-              author: typeof c.pkg?.author === 'string' ? c.pkg.author : c.pkg?.author?.name || '',
-              category: c.pkg?.vai?.category || 'utility',
-              tags: c.pkg?.vai?.tags || [],
-              tools: c.pkg?.vai?.tools || [],
-              source: 'community',
-              scope: c.scope,
-            }));
+            .map(c => mapPkg(c, 'community'));
           res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ workflows, community }));
+          res.end(JSON.stringify({ workflows, official, community }));
         } catch (err) {
           res.writeHead(500, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: err.message }));
@@ -388,7 +392,7 @@ function createPlaygroundServer() {
         try {
           const { getRegistry } = require('../lib/workflow-registry');
           const registry = getRegistry({ force: true });
-          const community = registry.community.map(c => ({
+          const mapPkg = (c) => ({
             name: c.name,
             description: c.pkg?.description || '',
             version: c.pkg?.version,
@@ -398,9 +402,11 @@ function createPlaygroundServer() {
             valid: c.errors.length === 0,
             errors: c.errors,
             warnings: c.warnings,
-          }));
+          });
+          const official = registry.official.map(mapPkg);
+          const community = registry.community.map(mapPkg);
           res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ community }));
+          res.end(JSON.stringify({ official, community }));
         } catch (err) {
           res.writeHead(500, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: err.message }));
@@ -509,9 +515,9 @@ function createPlaygroundServer() {
             res.end(JSON.stringify({ error: 'Package name is required' }));
             return;
           }
-          const { installPackage, WORKFLOW_PREFIX } = require('../lib/npm-utils');
+          const { installPackage, WORKFLOW_PREFIX, isWorkflowPackage } = require('../lib/npm-utils');
           const { validatePackage, clearRegistryCache } = require('../lib/workflow-registry');
-          const packageName = name.startsWith(WORKFLOW_PREFIX) ? name : WORKFLOW_PREFIX + name;
+          const packageName = name.startsWith('@') || name.startsWith(WORKFLOW_PREFIX) ? name : WORKFLOW_PREFIX + name;
           const result = installPackage(packageName);
           clearRegistryCache();
           let validation = null;

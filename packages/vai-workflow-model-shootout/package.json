@@ -1,0 +1,55 @@
+{
+  "name": "vai-workflow-model-shootout",
+  "version": "1.0.0",
+  "description": "Compare voyage-4-large, voyage-4, and voyage-4-lite side-by-side on your data. Shows retrieval quality differences and cost savings for each model.",
+  "keywords": [
+    "vai-workflow",
+    "utility",
+    "benchmarking",
+    "model-comparison",
+    "cost",
+    "shared-space"
+  ],
+  "author": "Michael Lynn",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mrlynn/voyageai-cli.git",
+    "directory": "packages/vai-workflow-model-shootout"
+  },
+  "files": [
+    "workflow.json",
+    "README.md",
+    "LICENSE"
+  ],
+  "vai-workflow": {
+    "engine": ">=1.0.0",
+    "category": "utility",
+    "tags": [
+      "benchmarking",
+      "model-comparison",
+      "cost",
+      "shared-space"
+    ],
+    "tools": [
+      "query",
+      "estimate",
+      "similarity",
+      "generate"
+    ],
+    "inputs": {
+      "query": {
+        "type": "string",
+        "required": true
+      },
+      "collection": {
+        "type": "string",
+        "required": true
+      },
+      "limit": {
+        "type": "number",
+        "default": 5
+      }
+    }
+  }
+}

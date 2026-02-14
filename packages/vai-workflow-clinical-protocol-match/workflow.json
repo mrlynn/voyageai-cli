@@ -1,0 +1,63 @@
+{
+  "name": "clinical-protocol-match",
+  "description": "Match clinical presentations to relevant protocols and guidelines with structured recommendations and evidence citations.",
+  "version": "1.0.0",
+  "inputs": {
+    "presentation": {
+      "type": "string",
+      "required": true
+    },
+    "collection": {
+      "type": "string",
+      "required": true
+    },
+    "specialty": {
+      "type": "string",
+      "default": "general"
+    },
+    "limit": {
+      "type": "number",
+      "default": 5
+    }
+  },
+  "defaults": {},
+  "steps": [
+    {
+      "id": "protocol_search",
+      "tool": "query",
+      "name": "Search clinical knowledge base",
+      "inputs": {
+        "query": "{{ inputs.presentation }}",
+        "collection": "{{ inputs.collection }}",
+        "filter": {
+          "specialty": "{{ inputs.specialty }}"
+        },
+        "limit": 20
+      }
+    },
+    {
+      "id": "rerank_clinical",
+      "tool": "rerank",
+      "name": "Rerank by clinical relevance",
+      "inputs": {
+        "query": "{{ inputs.presentation }} clinical protocol guideline recommendation",
+        "documents": "{{ protocol_search.output.results }}",
+        "model": "rerank-2.5",
+        "limit": "{{ inputs.limit }}"
+      }
+    },
+    {
+      "id": "protocol_summary",
+      "tool": "generate",
+      "name": "Generate structured protocol recommendations",
+      "inputs": {
+        "prompt": "You are a clinical decision support system. Based on the following retrieved clinical documents, provide structured protocol recommendations for the given presentation.\n\nIMPORTANT: This is for informational purposes only and does not constitute medical advice. All recommendations should be reviewed by a qualified healthcare professional.\n\nFor each relevant protocol:\n1. Protocol name and source\n2. Relevance to the presentation\n3. Key recommended actions\n4. Contraindications or precautions to note\n5. Evidence level (if available in the source documents)\n\nPresentation: {{ inputs.presentation }}\nSpecialty: {{ inputs.specialty }}",
+        "context": "{{ rerank_clinical.output.results }}"
+      }
+    }
+  ],
+  "output": {
+    "recommendations": "{{ protocol_summary.output.response }}",
+    "matched_protocols": "{{ rerank_clinical.output.results }}"
+  }
+}

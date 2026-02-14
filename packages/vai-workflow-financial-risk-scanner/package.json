@@ -1,0 +1,59 @@
+{
+  "name": "vai-workflow-financial-risk-scanner",
+  "version": "1.0.0",
+  "description": "Scan financial document collections for risk indicators related to a company or topic, with domain-specific retrieval and risk assessment.",
+  "keywords": [
+    "vai-workflow",
+    "domain-specific",
+    "finance",
+    "risk",
+    "analysis",
+    "voyage-finance-2"
+  ],
+  "author": "Michael Lynn",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mrlynn/voyageai-cli.git",
+    "directory": "packages/vai-workflow-financial-risk-scanner"
+  },
+  "files": [
+    "workflow.json",
+    "README.md",
+    "LICENSE"
+  ],
+  "vai-workflow": {
+    "engine": ">=1.0.0",
+    "category": "domain-specific",
+    "tags": [
+      "finance",
+      "risk",
+      "analysis",
+      "voyage-finance-2"
+    ],
+    "tools": [
+      "query",
+      "rerank",
+      "filter",
+      "generate"
+    ],
+    "inputs": {
+      "topic": {
+        "type": "string",
+        "required": true
+      },
+      "collection": {
+        "type": "string",
+        "required": true
+      },
+      "risk_categories": {
+        "type": "string",
+        "default": "regulatory, operational, market, credit, liquidity"
+      },
+      "limit": {
+        "type": "number",
+        "default": 15
+      }
+    }
+  }
+}
