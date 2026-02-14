@@ -56,7 +56,9 @@
       "Bash(/opt/homebrew/bin/npx docusaurus build)",
       "Bash(npx docusaurus build:*)",
       "Bash(/usr/bin/tail:*)",
-      "Bash(PATH=\"/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH\")"
+      "Bash(PATH=\"/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH\")",
+      "Bash(/opt/homebrew/bin/npx jest test/lib/workflow-scaffold.test.js --no-coverage)",
+      "WebFetch(domain:unpkg.com)"
     ]
   },
   "enableAllProjectMcpServers": true,

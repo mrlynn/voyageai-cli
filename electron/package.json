@@ -98,9 +98,11 @@
     "electron-builder": "^25.0.0"
   },
   "dependencies": {
+    "@vaicli/vai-workflow-asymmetric-search": "^1.0.0",
     "@vaicli/vai-workflow-batch-quality-gate": "^1.0.0",
     "@vaicli/vai-workflow-code-migration-helper": "^1.0.0",
     "@vaicli/vai-workflow-contract-clause-finder": "^1.0.0",
+    "@vaicli/vai-workflow-doc-freshness": "^1.0.0",
     "@vaicli/vai-workflow-financial-risk-scanner": "^1.0.0",
     "@vaicli/vai-workflow-knowledge-base-bootstrap": "^1.0.0",
     "@vaicli/vai-workflow-multilingual-search": "^1.0.0",
