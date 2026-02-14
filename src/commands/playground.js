@@ -617,6 +617,152 @@ function createPlaygroundServer() {
         return;
       }
 
+      // API: Home announcements
+      if (req.method === 'GET' && req.url === '/api/home/announcements') {
+        const announcements = [
+          {
+            id: 'ann-001',
+            title: 'Voyage AI 4 Large Now Available',
+            description: 'The latest embedding model from Voyage AI is ready to benchmark in VAI.',
+            badge: 'New Model',
+            cta: { label: 'Try It Now', action: 'navigate', target: '/benchmark' },
+            published: '2026-02-14',
+            expires: '2026-03-15'
+          },
+          {
+            id: 'ann-002',
+            title: 'New Marketplace Workflows',
+            description: 'HIPAA-compliant document search, legal contract analysis, and more workflows are now available.',
+            badge: 'New',
+            cta: { label: 'Explore Marketplace', action: 'navigate', target: '/workflows' },
+            published: '2026-02-12',
+            expires: '2026-03-01'
+          },
+          {
+            id: 'ann-003',
+            title: 'VAI v1.3 Adds Bulk CSV Ingestion',
+            description: 'Import large datasets efficiently with the new bulk CSV ingestion feature.',
+            badge: 'Update',
+            cta: { label: 'Learn More', action: 'link', target: 'https://docs.vaicli.com/csv-import' },
+            published: '2026-02-10',
+            expires: '2026-04-01'
+          }
+        ];
+        
+        // Filter out expired announcements
+        const now = new Date();
+        const activeAnnouncements = announcements.filter(a => {
+          const expires = new Date(a.expires);
+          return expires > now;
+        });
+        
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ announcements: activeAnnouncements }));
+        return;
+      }
+
+      // API: Home releases
+      if (req.method === 'GET' && req.url === '/api/home/releases') {
+        try {
+          // Fetch from GitHub API with caching
+          const cacheKey = 'github-releases-cache';
+          const cached = global[cacheKey];
+          
+          if (cached && Date.now() - cached.timestamp < 30 * 60 * 1000) {
+            // Use cached data if less than 30 minutes old
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify(cached.data));
+            return;
+          }
+          
+          const https = require('https');
+          const githubUrl = 'https://api.github.com/repos/mrlynn/voyageai-cli/releases?per_page=5';
+          
+          const fetchGitHub = () => new Promise((resolve, reject) => {
+            const req = https.request(githubUrl, {
+              headers: { 'User-Agent': 'VAI-Playground' }
+            }, (res) => {
+              let data = '';
+              res.on('data', chunk => data += chunk);
+              res.on('end', () => {
+                if (res.statusCode === 200) {
+                  resolve(JSON.parse(data));
+                } else {
+                  reject(new Error(`GitHub API returned ${res.statusCode}`));
+                }
+              });
+            });
+            req.on('error', reject);
+            req.setTimeout(10000, () => reject(new Error('Request timeout')));
+            req.end();
+          });
+          
+          const githubReleases = await fetchGitHub();
+          
+          // Parse release notes
+          const releases = githubReleases.map(release => {
+            let highlights = [];
+            
+            if (release.body) {
+              // Extract bullet points from markdown body
+              const lines = release.body.split('\n');
+              highlights = lines
+                .filter(line => line.trim().startsWith('-') || line.trim().startsWith('*'))
+                .map(line => line.replace(/^[-*]\s*/, '').trim())
+                .filter(line => line.length > 0)
+                .slice(0, 5); // Max 5 highlights
+            }
+            
+            if (highlights.length === 0) {
+              highlights = ['New features and improvements'];
+            }
+            
+            return {
+              version: release.tag_name || release.name,
+              date: release.published_at,
+              highlights,
+              url: release.html_url
+            };
+          });
+          
+          const result = { releases };
+          
+          // Cache the result
+          global[cacheKey] = {
+            data: result,
+            timestamp: Date.now()
+          };
+          
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify(result));
+          
+        } catch (err) {
+          console.error('Failed to fetch GitHub releases:', err);
+          
+          // Return fallback data
+          const fallback = {
+            releases: [
+              {
+                version: 'v1.0.0',
+                date: '2026-02-14T00:00:00Z',
+                highlights: [
+                  'Initial release of VAI Playground',
+                  'Support for all Voyage AI models',
+                  'Interactive embedding visualization',
+                  'Model comparison tools',
+                  'Vector similarity analysis'
+                ],
+                url: 'https://github.com/mrlynn/voyageai-cli/releases'
+              }
+            ]
+          };
+          
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify(fallback));
+        }
+        return;
+      }
+
       // API: Save chat config (POST) — persists to .vai.json
       // Placed before generic POST handler so it doesn't require Voyage API key
       if (req.method === 'POST' && req.url === '/api/chat/config') {

@@ -3777,6 +3777,673 @@ select:focus { outline: none; border-color: var(--accent); }
 }
 .wf-canvas-watermark img { width: 300px; height: 300px; filter: invert(1); }
 [data-theme="light"] .wf-canvas-watermark img { filter: none; }
+
+/* ── Home Page Styles ── */
+
+/* Home Header */
+.home-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 32px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.home-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.home-logo {
+  width: 32px;
+  height: 32px;
+}
+
+.home-version-badge {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.home-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.home-settings-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  padding: 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.home-settings-btn:hover {
+  background: var(--bg-card);
+  color: var(--text);
+  border-color: var(--accent);
+}
+
+.home-settings-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* API Key Warning Banner */
+.home-api-warning {
+  margin: 16px 32px;
+  background: linear-gradient(135deg, rgba(255, 201, 16, 0.1), rgba(255, 105, 96, 0.1));
+  border: 1px solid rgba(255, 201, 16, 0.3);
+  border-radius: 12px;
+  padding: 16px;
+  animation: slideDown 0.3s ease-out;
+}
+
+.home-api-warning-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--warning);
+}
+
+.home-api-warning svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.home-api-warning button {
+  margin-left: auto;
+  background: none;
+  border: 1px solid var(--warning);
+  color: var(--warning);
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s;
+}
+
+.home-api-warning button:hover {
+  background: var(--warning);
+  color: var(--bg);
+}
+
+/* Home Content */
+.home-content {
+  padding: 32px;
+  max-width: 1200px;
+  margin: 0 auto;
+  overflow-y: auto;
+  height: calc(100vh - 120px);
+}
+
+/* Announcements Banner */
+.home-announcements {
+  margin-bottom: 48px;
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.home-announcements-carousel {
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px;
+  background: linear-gradient(135deg, var(--bg-card), var(--bg-surface));
+  border: 1px solid var(--border);
+}
+
+.home-announcement-card {
+  display: none;
+  padding: 32px;
+  text-align: center;
+  position: relative;
+}
+
+.home-announcement-card.active {
+  display: block;
+  animation: fadeIn 0.5s ease-out;
+}
+
+.home-announcement-card .badge {
+  display: inline-block;
+  background: linear-gradient(135deg, #00ED64, #00C2FF);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.home-announcement-card h3 {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--accent-text);
+  margin-bottom: 12px;
+}
+
+.home-announcement-card p {
+  color: var(--text-dim);
+  line-height: 1.6;
+  margin-bottom: 24px;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.home-announcement-card .cta {
+  background: linear-gradient(135deg, #00ED64, #00C2FF);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.home-announcement-card .cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(0, 237, 100, 0.3);
+}
+
+.home-announcement-dismiss {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.home-announcement-dismiss:hover {
+  background: var(--bg-card);
+  color: var(--text);
+}
+
+.home-announcements-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.home-announcement-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--border);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.home-announcement-dot.active {
+  background: linear-gradient(135deg, #00ED64, #00C2FF);
+}
+
+/* Section Headers */
+.home-section {
+  margin-bottom: 48px;
+}
+
+.home-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.home-section-header h3 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--accent-text);
+}
+
+.home-section-header a,
+.home-marketplace-cta {
+  color: var(--blue);
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.home-marketplace-cta {
+  background: linear-gradient(135deg, #00ED64, #00C2FF);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.home-marketplace-cta:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(0, 237, 100, 0.3);
+}
+
+.home-section-header a:hover {
+  color: var(--accent);
+}
+
+/* Release Notes Timeline */
+.home-releases-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.home-release-item {
+  display: flex;
+  gap: 16px;
+  padding: 24px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  border-left: 4px solid transparent;
+  border-left-color: #00ED64;
+  background: linear-gradient(90deg, transparent, var(--bg-card) 4px);
+  transition: all 0.2s;
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.home-release-item:hover {
+  background: var(--bg-surface);
+  border-color: var(--accent);
+}
+
+.home-release-version {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--accent-text);
+  margin-bottom: 4px;
+}
+
+.home-release-date {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+.home-release-highlights {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.home-release-highlights li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+.home-release-highlights li:before {
+  content: "•";
+  color: var(--accent);
+  font-weight: bold;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* Subsections */
+.home-subsection {
+  margin-bottom: 32px;
+}
+
+.home-subsection h4 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 16px;
+}
+
+.home-subsection-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+/* Workflow Carousels */
+.home-workflows-carousel {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  scroll-snap-type: x mandatory;
+}
+
+.home-workflows-carousel::-webkit-scrollbar {
+  height: 6px;
+}
+
+.home-workflows-carousel::-webkit-scrollbar-track {
+  background: var(--bg-surface);
+  border-radius: 3px;
+}
+
+.home-workflows-carousel::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+.home-workflow-card {
+  flex: 0 0 280px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  scroll-snap-align: start;
+  transition: all 0.2s;
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.home-workflow-card:hover {
+  background: var(--bg-surface);
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(0, 212, 170, 0.1);
+}
+
+.home-workflow-card h5 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent-text);
+  margin-bottom: 8px;
+}
+
+.home-workflow-card p {
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.5;
+  margin-bottom: 12px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.home-workflow-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.home-workflow-domain {
+  background: rgba(0, 237, 100, 0.1);
+  color: var(--accent);
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.home-workflow-author {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.home-workflow-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.home-workflow-btn {
+  flex: 1;
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.home-workflow-btn:hover {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+/* Domain Pills */
+.home-domain-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.home-domain-pill {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.home-domain-pill:hover {
+  background: linear-gradient(135deg, #00ED64, #00C2FF);
+  color: white;
+  border-color: transparent;
+  transform: translateY(-1px);
+}
+
+/* Sort Tabs */
+.home-sort-tabs {
+  display: flex;
+  gap: 2px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 4px;
+}
+
+.home-sort-tab {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.home-sort-tab.active {
+  background: var(--accent);
+  color: white;
+}
+
+.home-sort-tab:hover:not(.active) {
+  background: var(--bg-card);
+  color: var(--text);
+}
+
+/* Community Grid */
+.home-community-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.home-community-empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 48px;
+  color: var(--text-muted);
+}
+
+.home-community-empty h4 {
+  font-size: 16px;
+  margin-bottom: 8px;
+  color: var(--text);
+}
+
+/* Quick Actions */
+.home-quick-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.home-quick-action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-decoration: none;
+  color: var(--text);
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.home-quick-action:hover {
+  background: var(--bg-surface);
+  border-color: var(--accent);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(0, 212, 170, 0.1);
+  color: var(--text);
+}
+
+.home-quick-action svg {
+  width: 24px;
+  height: 24px;
+  color: var(--accent);
+}
+
+.home-quick-action span {
+  font-size: 14px;
+  font-weight: 500;
+  text-align: center;
+}
+
+/* Footer */
+.home-footer {
+  margin-top: 64px;
+  padding-top: 32px;
+  border-top: 1px solid var(--border);
+  text-align: center;
+}
+
+.home-footer-links {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.home-footer-links a {
+  color: var(--text-dim);
+  text-decoration: none;
+  font-size: 12px;
+  transition: color 0.2s;
+}
+
+.home-footer-links a:hover {
+  color: var(--accent);
+}
+
+.home-footer-branding {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .home-content {
+    padding: 24px;
+  }
+  
+  .home-quick-actions {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  }
+  
+  .home-community-grid {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .home-header {
+    padding: 16px 24px 12px;
+  }
+  
+  .home-content {
+    padding: 16px;
+  }
+  
+  .home-section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .home-footer-links {
+    flex-direction: column;
+    gap: 12px;
+  }
+}
 </style>
 </head>
 <body>
@@ -3853,7 +4520,8 @@ select:focus { outline: none; border-color: var(--accent); }
   <nav class="sidebar-nav">
     <div class="sidebar-nav-group" role="tablist" aria-label="Tools">
       <div class="sidebar-nav-label" id="nav-tools-label">Tools</div>
-      <button class="tab-btn active" data-tab="embed" role="tab" aria-selected="true" aria-controls="tab-embed" id="tab-btn-embed"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-lightning"/></svg></span><span>Embed</span></button>
+      <button class="tab-btn active" data-tab="home" role="tab" aria-selected="true" aria-controls="tab-home" id="tab-btn-home"><span class="tab-btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span><span>Home</span></button>
+      <button class="tab-btn" data-tab="embed" role="tab" aria-selected="false" aria-controls="tab-embed" id="tab-btn-embed"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-lightning"/></svg></span><span>Embed</span></button>
       <button class="tab-btn" data-tab="compare" role="tab" aria-selected="false" aria-controls="tab-compare" id="tab-btn-compare"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-arrows"/></svg></span><span>Compare</span></button>
       <button class="tab-btn" data-tab="search" role="tab" aria-selected="false" aria-controls="tab-search" id="tab-btn-search"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-search"/></svg></span><span>Search</span></button>
       <button class="tab-btn" data-tab="multimodal" role="tab" aria-selected="false" aria-controls="tab-multimodal" id="tab-btn-multimodal"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-image"/></svg></span><span>Multimodal</span></button>
@@ -3912,8 +4580,179 @@ select:focus { outline: none; border-color: var(--accent); }
   </div>
   <div class="main">
 
+<!-- ========== HOME TAB ========== -->
+<div class="tab-panel active" id="tab-home" role="tabpanel" aria-labelledby="tab-btn-home" tabindex="0">
+  <!-- Header Bar -->
+  <div class="home-header">
+    <div class="home-header-left">
+      <svg class="home-logo" viewBox="0 0 100 100">
+        <defs>
+          <linearGradient id="vai-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#00ED64"/>
+            <stop offset="100%" style="stop-color:#00C2FF"/>
+          </linearGradient>
+        </defs>
+        <path d="M20 15 L50 75 L80 15 L65 15 L50 45 L35 15 Z" fill="url(#vai-gradient)"/>
+      </svg>
+      <span class="home-version-badge" id="homeVersionBadge">v1.0.0</span>
+    </div>
+    <div class="home-header-right">
+      <button class="home-settings-btn" onclick="switchTab('settings')" title="Settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1m16.95-4.95L19.07 8.93M4.93 4.93L2.05 7.05M19.07 15.07l-2.12-2.12M4.93 19.07L2.05 16.95"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- API Key Warning Banner (hidden by default) -->
+  <div class="home-api-warning" id="homeApiWarning" style="display: none;">
+    <div class="home-api-warning-content">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+        <triangle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      <span>Set up your Voyage AI API key to get started</span>
+      <button onclick="switchTab('settings')">Settings →</button>
+    </div>
+  </div>
+
+  <div class="home-content">
+    <!-- Announcements Banner -->
+    <div class="home-announcements" id="homeAnnouncements" style="display: none;">
+      <div class="home-announcements-carousel" id="announcementsCarousel">
+        <!-- Cards will be inserted here -->
+      </div>
+      <div class="home-announcements-dots" id="announcementsDots">
+        <!-- Dots will be inserted here -->
+      </div>
+    </div>
+
+    <!-- What's New (Release Notes) -->
+    <div class="home-section" id="homeReleases">
+      <div class="home-section-header">
+        <h3>What's New</h3>
+        <a href="https://github.com/mrlynn/voyageai-cli/releases" target="_blank" rel="noopener">View All →</a>
+      </div>
+      <div class="home-releases-timeline" id="releasesTimeline">
+        <!-- Release items will be inserted here -->
+      </div>
+    </div>
+
+    <!-- Marketplace Spotlight -->
+    <div class="home-section">
+      <div class="home-section-header">
+        <h3>Marketplace Spotlight</h3>
+        <button class="home-marketplace-cta" onclick="switchTab('workflows')">
+          Explore the Marketplace →
+        </button>
+      </div>
+      
+      <!-- Featured Workflows -->
+      <div class="home-subsection">
+        <h4>Featured Workflows</h4>
+        <div class="home-workflows-carousel" id="featuredWorkflows">
+          <!-- Workflow cards will be inserted here -->
+        </div>
+      </div>
+
+      <!-- Browse by Domain -->
+      <div class="home-subsection">
+        <h4>Browse by Domain</h4>
+        <div class="home-domain-pills">
+          <button class="home-domain-pill" onclick="filterAndSwitchWorkflows('Healthcare')">Healthcare</button>
+          <button class="home-domain-pill" onclick="filterAndSwitchWorkflows('Finance')">Finance</button>
+          <button class="home-domain-pill" onclick="filterAndSwitchWorkflows('Legal')">Legal</button>
+          <button class="home-domain-pill" onclick="filterAndSwitchWorkflows('DevOps')">DevOps</button>
+          <button class="home-domain-pill" onclick="filterAndSwitchWorkflows('Education')">Education</button>
+          <button class="home-domain-pill" onclick="filterAndSwitchWorkflows('E-Commerce')">E-Commerce</button>
+          <button class="home-domain-pill" onclick="filterAndSwitchWorkflows('Marketing')">Marketing</button>
+        </div>
+      </div>
+
+      <!-- Community Workflows -->
+      <div class="home-subsection">
+        <div class="home-subsection-header">
+          <h4>Community Workflows</h4>
+          <div class="home-sort-tabs">
+            <button class="home-sort-tab active" data-sort="trending" onclick="sortCommunityWorkflows('trending')">Trending</button>
+            <button class="home-sort-tab" data-sort="newest" onclick="sortCommunityWorkflows('newest')">Newest</button>
+            <button class="home-sort-tab" data-sort="installs" onclick="sortCommunityWorkflows('installs')">Most Installed</button>
+          </div>
+        </div>
+        <div class="home-community-grid" id="communityWorkflows">
+          <!-- Community workflow cards will be inserted here -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="home-section">
+      <div class="home-section-header">
+        <h3>Quick Actions</h3>
+      </div>
+      <div class="home-quick-actions">
+        <button class="home-quick-action" onclick="switchTab('embed')" title="Generate embeddings for text">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+            <path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/>
+          </svg>
+          <span>New Embedding</span>
+        </button>
+        <button class="home-quick-action" onclick="switchTab('compare')" title="Compare model similarities">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+            <path d="M21 12c0 1.2-4.03 6-9 6s-9-4.8-9-6c0-1.2 4.03-6 9-6s9 4.8 9 6"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+          <span>Compare Models</span>
+        </button>
+        <button class="home-quick-action" onclick="switchTab('search')" title="Search through vectors">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+            <circle cx="11" cy="11" r="8"/>
+            <path d="m21 21-4.35-4.35"/>
+          </svg>
+          <span>Search Vectors</span>
+        </button>
+        <button class="home-quick-action" onclick="switchTab('workflows')" title="View installed workflows">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+            <circle cx="5" cy="12" r="3"/>
+            <circle cx="19" cy="6" r="3"/>
+            <circle cx="19" cy="18" r="3"/>
+            <line x1="7.7" y1="10.7" x2="16.3" y2="7.3"/>
+            <line x1="7.7" y1="13.3" x2="16.3" y2="16.7"/>
+          </svg>
+          <span>My Workflows</span>
+        </button>
+        <button class="home-quick-action" onclick="publishWorkflow()" title="Publish a new workflow">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="17,8 12,3 7,8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+          <span>Publish Workflow</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="home-footer">
+      <div class="home-footer-links">
+        <a href="https://docs.vaicli.com" target="_blank" rel="noopener">Documentation</a>
+        <a href="https://github.com/mrlynn/voyageai-cli" target="_blank" rel="noopener">GitHub</a>
+        <a href="#" onclick="reportBug()">Report Bug</a>
+        <a href="#" target="_blank" rel="noopener">Community / Discord</a>
+      </div>
+      <div class="home-footer-branding">
+        <span>Built with Voyage AI + MongoDB Atlas</span>
+        <span id="homeFooterVersion">Version 1.0.0 • © 2026 VAI</span>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ========== EMBED TAB ========== -->
-<div class="tab-panel active" id="tab-embed" role="tabpanel" aria-labelledby="tab-btn-embed" tabindex="0">
+<div class="tab-panel" id="tab-embed" role="tabpanel" aria-labelledby="tab-btn-embed" tabindex="0">
   <div class="page-header">
     <h2 class="page-header-title">Embed</h2>
     <p class="page-header-subtitle">Generate vector embeddings for text</p>
@@ -5254,6 +6093,26 @@ Reranking models rescore initial search results to improve relevance ordering.</
               </select>
             </div>
           </div>
+          <div class="settings-row">
+            <div class="settings-label">
+              <span class="settings-label-text">Default Tab</span>
+              <span class="settings-label-hint">Which tab to open when the app starts</span>
+            </div>
+            <div class="settings-control">
+              <select class="settings-select" id="settingsDefaultTab">
+                <option value="home" selected>Home</option>
+                <option value="embed">Embed</option>
+                <option value="compare">Compare</option>
+                <option value="search">Search</option>
+                <option value="multimodal">Multimodal</option>
+                <option value="generate">Generate</option>
+                <option value="chat">Chat</option>
+                <option value="workflows">Workflows</option>
+                <option value="benchmark">Benchmark</option>
+                <option value="explore">Explore</option>
+              </select>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -5742,6 +6601,11 @@ async function init() {
   populateModelSelects();
   buildExploreCards();
 
+  // Apply default tab setting
+  const settings = JSON.parse(localStorage.getItem('vai-settings') || '{}');
+  const defaultTab = settings.defaultTab || 'home';
+  switchTab(defaultTab);
+
   // Telemetry
   initTelemetryToggle();
   sendTelemetry('app_launch');
@@ -5811,9 +6675,330 @@ function switchTab(tab) {
   if (settingsBtn) settingsBtn.classList.toggle('active', tab === 'settings');
   // Track tab views
   sendTelemetry('tab_view', { tab });
+  
+  // Initialize Home page if switching to it
+  if (tab === 'home') {
+    homeInit();
+  }
 }
 // Expose globally so Electron main process can call it
 window.switchTab = switchTab;
+
+// ── Home Page ──
+
+let homeData = {
+  announcements: null,
+  releases: null,
+  featuredWorkflows: null,
+  communityWorkflows: null,
+  currentAnnouncementIndex: 0,
+  sortMode: 'trending'
+};
+
+async function homeInit() {
+  // Only initialize once per session
+  if (homeData.announcements !== null) return;
+  
+  try {
+    // Load version info
+    updateHomeVersionInfo();
+    
+    // Check API key status and show warning if needed
+    checkApiKeyStatus();
+    
+    // Load all data
+    await Promise.all([
+      loadAnnouncements(),
+      loadReleases(),
+      loadMarketplaceData()
+    ]);
+    
+    // Render all sections
+    renderAnnouncements();
+    renderReleases();
+    renderFeaturedWorkflows();
+    renderCommunityWorkflows();
+    
+  } catch (err) {
+    console.error('Failed to initialize Home page:', err);
+  }
+}
+
+function updateHomeVersionInfo() {
+  const version = window.appVersion || '1.0.0';
+  document.getElementById('homeVersionBadge').textContent = `v${version}`;
+  document.getElementById('homeFooterVersion').textContent = `Version ${version} • © 2026 VAI`;
+}
+
+async function checkApiKeyStatus() {
+  try {
+    const res = await fetch('/api/config');
+    const data = await res.json();
+    const warningEl = document.getElementById('homeApiWarning');
+    
+    if (!data.hasKey) {
+      warningEl.style.display = 'block';
+    } else {
+      warningEl.style.display = 'none';
+    }
+  } catch {
+    // If config check fails, assume no API key
+    document.getElementById('homeApiWarning').style.display = 'block';
+  }
+}
+
+async function loadAnnouncements() {
+  try {
+    const res = await fetch('/api/home/announcements');
+    const data = await res.json();
+    
+    // Filter out dismissed announcements
+    const dismissed = JSON.parse(localStorage.getItem('vai-dismissed-announcements') || '[]');
+    homeData.announcements = data.announcements.filter(a => !dismissed.includes(a.id));
+    
+  } catch (err) {
+    console.error('Failed to load announcements:', err);
+    homeData.announcements = [];
+  }
+}
+
+async function loadReleases() {
+  try {
+    // Try cache first
+    const cached = localStorage.getItem('vai-releases-cache');
+    if (cached) {
+      const { data, timestamp } = JSON.parse(cached);
+      // Use cache if less than 30 minutes old
+      if (Date.now() - timestamp < 30 * 60 * 1000) {
+        homeData.releases = data;
+        return;
+      }
+    }
+    
+    const res = await fetch('/api/home/releases');
+    const data = await res.json();
+    homeData.releases = data.releases;
+    
+    // Cache the result
+    localStorage.setItem('vai-releases-cache', JSON.stringify({
+      data: data.releases,
+      timestamp: Date.now()
+    }));
+    
+  } catch (err) {
+    console.error('Failed to load releases:', err);
+    homeData.releases = [];
+  }
+}
+
+async function loadMarketplaceData() {
+  try {
+    const res = await fetch('/api/workflows/catalog');
+    const data = await res.json();
+    
+    // Extract featured and community workflows
+    homeData.featuredWorkflows = data.workflows.filter(w => w.featured).slice(0, 4);
+    homeData.communityWorkflows = data.workflows.filter(w => !w.featured);
+    
+  } catch (err) {
+    console.error('Failed to load marketplace data:', err);
+    homeData.featuredWorkflows = [];
+    homeData.communityWorkflows = [];
+  }
+}
+
+function renderAnnouncements() {
+  const container = document.getElementById('homeAnnouncements');
+  const carousel = document.getElementById('announcementsCarousel');
+  const dots = document.getElementById('announcementsDots');
+  
+  if (!homeData.announcements.length) {
+    container.style.display = 'none';
+    return;
+  }
+  
+  // Render cards
+  carousel.innerHTML = homeData.announcements.map((ann, i) => `
+    <div class="home-announcement-card${i === 0 ? ' active' : ''}" data-id="${ann.id}">
+      <button class="home-announcement-dismiss" onclick="dismissAnnouncement('${ann.id}')">×</button>
+      ${ann.badge ? `<div class="badge">${ann.badge}</div>` : ''}
+      <h3>${ann.title}</h3>
+      <p>${ann.description}</p>
+      ${ann.cta ? `<button class="cta" onclick="${ann.cta.action === 'navigate' ? `switchTab('${ann.cta.target.slice(1)}')` : 'void(0)'}">${ann.cta.label}</button>` : ''}
+    </div>
+  `).join('');
+  
+  // Render dots
+  if (homeData.announcements.length > 1) {
+    dots.innerHTML = homeData.announcements.map((_, i) => 
+      `<div class="home-announcement-dot${i === 0 ? ' active' : ''}" onclick="showAnnouncement(${i})"></div>`
+    ).join('');
+    
+    // Start rotation
+    startAnnouncementRotation();
+  }
+  
+  container.style.display = 'block';
+}
+
+function showAnnouncement(index) {
+  homeData.currentAnnouncementIndex = index;
+  
+  // Update cards
+  document.querySelectorAll('.home-announcement-card').forEach((card, i) => {
+    card.classList.toggle('active', i === index);
+  });
+  
+  // Update dots
+  document.querySelectorAll('.home-announcement-dot').forEach((dot, i) => {
+    dot.classList.toggle('active', i === index);
+  });
+}
+
+function startAnnouncementRotation() {
+  setInterval(() => {
+    if (homeData.announcements.length > 1) {
+      homeData.currentAnnouncementIndex = (homeData.currentAnnouncementIndex + 1) % homeData.announcements.length;
+      showAnnouncement(homeData.currentAnnouncementIndex);
+    }
+  }, 5000); // Rotate every 5 seconds
+}
+
+function dismissAnnouncement(id) {
+  const dismissed = JSON.parse(localStorage.getItem('vai-dismissed-announcements') || '[]');
+  dismissed.push(id);
+  localStorage.setItem('vai-dismissed-announcements', JSON.stringify(dismissed));
+  
+  // Remove from current data and re-render
+  homeData.announcements = homeData.announcements.filter(a => a.id !== id);
+  renderAnnouncements();
+}
+
+function renderReleases() {
+  const container = document.getElementById('releasesTimeline');
+  
+  const releases = homeData.releases.slice(0, 3); // Show latest 3
+  container.innerHTML = releases.map(release => `
+    <div class="home-release-item">
+      <div>
+        <div class="home-release-version">${release.version}</div>
+        <div class="home-release-date">${new Date(release.date).toLocaleDateString()}</div>
+        <ul class="home-release-highlights">
+          ${release.highlights.map(highlight => `<li>${highlight}</li>`).join('')}
+        </ul>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderFeaturedWorkflows() {
+  const container = document.getElementById('featuredWorkflows');
+  
+  if (!homeData.featuredWorkflows.length) {
+    container.innerHTML = '<div class="home-community-empty"><h4>Coming Soon</h4><p>Featured workflows launching soon</p></div>';
+    return;
+  }
+  
+  container.innerHTML = homeData.featuredWorkflows.map(workflow => `
+    <div class="home-workflow-card">
+      <h5>${workflow.name}</h5>
+      <p>${workflow.description}</p>
+      <div class="home-workflow-meta">
+        <div class="home-workflow-domain">${workflow.domain}</div>
+        <div class="home-workflow-author">by ${workflow.author}</div>
+      </div>
+      <div class="home-workflow-actions">
+        <button class="home-workflow-btn" onclick="installWorkflow('${workflow.id}')">Install</button>
+        <button class="home-workflow-btn" onclick="viewWorkflowDetails('${workflow.id}')">Details</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderCommunityWorkflows() {
+  const container = document.getElementById('communityWorkflows');
+  
+  if (!homeData.communityWorkflows.length) {
+    container.innerHTML = '<div class="home-community-empty"><h4>Be the First!</h4><p>Publish a workflow to get started</p></div>';
+    return;
+  }
+  
+  let workflows = [...homeData.communityWorkflows];
+  
+  // Sort based on current mode
+  switch (homeData.sortMode) {
+    case 'trending':
+      workflows.sort((a, b) => (b.installs * 2 + b.rating * 10) - (a.installs * 2 + a.rating * 10));
+      break;
+    case 'newest':
+      workflows.sort((a, b) => new Date(b.published) - new Date(a.published));
+      break;
+    case 'installs':
+      workflows.sort((a, b) => b.installs - a.installs);
+      break;
+  }
+  
+  container.innerHTML = workflows.slice(0, 6).map(workflow => `
+    <div class="home-workflow-card">
+      <h5>${workflow.name}</h5>
+      <p>${workflow.description}</p>
+      <div class="home-workflow-meta">
+        <div class="home-workflow-domain">${workflow.domain}</div>
+        <div class="home-workflow-author">by ${workflow.author}</div>
+      </div>
+      <div class="home-workflow-actions">
+        <button class="home-workflow-btn" onclick="installWorkflow('${workflow.id}')">Install</button>
+        <button class="home-workflow-btn" onclick="viewWorkflowDetails('${workflow.id}')">Details</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function sortCommunityWorkflows(mode) {
+  homeData.sortMode = mode;
+  
+  // Update tab appearance
+  document.querySelectorAll('.home-sort-tab').forEach(tab => {
+    tab.classList.toggle('active', tab.dataset.sort === mode);
+  });
+  
+  renderCommunityWorkflows();
+}
+
+function filterAndSwitchWorkflows(domain) {
+  // Switch to workflows tab with domain filter
+  switchTab('workflows');
+  // TODO: Apply domain filter when workflows tab supports it
+  console.log('Filtering workflows by domain:', domain);
+}
+
+function installWorkflow(id) {
+  // TODO: Implement workflow installation
+  console.log('Installing workflow:', id);
+  alert('Workflow installation will be implemented in the marketplace.');
+}
+
+function viewWorkflowDetails(id) {
+  // TODO: Switch to workflow details view
+  console.log('Viewing workflow details:', id);
+  switchTab('workflows');
+}
+
+function publishWorkflow() {
+  // TODO: Open workflow publishing flow
+  console.log('Opening workflow publisher');
+  switchTab('workflows');
+}
+
+function reportBug() {
+  // Open bug report (reuse existing functionality if available)
+  const bugButton = document.getElementById('bugButton');
+  if (bugButton) {
+    bugButton.click();
+  } else {
+    window.open('https://github.com/mrlynn/voyageai-cli/issues/new', '_blank');
+  }
+}
 
 // ── Config ──
 async function loadConfig() {
@@ -7737,6 +8922,15 @@ function initSettings() {
   if (timeoutSel) {
     timeoutSel.value = s.timeout || '30';
     timeoutSel.addEventListener('change', () => saveSetting('timeout', timeoutSel.value));
+  }
+
+  // Default Tab
+  const defaultTabSel = document.getElementById('settingsDefaultTab');
+  if (defaultTabSel) {
+    defaultTabSel.value = s.defaultTab || 'home';
+    defaultTabSel.addEventListener('change', () => {
+      saveSetting('defaultTab', defaultTabSel.value);
+    });
   }
 
   // Benchmark iterations
