@@ -613,12 +613,13 @@ function createPlaygroundServer() {
           const packageName = name.startsWith('@') || name.startsWith(WORKFLOW_PREFIX) ? name : WORKFLOW_PREFIX + name;
           const result = installPackage(packageName);
           clearRegistryCache();
+          _catalogCache = null; _catalogCacheTime = 0; // Invalidate store catalog cache
           let validation = null;
           if (result.path) {
             validation = validatePackage(result.path);
           }
           res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ success: true, version: result.version, validation: validation ? { valid: validation.errors.length === 0, errors: validation.errors, warnings: validation.warnings } : null }));
+          res.end(JSON.stringify({ success: true, version: result.version, path: result.path, validation: validation ? { valid: validation.errors.length === 0, errors: validation.errors, warnings: validation.warnings } : null }));
         } catch (err) {
           res.writeHead(500, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: err.message }));
@@ -634,6 +635,7 @@ function createPlaygroundServer() {
           const { clearRegistryCache } = require('../lib/workflow-registry');
           uninstallPackage(packageName);
           clearRegistryCache();
+          _catalogCache = null; _catalogCacheTime = 0; // Invalidate store catalog cache
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ success: true }));
         } catch (err) {
