@@ -1,0 +1,97 @@
+{
+  "name": "multilingual-search",
+  "description": "Translate a query into multiple languages, search in parallel, and merge results for cross-lingual retrieval.",
+  "version": "1.0.0",
+  "inputs": {
+    "query": {
+      "type": "string",
+      "required": true
+    },
+    "collection": {
+      "type": "string",
+      "required": true
+    },
+    "language1": {
+      "type": "string",
+      "default": "Spanish"
+    },
+    "language2": {
+      "type": "string",
+      "default": "French"
+    },
+    "limit": {
+      "type": "number",
+      "default": 10
+    }
+  },
+  "defaults": {},
+  "steps": [
+    {
+      "id": "translate",
+      "tool": "generate",
+      "name": "Translate query into target languages",
+      "inputs": {
+        "prompt": "Translate the following query into {{ inputs.language1 }} and {{ inputs.language2 }}. Return ONLY a JSON object with keys 'translation1' and 'translation2', nothing else.\n\nQuery: {{ inputs.query }}",
+        "format": "json"
+      }
+    },
+    {
+      "id": "search_original",
+      "tool": "query",
+      "name": "Search with original query",
+      "inputs": {
+        "query": "{{ inputs.query }}",
+        "collection": "{{ inputs.collection }}",
+        "limit": 15
+      }
+    },
+    {
+      "id": "search_lang1",
+      "tool": "query",
+      "name": "Search with first translation",
+      "inputs": {
+        "query": "{{ translate.output.response.translation1 }}",
+        "collection": "{{ inputs.collection }}",
+        "limit": 15
+      }
+    },
+    {
+      "id": "search_lang2",
+      "tool": "query",
+      "name": "Search with second translation",
+      "inputs": {
+        "query": "{{ translate.output.response.translation2 }}",
+        "collection": "{{ inputs.collection }}",
+        "limit": 15
+      }
+    },
+    {
+      "id": "merged",
+      "tool": "merge",
+      "name": "Merge cross-lingual results",
+      "inputs": {
+        "arrays": [
+          "{{ search_original.output.results }}",
+          "{{ search_lang1.output.results }}",
+          "{{ search_lang2.output.results }}"
+        ],
+        "dedup": true
+      }
+    },
+    {
+      "id": "final_rerank",
+      "tool": "rerank",
+      "name": "Rerank for final relevance ordering",
+      "inputs": {
+        "query": "{{ inputs.query }}",
+        "documents": "{{ merged.output.results }}",
+        "model": "rerank-2.5",
+        "limit": "{{ inputs.limit }}"
+      }
+    }
+  ],
+  "output": {
+    "results": "{{ final_rerank.output.results }}",
+    "translations": "{{ translate.output.response }}"
+  }
+}

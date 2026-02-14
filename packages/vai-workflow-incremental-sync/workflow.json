@@ -1,0 +1,83 @@
+{
+  "name": "incremental-sync",
+  "description": "Smart incremental ingestion that compares incoming documents against the existing collection using semantic similarity, with three-tier decision logic: skip duplicates, flag revisions, ingest new content.",
+  "version": "1.0.0",
+  "inputs": {
+    "document": {
+      "type": "string",
+      "required": true
+    },
+    "collection": {
+      "type": "string",
+      "required": true
+    },
+    "duplicate_threshold": {
+      "type": "number",
+      "default": 0.95
+    },
+    "revision_threshold": {
+      "type": "number",
+      "default": 0.7
+    }
+  },
+  "defaults": {},
+  "steps": [
+    {
+      "id": "find_existing",
+      "tool": "search",
+      "name": "Search for similar existing documents",
+      "inputs": {
+        "query": "{{ inputs.document }}",
+        "collection": "{{ inputs.collection }}",
+        "limit": 5
+      }
+    },
+    {
+      "id": "check_similarity",
+      "tool": "similarity",
+      "name": "Compare incoming document against closest match",
+      "inputs": {
+        "text1": "{{ inputs.document }}",
+        "text2": "{{ find_existing.output.results[0].text }}"
+      }
+    },
+    {
+      "id": "ingest_new",
+      "tool": "ingest",
+      "name": "Ingest as new document",
+      "condition": "{{ check_similarity.output.similarity < inputs.revision_threshold }}",
+      "inputs": {
+        "text": "{{ inputs.document }}",
+        "collection": "{{ inputs.collection }}"
+      }
+    },
+    {
+      "id": "flag_revision",
+      "tool": "generate",
+      "name": "Flag as revision for review",
+      "condition": "{{ check_similarity.output.similarity >= inputs.revision_threshold && check_similarity.output.similarity < inputs.duplicate_threshold }}",
+      "inputs": {
+        "prompt": "The following incoming document appears to be a revision of an existing document in the collection. Compare the two and summarize what changed.\n\nSimilarity score: {{ check_similarity.output.similarity }}",
+        "context": {
+          "incoming": "{{ inputs.document }}",
+          "existing": "{{ find_existing.output.results[0].text }}"
+        }
+      }
+    },
+    {
+      "id": "skip_duplicate",
+      "tool": "generate",
+      "name": "Skip - document is a duplicate",
+      "condition": "{{ check_similarity.output.similarity >= inputs.duplicate_threshold }}",
+      "inputs": {
+        "prompt": "Document skipped as duplicate. Similarity: {{ check_similarity.output.similarity }}. Existing document already in collection.",
+        "context": {}
+      }
+    }
+  ],
+  "output": {
+    "action": "{{ ingest_new.output ? 'ingested' : (flag_revision.output ? 'flagged_revision' : 'skipped_duplicate') }}",
+    "similarity": "{{ check_similarity.output.similarity }}",
+    "details": "{{ ingest_new.output || flag_revision.output.response || skip_duplicate.output.response }}"
+  }
+}

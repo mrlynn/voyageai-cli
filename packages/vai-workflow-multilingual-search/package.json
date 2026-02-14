@@ -1,0 +1,63 @@
+{
+  "name": "vai-workflow-multilingual-search",
+  "version": "1.0.0",
+  "description": "Translate a query into multiple languages, search in parallel, and merge results for cross-lingual retrieval.",
+  "keywords": [
+    "vai-workflow",
+    "retrieval",
+    "multilingual",
+    "translation",
+    "parallel",
+    "international"
+  ],
+  "author": "Michael Lynn",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mrlynn/voyageai-cli.git",
+    "directory": "packages/vai-workflow-multilingual-search"
+  },
+  "files": [
+    "workflow.json",
+    "README.md",
+    "LICENSE"
+  ],
+  "vai-workflow": {
+    "engine": ">=1.0.0",
+    "category": "retrieval",
+    "tags": [
+      "multilingual",
+      "translation",
+      "parallel",
+      "international"
+    ],
+    "tools": [
+      "generate",
+      "query",
+      "merge",
+      "rerank"
+    ],
+    "inputs": {
+      "query": {
+        "type": "string",
+        "required": true
+      },
+      "collection": {
+        "type": "string",
+        "required": true
+      },
+      "language1": {
+        "type": "string",
+        "default": "Spanish"
+      },
+      "language2": {
+        "type": "string",
+        "default": "French"
+      },
+      "limit": {
+        "type": "number",
+        "default": 10
+      }
+    }
+  }
+}

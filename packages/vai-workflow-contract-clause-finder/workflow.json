@@ -1,0 +1,64 @@
+{
+  "name": "contract-clause-finder",
+  "description": "Search a legal document collection for specific clause types, rerank with legal-domain understanding, and extract structured clause summaries.",
+  "version": "1.0.0",
+  "inputs": {
+    "clause_type": {
+      "type": "string",
+      "required": true
+    },
+    "collection": {
+      "type": "string",
+      "required": true
+    },
+    "jurisdiction": {
+      "type": "string",
+      "default": "US"
+    },
+    "limit": {
+      "type": "number",
+      "default": 10
+    }
+  },
+  "defaults": {},
+  "steps": [
+    {
+      "id": "search_clauses",
+      "tool": "query",
+      "name": "Search for clause type in legal collection",
+      "inputs": {
+        "query": "{{ inputs.clause_type }} clause provision",
+        "collection": "{{ inputs.collection }}",
+        "model": "voyage-law-2",
+        "filter": {
+          "jurisdiction": "{{ inputs.jurisdiction }}"
+        },
+        "limit": 20
+      }
+    },
+    {
+      "id": "rerank_legal",
+      "tool": "rerank",
+      "name": "Rerank with legal relevance",
+      "inputs": {
+        "query": "{{ inputs.clause_type }} contractual provision terms and conditions",
+        "documents": "{{ search_clauses.output.results }}",
+        "model": "rerank-2.5",
+        "limit": "{{ inputs.limit }}"
+      }
+    },
+    {
+      "id": "extract_summary",
+      "tool": "generate",
+      "name": "Extract and summarize clause language",
+      "inputs": {
+        "prompt": "You are a legal analyst. From the following contract excerpts, extract and summarize the {{ inputs.clause_type }} clauses found. For each clause:\n1. Quote the key operative language\n2. Identify the parties' obligations\n3. Note any unusual or non-standard terms\n4. Rate the clause as standard, favorable, or unfavorable from the contracting party's perspective\n\nJurisdiction context: {{ inputs.jurisdiction }}",
+        "context": "{{ rerank_legal.output.results }}"
+      }
+    }
+  ],
+  "output": {
+    "analysis": "{{ extract_summary.output.response }}",
+    "source_clauses": "{{ rerank_legal.output.results }}"
+  }
+}

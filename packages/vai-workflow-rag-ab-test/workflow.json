@@ -1,0 +1,95 @@
+{
+  "name": "rag-ab-test",
+  "description": "Run the same query through two different RAG configurations and compare results side-by-side with an LLM-generated evaluation.",
+  "version": "1.0.0",
+  "inputs": {
+    "query": {
+      "type": "string",
+      "required": true
+    },
+    "collection_a": {
+      "type": "string",
+      "required": true
+    },
+    "collection_b": {
+      "type": "string",
+      "required": true
+    },
+    "model_a": {
+      "type": "string",
+      "default": "voyage-4-large"
+    },
+    "model_b": {
+      "type": "string",
+      "default": "voyage-4-lite"
+    },
+    "limit": {
+      "type": "number",
+      "default": 5
+    }
+  },
+  "defaults": {},
+  "steps": [
+    {
+      "id": "config_a",
+      "tool": "query",
+      "name": "Configuration A retrieval",
+      "inputs": {
+        "query": "{{ inputs.query }}",
+        "collection": "{{ inputs.collection_a }}",
+        "model": "{{ inputs.model_a }}",
+        "limit": "{{ inputs.limit }}"
+      }
+    },
+    {
+      "id": "config_b",
+      "tool": "query",
+      "name": "Configuration B retrieval",
+      "inputs": {
+        "query": "{{ inputs.query }}",
+        "collection": "{{ inputs.collection_b }}",
+        "model": "{{ inputs.model_b }}",
+        "limit": "{{ inputs.limit }}"
+      }
+    },
+    {
+      "id": "answer_a",
+      "tool": "generate",
+      "name": "Generate answer from Configuration A",
+      "inputs": {
+        "prompt": "Using only the provided context documents, answer the following question. If the context doesn't contain enough information, say so.\n\nQuestion: {{ inputs.query }}",
+        "context": "{{ config_a.output.results }}"
+      }
+    },
+    {
+      "id": "answer_b",
+      "tool": "generate",
+      "name": "Generate answer from Configuration B",
+      "inputs": {
+        "prompt": "Using only the provided context documents, answer the following question. If the context doesn't contain enough information, say so.\n\nQuestion: {{ inputs.query }}",
+        "context": "{{ config_b.output.results }}"
+      }
+    },
+    {
+      "id": "evaluation",
+      "tool": "generate",
+      "name": "Evaluate and compare configurations",
+      "inputs": {
+        "prompt": "You are evaluating two RAG pipeline configurations tested on the same query. Compare them across these dimensions:\n\n1. **Answer quality**: Which configuration produced a more complete, accurate, and useful answer?\n2. **Source relevance**: Which configuration retrieved more relevant documents?\n3. **Coverage**: Did one configuration find important information that the other missed?\n4. **Confidence**: Which answer seems more confident and well-supported by its sources?\n5. **Winner**: Declare a winner with rationale.\n\nQuery: {{ inputs.query }}\n\nConfiguration A: model={{ inputs.model_a }}, collection={{ inputs.collection_a }}\nConfiguration B: model={{ inputs.model_b }}, collection={{ inputs.collection_b }}",
+        "context": {
+          "config_a_answer": "{{ answer_a.output.response }}",
+          "config_a_sources": "{{ config_a.output.results }}",
+          "config_b_answer": "{{ answer_b.output.response }}",
+          "config_b_sources": "{{ config_b.output.results }}"
+        }
+      }
+    }
+  ],
+  "output": {
+    "evaluation": "{{ evaluation.output.response }}",
+    "answer_a": "{{ answer_a.output.response }}",
+    "answer_b": "{{ answer_b.output.response }}",
+    "sources_a": "{{ config_a.output.results }}",
+    "sources_b": "{{ config_b.output.results }}"
+  }
+}
