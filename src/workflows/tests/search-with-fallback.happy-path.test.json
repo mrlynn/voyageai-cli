@@ -1,0 +1,27 @@
+{
+  "name": "search-with-fallback: happy path (primary has results)",
+  "inputs": {
+    "query": "how to authenticate",
+    "primary_collection": "api_docs",
+    "fallback_collection": "knowledge"
+  },
+  "mocks": {
+    "query": {
+      "results": [
+        { "text": "Use Bearer tokens for API authentication", "score": 0.95, "source": "auth.md" },
+        { "text": "OAuth2 is supported for third-party apps", "score": 0.88, "source": "oauth.md" }
+      ],
+      "resultCount": 2
+    }
+  },
+  "expect": {
+    "steps": {
+      "primary_search": { "status": "completed" },
+      "check_results": { "status": "completed" },
+      "format_primary": { "status": "completed" },
+      "fallback_search": { "status": "skipped" },
+      "format_fallback": { "status": "skipped" }
+    },
+    "noErrors": true
+  }
+}

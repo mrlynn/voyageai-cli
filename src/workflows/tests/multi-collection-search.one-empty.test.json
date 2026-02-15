@@ -1,0 +1,28 @@
+{
+  "name": "multi-collection-search: one collection empty",
+  "inputs": {
+    "query": "obscure feature",
+    "collection1": "api_docs",
+    "collection2": "tutorials",
+    "limit": 5
+  },
+  "mocks": {
+    "query": {
+      "results": [],
+      "resultCount": 0
+    },
+    "rerank": {
+      "results": [],
+      "resultCount": 0
+    }
+  },
+  "expect": {
+    "steps": {
+      "search_1": { "status": "completed" },
+      "search_2": { "status": "completed" },
+      "merge": { "status": "completed" },
+      "rerank_all": { "status": "completed" }
+    },
+    "noErrors": true
+  }
+}

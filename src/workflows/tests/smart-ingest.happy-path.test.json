@@ -1,0 +1,31 @@
+{
+  "name": "smart-ingest: novel document (no similar docs found)",
+  "inputs": {
+    "text": "A completely new document about quantum computing fundamentals",
+    "source": "quantum-101.md",
+    "threshold": 0.85
+  },
+  "mocks": {
+    "search": {
+      "results": [],
+      "resultCount": 0
+    },
+    "similarity": {
+      "similarity": 0.12,
+      "model": "voyage-4-large"
+    },
+    "ingest": {
+      "chunks": 3,
+      "source": "quantum-101.md",
+      "collection": "default"
+    }
+  },
+  "expect": {
+    "steps": {
+      "check_existing": { "status": "completed" },
+      "similarity_check": { "status": "skipped" },
+      "ingest_doc": { "status": "completed" }
+    },
+    "noErrors": true
+  }
+}

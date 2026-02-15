@@ -1,0 +1,28 @@
+{
+  "name": "consistency-check: happy path (both sources have results)",
+  "inputs": {
+    "topic": "authentication best practices",
+    "collection1": "api_docs",
+    "collection2": "tutorials"
+  },
+  "mocks": {
+    "query": {
+      "results": [
+        { "text": "Use OAuth2 for API authentication", "score": 0.92, "source": "auth.md" }
+      ],
+      "resultCount": 1
+    },
+    "similarity": {
+      "similarity": 0.87,
+      "model": "voyage-4-large"
+    }
+  },
+  "expect": {
+    "steps": {
+      "search_source_a": { "status": "completed" },
+      "search_source_b": { "status": "completed" },
+      "compare": { "status": "completed" }
+    },
+    "noErrors": true
+  }
+}

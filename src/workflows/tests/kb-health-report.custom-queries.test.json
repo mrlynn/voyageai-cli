@@ -1,0 +1,24 @@
+{
+  "name": "kb-health-report: custom queries",
+  "inputs": {
+    "test_queries": ["vector search", "embeddings"]
+  },
+  "mocks": {
+    "query": {
+      "results": [],
+      "resultCount": 0
+    },
+    "generate": {
+      "text": "Knowledge Base Health Report: 2 topics tested. Low coverage detected across test queries.",
+      "model": "claude-3-haiku",
+      "tokensUsed": 60
+    }
+  },
+  "expect": {
+    "steps": {
+      "coverage_check": { "status": "completed" },
+      "report": { "status": "completed" }
+    },
+    "noErrors": true
+  }
+}

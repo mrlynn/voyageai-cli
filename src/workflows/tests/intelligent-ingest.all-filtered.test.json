@@ -1,0 +1,26 @@
+{
+  "name": "intelligent-ingest: all chunks filtered out (too short)",
+  "inputs": {
+    "text": "Short. Tiny. Small text.",
+    "source": "tiny.md",
+    "similarity_threshold": 0.92
+  },
+  "mocks": {
+    "search": {
+      "results": [],
+      "resultCount": 0
+    }
+  },
+  "expect": {
+    "steps": {
+      "split": { "status": "completed" },
+      "filter_short": { "status": "completed" },
+      "check_each": { "status": "completed" },
+      "embed_novel": { "status": "completed" }
+    },
+    "output": {
+      "summary": { "type": "string" }
+    },
+    "noErrors": true
+  }
+}

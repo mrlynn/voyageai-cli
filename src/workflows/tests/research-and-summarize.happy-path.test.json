@@ -1,0 +1,33 @@
+{
+  "name": "research-and-summarize: happy path",
+  "inputs": {
+    "question": "How does vector search work?",
+    "limit": 5
+  },
+  "mocks": {
+    "query": {
+      "results": [
+        { "text": "Vector search uses embeddings to find similar documents", "score": 0.95 },
+        { "text": "Approximate nearest neighbor algorithms power vector search", "score": 0.88 }
+      ],
+      "resultCount": 2
+    },
+    "generate": {
+      "text": "Vector search works by converting documents and queries into numerical embeddings and finding the closest matches using ANN algorithms.",
+      "model": "claude-3-haiku",
+      "tokensUsed": 120
+    }
+  },
+  "expect": {
+    "steps": {
+      "research": { "status": "completed" },
+      "summarize": { "status": "completed" }
+    },
+    "output": {
+      "summary": { "type": "string", "minLength": 1 },
+      "sources": { "type": "array", "minLength": 1 },
+      "sourceCount": { "type": "number" }
+    },
+    "noErrors": true
+  }
+}

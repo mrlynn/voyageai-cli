@@ -1,0 +1,227 @@
+{
+  "name": "vai-vscode",
+  "displayName": "vai - Voyage AI Integration",
+  "description": "Semantic search, RAG queries, and AI-powered code understanding with Voyage AI embeddings",
+  "version": "0.1.0",
+  "publisher": "voyageai",
+  "icon": "images/icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mrlynn/voyageai-cli"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Machine Learning",
+    "Other"
+  ],
+  "keywords": [
+    "voyage-ai",
+    "embeddings",
+    "semantic-search",
+    "rag",
+    "vector-search",
+    "mongodb"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "vai.query",
+        "title": "vai: Semantic Query",
+        "icon": "$(search)"
+      },
+      {
+        "command": "vai.indexWorkspace",
+        "title": "vai: Index Workspace",
+        "icon": "$(database)"
+      },
+      {
+        "command": "vai.searchCodebase",
+        "title": "vai: Search Codebase",
+        "icon": "$(search-fuzzy)"
+      },
+      {
+        "command": "vai.explainSelection",
+        "title": "vai: Explain Selection",
+        "icon": "$(lightbulb)"
+      },
+      {
+        "command": "vai.similarity",
+        "title": "vai: Compare Similarity",
+        "icon": "$(diff)"
+      },
+      {
+        "command": "vai.showCollections",
+        "title": "vai: Show Collections",
+        "icon": "$(list-tree)"
+      },
+      {
+        "command": "vai.showModels",
+        "title": "vai: Show Models",
+        "icon": "$(symbol-misc)"
+      },
+      {
+        "command": "vai.configure",
+        "title": "vai: Configure",
+        "icon": "$(gear)"
+      },
+      {
+        "command": "vai.startServer",
+        "title": "vai: Start MCP Server",
+        "icon": "$(server)"
+      },
+      {
+        "command": "vai.stopServer",
+        "title": "vai: Stop MCP Server",
+        "icon": "$(debug-stop)"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "vai.explainSelection",
+          "when": "editorHasSelection",
+          "group": "vai@1"
+        },
+        {
+          "command": "vai.searchCodebase",
+          "when": "editorHasSelection",
+          "group": "vai@2"
+        },
+        {
+          "command": "vai.similarity",
+          "when": "editorHasSelection",
+          "group": "vai@3"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "vai.query",
+          "when": "true"
+        },
+        {
+          "command": "vai.indexWorkspace",
+          "when": "true"
+        },
+        {
+          "command": "vai.searchCodebase",
+          "when": "true"
+        }
+      ]
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "vai-explorer",
+          "title": "vai",
+          "icon": "images/vai-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "vai-explorer": [
+        {
+          "id": "vai.collections",
+          "name": "Collections",
+          "contextualTitle": "vai Collections"
+        },
+        {
+          "id": "vai.results",
+          "name": "Search Results",
+          "contextualTitle": "vai Results"
+        },
+        {
+          "id": "vai.status",
+          "name": "Server Status",
+          "contextualTitle": "vai Status"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "vai",
+      "properties": {
+        "vai.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "Voyage AI API key (or set VOYAGE_API_KEY env var)"
+        },
+        "vai.mongodbUri": {
+          "type": "string",
+          "default": "",
+          "description": "MongoDB connection string (or set MONGODB_URI env var)"
+        },
+        "vai.defaultDb": {
+          "type": "string",
+          "default": "",
+          "description": "Default MongoDB database name"
+        },
+        "vai.defaultCollection": {
+          "type": "string",
+          "default": "",
+          "description": "Default collection for queries"
+        },
+        "vai.embeddingModel": {
+          "type": "string",
+          "default": "voyage-4-large",
+          "enum": [
+            "voyage-4-large",
+            "voyage-4",
+            "voyage-4-lite",
+            "voyage-code-3",
+            "voyage-finance-2",
+            "voyage-law-2"
+          ],
+          "description": "Embedding model to use"
+        },
+        "vai.autoStartServer": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically start MCP server on VS Code launch"
+        },
+        "vai.serverPort": {
+          "type": "number",
+          "default": 3100,
+          "description": "Port for HTTP MCP server"
+        }
+      }
+    },
+    "keybindings": [
+      {
+        "command": "vai.query",
+        "key": "ctrl+shift+v q",
+        "mac": "cmd+shift+v q"
+      },
+      {
+        "command": "vai.searchCodebase",
+        "key": "ctrl+shift+v s",
+        "mac": "cmd+shift+v s"
+      },
+      {
+        "command": "vai.explainSelection",
+        "key": "ctrl+shift+v e",
+        "mac": "cmd+shift+v e",
+        "when": "editorHasSelection"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint src --ext ts",
+    "package": "vsce package",
+    "publish": "vsce publish"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^2.22.0",
+    "typescript": "^5.3.0"
+  },
+  "dependencies": {}
+}

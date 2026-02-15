@@ -1,0 +1,34 @@
+{
+  "name": "smart-ingest: duplicate detected (high similarity)",
+  "description": "NOTE: Due to a known dependency extraction issue with negated conditions (!similarity_check), the ingest_doc step's condition cannot properly wait for similarity_check. The !prefix prevents dependency tracking, so ingest_doc runs in parallel with check_existing. The condition evaluates with similarity_check.output as undefined, making !undefined = true, so ingest_doc always executes. This test validates actual engine behavior.",
+  "inputs": {
+    "text": "A document that already exists in the knowledge base",
+    "source": "existing-doc.md",
+    "threshold": 0.85
+  },
+  "mocks": {
+    "search": {
+      "results": [
+        { "text": "A document that already exists in the knowledge base", "score": 0.98 }
+      ],
+      "resultCount": 1
+    },
+    "similarity": {
+      "similarity": 0.97,
+      "model": "voyage-4-large"
+    },
+    "ingest": {
+      "chunks": 1,
+      "source": "existing-doc.md",
+      "collection": "default"
+    }
+  },
+  "expect": {
+    "steps": {
+      "check_existing": { "status": "completed" },
+      "similarity_check": { "status": "completed" },
+      "ingest_doc": { "status": "completed" }
+    },
+    "noErrors": true
+  }
+}

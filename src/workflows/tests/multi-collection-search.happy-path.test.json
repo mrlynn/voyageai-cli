@@ -1,0 +1,40 @@
+{
+  "name": "multi-collection-search: happy path",
+  "inputs": {
+    "query": "how to deploy",
+    "collection1": "api_docs",
+    "collection2": "tutorials",
+    "limit": 5
+  },
+  "mocks": {
+    "query": {
+      "results": [
+        { "text": "Deploy using Docker containers", "score": 0.92, "source": "deploy.md" },
+        { "text": "CI/CD pipeline setup guide", "score": 0.85, "source": "ci.md" }
+      ],
+      "resultCount": 2
+    },
+    "rerank": {
+      "results": [
+        { "text": "Deploy using Docker containers", "score": 0.96, "source": "deploy.md" },
+        { "text": "CI/CD pipeline setup guide", "score": 0.91, "source": "ci.md" },
+        { "text": "Deploy using Docker containers", "score": 0.89, "source": "deploy.md" },
+        { "text": "CI/CD pipeline setup guide", "score": 0.82, "source": "ci.md" }
+      ],
+      "resultCount": 4
+    }
+  },
+  "expect": {
+    "steps": {
+      "search_1": { "status": "completed" },
+      "search_2": { "status": "completed" },
+      "merge": { "status": "completed" },
+      "rerank_all": { "status": "completed" }
+    },
+    "output": {
+      "results": { "type": "array", "minLength": 1 },
+      "resultCount": { "type": "number" }
+    },
+    "noErrors": true
+  }
+}

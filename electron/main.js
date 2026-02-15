@@ -4,6 +4,32 @@ const { app, BrowserWindow, Menu, shell, dialog, nativeTheme, nativeImage, ipcMa
 const path = require('path');
 const fs = require('fs');
 const http = require('http');
+const Module = require('module');
+
+// ── Module Resolution for Bundled CLI Dependencies ──
+// When packaged, CLI source files in Resources/src need to find their
+// dependencies in Resources/node_modules (copied via extraResources)
+if (app.isPackaged) {
+  const extraNodeModules = path.join(process.resourcesPath, 'node_modules');
+  const originalResolveFilename = Module._resolveFilename;
+  Module._resolveFilename = function(request, parent, isMain, options) {
+    // Only intercept requires from our bundled src/ folder
+    if (parent && parent.filename && parent.filename.includes(path.join('Resources', 'src'))) {
+      // Try extraResources node_modules first for non-relative requires
+      if (!request.startsWith('.') && !request.startsWith('/')) {
+        const extraPath = path.join(extraNodeModules, request);
+        try {
+          // Check if module exists in extraResources
+          const resolved = originalResolveFilename.call(this, extraPath, parent, isMain, options);
+          return resolved;
+        } catch {
+          // Fall through to default resolution
+        }
+      }
+    }
+    return originalResolveFilename.call(this, request, parent, isMain, options);
+  };
+}
 
 // ── Secure API Key Storage ──
 // Uses Electron safeStorage (OS keychain encryption) + file on disk

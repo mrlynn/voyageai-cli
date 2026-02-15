@@ -8,6 +8,7 @@ const { registerEmbeddingTools } = require('./tools/embedding');
 const { registerManagementTools } = require('./tools/management');
 const { registerUtilityTools } = require('./tools/utility');
 const { registerIngestTool } = require('./tools/ingest');
+const { registerWorkspaceTools } = require('./tools/workspace');
 
 const VERSION = require('../../package.json').version;
 
@@ -27,6 +28,7 @@ function createServer() {
   registerManagementTools(server, schemas);
   registerUtilityTools(server, schemas);
   registerIngestTool(server, schemas);
+  registerWorkspaceTools(server, schemas);
 
   return server;
 }

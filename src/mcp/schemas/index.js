@@ -87,6 +87,43 @@ const ingestSchema = {
   model: z.string().default('voyage-4-large').describe('Voyage AI embedding model'),
 };
 
+/** vai_index_workspace input schema */
+const indexWorkspaceSchema = {
+  path: z.string().optional().describe('Workspace directory path. Defaults to current working directory.'),
+  db: z.string().optional().describe('MongoDB database name'),
+  collection: z.string().optional().describe('Collection to store indexed documents'),
+  contentType: z.enum(['code', 'docs', 'config', 'all']).default('code')
+    .describe('Type of content to index: code (source files), docs (markdown/text), config (json/yaml), or all'),
+  model: z.string().default('voyage-4-large').describe('Voyage AI embedding model'),
+  maxFiles: z.number().int().min(1).max(10000).default(1000).describe('Maximum number of files to index'),
+  maxFileSize: z.number().int().min(1000).max(1000000).default(100000).describe('Maximum file size in bytes'),
+  chunkSize: z.number().int().min(100).max(4000).default(512).describe('Target chunk size in characters'),
+  chunkOverlap: z.number().int().min(0).max(500).default(50).describe('Overlap between chunks in characters'),
+  batchSize: z.number().int().min(1).max(50).default(10).describe('Number of files to process per batch'),
+};
+
+/** vai_search_code input schema */
+const searchCodeSchema = {
+  query: z.string().min(1).max(5000).describe('Semantic search query for code'),
+  db: z.string().optional().describe('MongoDB database name'),
+  collection: z.string().optional().describe('Collection with indexed code'),
+  limit: z.number().int().min(1).max(50).default(10).describe('Maximum number of results'),
+  language: z.string().optional().describe('Filter by programming language (e.g., "js", "py", "go")'),
+  category: z.enum(['code', 'docs', 'config']).optional().describe('Filter by content category'),
+  model: z.string().optional().describe('Voyage AI embedding model'),
+  filter: z.record(z.string(), z.unknown()).optional().describe('Additional MongoDB filter'),
+};
+
+/** vai_explain_code input schema */
+const explainCodeSchema = {
+  code: z.string().min(1).max(10000).describe('Code snippet to explain'),
+  language: z.string().optional().describe('Programming language of the code'),
+  db: z.string().optional().describe('MongoDB database name'),
+  collection: z.string().optional().describe('Collection with indexed documentation'),
+  contextLimit: z.number().int().min(1).max(20).default(5).describe('Number of context documents to retrieve'),
+  model: z.string().optional().describe('Voyage AI embedding model'),
+};
+
 module.exports = {
   querySchema,
   searchSchema,
@@ -99,4 +136,7 @@ module.exports = {
   explainSchema,
   estimateSchema,
   ingestSchema,
+  indexWorkspaceSchema,
+  searchCodeSchema,
+  explainCodeSchema,
 };

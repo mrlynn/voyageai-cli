@@ -1,0 +1,38 @@
+{
+  "name": "enrich-and-ingest: notification failure (continueOnError)",
+  "inputs": {
+    "document_url": "https://api.example.com/documents/456/metadata",
+    "text": "Document text for ingestion even if notification fails."
+  },
+  "mocks": {
+    "http": {
+      "status": 200,
+      "statusText": "OK",
+      "headers": { "content-type": "application/json" },
+      "body": {
+        "title": "API Reference",
+        "author": "John Dev",
+        "category": "reference",
+        "timestamp": "2025-02-01T14:00:00Z"
+      },
+      "durationMs": 200
+    },
+    "ingest": {
+      "chunks": 5,
+      "source": "API Reference",
+      "collection": "default"
+    }
+  },
+  "expect": {
+    "steps": {
+      "fetch_metadata": { "status": "completed" },
+      "store": { "status": "completed" },
+      "notify": { "status": "completed" }
+    },
+    "output": {
+      "source": { "type": "string", "minLength": 1 },
+      "chunks": { "type": "number" }
+    },
+    "noErrors": true
+  }
+}

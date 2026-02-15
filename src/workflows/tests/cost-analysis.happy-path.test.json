@@ -1,0 +1,28 @@
+{
+  "name": "cost-analysis: happy path",
+  "inputs": {
+    "docs": 10000,
+    "queries": 5000,
+    "months": 12
+  },
+  "mocks": {
+    "estimate": {
+      "model": "voyage-4-large",
+      "embeddingCost": 12.50,
+      "queryCost": 8.25,
+      "totalCost": 20.75,
+      "currency": "USD"
+    }
+  },
+  "expect": {
+    "steps": {
+      "cost_large": { "status": "completed" },
+      "cost_balanced": { "status": "completed" },
+      "cost_lite": { "status": "completed" }
+    },
+    "output": {
+      "comparison": { "type": "array", "minLength": 3 }
+    },
+    "noErrors": true
+  }
+}

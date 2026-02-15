@@ -1,0 +1,28 @@
+{
+  "name": "intelligent-ingest: happy path",
+  "inputs": {
+    "text": "This is a long document about vector databases and how they work. Vector databases store high-dimensional embeddings and support approximate nearest neighbor search for fast retrieval. They are essential for modern RAG applications. The key advantage is that semantic similarity can be computed efficiently at scale. Various indexing strategies like HNSW and IVF are used to speed up queries.",
+    "source": "vector-db-guide.md",
+    "similarity_threshold": 0.92
+  },
+  "mocks": {
+    "search": {
+      "results": [
+        { "text": "Some existing doc about databases", "score": 0.45 }
+      ],
+      "resultCount": 1
+    }
+  },
+  "expect": {
+    "steps": {
+      "split": { "status": "completed" },
+      "filter_short": { "status": "completed" },
+      "check_each": { "status": "completed" },
+      "embed_novel": { "status": "completed" }
+    },
+    "output": {
+      "summary": { "type": "string", "minLength": 1 }
+    },
+    "noErrors": true
+  }
+}

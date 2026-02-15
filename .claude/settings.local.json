@@ -60,7 +60,9 @@
       "Bash(/opt/homebrew/bin/npx jest test/lib/workflow-scaffold.test.js --no-coverage)",
       "WebFetch(domain:unpkg.com)",
       "Bash(kill:*)",
-      "Bash(PATH=\"/opt/homebrew/bin:$PATH\" /opt/homebrew/bin/node /opt/homebrew/bin/npx docusaurus build:*)"
+      "Bash(PATH=\"/opt/homebrew/bin:$PATH\" /opt/homebrew/bin/node /opt/homebrew/bin/npx docusaurus build:*)",
+      "Bash(wc:*)",
+      "Bash(done)"
     ]
   },
   "enableAllProjectMcpServers": true,

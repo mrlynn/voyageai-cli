@@ -1,0 +1,26 @@
+{
+  "name": "kb-health-report: happy path",
+  "inputs": {
+    "test_queries": ["authentication", "deployment", "error handling"]
+  },
+  "mocks": {
+    "query": {
+      "results": [
+        { "text": "Auth docs available", "score": 0.9 }
+      ],
+      "resultCount": 1
+    },
+    "generate": {
+      "text": "Knowledge Base Health Report: 3 topics tested. Coverage looks good with results found for all test queries.",
+      "model": "claude-3-haiku",
+      "tokensUsed": 85
+    }
+  },
+  "expect": {
+    "steps": {
+      "coverage_check": { "status": "completed" },
+      "report": { "status": "completed" }
+    },
+    "noErrors": true
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "name": "enrich-and-ingest: happy path",
+  "inputs": {
+    "document_url": "https://api.example.com/documents/123/metadata",
+    "text": "This is the document text to ingest after enrichment with external metadata."
+  },
+  "mocks": {
+    "http": {
+      "status": 200,
+      "statusText": "OK",
+      "headers": { "content-type": "application/json" },
+      "body": {
+        "title": "Getting Started Guide",
+        "author": "Jane Developer",
+        "category": "tutorials",
+        "timestamp": "2025-01-15T10:00:00Z"
+      },
+      "durationMs": 150
+    },
+    "ingest": {
+      "chunks": 2,
+      "source": "Getting Started Guide",
+      "collection": "default"
+    }
+  },
+  "expect": {
+    "steps": {
+      "fetch_metadata": { "status": "completed" },
+      "store": { "status": "completed" },
+      "notify": { "status": "completed" }
+    },
+    "output": {
+      "source": { "type": "string", "minLength": 1 },
+      "chunks": { "type": "number" }
+    },
+    "noErrors": true
+  }
+}

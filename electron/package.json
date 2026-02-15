@@ -48,6 +48,21 @@
       {
         "from": "../package.json",
         "to": "cli-package.json"
+      },
+      {
+        "from": "../node_modules",
+        "to": "node_modules",
+        "filter": [
+          "picocolors/**",
+          "commander/**",
+          "dotenv/**",
+          "mongodb/**",
+          "ora/**",
+          "zod/**",
+          "@clack/**",
+          "@modelcontextprotocol/**",
+          "update-notifier/**"
+        ]
       }
     ],
     "publish": {

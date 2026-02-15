@@ -38,6 +38,7 @@ const { registerBug } = require('./commands/bug');
 const { registerChat } = require('./commands/chat');
 const { registerMcpServer } = require('./commands/mcp-server');
 const { registerWorkflow } = require('./commands/workflow');
+const { registerIndexWorkspace } = require('./commands/index-workspace');
 const { showBanner, showQuickStart, getVersion } = require('./lib/banner');
 
 const version = getVersion();
@@ -80,6 +81,7 @@ registerBug(program);
 registerChat(program);
 registerMcpServer(program);
 registerWorkflow(program);
+registerIndexWorkspace(program);
 
 // Append disclaimer to all help output
 program.addHelpText('after', `

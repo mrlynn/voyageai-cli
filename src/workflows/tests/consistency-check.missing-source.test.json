@@ -1,0 +1,26 @@
+{
+  "name": "consistency-check: one source empty (comparison skipped)",
+  "inputs": {
+    "topic": "obscure topic",
+    "collection1": "api_docs",
+    "collection2": "tutorials"
+  },
+  "mocks": {
+    "query": {
+      "results": [],
+      "resultCount": 0
+    },
+    "similarity": {
+      "similarity": 0.0,
+      "model": "voyage-4-large"
+    }
+  },
+  "expect": {
+    "steps": {
+      "search_source_a": { "status": "completed" },
+      "search_source_b": { "status": "completed" },
+      "compare": { "status": "skipped" }
+    },
+    "noErrors": true
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "name": "search-with-fallback: both collections empty",
+  "inputs": {
+    "query": "nonexistent topic xyz",
+    "primary_collection": "api_docs",
+    "fallback_collection": "knowledge"
+  },
+  "mocks": {
+    "query": {
+      "results": [],
+      "resultCount": 0
+    }
+  },
+  "expect": {
+    "steps": {
+      "primary_search": { "status": "completed" },
+      "check_results": { "status": "completed" },
+      "format_primary": { "status": "skipped" },
+      "fallback_search": { "status": "completed" },
+      "format_fallback": { "status": "completed" }
+    },
+    "noErrors": true
+  }
+}

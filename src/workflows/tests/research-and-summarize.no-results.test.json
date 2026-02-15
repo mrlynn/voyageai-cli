@@ -1,0 +1,29 @@
+{
+  "name": "research-and-summarize: no search results",
+  "inputs": {
+    "question": "What is the meaning of life?",
+    "limit": 5
+  },
+  "mocks": {
+    "query": {
+      "results": [],
+      "resultCount": 0
+    },
+    "generate": {
+      "text": "No relevant documents were found in the knowledge base to answer this question.",
+      "model": "claude-3-haiku",
+      "tokensUsed": 45
+    }
+  },
+  "expect": {
+    "steps": {
+      "research": { "status": "completed" },
+      "summarize": { "status": "completed" }
+    },
+    "output": {
+      "summary": { "type": "string", "minLength": 1 },
+      "sourceCount": { "type": "number" }
+    },
+    "noErrors": true
+  }
+}
