@@ -324,7 +324,17 @@ function uninstallTarget(targetKey) {
 function statusAll() {
   const results = [];
   for (const [key, target] of Object.entries(TARGETS)) {
-    const configPath = target.configPath();
+    // Skip workspace-only targets in global status
+    if (target.requiresWorkspace) {
+      continue;
+    }
+
+    const configPath = target.configPath?.();
+    if (!configPath) {
+      results.push({ target: key, name: target.name, configPath: 'N/A', status: 'workspace-only' });
+      continue;
+    }
+
     const mcpKey = target.configKey || 'mcpServers';
     const config = readConfig(configPath);
 

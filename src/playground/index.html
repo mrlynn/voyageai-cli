@@ -7332,7 +7332,13 @@ async function loadMarketplaceData() {
   try {
     const res = await fetch('/api/workflows/catalog');
     const data = await res.json();
-    
+
+    // Populate store catalog so detail modal and install work from home page
+    if (data.workflows && data.workflows.length > 0) {
+      _wfStoreCatalog = data.workflows;
+    }
+    if (data.icons) _wfStoreIcons = data.icons;
+
     // Extract featured and community workflows
     homeData.featuredWorkflows = data.workflows.filter(w => w.featured).slice(0, 4);
     homeData.communityWorkflows = data.workflows.filter(w => !w.featured);
@@ -7518,7 +7524,7 @@ function renderFeaturedWorkflows() {
         <div class="home-workflow-author">by ${workflow.author?.name || 'unknown'}</div>
       </div>
       <div class="home-workflow-actions">
-        <button class="home-workflow-btn" onclick="installWorkflow('${workflow.packageName}')">Install</button>
+        <button class="home-workflow-btn" onclick="wfStoreInstall('${workflow.packageName}', this)">Install</button>
         <button class="home-workflow-btn" onclick="viewWorkflowDetails('${workflow.packageName}')">Details</button>
       </div>
     </div>
@@ -7559,7 +7565,7 @@ function renderCommunityWorkflows() {
         <div class="home-workflow-author">by ${workflow.author?.name || 'unknown'}</div>
       </div>
       <div class="home-workflow-actions">
-        <button class="home-workflow-btn" onclick="installWorkflow('${workflow.packageName}')">Install</button>
+        <button class="home-workflow-btn" onclick="wfStoreInstall('${workflow.packageName}', this)">Install</button>
         <button class="home-workflow-btn" onclick="viewWorkflowDetails('${workflow.packageName}')">Details</button>
       </div>
     </div>
@@ -7578,15 +7584,14 @@ function sortCommunityWorkflows(mode) {
 }
 
 function filterAndSwitchWorkflows(domain) {
-  // Switch to workflows tab with domain filter
   switchTab('workflows');
-  // TODO: Apply domain filter when workflows tab supports it
-  console.log('Filtering workflows by domain:', domain);
-}
-
-function installWorkflow(packageName) {
-  // Use the workflow store install function
-  wfStoreInstall(packageName, null);
+  // Open the store and search for the domain
+  wfStoreOpen();
+  const searchInput = document.getElementById('wfStoreSearch');
+  if (searchInput) {
+    searchInput.value = domain;
+    searchInput.dispatchEvent(new Event('input'));
+  }
 }
 
 function viewWorkflowDetails(packageName) {
@@ -7617,6 +7622,15 @@ function reportBug() {
     window.open('https://github.com/mrlynn/voyageai-cli/issues/new', '_blank');
   }
 }
+
+// Expose home page functions for inline onclick handlers
+window.filterAndSwitchWorkflows = filterAndSwitchWorkflows;
+window.sortCommunityWorkflows = sortCommunityWorkflows;
+window.viewWorkflowDetails = viewWorkflowDetails;
+window.publishWorkflow = publishWorkflow;
+window.reportBug = reportBug;
+window.dismissAnnouncement = dismissAnnouncement;
+window.restoreAnnouncements = restoreAnnouncements;
 
 // ── Config ──
 async function loadConfig() {
