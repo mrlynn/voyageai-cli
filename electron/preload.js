@@ -51,6 +51,16 @@ contextBridge.exposeInMainWorld('vai', {
   },
   // Native file dialog for image uploads (more reliable than <input type="file">)
   openImageDialog: () => ipcRenderer.invoke('dialog:open-image'),
+  // Export — native save dialog + clipboard
+  export: {
+    saveFile: (opts) => ipcRenderer.invoke('export:save-file', opts),
+    copyToClipboard: (opts) => ipcRenderer.invoke('export:clipboard', opts),
+    onTrigger: (cb) => {
+      const handler = (_event) => cb();
+      ipcRenderer.on('export:trigger', handler);
+      return () => ipcRenderer.removeListener('export:trigger', handler);
+    },
+  },
   // App info — returns { app, cli }
   getVersion: () => ipcRenderer.invoke('app:version'),
   isElectron: true,
