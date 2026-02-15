@@ -147,15 +147,24 @@ class AnthropicProvider {
       const json = await res.json();
       const text = json.content?.[0]?.text || '';
       yield text;
+      // Yield usage sentinel
+      const usage = json.usage || {};
+      yield { __usage: { inputTokens: usage.input_tokens || 0, outputTokens: usage.output_tokens || 0 } };
       return;
     }
 
-    yield* parseSSE(res.body, (event, data) => {
-      if (event === 'content_block_delta' && data.delta?.text) {
-        return data.delta.text;
+    // Manual SSE loop to capture usage from streaming events
+    const usage = { inputTokens: 0, outputTokens: 0 };
+    for await (const chunk of parseSSEWithMeta(res.body)) {
+      if (chunk.__event === 'message_start' && chunk.__data?.message?.usage) {
+        usage.inputTokens = chunk.__data.message.usage.input_tokens || 0;
+      } else if (chunk.__event === 'message_delta' && chunk.__data?.usage) {
+        usage.outputTokens = chunk.__data.usage.output_tokens || 0;
+      } else if (chunk.__event === 'content_block_delta' && chunk.__data?.delta?.text) {
+        yield chunk.__data.delta.text;
       }
-      return null;
-    });
+    }
+    yield { __usage: usage };
   }
 
   /**
@@ -163,7 +172,7 @@ class AnthropicProvider {
    * @param {Array} messages - Conversation messages
    * @param {Array} tools - Tool definitions in Anthropic format
    * @param {object} [options]
-   * @returns {Promise<{type: 'text'|'tool_calls', content?: string, calls?: Array, stopReason: string}>}
+   * @returns {Promise<{type: 'text'|'tool_calls', content?: string, calls?: Array, stopReason: string, usage: object}>}
    */
   async chatWithTools(messages, tools, options = {}) {
     const model = options.model || this.model;
@@ -200,6 +209,8 @@ class AnthropicProvider {
 
     const json = await res.json();
     const stopReason = json.stop_reason || 'end_turn';
+    const apiUsage = json.usage || {};
+    const usage = { inputTokens: apiUsage.input_tokens || 0, outputTokens: apiUsage.output_tokens || 0 };
 
     // Check for tool_use blocks
     const toolBlocks = (json.content || []).filter(b => b.type === 'tool_use');
@@ -212,6 +223,7 @@ class AnthropicProvider {
           arguments: b.input,
         })),
         stopReason,
+        usage,
         _raw: json.content,
       };
     }
@@ -222,6 +234,7 @@ class AnthropicProvider {
       type: 'text',
       content: textBlocks.map(b => b.text).join(''),
       stopReason,
+      usage,
     };
   }
 
@@ -324,6 +337,11 @@ class OpenAIProvider {
       messages,
     };
 
+    // Request usage data in streaming mode
+    if (stream) {
+      body.stream_options = { include_usage: true };
+    }
+
     const res = await fetch(`${this.baseUrl}/v1/chat/completions`, {
       method: 'POST',
       headers: {
@@ -342,14 +360,25 @@ class OpenAIProvider {
       const json = await res.json();
       const text = json.choices?.[0]?.message?.content || '';
       yield text;
+      const apiUsage = json.usage || {};
+      yield { __usage: { inputTokens: apiUsage.prompt_tokens || 0, outputTokens: apiUsage.completion_tokens || 0 } };
       return;
     }
 
-    yield* parseSSE(res.body, (_event, data) => {
-      if (data === '[DONE]') return null;
-      const content = data.choices?.[0]?.delta?.content;
-      return content || null;
-    });
+    // Manual SSE loop to capture usage from final streaming chunk
+    const usage = { inputTokens: 0, outputTokens: 0 };
+    for await (const chunk of parseSSEWithMeta(res.body)) {
+      const data = chunk.__data;
+      if (data === '[DONE]') continue;
+      // Final chunk with usage stats (stream_options: include_usage)
+      if (data?.usage) {
+        usage.inputTokens = data.usage.prompt_tokens || 0;
+        usage.outputTokens = data.usage.completion_tokens || 0;
+      }
+      const content = data?.choices?.[0]?.delta?.content;
+      if (content) yield content;
+    }
+    yield { __usage: usage };
   }
 
   /**
@@ -357,7 +386,7 @@ class OpenAIProvider {
    * @param {Array} messages - Conversation messages
    * @param {Array} tools - Tool definitions in OpenAI format
    * @param {object} [options]
-   * @returns {Promise<{type: 'text'|'tool_calls', content?: string, calls?: Array, stopReason: string}>}
+   * @returns {Promise<{type: 'text'|'tool_calls', content?: string, calls?: Array, stopReason: string, usage: object}>}
    */
   async chatWithTools(messages, tools, options = {}) {
     const model = options.model || this.model;
@@ -389,6 +418,8 @@ class OpenAIProvider {
     const choice = json.choices?.[0] || {};
     const msg = choice.message || {};
     const stopReason = choice.finish_reason || 'stop';
+    const apiUsage = json.usage || {};
+    const usage = { inputTokens: apiUsage.prompt_tokens || 0, outputTokens: apiUsage.completion_tokens || 0 };
 
     if (msg.tool_calls && msg.tool_calls.length > 0) {
       return {
@@ -401,6 +432,7 @@ class OpenAIProvider {
             : tc.function.arguments,
         })),
         stopReason,
+        usage,
         _raw: msg,
       };
     }
@@ -409,6 +441,7 @@ class OpenAIProvider {
       type: 'text',
       content: msg.content || '',
       stopReason,
+      usage,
     };
   }
 
@@ -502,14 +535,25 @@ class OllamaProvider {
       const json = await res.json();
       const text = json.choices?.[0]?.message?.content || '';
       yield text;
+      // Ollama may not return usage, default to 0
+      const apiUsage = json.usage || {};
+      yield { __usage: { inputTokens: apiUsage.prompt_tokens || 0, outputTokens: apiUsage.completion_tokens || 0 } };
       return;
     }
 
-    yield* parseSSE(res.body, (_event, data) => {
-      if (data === '[DONE]') return null;
-      const content = data.choices?.[0]?.delta?.content;
-      return content || null;
-    });
+    // Manual SSE loop (Ollama may not support stream_options)
+    const usage = { inputTokens: 0, outputTokens: 0 };
+    for await (const chunk of parseSSEWithMeta(res.body)) {
+      const data = chunk.__data;
+      if (data === '[DONE]') continue;
+      if (data?.usage) {
+        usage.inputTokens = data.usage.prompt_tokens || 0;
+        usage.outputTokens = data.usage.completion_tokens || 0;
+      }
+      const content = data?.choices?.[0]?.delta?.content;
+      if (content) yield content;
+    }
+    yield { __usage: usage };
   }
 
   /**
@@ -517,7 +561,7 @@ class OllamaProvider {
    * @param {Array} messages - Conversation messages
    * @param {Array} tools - Tool definitions in OpenAI format
    * @param {object} [options]
-   * @returns {Promise<{type: 'text'|'tool_calls', content?: string, calls?: Array, stopReason: string}>}
+   * @returns {Promise<{type: 'text'|'tool_calls', content?: string, calls?: Array, stopReason: string, usage: object}>}
    */
   async chatWithTools(messages, tools, options = {}) {
     const model = options.model || this.model;
@@ -544,6 +588,9 @@ class OllamaProvider {
     const choice = json.choices?.[0] || {};
     const msg = choice.message || {};
     const stopReason = choice.finish_reason || 'stop';
+    // Ollama may not return usage, default to 0
+    const apiUsage = json.usage || {};
+    const usage = { inputTokens: apiUsage.prompt_tokens || 0, outputTokens: apiUsage.completion_tokens || 0 };
 
     if (msg.tool_calls && msg.tool_calls.length > 0) {
       return {
@@ -556,6 +603,7 @@ class OllamaProvider {
             : tc.function.arguments,
         })),
         stopReason,
+        usage,
         _raw: msg,
       };
     }
@@ -564,6 +612,7 @@ class OllamaProvider {
       type: 'text',
       content: msg.content || '',
       stopReason,
+      usage,
     };
   }
 
@@ -621,6 +670,64 @@ class OllamaProvider {
 // ============================================
 // SSE Stream Parser
 // ============================================
+
+/**
+ * Parse a Server-Sent Events stream, yielding raw event+data pairs.
+ * Unlike parseSSE, this preserves event types and full data objects
+ * so callers can extract both content and metadata (e.g. usage stats).
+ *
+ * @param {ReadableStream} body - Response body stream
+ * @yields {{ __event: string|null, __data: object|string }} Parsed SSE events
+ */
+async function* parseSSEWithMeta(body) {
+  const decoder = new TextDecoder();
+  let buffer = '';
+  let currentEvent = null;
+
+  for await (const chunk of body) {
+    buffer += decoder.decode(chunk, { stream: true });
+
+    const lines = buffer.split('\n');
+    buffer = lines.pop() || '';
+
+    for (const line of lines) {
+      if (line.startsWith('event: ')) {
+        currentEvent = line.slice(7).trim();
+        continue;
+      }
+
+      if (line.startsWith('data: ')) {
+        const rawData = line.slice(6);
+
+        if (rawData === '[DONE]') {
+          yield { __event: currentEvent, __data: '[DONE]' };
+          return;
+        }
+
+        let parsed;
+        try {
+          parsed = JSON.parse(rawData);
+        } catch {
+          continue;
+        }
+
+        yield { __event: currentEvent, __data: parsed };
+        currentEvent = null;
+      }
+    }
+  }
+
+  // Process remaining buffer
+  if (buffer.trim() && buffer.startsWith('data: ')) {
+    const rawData = buffer.slice(6);
+    if (rawData !== '[DONE]') {
+      try {
+        const parsed = JSON.parse(rawData);
+        yield { __event: currentEvent, __data: parsed };
+      } catch { /* skip */ }
+    }
+  }
+}
 
 /**
  * Parse a Server-Sent Events stream.

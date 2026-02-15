@@ -27,6 +27,19 @@ const INTEGRATION_TOOLS = new Set(['http']);
 const ALL_TOOLS = new Set([...VAI_TOOLS, ...CONTROL_FLOW_TOOLS, ...PROCESSING_TOOLS, ...INTEGRATION_TOOLS]);
 
 // ════════════════════════════════════════════════════════════════════
+// Schema Limits (Phase 1 Enhanced Validation)
+// ════════════════════════════════════════════════════════════════════
+
+const SCHEMA_LIMITS = {
+  maxSteps: 50,
+  maxInputs: 20,
+  maxTemplateDepth: 5,
+  maxNameLength: 64,
+  maxDescriptionLength: 500,
+  maxStepNameLength: 100,
+};
+
+// ════════════════════════════════════════════════════════════════════
 // Validation
 // ════════════════════════════════════════════════════════════════════
 
@@ -176,6 +189,74 @@ function validateWorkflow(definition) {
   // Check for circular dependencies
   const cycleErrors = detectCycles(definition.steps);
   errors.push(...cycleErrors);
+
+  return errors;
+}
+
+/**
+ * Enhanced schema validation for publishable workflows.
+ * Runs all existing validateWorkflow() checks plus additional quality gates.
+ *
+ * @param {object} definition - Parsed workflow JSON
+ * @returns {string[]} errors
+ */
+function validateSchemaEnhanced(definition) {
+  const errors = validateWorkflow(definition);
+
+  if (!definition || typeof definition !== 'object') return errors;
+
+  // Step count limit
+  if (Array.isArray(definition.steps) && definition.steps.length > SCHEMA_LIMITS.maxSteps) {
+    errors.push(`Too many steps (${definition.steps.length}/${SCHEMA_LIMITS.maxSteps})`);
+  }
+
+  // Input count limit
+  if (definition.inputs && Object.keys(definition.inputs).length > SCHEMA_LIMITS.maxInputs) {
+    errors.push(`Too many inputs (${Object.keys(definition.inputs).length}/${SCHEMA_LIMITS.maxInputs})`);
+  }
+
+  // Name length
+  if (definition.name && definition.name.length > SCHEMA_LIMITS.maxNameLength) {
+    errors.push(`Workflow name too long (${definition.name.length}/${SCHEMA_LIMITS.maxNameLength})`);
+  }
+
+  // Description required (min 10 chars) for publishable workflows
+  if (!definition.description || definition.description.length < 10) {
+    errors.push('Description must be at least 10 characters');
+  }
+
+  // Description length limit
+  if (definition.description && definition.description.length > SCHEMA_LIMITS.maxDescriptionLength) {
+    errors.push(`Description too long (${definition.description.length}/${SCHEMA_LIMITS.maxDescriptionLength})`);
+  }
+
+  // Version must be valid semver
+  if (definition.version && !/^\d+\.\d+\.\d+/.test(definition.version)) {
+    errors.push('Version must be valid semver (e.g. 1.0.0)');
+  }
+
+  // Every input should have a description
+  for (const [key, spec] of Object.entries(definition.inputs || {})) {
+    if (!spec.description) {
+      errors.push(`Input "${key}" missing description`);
+    }
+  }
+
+  // Every step should have a human-readable name
+  if (Array.isArray(definition.steps)) {
+    for (const step of definition.steps) {
+      if (!step.name) {
+        errors.push(`Step "${step.id}" missing "name" field`);
+      } else if (step.name.length > SCHEMA_LIMITS.maxStepNameLength) {
+        errors.push(`Step "${step.id}" name too long (${step.name.length}/${SCHEMA_LIMITS.maxStepNameLength})`);
+      }
+    }
+  }
+
+  // Output section should exist
+  if (!definition.output || Object.keys(definition.output).length === 0) {
+    errors.push('Workflow should define an "output" section');
+  }
 
   return errors;
 }
@@ -1475,7 +1556,12 @@ async function executeWorkflow(definition, opts = {}) {
       try {
         let output;
 
-        if (step.tool === 'conditional') {
+        // Mock executor injection: if _mockExecutors has a mock for this tool, use it
+        const mockExecutor = opts._mockExecutors && opts._mockExecutors[step.tool];
+        if (mockExecutor && step.tool !== 'conditional') {
+          const resolvedInputs = resolveTemplate(step.inputs || {}, context);
+          output = await mockExecutor(resolvedInputs, step, context);
+        } else if (step.tool === 'conditional') {
           // Special handling: resolve then/else but pass raw condition to evaluator
           const rawCondition = step.inputs.condition;
           const resolvedInputs = {
@@ -1738,7 +1824,9 @@ function loadWorkflow(nameOrPath) {
 module.exports = {
   // Validation
   validateWorkflow,
+  validateSchemaEnhanced,
   detectCycles,
+  SCHEMA_LIMITS,
 
   // Dependency resolution
   buildDependencyGraph,

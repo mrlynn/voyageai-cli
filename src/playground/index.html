@@ -3268,6 +3268,30 @@ select:focus { outline: none; border-color: var(--accent); }
 .wf-store-card-badges { display: flex; gap: 4px; }
 .wf-store-badge-official { font-family: var(--mono); font-size: 9px; padding: 2px 7px; border-radius: 100px; background: rgba(0,212,170,.1); color: var(--accent); border: 1px solid rgba(0,212,170,.15); white-space: nowrap; }
 .wf-store-badge-installed { font-family: var(--mono); font-size: 9px; padding: 2px 7px; border-radius: 100px; background: rgba(16,185,129,.1); color: #10B981; border: 1px solid rgba(16,185,129,.15); white-space: nowrap; }
+.wf-store-badge-verified { font-family: var(--mono); font-size: 9px; padding: 2px 7px; border-radius: 100px; background: rgba(16,185,129,.1); color: #10B981; border: 1px solid rgba(16,185,129,.15); white-space: nowrap; }
+.wf-store-badge-capability { font-family: var(--mono); font-size: 9px; padding: 2px 6px; border-radius: 100px; white-space: nowrap; display: inline-flex; align-items: center; gap: 3px; }
+.wf-store-badge-cap-network { background: rgba(59,130,246,.1); color: #3B82F6; border: 1px solid rgba(59,130,246,.15); }
+.wf-store-badge-cap-writedb { background: rgba(245,158,11,.1); color: #F59E0B; border: 1px solid rgba(245,158,11,.15); }
+.wf-store-badge-cap-llm { background: rgba(139,92,246,.1); color: #8B5CF6; border: 1px solid rgba(139,92,246,.15); }
+.wf-store-badge-cap-loop { background: rgba(6,182,212,.1); color: #06B6D4; border: 1px solid rgba(6,182,212,.15); }
+.wf-store-badge-cap-readdb { background: rgba(34,197,94,.1); color: #22C55E; border: 1px solid rgba(34,197,94,.15); }
+.wf-store-detail-security-item { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: var(--bg-card); border-radius: 6px; margin-bottom: 4px; font-size: 12px; color: var(--text-dim); }
+.wf-store-detail-security-sev { font-family: var(--mono); font-size: 9px; padding: 2px 7px; border-radius: 100px; font-weight: 700; text-transform: uppercase; }
+.wf-store-detail-security-sev.critical { background: rgba(239,68,68,.15); color: #EF4444; }
+.wf-store-detail-security-sev.high { background: rgba(249,115,22,.15); color: #F97316; }
+.wf-store-detail-security-sev.medium { background: rgba(234,179,8,.15); color: #EAB308; }
+.wf-store-detail-security-sev.low { background: rgba(148,163,184,.15); color: #94A3B8; }
+.wf-store-detail-security-ok { color: #10B981; font-size: 12px; padding: 8px 10px; background: rgba(16,185,129,.06); border-radius: 6px; }
+.wf-store-detail-stars { display: inline-flex; gap: 2px; cursor: pointer; }
+.wf-store-detail-stars span { font-size: 18px; color: var(--text-muted); transition: color 0.1s; }
+.wf-store-detail-stars span.filled { color: #F59E0B; }
+.wf-store-detail-stars span:hover, .wf-store-detail-stars span:hover ~ span { color: var(--text-muted); }
+.wf-store-report-form { margin-top: 8px; padding: 12px; background: var(--bg-card); border-radius: 8px; border: 1px solid var(--border); }
+.wf-store-report-form select, .wf-store-report-form textarea { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 8px; color: var(--text); font-family: var(--font); font-size: 12px; margin-bottom: 8px; }
+.wf-store-report-form textarea { resize: vertical; min-height: 60px; }
+.wf-store-report-submit { padding: 6px 14px; background: var(--error); color: #fff; border: none; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; }
+.wf-store-report-submit:hover { filter: brightness(1.1); }
+.wf-store-cap-badges { display: flex; gap: 3px; flex-wrap: wrap; margin-top: 4px; }
 .wf-store-card-desc { font-size: 12px; color: var(--text-dim); line-height: 1.5; margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .wf-store-card-author { font-size: 11px; color: var(--text-muted); margin-bottom: 10px; }
 .wf-store-card-meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
@@ -3921,18 +3945,25 @@ select:focus { outline: none; border-color: var(--accent); }
   border-radius: 16px;
   background: linear-gradient(135deg, var(--bg-card), var(--bg-surface));
   border: 1px solid var(--border);
+  min-height: 180px;
 }
 
 .home-announcement-card {
-  display: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
   padding: 32px;
   text-align: center;
-  position: relative;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.5s ease-in-out;
 }
 
 .home-announcement-card.active {
-  display: block;
-  animation: fadeIn 0.5s ease-out;
+  position: relative;
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .home-announcement-card .badge {
@@ -4016,6 +4047,72 @@ select:focus { outline: none; border-color: var(--accent); }
 
 .home-announcement-dot.active {
   background: linear-gradient(135deg, #00ED64, #00C2FF);
+}
+
+.home-announcements-restore {
+  text-align: center;
+  margin-top: 12px;
+}
+
+.home-announcements-restore button {
+  background: var(--bg-card);
+  border: 1px dashed var(--border);
+  color: var(--text-dim);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 8px 16px;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.home-announcements-restore button:hover {
+  color: var(--accent-text);
+  border-color: var(--accent-text);
+  background: var(--bg-surface);
+}
+
+.home-announcement-card.has-bg-image {
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  min-height: 220px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.home-announcement-card.has-bg-image::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: inherit;
+  z-index: 0;
+}
+
+.home-announcement-card.has-bg-image > * {
+  position: relative;
+  z-index: 1;
+}
+
+.home-announcement-card.has-bg-image h3,
+.home-announcement-card.has-bg-image p {
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+}
+
+.home-announcement-card.has-bg-image h3 {
+  color: #fff;
+}
+
+.home-announcement-card.has-bg-image p {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.home-announcement-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+  line-height: 1;
 }
 
 /* Section Headers */
@@ -4675,6 +4772,9 @@ select:focus { outline: none; border-color: var(--accent); }
       </div>
       <div class="home-announcements-dots" id="announcementsDots">
         <!-- Dots will be inserted here -->
+      </div>
+      <div class="home-announcements-restore" id="announcementsRestore" style="display: none;">
+        <button onclick="restoreAnnouncements()">Show dismissed announcements</button>
       </div>
     </div>
 
@@ -6846,6 +6946,9 @@ async function loadAnnouncements() {
     const res = await fetch('/api/home/announcements');
     const data = await res.json();
     
+    // Store total count before filtering
+    homeData.totalAnnouncements = data.announcements.length;
+    
     // Filter out dismissed announcements
     const dismissed = JSON.parse(localStorage.getItem('vai-dismissed-announcements') || '[]');
     homeData.announcements = data.announcements.filter(a => !dismissed.includes(a.id));
@@ -6853,6 +6956,7 @@ async function loadAnnouncements() {
   } catch (err) {
     console.error('Failed to load announcements:', err);
     homeData.announcements = [];
+    homeData.totalAnnouncements = 0;
   }
 }
 
@@ -6912,22 +7016,41 @@ function renderAnnouncements() {
   const container = document.getElementById('homeAnnouncements');
   const carousel = document.getElementById('announcementsCarousel');
   const dots = document.getElementById('announcementsDots');
+  const restoreBtn = document.getElementById('announcementsRestore');
+  
+  // Show restore button if any announcements have been dismissed
+  const hasDismissed = (homeData.totalAnnouncements || 0) > homeData.announcements.length;
+  if (restoreBtn) restoreBtn.style.display = hasDismissed ? 'block' : 'none';
   
   if (!homeData.announcements.length) {
-    container.style.display = 'none';
+    container.style.display = hasDismissed ? 'block' : 'none';
+    carousel.innerHTML = '';
+    dots.innerHTML = '';
     return;
   }
   
   // Render cards
-  carousel.innerHTML = homeData.announcements.map((ann, i) => `
-    <div class="home-announcement-card${i === 0 ? ' active' : ''}" data-id="${ann.id}">
+  carousel.innerHTML = homeData.announcements.map((ann, i) => {
+    const bgClasses = [
+      'home-announcement-card',
+      i === 0 ? 'active' : '',
+      ann.bg_image ? 'has-bg-image' : ''
+    ].filter(Boolean).join(' ');
+    const bgStyle = ann.bg_image
+      ? `background-image: url('${ann.bg_image}');`
+      : ann.bg_color
+        ? `background: ${ann.bg_color};`
+        : '';
+    return `
+    <div class="${bgClasses}" data-id="${ann.id}" style="${bgStyle}">
       <button class="home-announcement-dismiss" onclick="dismissAnnouncement('${ann.id}')">×</button>
+      ${ann.icon ? `<div class="home-announcement-icon">${ann.icon}</div>` : ''}
       ${ann.badge ? `<div class="badge">${ann.badge}</div>` : ''}
       <h3>${ann.title}</h3>
       <p>${ann.description}</p>
       ${ann.cta ? `<button class="cta" onclick="${ann.cta.action === 'navigate' ? `switchTab('${ann.cta.target.slice(1)}')` : 'void(0)'}">${ann.cta.label}</button>` : ''}
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
   
   // Render dots
   if (homeData.announcements.length > 1) {
@@ -6947,22 +7070,63 @@ function showAnnouncement(index) {
   
   // Update cards
   document.querySelectorAll('.home-announcement-card').forEach((card, i) => {
-    card.classList.toggle('active', i === index);
+    if (i === index) {
+      card.classList.add('active');
+    } else {
+      card.classList.remove('active');
+    }
   });
   
   // Update dots
   document.querySelectorAll('.home-announcement-dot').forEach((dot, i) => {
-    dot.classList.toggle('active', i === index);
+    if (i === index) {
+      dot.classList.add('active');
+    } else {
+      dot.classList.remove('active');
+    }
   });
+  
+  // Reset the rotation timer so we get a full interval after manual clicks
+  resetAnnouncementRotation();
 }
 
+let announcementRotationTimer = null;
+
 function startAnnouncementRotation() {
-  setInterval(() => {
-    if (homeData.announcements.length > 1) {
-      homeData.currentAnnouncementIndex = (homeData.currentAnnouncementIndex + 1) % homeData.announcements.length;
-      showAnnouncement(homeData.currentAnnouncementIndex);
-    }
-  }, 5000); // Rotate every 5 seconds
+  stopAnnouncementRotation();
+  if (homeData.announcements.length <= 1) return;
+  announcementRotationTimer = setInterval(() => {
+    const next = (homeData.currentAnnouncementIndex + 1) % homeData.announcements.length;
+    homeData.currentAnnouncementIndex = next;
+    
+    // Update cards directly (don't call showAnnouncement to avoid resetting timer)
+    document.querySelectorAll('.home-announcement-card').forEach((card, i) => {
+      if (i === next) {
+        card.classList.add('active');
+      } else {
+        card.classList.remove('active');
+      }
+    });
+    document.querySelectorAll('.home-announcement-dot').forEach((dot, i) => {
+      if (i === next) {
+        dot.classList.add('active');
+      } else {
+        dot.classList.remove('active');
+      }
+    });
+  }, 6000);
+}
+
+function stopAnnouncementRotation() {
+  if (announcementRotationTimer) {
+    clearInterval(announcementRotationTimer);
+    announcementRotationTimer = null;
+  }
+}
+
+function resetAnnouncementRotation() {
+  stopAnnouncementRotation();
+  startAnnouncementRotation();
 }
 
 function dismissAnnouncement(id) {
@@ -6973,6 +7137,19 @@ function dismissAnnouncement(id) {
   // Remove from current data and re-render
   homeData.announcements = homeData.announcements.filter(a => a.id !== id);
   renderAnnouncements();
+}
+
+async function restoreAnnouncements() {
+  localStorage.removeItem('vai-dismissed-announcements');
+  // Re-fetch all announcements
+  try {
+    const res = await fetch('/api/home/announcements');
+    const data = await res.json();
+    homeData.announcements = data.announcements;
+    renderAnnouncements();
+  } catch (err) {
+    console.error('Failed to restore announcements:', err);
+  }
 }
 
 function renderReleases() {
@@ -11354,6 +11531,10 @@ async function sendChatMessage() {
             if (!retrievalCostTracked && meta.tokens?.rerank) {
               CostTracker.addOperation('chat-rerank', 'rerank-2.5', meta.tokens.rerank);
             }
+            // Track LLM generation cost
+            if (meta.tokens?.llmInput || meta.tokens?.llmOutput) {
+              CostTracker.addLLMOperation('chat-llm', meta.llmModel, meta.tokens.llmInput, meta.tokens.llmOutput);
+            }
             // Agent mode: track tool call tokens from steps/layers
             if (data.steps) {
               for (const step of data.steps) {
@@ -13886,7 +14067,25 @@ const _WF_FALLBACK_BRANDING = {
   'batch-quality-gate':       { icon:'check-circle',  color:'#166534',  iconPath:'M22 11.08V12a10 10 0 1 1-5.93-9.14M22 4 12 14.01l-3-3' },
   'index-health-check':       { icon:'bar-chart-3',   color:'#1D4ED8',  iconPath:'M12 20V10M18 20V4M6 20v-4' },
 };
-WF_STORE_FALLBACK.forEach(wf => { wf.branding = _WF_FALLBACK_BRANDING[wf.name] || { icon:'zap', color:'#64748B', iconPath:'M13 2 3 14h9l-1 8 10-12h-9l1-8z' }; });
+WF_STORE_FALLBACK.forEach(wf => {
+  wf.branding = _WF_FALLBACK_BRANDING[wf.name] || { icon:'zap', color:'#64748B', iconPath:'M13 2 3 14h9l-1 8 10-12h-9l1-8z' };
+  wf.verified = true;
+  wf.security = [];
+  wf.rating = null;
+});
+
+function getCapabilityBadges(tools) {
+  if (!Array.isArray(tools)) return [];
+  const badges = [];
+  if (tools.includes('http')) badges.push({ emoji: '🌐', label: 'NETWORK', cls: 'wf-store-badge-cap-network' });
+  if (tools.includes('ingest') || tools.includes('aggregate')) badges.push({ emoji: '💾', label: 'WRITE_DB', cls: 'wf-store-badge-cap-writedb' });
+  if (tools.includes('generate')) badges.push({ emoji: '🤖', label: 'LLM', cls: 'wf-store-badge-cap-llm' });
+  if (tools.includes('loop') || tools.includes('forEach')) badges.push({ emoji: '🔄', label: 'LOOP', cls: 'wf-store-badge-cap-loop' });
+  if (tools.some(t => ['query','search','collections','aggregate'].includes(t))) badges.push({ emoji: '📊', label: 'READ_DB', cls: 'wf-store-badge-cap-readdb' });
+  return badges;
+}
+
+let _wfStoreUserRatings = {};
 
 let _wfStoreCatalog = null;
 let _wfStoreCat = 'all';
@@ -13991,8 +14190,13 @@ function wfStoreRender() {
       const dots = (wf.tools||[]).slice(0,5).map(t =>
         `<div class="wf-store-card-dot" style="background:${WF_STORE_TOOL_COLORS[t]||'#666'}"></div>`
       ).join('') + ((wf.tools||[]).length > 5 ? `<span style="font-family:var(--mono);font-size:9px;color:var(--text-muted);margin-left:2px">+${wf.tools.length-5}</span>` : '');
-      const badges = (wf.installed ? '<span class="wf-store-badge-installed">installed</span>' : '') +
+      const badges = (wf.verified ? '<span class="wf-store-badge-verified">✓ VERIFIED</span>' : '') +
+        (wf.installed ? '<span class="wf-store-badge-installed">installed</span>' : '') +
         `<span class="wf-store-badge-official">${wf.tier==='official' ? '✓ OFFICIAL' : 'COMMUNITY'}</span>`;
+      const capBadges = getCapabilityBadges(wf.tools);
+      const capBadgesHtml = capBadges.length > 0
+        ? `<div class="wf-store-cap-badges">${capBadges.map(b => `<span class="wf-store-badge-capability ${b.cls}">${b.emoji} ${b.label}</span>`).join('')}</div>`
+        : '';
       const cardIconColor = (wf.branding && wf.branding.color) || '#64748B';
       const cardIconSvg = wfBrandingIcon(wf, 16);
       const cardIconHtml = cardIconSvg
@@ -14006,6 +14210,7 @@ function wfStoreRender() {
         </div>
         <div class="wf-store-card-desc">${wf.description||''}</div>
         ${wf.author && wf.author.name && wf.author.name !== 'unknown' ? `<div class="wf-store-card-author">by ${wf.author.name}</div>` : ''}
+        ${capBadgesHtml}
         <div class="wf-store-card-meta">
           <span class="wf-store-card-cat">${wf.category||'utility'}</span>
           <div class="wf-store-card-dots">${dots}</div>
@@ -14112,6 +14317,38 @@ function wfStoreShowDetail(name) {
         <div class="wf-store-detail-label" style="margin-top:12px">Run</div>
         <div class="wf-store-detail-cmd" style="color:var(--text-dim)" onclick="navigator.clipboard.writeText('${rcEsc}');this.querySelector('.wf-store-detail-cmd-hint').textContent='✓ copied';setTimeout(()=>this.querySelector('.wf-store-detail-cmd-hint').textContent='copy',2000)">
           <span>$ ${rc}</span><span class="wf-store-detail-cmd-hint">copy</span>
+        </div>
+      </div>
+      ${(() => {
+        const capBadges = getCapabilityBadges(wf.tools);
+        if (capBadges.length === 0) return '';
+        return `<div class="wf-store-detail-section">
+          <div class="wf-store-detail-label">Capabilities</div>
+          <div style="display:flex;gap:5px;flex-wrap:wrap">${capBadges.map(b => `<span class="wf-store-badge-capability ${b.cls}">${b.emoji} ${b.label}</span>`).join('')}</div>
+        </div>`;
+      })()}
+      ${(() => {
+        const sec = wf.security || [];
+        if (sec.length === 0) return `<div class="wf-store-detail-section"><div class="wf-store-detail-label">Security</div><div class="wf-store-detail-security-ok">✓ No security issues found</div></div>`;
+        return `<div class="wf-store-detail-section"><div class="wf-store-detail-label">Security</div>${sec.map(f => `<div class="wf-store-detail-security-item"><span class="wf-store-detail-security-sev ${f.severity||'low'}">${f.severity||'low'}</span><span>${f.message||f.rule||'Issue found'}</span></div>`).join('')}</div>`;
+      })()}
+      ${wf.verified ? `<div class="wf-store-detail-section"><div class="wf-store-detail-label">Verified</div><div class="wf-store-detail-security-ok">✓ This workflow has passed all validation checks (L1–L4): schema, security audit, quality audit, and capability analysis.</div></div>` : ''}
+      <div class="wf-store-detail-section">
+        <div class="wf-store-detail-label">Rating</div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <span style="font-size:12px;color:var(--text-dim)">${wf.rating != null ? wf.rating.toFixed(1) + ' / 5' : 'Not yet rated'}</span>
+        </div>
+        <div style="margin-top:8px;font-size:11px;color:var(--text-muted)">Rate this workflow:</div>
+        <div class="wf-store-detail-stars" id="wfStoreRateStars">
+          ${[1,2,3,4,5].map(i => `<span onclick="_wfStoreUserRatings['${wf.name}']=${i};document.querySelectorAll('#wfStoreRateStars span').forEach((s,j)=>s.className=j<${i}?'filled':'')" class="${(_wfStoreUserRatings[wf.name]||0)>=i?'filled':''}">★</span>`).join('')}
+        </div>
+      </div>
+      <div class="wf-store-detail-section">
+        <button class="wf-store-detail-btn wf-store-detail-btn-secondary" style="flex:none;width:auto;padding:6px 14px;font-size:11px" onclick="document.getElementById('wfStoreReportForm').style.display=document.getElementById('wfStoreReportForm').style.display==='none'?'block':'none'">⚑ Report</button>
+        <div id="wfStoreReportForm" class="wf-store-report-form" style="display:none">
+          <select id="wfStoreReportReason"><option value="">Select reason...</option><option value="malicious">Malicious</option><option value="broken">Broken</option><option value="low quality">Low quality</option><option value="spam">Spam</option></select>
+          <textarea id="wfStoreReportComment" placeholder="Optional comment..."></textarea>
+          <button class="wf-store-report-submit" onclick="document.getElementById('wfStoreReportForm').style.display='none';const t=document.createElement('div');t.style.cssText='position:fixed;bottom:20px;right:20px;background:var(--bg-surface);border:1px solid var(--border);border-radius:8px;padding:12px 20px;color:var(--text);font-size:13px;z-index:9999;animation:wfStoreDetailFadeIn .2s';t.textContent='✓ Report submitted';document.body.appendChild(t);setTimeout(()=>t.remove(),3000)">Submit Report</button>
         </div>
       </div>
       <div class="wf-store-detail-actions">
@@ -14358,6 +14595,8 @@ let wfInitialized = false;
   <span class="cost-sep">│</span>
   <span><span id="costOps">0</span> ops</span>
   <span class="cost-sep">│</span>
+  <span>LLM: <span class="cost-val" id="costLLM">$0.000000</span> (<span id="costLLMIn">0</span>in/<span id="costLLMOut">0</span>out)</span>
+  <span class="cost-sep">│</span>
   <span>If symmetric: <span id="costSymmetric">$0.000000</span> <span id="costSymDelta"></span></span>
   <span class="cost-sep">│</span>
   <span>If OpenAI: <span id="costCompetitor">$0.000000</span> <span id="costCompDelta"></span></span>
@@ -14375,6 +14614,41 @@ let wfInitialized = false;
   const LARGE_PRICE = 0.12;
   const OPENAI_PRICE = 0.13;
 
+  // LLM pricing: per-million tokens { input, output }
+  const LLM_PRICING = {
+    'claude-sonnet-4-5-20250929': { input: 3.00, output: 15.00 },
+    'claude-opus-4-20250514': { input: 15.00, output: 75.00 },
+    'claude-3-5-haiku-20241022': { input: 0.80, output: 4.00 },
+    'claude-sonnet-4': { input: 3.00, output: 15.00 },
+    'claude-opus-4': { input: 15.00, output: 75.00 },
+    'gpt-4o': { input: 2.50, output: 10.00 },
+    'gpt-4o-mini': { input: 0.15, output: 0.60 },
+    'gpt-4-turbo': { input: 10.00, output: 30.00 },
+    'o1': { input: 15.00, output: 60.00 },
+    'o1-mini': { input: 3.00, output: 12.00 },
+    'o3-mini': { input: 1.10, output: 4.40 },
+  };
+
+  function getLLMPrice(model) {
+    if (!model) return { input: 0, output: 0 };
+    if (LLM_PRICING[model]) return LLM_PRICING[model];
+    // Fuzzy match
+    for (const k of Object.keys(LLM_PRICING)) {
+      if (model.includes(k) || k.includes(model)) return LLM_PRICING[k];
+    }
+    // Match by prefix (e.g. "claude-sonnet-4-5" matches the full versioned key)
+    for (const k of Object.keys(LLM_PRICING)) {
+      const base = k.replace(/-\d{8}$/, '');
+      if (model.includes(base) || base.includes(model)) return LLM_PRICING[k];
+    }
+    return { input: 0, output: 0 }; // Unknown model: free (don't inflate costs)
+  }
+
+  function llmCostForTokens(model, inputTokens, outputTokens) {
+    const prices = getLLMPrice(model);
+    return (prices.input / 1_000_000) * inputTokens + (prices.output / 1_000_000) * outputTokens;
+  }
+
   function getPrice(model) {
     if (PRICING[model] != null) return PRICING[model];
     // fuzzy match
@@ -14388,7 +14662,11 @@ let wfInitialized = false;
     return (pricePerMillion / 1_000_000) * tokens;
   }
 
-  const session = { operations: [], totalCost: 0, totalTokens: 0, totalOperations: 0, symmetricCost: 0, competitorCost: 0 };
+  const session = {
+    operations: [], totalCost: 0, totalTokens: 0, totalOperations: 0,
+    symmetricCost: 0, competitorCost: 0,
+    llmCost: 0, llmInputTokens: 0, llmOutputTokens: 0,
+  };
 
   window.CostTracker = {
     addOperation(op, model, tokens) {
@@ -14399,7 +14677,8 @@ let wfInitialized = false;
       const competitorCost = costForTokens(OPENAI_PRICE, tokens);
 
       session.operations.push({
-        timestamp: new Date(), operation: op, model, tokens, cost, hypotheticalLargeCost: largeCost, hypotheticalCompetitorCost: competitorCost
+        timestamp: new Date(), operation: op, model, tokens, cost,
+        hypotheticalLargeCost: largeCost, hypotheticalCompetitorCost: competitorCost,
       });
       session.totalCost += cost;
       session.totalTokens += tokens;
@@ -14411,10 +14690,33 @@ let wfInitialized = false;
       this._showToast(op, model, tokens, cost, largeCost);
     },
 
+    addLLMOperation(op, model, inputTokens, outputTokens) {
+      if ((!inputTokens || inputTokens <= 0) && (!outputTokens || outputTokens <= 0)) return;
+      const cost = llmCostForTokens(model, inputTokens || 0, outputTokens || 0);
+      const totalTokens = (inputTokens || 0) + (outputTokens || 0);
+
+      session.operations.push({
+        timestamp: new Date(), operation: op, model: model || 'unknown',
+        tokens: totalTokens, cost, isLLM: true,
+        inputTokens: inputTokens || 0, outputTokens: outputTokens || 0,
+        hypotheticalLargeCost: 0, hypotheticalCompetitorCost: 0,
+      });
+      session.totalCost += cost;
+      session.totalTokens += totalTokens;
+      session.totalOperations++;
+      session.llmCost += cost;
+      session.llmInputTokens += (inputTokens || 0);
+      session.llmOutputTokens += (outputTokens || 0);
+
+      this._updateUI();
+      this._showLLMToast(op, model, inputTokens || 0, outputTokens || 0, cost);
+    },
+
     reset() {
       session.operations.length = 0;
       session.totalCost = 0; session.totalTokens = 0; session.totalOperations = 0;
       session.symmetricCost = 0; session.competitorCost = 0;
+      session.llmCost = 0; session.llmInputTokens = 0; session.llmOutputTokens = 0;
       this._updateUI();
     },
 
@@ -14438,6 +14740,9 @@ let wfInitialized = false;
       document.getElementById('costTotal').textContent = '$' + session.totalCost.toFixed(6);
       document.getElementById('costTokens').textContent = session.totalTokens.toLocaleString();
       document.getElementById('costOps').textContent = session.totalOperations;
+      document.getElementById('costLLM').textContent = '$' + session.llmCost.toFixed(6);
+      document.getElementById('costLLMIn').textContent = session.llmInputTokens.toLocaleString();
+      document.getElementById('costLLMOut').textContent = session.llmOutputTokens.toLocaleString();
       document.getElementById('costSymmetric').textContent = '$' + session.symmetricCost.toFixed(6);
       document.getElementById('costCompetitor').textContent = '$' + session.competitorCost.toFixed(6);
 
@@ -14457,15 +14762,22 @@ let wfInitialized = false;
 
       // Table
       const tbody = document.querySelector('#costOpsTable tbody');
-      tbody.innerHTML = session.operations.map(o => `<tr>
-        <td>${o.timestamp.toLocaleTimeString()}</td>
-        <td>${o.operation}</td>
-        <td>${o.model}</td>
-        <td>${o.tokens.toLocaleString()}</td>
-        <td>$${o.cost.toFixed(6)}</td>
-        <td>$${o.hypotheticalLargeCost.toFixed(6)}</td>
-        <td>$${o.hypotheticalCompetitorCost.toFixed(6)}</td>
-      </tr>`).join('');
+      tbody.innerHTML = session.operations.map(o => {
+        const tokensDisplay = o.isLLM
+          ? `${o.inputTokens.toLocaleString()}in / ${o.outputTokens.toLocaleString()}out`
+          : o.tokens.toLocaleString();
+        const largeCostDisplay = o.isLLM ? 'n/a' : `$${o.hypotheticalLargeCost.toFixed(6)}`;
+        const compCostDisplay = o.isLLM ? 'n/a' : `$${o.hypotheticalCompetitorCost.toFixed(6)}`;
+        return `<tr${o.isLLM ? ' style="background:rgba(180,90,242,0.08)"' : ''}>
+          <td>${o.timestamp.toLocaleTimeString()}</td>
+          <td>${o.operation}</td>
+          <td>${o.model}</td>
+          <td>${tokensDisplay}</td>
+          <td>$${o.cost.toFixed(6)}</td>
+          <td>${largeCostDisplay}</td>
+          <td>${compCostDisplay}</td>
+        </tr>`;
+      }).join('');
 
       // Projection
       const proj = this.getProjectedMonthlyCost(1_000_000);
@@ -14483,6 +14795,14 @@ let wfInitialized = false;
       const toast = document.createElement('div');
       toast.className = 'cost-toast';
       toast.textContent = `✅ ${op} — $${cost.toFixed(6)} (${model}, ${tokens.toLocaleString()} tokens)${savingsText}`;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 3100);
+    },
+
+    _showLLMToast(op, model, inputTokens, outputTokens, cost) {
+      const toast = document.createElement('div');
+      toast.className = 'cost-toast';
+      toast.textContent = `🤖 ${op} — $${cost.toFixed(6)} (${model || 'LLM'}, ${inputTokens.toLocaleString()}in/${outputTokens.toLocaleString()}out)`;
       document.body.appendChild(toast);
       setTimeout(() => toast.remove(), 3100);
     }

@@ -67,6 +67,9 @@ function loadAnnouncementsFromMarkdown() {
       badge: metadata.badge || 'Info',
       published: metadata.published || new Date().toISOString().split('T')[0],
       expires: metadata.expires || '2099-12-31',
+      bg_image: metadata.bg_image || null,
+      bg_color: metadata.bg_color || null,
+      icon: metadata.icon || null,
       cta: {
         label: metadata.cta_label || 'Learn More',
         action: metadata.cta_action || 'link',
@@ -221,6 +224,25 @@ function createPlaygroundServer() {
         } else {
           res.writeHead(404);
           res.end('Icon not found');
+        }
+        return;
+      }
+
+      // Serve announcement assets: /assets/announcements/{filename}
+      const assetMatch = req.url.match(/^\/assets\/announcements\/([a-zA-Z0-9_.-]+\.(jpg|jpeg|png|webp|gif))$/);
+      if (req.method === 'GET' && assetMatch) {
+        const assetPath = path.join(__dirname, '..', 'playground', 'assets', 'announcements', assetMatch[1]);
+        if (fs.existsSync(assetPath)) {
+          const mimeTypes = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp', gif: 'image/gif' };
+          const data = fs.readFileSync(assetPath);
+          res.writeHead(200, {
+            'Content-Type': mimeTypes[assetMatch[2]] || 'application/octet-stream',
+            'Cache-Control': 'public, max-age=86400',
+          });
+          res.end(data);
+        } else {
+          res.writeHead(404);
+          res.end('Asset not found');
         }
         return;
       }
@@ -658,6 +680,17 @@ function createPlaygroundServer() {
               description: def.description || '',
             }));
 
+            // Derive capabilities from tools
+            const toolsList = vai.tools || [];
+            const capabilities = [];
+            if (toolsList.includes('http')) capabilities.push('NETWORK');
+            if (toolsList.includes('ingest') || toolsList.includes('aggregate')) capabilities.push('WRITE_DB');
+            if (toolsList.includes('generate')) capabilities.push('LLM');
+            if (toolsList.includes('loop') || toolsList.includes('forEach')) capabilities.push('LOOP');
+            if (toolsList.some(t => ['query','search','collections','aggregate'].includes(t))) capabilities.push('READ_DB');
+
+            const isOfficial = (r.name || '').startsWith('@vaicli/');
+
             return {
               name: shortName,
               packageName: r.name,
@@ -665,11 +698,10 @@ function createPlaygroundServer() {
               description: r.description || '',
               category,
               tags: vai.tags || [],
-              tools: vai.tools || [],
-              steps: vai.steps || (vai.tools || []).length || 0,
-              tools: vai.tools || [],
-              toolCount: (vai.tools || []).length,
-              tier: (r.name || '').startsWith('@vaicli/') ? 'official' : 'community',
+              tools: toolsList,
+              steps: vai.steps || toolsList.length || 0,
+              toolCount: toolsList.length,
+              tier: isOfficial ? 'official' : 'community',
               downloads: 0,
               featured: FEATURED.includes(shortName),
               installed: installedNames.has(r.name),
@@ -678,6 +710,10 @@ function createPlaygroundServer() {
               author,
               assets,
               inputs,
+              capabilities,
+              verified: isOfficial,
+              security: [],
+              rating: null,
             };
           });
 

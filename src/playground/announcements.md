@@ -20,6 +20,8 @@ id: ann-voyage-4
 badge: New Model
 published: 2026-02-14
 expires: 2026-03-15
+icon: 🚀
+bg_image: /assets/announcements/circuits.jpg
 cta_label: Try It Now
 cta_action: navigate
 cta_target: /benchmark
@@ -34,6 +36,8 @@ id: ann-marketplace-workflows
 badge: New
 published: 2026-02-12
 expires: 2026-03-01
+icon: 🏪
+bg_image: /assets/announcements/green-wave.jpg
 cta_label: Explore Marketplace
 cta_action: navigate
 cta_target: /workflows
@@ -48,6 +52,9 @@ id: ann-csv-ingestion
 badge: Update
 published: 2026-02-10
 expires: 2026-04-01
+icon: 📊
+bg_image: /assets/announcements/csvingest.jpg
+bg_color: linear-gradient(135deg, #1B5E20 0%, #2E7D32 100%)
 cta_label: Learn More
 cta_action: link
 cta_target: https://docs.vaicli.com/csv-import
@@ -62,6 +69,8 @@ id: ann-workflow-store
 badge: New
 published: 2026-02-13
 expires: 2026-03-15
+icon: ⚡
+bg_image: /assets/announcements/appstore.jpg
 cta_label: Browse Store
 cta_action: navigate
 cta_target: /workflows

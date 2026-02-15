@@ -1,0 +1,7 @@
+{
+  "trustedAuthors": [
+    "michael-lynn",
+    "vaicli-bot"
+  ],
+  "description": "GitHub usernames that can receive auto-approval when all L1-L4 checks pass with no CRITICAL/HIGH findings."
+}

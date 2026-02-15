@@ -288,6 +288,67 @@ function scaffoldPackage(options) {
   fs.writeFileSync(path.join(outputDir, 'LICENSE'), license);
   files.push('LICENSE');
 
+  // Create tests/ directory with a sample test case
+  const testsDir = path.join(outputDir, 'tests');
+  fs.mkdirSync(testsDir, { recursive: true });
+
+  // Build sample mocks based on the tools used
+  const sampleMocks = {};
+  for (const tool of tools) {
+    if (tool === 'query' || tool === 'search') {
+      sampleMocks[tool] = { results: [{ text: 'Sample result', score: 0.95 }], resultCount: 1 };
+    } else if (tool === 'embed') {
+      sampleMocks[tool] = { embedding: [0.1, 0.2, 0.3], model: 'voyage-3-large', dimensions: 3 };
+    } else if (tool === 'rerank') {
+      sampleMocks[tool] = { results: [{ text: 'Reranked result', score: 0.98 }], resultCount: 1 };
+    } else if (tool === 'generate') {
+      sampleMocks[tool] = { text: 'Generated text response', model: 'mock-llm', provider: 'mock' };
+    }
+  }
+
+  // Build sample inputs from definition
+  const sampleInputs = {};
+  if (definition.inputs) {
+    for (const [key, schema] of Object.entries(definition.inputs)) {
+      if (schema.default !== undefined) {
+        sampleInputs[key] = schema.default;
+      } else if (schema.type === 'number') {
+        sampleInputs[key] = 10;
+      } else if (schema.type === 'boolean') {
+        sampleInputs[key] = true;
+      } else {
+        sampleInputs[key] = 'test value';
+      }
+    }
+  }
+
+  // Build expected steps
+  const expectedSteps = {};
+  if (definition.steps) {
+    for (const step of definition.steps) {
+      expectedSteps[step.id] = { status: 'completed' };
+    }
+  }
+
+  const sampleTestCase = {
+    name: 'basic workflow test',
+    inputs: sampleInputs,
+    mocks: sampleMocks,
+    expect: {
+      steps: expectedSteps,
+      noErrors: true,
+    },
+  };
+
+  fs.writeFileSync(path.join(testsDir, 'basic.test.json'), JSON.stringify(sampleTestCase, null, 2) + '\n');
+  files.push('tests/basic.test.json');
+
+  // Create fixtures directory with .gitkeep
+  const fixturesDir = path.join(testsDir, 'fixtures');
+  fs.mkdirSync(fixturesDir, { recursive: true });
+  fs.writeFileSync(path.join(fixturesDir, '.gitkeep'), '');
+  files.push('tests/fixtures/.gitkeep');
+
   return { dir: outputDir, files };
 }
 

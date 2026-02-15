@@ -1,0 +1,169 @@
+name: Validate Workflow Submission
+
+on:
+  pull_request:
+    paths: ['packages/vai-workflow-*/**']
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: npm ci
+
+      - name: Detect changed packages
+        id: detect
+        run: |
+          PACKAGES=$(git diff --name-only ${{ github.event.pull_request.base.sha }} HEAD | grep '^packages/vai-workflow-' | cut -d/ -f2 | sort -u || true)
+          echo "packages=$PACKAGES" >> $GITHUB_OUTPUT
+          if [ -z "$PACKAGES" ]; then
+            echo "No workflow packages changed."
+          else
+            echo "Changed packages: $PACKAGES"
+          fi
+
+      - name: Validate each package
+        if: steps.detect.outputs.packages != ''
+        id: validate
+        run: |
+          OVERALL_EXIT=0
+          mkdir -p /tmp/validation-results
+          for pkg in ${{ steps.detect.outputs.packages }}; do
+            echo "::group::Validating $pkg"
+            PKG_DIR="packages/$pkg"
+            if [ ! -d "$PKG_DIR" ]; then
+              echo "Package directory $PKG_DIR not found, skipping."
+              echo "::endgroup::"
+              continue
+            fi
+            npx vai workflow check "$PKG_DIR" --all --ci > "/tmp/validation-results/${pkg}.json" 2>&1 || true
+            cat "/tmp/validation-results/${pkg}.json"
+            # Check for critical findings
+            if jq -e '.summary.criticalCount > 0' "/tmp/validation-results/${pkg}.json" > /dev/null 2>&1; then
+              echo "::error::Critical security finding in $pkg"
+              OVERALL_EXIT=1
+            fi
+            echo "::endgroup::"
+          done
+          echo "exit_code=$OVERALL_EXIT" >> $GITHUB_OUTPUT
+          exit $OVERALL_EXIT
+
+      - name: Post review comment
+        if: always() && steps.detect.outputs.packages != ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+
+            const packages = '${{ steps.detect.outputs.packages }}'.split(/\s+/).filter(Boolean);
+            if (packages.length === 0) return;
+
+            // Load trusted authors
+            let trustedAuthors = [];
+            try {
+              const config = JSON.parse(fs.readFileSync('.github/trusted-authors.json', 'utf8'));
+              trustedAuthors = config.trustedAuthors || [];
+            } catch { }
+
+            const author = context.payload.pull_request.user.login;
+            const isTrusted = trustedAuthors.includes(author);
+
+            let body = '## 🔍 Workflow Validation Results\n\n';
+            let allPassed = true;
+            let needsManualReview = false;
+
+            for (const pkg of packages) {
+              const resultFile = `/tmp/validation-results/${pkg}.json`;
+              body += `### Package: \`${pkg}\`\n\n`;
+
+              let result;
+              try {
+                result = JSON.parse(fs.readFileSync(resultFile, 'utf8'));
+              } catch {
+                body += '⚠️ Could not read validation results.\n\n';
+                allPassed = false;
+                continue;
+              }
+
+              // Schema
+              const schemaIcon = result.schema.pass ? '✅' : '❌';
+              body += `**Schema:** ${schemaIcon} ${result.schema.pass ? 'Passed' : `${result.schema.errors.length} error(s)`}\n`;
+
+              // Security
+              const secIcon = result.security.pass ? '✅' : '❌';
+              body += `**Security:** ${secIcon} ${result.security.pass ? 'Passed' : `${result.summary.criticalCount} critical, ${result.summary.highCount} high`}\n`;
+
+              // Quality
+              const qualIcon = result.quality.pass ? '✅' : '⚠️';
+              body += `**Quality:** ${qualIcon} ${result.quality.pass ? 'Passed' : `${result.quality.issues.length} issue(s)`}\n`;
+
+              // Capabilities
+              if (result.capabilities && result.capabilities.length > 0) {
+                const capIcons = { NETWORK: '🌐', WRITE_DB: '💾', LLM: '🤖', LOOP: '🔄', READ_DB: '📊' };
+                const capStr = result.capabilities.map(c => `${capIcons[c] || '•'} ${c}`).join(' ');
+                body += `**Capabilities:** ${capStr}\n`;
+
+                // Flag http/aggregate for manual review
+                if (result.capabilities.includes('NETWORK') || result.capabilities.includes('WRITE_DB')) {
+                  needsManualReview = true;
+                }
+              }
+
+              body += '\n';
+
+              if (!result.summary.passAll) allPassed = false;
+              if (result.summary.criticalCount > 0 || result.summary.highCount > 0) {
+                needsManualReview = true;
+              }
+            }
+
+            // Auto-approve decision
+            body += '---\n\n';
+            if (allPassed && !needsManualReview && isTrusted) {
+              body += '✅ **Auto-approved:** All checks passed, no security concerns, trusted author.\n';
+            } else {
+              const reasons = [];
+              if (!allPassed) reasons.push('validation checks did not all pass');
+              if (needsManualReview) reasons.push('security findings or sensitive capabilities detected');
+              if (!isTrusted) reasons.push(`author \`${author}\` is not in trusted authors list`);
+              body += `👀 **Manual review required:** ${reasons.join('; ')}.\n`;
+            }
+
+            // Post or update comment
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.find(c =>
+              c.user.type === 'Bot' && c.body.includes('Workflow Validation Results')
+            );
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }

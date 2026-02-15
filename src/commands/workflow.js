@@ -269,6 +269,269 @@ function registerWorkflow(program) {
       }
     });
 
+  // ── workflow check <path> ──
+  wfCmd
+    .command('check <path>')
+    .description('Run validation, security, and quality checks on a workflow package')
+    .option('--security', 'Run security checks only', false)
+    .option('--quality', 'Run quality checks only', false)
+    .option('--all', 'Run all check tiers', false)
+    .option('--json', 'Output machine-readable JSON', false)
+    .option('--ci', 'Output CI-optimized JSON with summary metadata', false)
+    .action((pkgPath, opts) => {
+      const { validateSchemaEnhanced, loadWorkflow } = require('../lib/workflow');
+      const { securityAudit, extractCapabilities } = require('../lib/security-audit');
+      const { qualityAudit } = require('../lib/quality-audit');
+      const fs = require('fs');
+
+      const resolvedPath = path.resolve(pkgPath);
+      const runAll = opts.all || (!opts.security && !opts.quality);
+
+      // Load workflow definition
+      let definition;
+      let pkg = {};
+      let workflowFile;
+
+      try {
+        // Check if it's a directory (package) or a single file
+        const stat = fs.statSync(resolvedPath);
+        if (stat.isDirectory()) {
+          // Package directory
+          const pkgJsonPath = path.join(resolvedPath, 'package.json');
+          if (fs.existsSync(pkgJsonPath)) {
+            pkg = JSON.parse(fs.readFileSync(pkgJsonPath, 'utf8'));
+          }
+          // Find workflow file
+          workflowFile = pkg.main || 'workflow.json';
+          const wfPath = path.join(resolvedPath, workflowFile);
+          if (fs.existsSync(wfPath)) {
+            definition = JSON.parse(fs.readFileSync(wfPath, 'utf8'));
+          } else {
+            console.error(ui.error(`Workflow file not found: ${wfPath}`));
+            process.exit(1);
+          }
+        } else {
+          // Single file
+          definition = loadWorkflow(resolvedPath);
+        }
+      } catch (err) {
+        console.error(ui.error(err.message));
+        process.exit(1);
+      }
+
+      const results = { schema: [], security: [], quality: [], capabilities: [] };
+
+      // L1: Schema validation (always runs)
+      if (runAll || (!opts.security && !opts.quality)) {
+        results.schema = validateSchemaEnhanced(definition);
+      }
+
+      // L2: Security
+      if (runAll || opts.security) {
+        const packageDir = fs.statSync(resolvedPath).isDirectory() ? resolvedPath : null;
+        results.security = securityAudit(definition, packageDir);
+        results.capabilities = [...extractCapabilities(definition)];
+      }
+
+      // L3: Quality
+      if (runAll || opts.quality) {
+        const packageDir = fs.statSync(resolvedPath).isDirectory() ? resolvedPath : null;
+        results.quality = qualityAudit(definition, pkg, packageDir);
+      }
+
+      // CI output (machine-readable JSON with summary metadata)
+      if (opts.ci) {
+        const criticalCount = results.security.filter(f => f.severity === 'critical').length;
+        const highCount = results.security.filter(f => f.severity === 'high').length;
+        const schemaPass = results.schema.length === 0;
+        const securityPass = criticalCount === 0 && highCount === 0;
+        const qualityPass = results.quality.filter(i => i.level === 'error').length === 0;
+        const ciOutput = {
+          schema: { pass: schemaPass, errors: results.schema },
+          security: { pass: securityPass, findings: results.security },
+          quality: { pass: qualityPass, issues: results.quality },
+          capabilities: results.capabilities,
+          summary: {
+            passAll: schemaPass && securityPass && qualityPass,
+            criticalCount,
+            highCount,
+          },
+        };
+        console.log(JSON.stringify(ciOutput, null, 2));
+        if (criticalCount > 0) process.exit(2);
+        if (highCount > 0) process.exit(1);
+        return;
+      }
+
+      // JSON output
+      if (opts.json) {
+        console.log(JSON.stringify(results, null, 2));
+        // Exit code 1 if critical/high security findings
+        const hasCritical = results.security.some(f => f.severity === 'critical' || f.severity === 'high');
+        if (hasCritical) process.exit(1);
+        return;
+      }
+
+      // Pretty output
+      console.log();
+      console.log(pc.bold(`Workflow Check: ${definition.name || pkgPath}`));
+      console.log(pc.dim('═'.repeat(50)));
+
+      // Schema
+      if (results.schema.length > 0) {
+        console.log();
+        console.log(pc.bold('Schema Validation:'));
+        for (const e of results.schema) {
+          console.log(`  ${pc.red('✗')} ${e}`);
+        }
+      } else if (runAll || (!opts.security && !opts.quality)) {
+        console.log();
+        console.log(`${pc.bold('Schema Validation:')} ${pc.green('✔ passed')}`);
+      }
+
+      // Security
+      if (runAll || opts.security) {
+        console.log();
+        console.log(pc.bold('Security Audit:'));
+        if (results.security.length === 0) {
+          console.log(`  ${pc.green('✔')} No security issues found`);
+        } else {
+          for (const f of results.security) {
+            const color = f.severity === 'critical' ? pc.red :
+                          f.severity === 'high' ? pc.red :
+                          f.severity === 'medium' ? pc.yellow : pc.dim;
+            const icon = f.severity === 'critical' || f.severity === 'high' ? '✗' : '⚠';
+            console.log(`  ${color(icon)} [${f.severity.toUpperCase()}] ${f.message}`);
+          }
+        }
+
+        // Capability flags
+        if (results.capabilities.length > 0) {
+          console.log();
+          console.log(pc.bold('Capabilities:'));
+          const capIcons = { NETWORK: '🌐', WRITE_DB: '💾', LLM: '🤖', LOOP: '🔄', READ_DB: '📊' };
+          for (const cap of results.capabilities) {
+            console.log(`  ${capIcons[cap] || '•'} ${cap}`);
+          }
+        }
+      }
+
+      // Quality
+      if (runAll || opts.quality) {
+        console.log();
+        console.log(pc.bold('Quality Audit:'));
+        if (results.quality.length === 0) {
+          console.log(`  ${pc.green('✔')} No quality issues found`);
+        } else {
+          for (const issue of results.quality) {
+            const color = issue.level === 'error' ? pc.red :
+                          issue.level === 'warning' ? pc.yellow : pc.dim;
+            const icon = issue.level === 'error' ? '✗' : issue.level === 'warning' ? '⚠' : 'ℹ';
+            console.log(`  ${color(icon)} [${issue.level.toUpperCase()}] ${issue.message}`);
+          }
+        }
+      }
+
+      console.log();
+
+      // Exit code 1 if critical/high security findings
+      const hasCritical = results.security.some(f => f.severity === 'critical' || f.severity === 'high');
+      if (hasCritical) process.exit(1);
+    });
+
+  // ── workflow test <path> ──
+  wfCmd
+    .command('test <path>')
+    .description('Run test fixtures for a workflow package')
+    .option('--test <name>', 'Run a specific test case by name')
+    .option('--json', 'Output machine-readable JSON', false)
+    .action(async (pkgPath, opts) => {
+      const { loadWorkflow } = require('../lib/workflow');
+      const { runAllTests, loadTestCases } = require('../lib/workflow-test-runner');
+      const fs = require('fs');
+
+      const resolvedPath = path.resolve(pkgPath);
+
+      // Load workflow definition
+      let definition;
+      try {
+        const stat = fs.statSync(resolvedPath);
+        if (stat.isDirectory()) {
+          const wfPath = path.join(resolvedPath, 'workflow.json');
+          if (fs.existsSync(wfPath)) {
+            definition = JSON.parse(fs.readFileSync(wfPath, 'utf8'));
+          } else {
+            console.error(ui.error(`Workflow file not found: ${wfPath}`));
+            process.exit(1);
+          }
+        } else {
+          console.error(ui.error('Path must be a workflow package directory'));
+          process.exit(1);
+        }
+      } catch (err) {
+        console.error(ui.error(err.message));
+        process.exit(1);
+      }
+
+      // Check for tests directory
+      const testsDir = path.join(resolvedPath, 'tests');
+      if (!fs.existsSync(testsDir)) {
+        console.error(ui.error('No tests/ directory found in package'));
+        process.exit(1);
+      }
+
+      const testCases = loadTestCases(resolvedPath);
+      if (testCases.length === 0) {
+        console.error(ui.error('No *.test.json files found in tests/'));
+        process.exit(1);
+      }
+
+      try {
+        const aggregate = await runAllTests(definition, resolvedPath, {
+          testName: opts.test,
+        });
+
+        if (opts.json) {
+          console.log(JSON.stringify(aggregate, null, 2));
+          if (aggregate.failed > 0) process.exit(1);
+          return;
+        }
+
+        // Pretty output
+        console.log();
+        console.log(pc.bold(`Workflow Tests: ${definition.name || pkgPath}`));
+        console.log(pc.dim('═'.repeat(50)));
+        console.log();
+
+        for (const result of aggregate.results) {
+          const icon = result.passed ? pc.green('✔') : pc.red('✗');
+          console.log(`${icon} ${result.name || result.file}`);
+
+          if (result.error) {
+            console.log(`  ${pc.red(result.error)}`);
+          }
+
+          for (const assertion of result.assertions) {
+            const aIcon = assertion.pass ? pc.green('  ✔') : pc.red('  ✗');
+            console.log(`${aIcon} ${assertion.message}`);
+          }
+
+          for (const err of (result.errors || [])) {
+            console.log(`  ${pc.red('Error:')} ${err}`);
+          }
+        }
+
+        console.log();
+        console.log(`${pc.bold('Summary:')} ${pc.green(`${aggregate.passed} passed`)}, ${aggregate.failed > 0 ? pc.red(`${aggregate.failed} failed`) : `${aggregate.failed} failed`}`);
+        console.log();
+
+        if (aggregate.failed > 0) process.exit(1);
+      } catch (err) {
+        console.error(ui.error(err.message));
+        process.exit(1);
+      }
+    });
+
   // ── workflow validate <file> ──
   wfCmd
     .command('validate <file>')
@@ -427,6 +690,17 @@ function registerWorkflow(program) {
             const steps = validation.definition?.steps?.length || 0;
             const tools = (validation.pkg?.vai?.tools || []).join(', ');
             console.log(`${pc.green('✔')} Validated workflow definition (${steps} steps${tools ? `, tools: ${tools}` : ''})`);
+
+            // Display capability flags
+            if (validation.definition) {
+              const { extractCapabilities } = require('../lib/security-audit');
+              const caps = extractCapabilities(validation.definition);
+              if (caps.size > 0) {
+                const capIcons = { NETWORK: '🌐', WRITE_DB: '💾', LLM: '🤖', LOOP: '🔄', READ_DB: '📊' };
+                const capList = [...caps].map(c => `${capIcons[c] || '•'} ${c}`).join('  ');
+                console.log(`${pc.dim('Capabilities:')} ${capList}`);
+              }
+            }
           } else {
             console.log(`${pc.yellow('⚠')} Validation issues:`);
             for (const e of validation.errors) {

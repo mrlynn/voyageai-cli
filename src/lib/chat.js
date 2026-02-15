@@ -202,9 +202,15 @@ async function* chatTurn({ query, db, collection, llm, history, opts = {} }) {
   // 3. Generate response (streaming)
   let fullResponse = '';
   const stream = opts.stream !== false;
+  let llmUsage = { inputTokens: 0, outputTokens: 0 };
 
   try {
     for await (const chunk of llm.chat(messages, { stream })) {
+      // Check for __usage sentinel (yielded as final item from LLM providers)
+      if (typeof chunk === 'object' && chunk !== null && chunk.__usage) {
+        llmUsage = chunk.__usage;
+        continue;
+      }
       fullResponse += chunk;
       yield { type: 'chunk', data: chunk };
     }
@@ -240,7 +246,13 @@ async function* chatTurn({ query, db, collection, llm, history, opts = {} }) {
       metadata: {
         retrievalTimeMs,
         generationTimeMs,
-        tokens,
+        tokens: {
+          ...tokens,
+          llmInput: llmUsage.inputTokens,
+          llmOutput: llmUsage.outputTokens,
+        },
+        llmModel: llm.model,
+        llmProvider: llm.name,
         contextDocsUsed: docs.length,
       },
     },
@@ -284,10 +296,17 @@ async function* agentChatTurn({ query, llm, history, opts = {} }) {
   // Track messages for the tool-calling loop (mutable copy)
   const messages = [...initialMessages];
   const toolCallLog = [];
+  const totalLlmUsage = { inputTokens: 0, outputTokens: 0 };
 
   // 3. Agent loop
   for (let iteration = 0; iteration < maxIterations; iteration++) {
     const response = await llm.chatWithTools(messages, tools);
+
+    // Accumulate LLM usage from each chatWithTools call
+    if (response.usage) {
+      totalLlmUsage.inputTokens += response.usage.inputTokens || 0;
+      totalLlmUsage.outputTokens += response.usage.outputTokens || 0;
+    }
 
     // Text response: done
     if (response.type === 'text') {
@@ -321,6 +340,12 @@ async function* agentChatTurn({ query, llm, history, opts = {} }) {
             iterationCount: iteration + 1,
             toolCallCount: toolCallLog.length,
             totalTimeMs,
+            tokens: {
+              llmInput: totalLlmUsage.inputTokens,
+              llmOutput: totalLlmUsage.outputTokens,
+            },
+            llmModel: llm.model,
+            llmProvider: llm.name,
           },
         },
       };
@@ -406,6 +431,12 @@ async function* agentChatTurn({ query, llm, history, opts = {} }) {
         toolCallCount: toolCallLog.length,
         totalTimeMs: Date.now() - start,
         maxIterationsReached: true,
+        tokens: {
+          llmInput: totalLlmUsage.inputTokens,
+          llmOutput: totalLlmUsage.outputTokens,
+        },
+        llmModel: llm.model,
+        llmProvider: llm.name,
       },
     },
   };
