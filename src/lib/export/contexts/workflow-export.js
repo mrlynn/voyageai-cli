@@ -75,6 +75,6 @@ function computeLayerCount(steps, depGraph) {
 }
 
 /** Supported export formats for workflows */
-const WORKFLOW_FORMATS = ['json', 'markdown', 'mermaid', 'clipboard'];
+const WORKFLOW_FORMATS = ['json', 'markdown', 'mermaid', 'svg', 'png', 'clipboard'];
 
 module.exports = { normalizeWorkflow, WORKFLOW_FORMATS };

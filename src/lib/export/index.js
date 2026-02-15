@@ -5,6 +5,9 @@ const { renderCsv } = require('./formats/csv-export');
 const { renderMarkdown } = require('./formats/markdown-export');
 const { renderMermaid } = require('./formats/mermaid-export');
 const { copyToClipboard } = require('./formats/clipboard-export');
+const { renderSvgAsync } = require('./formats/svg-export');
+const { renderPng } = require('./formats/png-export');
+const { renderPdf } = require('./formats/pdf-export');
 
 const { normalizeWorkflow, WORKFLOW_FORMATS } = require('./contexts/workflow-export');
 const { normalizeSearch, SEARCH_FORMATS } = require('./contexts/search-export');
@@ -38,7 +41,13 @@ const RENDERERS = {
   csv: renderCsv,
   markdown: renderMarkdown,
   mermaid: renderMermaid,
+  svg: renderSvgAsync,
+  png: renderPng,
+  pdf: renderPdf,
 };
+
+// Formats that produce binary (Buffer) output
+const BINARY_FORMATS = new Set(['png', 'pdf']);
 
 const EXT_MAP = {
   json: '.json',
@@ -118,11 +127,12 @@ async function exportArtifact({ context, format, data, options = {} }) {
   if (!renderer) {
     throw new ExportError(`No renderer for format: "${effectiveFormat}"`);
   }
-  const output = renderer(normalized, options);
+  const output = await renderer(normalized, options);
+  const isBinary = BINARY_FORMATS.has(effectiveFormat);
 
-  // Clipboard side-effect
+  // Clipboard side-effect (text only — binary clipboard handled by Electron)
   if (isClipboard) {
-    const ok = copyToClipboard(output.content);
+    const ok = copyToClipboard(typeof output.content === 'string' ? output.content : output.content.toString());
     if (!ok) {
       throw new ExportError('Failed to copy to clipboard — unsupported platform or missing clipboard tool');
     }

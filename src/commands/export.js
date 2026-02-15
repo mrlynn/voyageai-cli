@@ -19,7 +19,7 @@ function registerExport(program) {
   exportCmd
     .command('workflow <file>')
     .description('Export a workflow definition')
-    .option('-f, --format <fmt>', 'Output format (json, markdown, mermaid, clipboard)', 'json')
+    .option('-f, --format <fmt>', 'Output format (json, markdown, mermaid, svg, png, clipboard)', 'json')
     .option('-o, --output <path>', 'Output file path (stdout if omitted)')
     .option('--options <json>', 'Format-specific options as JSON string', '{}')
     .option('--clipboard', 'Copy to system clipboard')
@@ -31,7 +31,7 @@ function registerExport(program) {
   exportCmd
     .command('chat <sessionId>')
     .description('Export a chat session')
-    .option('-f, --format <fmt>', 'Output format (json, markdown, clipboard)', 'json')
+    .option('-f, --format <fmt>', 'Output format (json, markdown, pdf, clipboard)', 'json')
     .option('-o, --output <path>', 'Output file path (stdout if omitted)')
     .option('--options <json>', 'Format-specific options as JSON string', '{}')
     .option('--clipboard', 'Copy to system clipboard')
@@ -76,13 +76,23 @@ async function handleExport(context, source, opts) {
       options: formatOptions,
     });
 
+    const isBinary = Buffer.isBuffer(result.content);
+
     // Output
     if (opts.clipboard) {
       console.log(ui.success ? ui.success('Copied to clipboard') : '✓ Copied to clipboard');
     } else if (opts.output) {
       const outPath = path.resolve(opts.output);
-      fs.writeFileSync(outPath, result.content, 'utf-8');
+      if (isBinary) {
+        fs.writeFileSync(outPath, result.content);
+      } else {
+        fs.writeFileSync(outPath, result.content, 'utf-8');
+      }
       console.log(ui.success ? ui.success(`Saved to ${outPath}`) : `✓ Saved to ${outPath}`);
+    } else if (isBinary) {
+      // Binary to stdout requires --output
+      console.error(ui.error ? ui.error('Binary formats (png, pdf) require --output <path>') : '✗ Binary formats (png, pdf) require --output <path>');
+      process.exitCode = 1;
     } else {
       // stdout
       process.stdout.write(result.content);

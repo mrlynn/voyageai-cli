@@ -17,6 +17,6 @@ function normalizeExplore(data, options = {}) {
   };
 }
 
-const EXPLORE_FORMATS = ['json'];
+const EXPLORE_FORMATS = ['json', 'svg', 'png'];
 
 module.exports = { normalizeExplore, EXPLORE_FORMATS };
