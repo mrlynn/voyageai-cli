@@ -3096,6 +3096,88 @@ select:focus { outline: none; border-color: var(--accent); }
   font-size: 10px; font-weight: 600; color: var(--text-muted);
   padding: 8px 12px 2px; text-transform: uppercase; letter-spacing: 0.5px;
 }
+/* ── Library Search ── */
+.wf-library-search-wrap {
+  padding: 8px 12px 4px; position: relative;
+}
+.wf-library-search-wrap input {
+  width: 100%; padding: 6px 28px 6px 10px; border-radius: 6px;
+  border: 1px solid var(--border); background: var(--bg-card);
+  color: var(--text); font-size: 12px; outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+.wf-library-search-wrap input:focus {
+  border-color: var(--accent);
+}
+.wf-library-search-wrap input::placeholder {
+  color: var(--text-muted);
+}
+.wf-library-search-clear {
+  position: absolute; right: 18px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; color: var(--text-muted); cursor: pointer;
+  font-size: 14px; padding: 2px 4px; line-height: 1; display: none;
+}
+.wf-library-search-clear:hover { color: var(--text); }
+/* ── Collapsible Library Sections ── */
+.wf-lib-section-header {
+  display: flex; align-items: center; gap: 6px;
+  width: 100%; padding: 8px 12px; border: none; background: none;
+  color: var(--text-muted); font-size: 10px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 1.2px; cursor: pointer;
+  transition: color 0.15s;
+}
+.wf-lib-section-header:hover { color: var(--text); }
+.wf-lib-section-header .wf-chevron {
+  font-size: 10px; transition: transform 0.2s; display: inline-block;
+}
+.wf-lib-section-header.expanded .wf-chevron { transform: rotate(90deg); }
+.wf-lib-section-header .wf-section-count {
+  color: var(--text-muted); font-size: 10px; font-weight: 400;
+}
+.wf-lib-section-body {
+  overflow: hidden; transition: max-height 0.2s ease-out;
+}
+/* ── Properties Accordion ── */
+.wf-accordion-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 12px; cursor: pointer; border-bottom: 1px solid var(--border);
+  transition: background-color 0.15s ease; user-select: none;
+}
+.wf-accordion-header.expanded {
+  background: rgba(0,212,170,0.05);
+}
+.wf-accordion-header .wf-acc-left {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; font-weight: 600; letter-spacing: 0.5px;
+  color: var(--text);
+}
+.wf-accordion-header .wf-acc-left .wf-chevron {
+  font-size: 10px; transition: transform 0.2s; display: inline-block;
+}
+.wf-accordion-header.expanded .wf-acc-left .wf-chevron { transform: rotate(90deg); }
+.wf-accordion-header .wf-acc-summary {
+  font-size: 10px; color: var(--text-muted); font-weight: 400;
+}
+.wf-accordion-body {
+  overflow: hidden; transition: max-height 0.2s ease-out;
+}
+.wf-accordion-body-inner {
+  padding: 12px;
+}
+.wf-step-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 4px 0; font-size: 12px;
+}
+.wf-step-dot {
+  width: 8px; height: 8px; border-radius: 50%; display: inline-block;
+  margin-right: 8px; flex-shrink: 0;
+}
+.wf-step-name { flex: 1; color: var(--text); }
+.wf-step-time {
+  font-family: 'SF Mono', 'Fira Code', monospace; font-size: 10px;
+  color: var(--text-muted); margin-left: 8px;
+}
 .wf-canvas-area {
   flex: 1; position: relative; overflow: hidden;
   background: var(--bg);
@@ -5870,6 +5952,10 @@ Reranking models rescore initial search results to improve relevance ordering.</
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
         </button>
         <button class="wf-library-collapse-btn" onclick="wfToggleLibrary()" title="Collapse library">&#x2039;</button>
+      </div>
+      <div class="wf-library-search-wrap">
+        <input type="text" id="wfLibrarySearch" placeholder="Search workflows..." oninput="wfOnLibrarySearch()">
+        <button class="wf-library-search-clear" id="wfLibrarySearchClear" onclick="wfClearLibrarySearch()">✕</button>
       </div>
       <div class="wf-library-list" id="wfLibraryList">
         <div style="padding: 16px; color: var(--text-muted); font-size: 12px;">Loading...</div>
@@ -12113,92 +12199,119 @@ async function wfLoadLibrary() {
   }
 }
 
+// ── Library Search ──
+let _wfLibSearchTimer = null;
+function wfOnLibrarySearch() {
+  clearTimeout(_wfLibSearchTimer);
+  _wfLibSearchTimer = setTimeout(() => wfRenderLibrary(), 150);
+  const input = document.getElementById('wfLibrarySearch');
+  const clear = document.getElementById('wfLibrarySearchClear');
+  if (input && clear) clear.style.display = input.value ? 'block' : 'none';
+}
+function wfClearLibrarySearch() {
+  const input = document.getElementById('wfLibrarySearch');
+  if (input) { input.value = ''; input.focus(); }
+  const clear = document.getElementById('wfLibrarySearchClear');
+  if (clear) clear.style.display = 'none';
+  wfRenderLibrary();
+}
+
+function wfGetLibSectionStates() {
+  const state = wfGetLayoutState();
+  return (state.library && state.library.sections) || { builtin: true, examples: true, catalog: false, community: false };
+}
+function wfSaveLibSectionState(key, expanded) {
+  const state = wfGetLayoutState();
+  if (!state.library) state.library = { open: true };
+  if (!state.library.sections) state.library.sections = { builtin: true, examples: true, catalog: false, community: false };
+  state.library.sections[key] = expanded;
+  try { localStorage.setItem('vai-workflow-layout', JSON.stringify(state)); } catch(e) {}
+}
+function wfToggleLibSection(key) {
+  const states = wfGetLibSectionStates();
+  const newVal = !states[key];
+  wfSaveLibSectionState(key, newVal);
+  // Toggle UI directly
+  const header = document.querySelector(`.wf-lib-section-header[data-section="${key}"]`);
+  const body = document.querySelector(`.wf-lib-section-body[data-section="${key}"]`);
+  if (header && body) {
+    header.classList.toggle('expanded', newVal);
+    if (newVal) {
+      body.style.maxHeight = body.scrollHeight + 'px';
+      setTimeout(() => { body.style.maxHeight = 'none'; }, 200);
+    } else {
+      body.style.maxHeight = body.scrollHeight + 'px';
+      requestAnimationFrame(() => { body.style.maxHeight = '0px'; });
+    }
+  }
+}
+
 function wfRenderLibrary() {
   const list = document.getElementById('wfLibraryList');
   if (!list) return;
-  if (wfState.workflows.length === 0 && (!wfState.examples || wfState.examples.length === 0)) {
-    list.innerHTML = '<div style="padding:16px;color:var(--text-muted);font-size:12px;">No workflows found</div>';
-    return;
+
+  const searchInput = document.getElementById('wfLibrarySearch');
+  const query = (searchInput ? searchInput.value : '').toLowerCase().trim();
+  const sectionStates = wfGetLibSectionStates();
+
+  function matchesSearch(w) {
+    if (!query) return true;
+    const name = (w.name || '').toLowerCase();
+    const desc = (w.description || '').toLowerCase();
+    return name.includes(query) || desc.includes(query);
   }
 
-  // Built-in templates
-  let html = wfState.workflows.map(w => {
-    const displayName = w.name.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  function renderItem(w, prefix) {
+    const displayName = prefix + w.name.replace(/^@vaicli\/vai-workflow-/, '').replace(/^vai-workflow-/, '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    const authorLine = w.author ? `<span style="color:var(--text-muted);font-size:10px;">by ${w.author}${w.version ? ' · v' + w.version : ''}</span>` : '';
+    const tagLine = (w.tags || []).length ? `<div style="margin-top:2px;font-size:10px;color:var(--text-muted);">${w.tags.join(' · ')}</div>` : '';
     return `<div class="wf-library-item" data-wf-name="${w.name}" onclick="wfSelectWorkflow('${w.name}')">
       <div class="wf-library-item-name">${displayName}</div>
       <div class="wf-library-item-desc">${w.description || ''}</div>
+      ${authorLine}${tagLine}
     </div>`;
-  }).join('');
+  }
 
-  // Collapsible examples section
+  function renderSection(key, label, items, prefix) {
+    const filtered = items.filter(matchesSearch);
+    if (filtered.length === 0) return '';
+    const expanded = sectionStates[key] !== false;
+    const chevron = '&#9654;';
+    const itemsHtml = filtered.map(w => renderItem(w, prefix)).join('');
+    return `<div class="wf-library-section" data-section="${key}">
+      <div class="wf-lib-section-header ${expanded ? 'expanded' : ''}" data-section="${key}" onclick="wfToggleLibSection('${key}')">
+        <span class="wf-chevron">${chevron}</span>
+        <span>${label}</span>
+        <span class="wf-section-count">(${filtered.length})</span>
+      </div>
+      <div class="wf-lib-section-body" data-section="${key}" style="max-height:${expanded ? 'none' : '0px'};">
+        ${itemsHtml}
+      </div>
+    </div>`;
+  }
+
+  let html = '';
+
+  // Built-in
+  html += renderSection('builtin', 'Built-in', wfState.workflows, '');
+
+  // Examples
   const examples = wfState.examples || [];
   if (examples.length > 0) {
-    html += `<div class="wf-library-section">
-      <button class="wf-library-section-toggle" onclick="wfToggleExamples(this)">
-        <span class="arrow">&#9654;</span> Examples (${examples.length})
-      </button>
-      <div class="wf-examples-content" style="display:none;">`;
-
-    const categories = ['Retrieval', 'RAG', 'Ingestion', 'Analysis', 'Other'];
-    for (const cat of categories) {
-      const items = examples.filter(e => e.category === cat);
-      if (items.length === 0) continue;
-      html += `<div class="wf-library-category">${cat}</div>`;
-      html += items.map(w => {
-        const displayName = w.name.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-        return `<div class="wf-library-item" data-wf-name="${w.name}" onclick="wfSelectWorkflow('${w.name}')">
-          <div class="wf-library-item-name">${displayName}</div>
-          <div class="wf-library-item-desc">${w.description || ''}</div>
-        </div>`;
-      }).join('');
-    }
-    html += '</div></div>';
+    html += renderSection('examples', 'Examples', examples, '');
   }
 
-  // Official catalog section
+  // Official catalog
   const official = wfState.official || [];
-  html += `<div class="wf-library-section">
-    <div class="wf-library-category" style="display:flex;align-items:center;justify-content:space-between;">
-      <span>Official Catalog (@vaicli) (${official.length})</span>
-    </div>`;
-  if (official.length === 0) {
-    html += '<div style="padding:8px 12px;color:var(--text-muted);font-size:11px;">No official workflows installed.</div>';
-  } else {
-    html += official.map(w => {
-      const displayName = w.name.replace(/^@vaicli\/vai-workflow-/, '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-      const authorLine = w.author ? `<span style="color:var(--text-muted);font-size:10px;">by ${w.author}${w.version ? ' · v' + w.version : ''}</span>` : '';
-      const tagLine = (w.tags || []).length ? `<div style="margin-top:2px;font-size:10px;color:var(--text-muted);">${w.tags.join(' · ')}</div>` : '';
-      return `<div class="wf-library-item" data-wf-name="${w.name}" onclick="wfSelectWorkflow('${w.name}')">
-        <div class="wf-library-item-name">✓ ${displayName}</div>
-        <div class="wf-library-item-desc">${w.description || ''}</div>
-        ${authorLine}${tagLine}
-      </div>`;
-    }).join('');
-  }
-  html += '</div>';
+  html += renderSection('catalog', 'Official Catalog (@vaicli)', official, '✓ ');
 
-  // Community workflows section
+  // Community
   const community = wfState.community || [];
-  html += `<div class="wf-library-section">
-    <div class="wf-library-category" style="display:flex;align-items:center;justify-content:space-between;">
-      <span>Community (${community.length})</span>
-      <button onclick="wfLoadLibrary()" title="Refresh" style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:12px;display:flex;align-items:center;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg></button>
-    </div>`;
-  if (community.length === 0) {
-    html += '<div style="padding:8px 12px;color:var(--text-muted);font-size:11px;">No community workflows installed.<br><code style="font-size:10px;">vai workflow install &lt;name&gt;</code></div>';
-  } else {
-    html += community.map(w => {
-      const displayName = w.name.replace(/^vai-workflow-/, '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-      const authorLine = w.author ? `<span style="color:var(--text-muted);font-size:10px;">by ${w.author}${w.version ? ' · v' + w.version : ''}</span>` : '';
-      const tagLine = (w.tags || []).length ? `<div style="margin-top:2px;font-size:10px;color:var(--text-muted);">${w.tags.join(' · ')}</div>` : '';
-      return `<div class="wf-library-item" data-wf-name="${w.name}" onclick="wfSelectWorkflow('${w.name}')">
-        <div class="wf-library-item-name">🌐 ${displayName}</div>
-        <div class="wf-library-item-desc">${w.description || ''}</div>
-        ${authorLine}${tagLine}
-      </div>`;
-    }).join('');
+  html += renderSection('community', 'Community', community, '🌐 ');
+
+  if (!html) {
+    html = '<div style="padding:16px;color:var(--text-muted);font-size:12px;">No workflows found</div>';
   }
-  html += '</div>';
 
   // Install from npm button
   html += `<div style="padding:8px 12px;">
@@ -12769,13 +12882,42 @@ function wfSaveLayoutState() {
   _wfLayoutSaveTimer = setTimeout(() => {
     const lib = document.getElementById('wfLibrary');
     const insp = document.getElementById('wfInspector');
+    const existing = wfGetLayoutState();
     const state = {
-      library: { open: lib ? !lib.classList.contains('collapsed') : true },
-      properties: { open: insp ? !insp.classList.contains('collapsed') : true }
+      library: { open: lib ? !lib.classList.contains('collapsed') : true, sections: (existing.library && existing.library.sections) || { builtin: true, examples: true, catalog: false, community: false } },
+      properties: { open: insp ? !insp.classList.contains('collapsed') : true, sections: (existing.properties && existing.properties.sections) || { inputs: true, steps: false, output: false } }
     };
     try { localStorage.setItem('vai-workflow-layout', JSON.stringify(state)); } catch(e) {}
   }, 300);
 }
+// ── Properties Accordion State ──
+function wfGetAccordionStates() {
+  const state = wfGetLayoutState();
+  return (state.properties && state.properties.sections) || { inputs: true, steps: false, output: false };
+}
+function wfSaveAccordionState(key, expanded) {
+  const state = wfGetLayoutState();
+  if (!state.properties) state.properties = { open: true };
+  if (!state.properties.sections) state.properties.sections = { inputs: true, steps: false, output: false };
+  state.properties.sections[key] = expanded;
+  try { localStorage.setItem('vai-workflow-layout', JSON.stringify(state)); } catch(e) {}
+}
+function wfToggleAccordion(key, headerEl) {
+  const body = document.querySelector(`.wf-accordion-body[data-acc="${key}"]`);
+  if (!body) return;
+  const expanded = headerEl.classList.contains('expanded');
+  const newVal = !expanded;
+  headerEl.classList.toggle('expanded', newVal);
+  if (newVal) {
+    body.style.maxHeight = body.scrollHeight + 'px';
+    setTimeout(() => { body.style.maxHeight = 'none'; }, 200);
+  } else {
+    body.style.maxHeight = body.scrollHeight + 'px';
+    requestAnimationFrame(() => { body.style.maxHeight = '0px'; });
+  }
+  wfSaveAccordionState(key, newVal);
+}
+
 function wfSyncPanelUI() {
   const lib = document.getElementById('wfLibrary');
   const insp = document.getElementById('wfInspector');
@@ -12885,56 +13027,83 @@ function wfUpdateInspector() {
         <div style="font-size:10px;color:var(--text-muted);">Add steps from the Palette tab, then drag between ports to connect them.</div>
       </div>`;
     } else {
-      // Read-only: Description
+      // Read-only: Description (above accordion)
       if (def.description) {
         html += `<div class="wf-inspector-section">
-          <div class="wf-inspector-section-title">Description</div>
           <div style="font-size:12px;color:var(--text);line-height:1.4;">${escapeHtml(def.description)}</div>
         </div>`;
       }
 
-      // Read-only: Inputs
-      if (def.inputs && Object.keys(def.inputs).length > 0) {
-        html += '<div class="wf-inspector-section"><div class="wf-inspector-section-title">Inputs</div>';
+      // Get accordion states from localStorage
+      const accStates = wfGetAccordionStates();
+      const hasDone = !!wfState.executionResults._done;
+
+      // ── INPUTS Accordion ──
+      const inputKeys = def.inputs ? Object.keys(def.inputs) : [];
+      const inputsExpanded = accStates.inputs !== false;
+      html += `<div class="wf-accordion-header ${inputsExpanded ? 'expanded' : ''}" onclick="wfToggleAccordion('inputs', this)">
+        <span class="wf-acc-left"><span class="wf-chevron">&#9654;</span> INPUTS</span>
+        <span class="wf-acc-summary">${inputKeys.length} field${inputKeys.length !== 1 ? 's' : ''}</span>
+      </div>
+      <div class="wf-accordion-body" data-acc="inputs" style="max-height:${inputsExpanded ? 'none' : '0px'};">
+        <div class="wf-accordion-body-inner">`;
+      if (inputKeys.length > 0) {
         for (const [key, spec] of Object.entries(def.inputs)) {
           const req = spec.required ? ' <span style="color:#e74c3c">*</span>' : '';
-          const defVal = spec.default !== undefined ? ` (default: ${spec.default})` : '';
-          html += `<div style="margin-bottom:8px;">
+          html += `<div style="margin-bottom:12px;">
             <div style="font-size:12px;font-weight:600;color:var(--text);">${escapeHtml(key)}${req}</div>
-            <div style="font-size:11px;color:var(--text-muted);">${escapeHtml(spec.description || spec.type || '')}${defVal}</div>
-            <input class="wf-inspector-input" id="wf-input-${key}" placeholder="${escapeHtml(key)}" value="${spec.default !== undefined ? spec.default : ''}">
+            <div style="font-size:10px;color:var(--text-muted);margin-bottom:4px;">${escapeHtml(spec.description || spec.type || '')}</div>
+            <input class="wf-inspector-input" id="wf-input-${key}" placeholder="${escapeHtml(key)}" value="${spec.default !== undefined ? escapeHtml(String(spec.default)) : ''}">
           </div>`;
         }
-        html += '</div>';
+      } else {
+        html += '<div style="font-size:12px;color:var(--text-muted);">No inputs defined</div>';
       }
+      html += '</div></div>';
 
-      // Steps summary
-      html += `<div class="wf-inspector-section">
-        <div class="wf-inspector-section-title">Steps</div>
-        <div style="font-size:12px;color:var(--text);">${def.steps.length} step${def.steps.length !== 1 ? 's' : ''}${wfState.layers ? ' in ' + wfState.layers.length + ' layer' + (wfState.layers.length !== 1 ? 's' : '') : ''}</div>
-      </div>`;
-
-      // Output mapping
-      if (def.output) {
-        html += `<div class="wf-inspector-section">
-          <div class="wf-inspector-section-title">Output</div>
-          <div class="wf-inspector-code">${escapeHtml(JSON.stringify(def.output, null, 2))}</div>
+      // ── STEPS Accordion ──
+      const stepCount = def.steps.length;
+      const layerCount = wfState.layers ? wfState.layers.length : 0;
+      const stepsSummary = `${stepCount} step${stepCount !== 1 ? 's' : ''}${layerCount ? ' · ' + layerCount + ' layer' + (layerCount !== 1 ? 's' : '') : ''}`;
+      const stepsExpanded = accStates.steps === true;
+      html += `<div class="wf-accordion-header ${stepsExpanded ? 'expanded' : ''}" onclick="wfToggleAccordion('steps', this)">
+        <span class="wf-acc-left"><span class="wf-chevron">&#9654;</span> STEPS</span>
+        <span class="wf-acc-summary">${stepsSummary}</span>
+      </div>
+      <div class="wf-accordion-body" data-acc="steps" style="max-height:${stepsExpanded ? 'none' : '0px'};">
+        <div class="wf-accordion-body-inner">`;
+      for (const step of def.steps) {
+        const meta = WF_NODE_META[step.tool] || { color: '#666' };
+        const result = wfState.executionResults[step.id];
+        const timeStr = result && result.timeMs != null ? result.timeMs + 'ms' : '—';
+        html += `<div class="wf-step-row">
+          <span class="wf-step-dot" style="background:${meta.color}"></span>
+          <span class="wf-step-name">${escapeHtml(step.name || step.id)}</span>
+          <span class="wf-step-time">${timeStr}</span>
         </div>`;
       }
-    }
+      html += '</div></div>';
 
-    // Execution result (shown in both modes)
-    if (wfState.executionResults._done) {
-      const r = wfState.executionResults._done;
-      const doneJson = JSON.stringify(r.output, null, 2);
-      html += `<div class="wf-inspector-section">
-        <div class="wf-inspector-section-title">Result</div>
-        <div class="wf-inspector-result success">
-          <div style="font-weight:600;margin-bottom:4px;">Completed in ${r.totalTimeMs}ms</div>
-          <div class="wf-inspector-code" style="max-height:150px;overflow:auto;">${escapeHtml(doneJson)}</div>
-        </div>
-        <button class="wf-output-expand-btn" data-expand-step="_done">&#x2922; Expand</button>
-      </div>`;
+      // ── OUTPUT Accordion ──
+      const outputExpanded = hasDone || accStates.output === true;
+      html += `<div class="wf-accordion-header ${outputExpanded ? 'expanded' : ''}" onclick="wfToggleAccordion('output', this)">
+        <span class="wf-acc-left"><span class="wf-chevron">&#9654;</span> OUTPUT</span>
+        <span class="wf-acc-summary"></span>
+      </div>
+      <div class="wf-accordion-body" data-acc="output" style="max-height:${outputExpanded ? 'none' : '0px'};">
+        <div class="wf-accordion-body-inner">`;
+      if (hasDone) {
+        const r = wfState.executionResults._done;
+        const doneJson = JSON.stringify(r.output, null, 2);
+        html += `<div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;">Completed in ${r.totalTimeMs}ms</div>
+          <div class="wf-inspector-code" style="max-height:200px;overflow:auto;color:#40E0FF;">${escapeHtml(doneJson)}</div>
+          <button class="wf-output-expand-btn" data-expand-step="_done">&#x2922; Expand</button>`;
+      } else if (def.output) {
+        html += `<div class="wf-inspector-code" style="color:#40E0FF;">${escapeHtml(JSON.stringify(def.output, null, 2))}</div>`;
+      } else {
+        html += '<div style="font-size:12px;color:var(--text-muted);">Run the workflow to see output</div>';
+      }
+      html += '</div></div>';
     }
 
     body.innerHTML = html;
