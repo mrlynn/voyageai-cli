@@ -335,6 +335,31 @@ function registerApiKeyHandlers() {
     shell.openPath(dirPath);
     return { success: true };
   });
+
+  // ── Export IPC handlers ──
+
+  ipcMain.handle('export:save-file', async (_event, { content, filename, filters, isBinary }) => {
+    const result = await dialog.showSaveDialog({
+      title: 'Export',
+      defaultPath: filename,
+      filters: filters || [{ name: 'All Files', extensions: ['*'] }],
+    });
+    if (result.canceled || !result.filePath) return { canceled: true };
+    const data = isBinary ? Buffer.from(content, 'base64') : content;
+    fs.writeFileSync(result.filePath, data);
+    return { success: true, filePath: result.filePath };
+  });
+
+  ipcMain.handle('export:clipboard', async (_event, { content, type }) => {
+    const { clipboard: electronClipboard } = require('electron');
+    if (type === 'image') {
+      const img = nativeImage.createFromBuffer(Buffer.from(content, 'base64'));
+      electronClipboard.writeImage(img);
+    } else {
+      electronClipboard.writeText(content);
+    }
+    return { success: true };
+  });
 }
 
 // ── Icon helpers ──
@@ -655,6 +680,23 @@ function buildMenu() {
     {
       label: 'File',
       submenu: [
+        {
+          label: 'Export…',
+          accelerator: 'CmdOrCtrl+E',
+          click: () => {
+            const win = BrowserWindow.getFocusedWindow();
+            if (win) win.webContents.send('export:trigger');
+          },
+        },
+        {
+          label: 'Export to Clipboard',
+          accelerator: 'CmdOrCtrl+Shift+C',
+          click: () => {
+            const win = BrowserWindow.getFocusedWindow();
+            if (win) win.webContents.send('export:trigger-clipboard');
+          },
+        },
+        { type: 'separator' },
         isMac ? { role: 'close' } : { role: 'quit' },
       ],
     },
