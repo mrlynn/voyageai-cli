@@ -1,0 +1,92 @@
+{
+  "name": "url-knowledge-base",
+  "description": "Fetch a URL, embed its content into a collection, then answer questions about it using RAG. A vector search index is auto-created on first ingest.",
+  "version": "1.0.0",
+  "inputs": {
+    "url": { "type": "string", "required": true, "description": "URL to ingest and query" },
+    "question": { "type": "string", "required": true, "description": "Question to ask about the URL content" },
+    "db": { "type": "string", "default": "vai_urls", "description": "Database name" },
+    "collection": { "type": "string", "default": "content", "description": "Collection name" },
+    "model": { "type": "string", "default": "voyage-3-large", "description": "Embedding model" },
+    "chunk_size": { "type": "number", "default": 512, "description": "Chunk size in tokens" },
+    "chunk_strategy": { "type": "string", "default": "recursive", "description": "Chunking strategy: fixed, sentence, paragraph, recursive, or markdown" }
+  },
+  "defaults": {
+    "db": "vai_urls",
+    "collection": "content",
+    "model": "voyage-3-large"
+  },
+  "steps": [
+    {
+      "id": "fetch",
+      "tool": "http",
+      "name": "Fetch URL content",
+      "inputs": {
+        "url": "{{ inputs.url }}",
+        "method": "GET",
+        "responseType": "text",
+        "extract": "text"
+      }
+    },
+    {
+      "id": "embed_and_store",
+      "tool": "ingest",
+      "name": "Chunk, embed, and store in MongoDB",
+      "inputs": {
+        "text": "{{ fetch.output.body }}",
+        "model": "{{ inputs.model }}",
+        "db": "{{ inputs.db }}",
+        "collection": "{{ inputs.collection }}",
+        "chunkStrategy": "{{ inputs.chunk_strategy }}",
+        "chunkSize": "{{ inputs.chunk_size }}",
+        "source": "{{ inputs.url }}"
+      }
+    },
+    {
+      "id": "search",
+      "tool": "search",
+      "name": "Search for relevant passages",
+      "inputs": {
+        "query": "{{ inputs.question }}",
+        "model": "{{ inputs.model }}",
+        "db": "{{ inputs.db }}",
+        "collection": "{{ inputs.collection }}",
+        "limit": 5
+      }
+    },
+    {
+      "id": "rerank",
+      "tool": "rerank",
+      "name": "Rerank results for relevance",
+      "inputs": {
+        "query": "{{ inputs.question }}",
+        "documents": "{{ search.output.results }}",
+        "topK": 3
+      }
+    },
+    {
+      "id": "build_context",
+      "tool": "template",
+      "name": "Build context from top passages",
+      "inputs": {
+        "text": "The following passages were extracted from {{ inputs.url }}:\n\n{{ rerank.output.results }}"
+      }
+    },
+    {
+      "id": "answer",
+      "tool": "generate",
+      "name": "Answer the question",
+      "inputs": {
+        "prompt": "{{ inputs.question }}",
+        "context": "{{ build_context.output.text }}",
+        "systemPrompt": "You are a helpful assistant. Answer the question using only the provided passages from the given URL. Cite specific passages when possible. If the content doesn't contain enough information to answer, say so."
+      }
+    }
+  ],
+  "output": {
+    "answer": "{{ answer.output.text }}",
+    "source": "{{ inputs.url }}",
+    "chunksIngested": "{{ embed_and_store.output.count }}",
+    "passagesUsed": "{{ rerank.output.results.length }}"
+  }
+}

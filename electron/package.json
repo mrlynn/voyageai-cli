@@ -107,6 +107,7 @@
     "@vaicli/vai-workflow-incremental-sync": "^1.0.0",
     "@vaicli/vai-workflow-knowledge-base-bootstrap": "^1.0.0",
     "@vaicli/vai-workflow-meeting-action-items": "^1.0.0",
+    "@vaicli/vai-workflow-model-shootout": "^1.0.0",
     "@vaicli/vai-workflow-multilingual-search": "^1.0.0",
     "electron-updater": "^6.7.3",
     "picocolors": "^1.0.0"

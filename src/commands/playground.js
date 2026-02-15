@@ -384,6 +384,14 @@ function createPlaygroundServer() {
         return;
       }
 
+      // API: Workflow node help
+      if (req.method === 'GET' && req.url === '/api/workflows/node-help') {
+        const nodeHelp = require('../playground/help/workflow-nodes');
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ nodeHelp }));
+        return;
+      }
+
       // API: Chat config (GET)
       if (req.method === 'GET' && req.url === '/api/chat/config') {
         const { resolveLLMConfig } = require('../lib/llm');

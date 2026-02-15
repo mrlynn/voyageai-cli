@@ -875,7 +875,9 @@ function executeChunk(inputs) {
  * @returns {Promise<{ status: number, statusText: string, headers: object, body: any, durationMs: number }>}
  */
 async function executeHttp(inputs) {
-  const { url, method = 'GET', headers = {}, body, timeout = 30000, responseType = 'json', followRedirects = false } = inputs;
+  const effectiveResponseType = inputs.responseType || (inputs.extract === 'text' ? 'text' : 'json');
+  const { url, method = 'GET', headers = {}, body, timeout = 30000, followRedirects = false } = inputs;
+  const responseType = effectiveResponseType;
 
   if (!url || typeof url !== 'string') {
     throw new Error('http: "url" input is required');
@@ -936,6 +938,12 @@ async function executeHttp(inputs) {
     }
   } else {
     parsedBody = rawBody;
+  }
+
+  // Strip HTML if extract: "text"
+  if (inputs.extract === 'text' && typeof parsedBody === 'string') {
+    const { stripHtml } = require('./readers');
+    parsedBody = stripHtml(parsedBody);
   }
 
   // Collect response headers
@@ -1200,11 +1208,40 @@ async function executeIngest(inputs, defaults) {
   const { client, collection: col } = await getMongoCollection(db, collection);
   try {
     const result = await col.insertMany(docs);
+
+    // Auto-create vector search index if it doesn't exist
+    // Note: Atlas vector search indexes take a few seconds to become ready after creation.
+    // The search step may need a brief delay on first run.
+    let indexCreated = false;
+    try {
+      const indexes = await col.listSearchIndexes().toArray();
+      const hasVectorIndex = indexes.some(idx => idx.name === 'vector_index');
+      if (!hasVectorIndex) {
+        await col.createSearchIndex({
+          name: 'vector_index',
+          type: 'vectorSearch',
+          definition: {
+            fields: [{
+              type: 'vector',
+              path: 'embedding',
+              numDimensions: embRes.data[0].embedding.length,
+              similarity: 'cosine'
+            }]
+          }
+        });
+        indexCreated = true;
+      }
+    } catch (indexErr) {
+      // Ignore errors: index may already exist, or createSearchIndex may not be
+      // available on non-Atlas deployments
+    }
+
     return {
       insertedCount: result.insertedCount,
       chunks: chunks.length,
       source,
       model: embRes.model,
+      indexCreated,
     };
   } finally {
     await client.close();
@@ -1844,6 +1881,7 @@ module.exports = {
   executeLoop,
   executeChunk,
   executeHttp,
+  executeIngest,
   executeAggregate,
 
   // Main execution
