@@ -1494,15 +1494,23 @@ function createPlaygroundServer() {
         // API: Validate a workflow definition
         if (req.url === '/api/workflows/validate') {
           const { validateWorkflow } = require('../lib/workflow');
-          const { definition } = parsed;
+          const { definition, mode } = parsed;
           if (!definition) {
             res.writeHead(400, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ error: 'definition is required' }));
             return;
           }
-          const errors = validateWorkflow(definition);
+          const validationMode = mode || 'strict';
+          const result = validateWorkflow(definition, { mode: validationMode });
+          
           res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ valid: errors.length === 0, errors }));
+          
+          if (validationMode === 'draft') {
+            res.end(JSON.stringify(result));
+          } else {
+            // Backward compatible format for strict mode
+            res.end(JSON.stringify({ valid: result.length === 0, errors: result }));
+          }
           return;
         }
 
