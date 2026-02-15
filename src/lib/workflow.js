@@ -45,32 +45,55 @@ const SCHEMA_LIMITS = {
 
 /**
  * Validate a workflow definition object.
- * Returns an array of error strings (empty = valid).
+ * Two modes: strict (default) returns error strings for backward compatibility,
+ * draft mode returns structured issue objects with severity levels.
  *
  * @param {object} definition - Parsed workflow JSON
- * @returns {string[]} errors
+ * @param {object} [options]
+ * @param {'strict'|'draft'} [options.mode='strict'] - Validation mode
+ * @returns {string[]|object} In strict: string[] errors. In draft: { valid, mode, issues, stats }
  */
-function validateWorkflow(definition) {
-  const errors = [];
+function validateWorkflow(definition, { mode = 'strict' } = {}) {
+  const issues = [];
+
+  // Helper to add issue
+  function addIssue(severity, stepId, code, message, field = null, referencedStep = null) {
+    issues.push({
+      severity,
+      stepId,
+      code,
+      message,
+      ...(field && { field }),
+      ...(referencedStep && { referencedStep })
+    });
+  }
 
   // Top-level required fields
   if (!definition || typeof definition !== 'object') {
-    return ['Workflow definition must be a JSON object'];
+    addIssue('error', null, 'INVALID_DEFINITION', 'Workflow definition must be a JSON object');
+    return mode === 'strict' ? ['Workflow definition must be a JSON object'] : { valid: false, mode, issues, stats: { totalSteps: 0, errors: 1, warnings: 0, info: 0 } };
   }
+  
   if (!definition.name || typeof definition.name !== 'string') {
-    errors.push('Workflow must have a "name" string');
+    const severity = mode === 'draft' ? 'info' : 'error';
+    addIssue(severity, null, 'MISSING_WORKFLOW_NAME', 'Workflow must have a "name" string');
   }
+  
   if (!Array.isArray(definition.steps) || definition.steps.length === 0) {
-    errors.push('Workflow must have a non-empty "steps" array');
+    addIssue('error', null, 'MISSING_STEPS', 'Workflow must have a non-empty "steps" array');
   }
 
-  if (errors.length > 0) return errors; // Can't validate steps without them
+  const structuralErrors = issues.filter(i => i.severity === 'error');
+  if (structuralErrors.length > 0 && !Array.isArray(definition.steps)) {
+    // Can't validate steps without them
+    return formatResponse(mode, issues, 0);
+  }
 
   // Validate inputs schema
   if (definition.inputs) {
     for (const [key, schema] of Object.entries(definition.inputs)) {
       if (schema.type && !['string', 'number', 'boolean', 'array'].includes(schema.type)) {
-        errors.push(`Input "${key}" has invalid type "${schema.type}" (must be string, number, boolean, or array)`);
+        addIssue('error', null, 'INVALID_INPUT_TYPE', `Input "${key}" has invalid type "${schema.type}" (must be string, number, boolean, or array)`);
       }
     }
   }
@@ -84,7 +107,7 @@ function validateWorkflow(definition) {
     const prefix = `Step ${i}`;
 
     if (!step.id || typeof step.id !== 'string') {
-      errors.push(`${prefix}: must have a string "id"`);
+      addIssue('error', step.id || `step${i}`, 'MISSING_STEP_ID', `${prefix}: must have a string "id"`);
       continue;
     }
 
@@ -98,14 +121,20 @@ function validateWorkflow(definition) {
 
     // Tool validation
     if (!step.tool || typeof step.tool !== 'string') {
-      errors.push(`${stepPrefix}: must have a string "tool"`);
+      addIssue('error', step.id, 'MISSING_TOOL', `${stepPrefix}: must have a string "tool"`);
     } else if (!ALL_TOOLS.has(step.tool)) {
-      errors.push(`${stepPrefix}: unknown tool "${step.tool}" (available: ${[...ALL_TOOLS].join(', ')})`);
+      addIssue('error', step.id, 'INVALID_TOOL', `${stepPrefix}: unknown tool "${step.tool}" (available: ${[...ALL_TOOLS].join(', ')})`);
     }
 
     // Inputs validation
     if (step.tool !== 'generate' && (!step.inputs || typeof step.inputs !== 'object')) {
-      errors.push(`${stepPrefix}: must have an "inputs" object`);
+      const severity = mode === 'draft' ? 'info' : 'error';
+      addIssue(severity, step.id, 'MISSING_INPUTS', `${stepPrefix}: must have an "inputs" object`);
+    }
+
+    // Step name validation (only in draft mode for better UX)
+    if (!step.name && mode === 'draft') {
+      addIssue('info', step.id, 'MISSING_STEP_NAME', `${stepPrefix}: missing "name" field`);
     }
 
     // Check template references point to known step IDs or reserved prefixes
@@ -127,25 +156,32 @@ function validateWorkflow(definition) {
       const deps = extractDependencies(inputsToCheck);
       for (const dep of deps) {
         if (!forEachVars.has(dep) && !loopVars.has(dep) && !stepIds.has(dep) && !definition.steps.some(s => s.id === dep)) {
-          errors.push(`${stepPrefix}: references unknown step "${dep}"`);
+          const severity = mode === 'draft' ? 'warning' : 'error';
+          addIssue(severity, step.id, 'UNKNOWN_STEP_REF', `${stepPrefix}: references unknown step "${dep}"`, null, dep);
         }
       }
     }
 
     // Condition validation (if present, should be a string)
     if (step.condition !== undefined && typeof step.condition !== 'string') {
-      errors.push(`${stepPrefix}: "condition" must be a string`);
+      addIssue('error', step.id, 'INVALID_CONDITION', `${stepPrefix}: "condition" must be a string`);
+    }
+
+    // Empty condition validation
+    if (step.condition !== undefined && typeof step.condition === 'string' && step.condition.trim() === '') {
+      const severity = mode === 'draft' ? 'info' : 'error';
+      addIssue(severity, step.id, 'EMPTY_CONDITION', `${stepPrefix}: "condition" is empty`);
     }
 
     // forEach validation (if present, should be a template string)
     if (step.forEach !== undefined && typeof step.forEach !== 'string') {
-      errors.push(`${stepPrefix}: "forEach" must be a string`);
+      addIssue('error', step.id, 'INVALID_FOREACH', `${stepPrefix}: "forEach" must be a string`);
     }
   }
 
   // Report duplicates
   for (const id of duplicateIds) {
-    errors.push(`Duplicate step id: "${id}"`);
+    addIssue('error', id, 'DUPLICATE_ID', `Duplicate step id: "${id}"`);
   }
 
   // Validate conditional branch references
@@ -157,40 +193,183 @@ function validateWorkflow(definition) {
         if (refs && Array.isArray(refs)) {
           for (const ref of refs) {
             if (!stepIds.has(ref)) {
-              errors.push(`Step "${step.id}": conditional ${branch} references unknown step "${ref}"`);
+              const severity = mode === 'draft' ? 'warning' : 'error';
+              addIssue(severity, step.id, 'UNKNOWN_STEP_REF', `Step "${step.id}": conditional ${branch} references unknown step "${ref}"`, null, ref);
             }
           }
         }
       }
       if (!step.inputs.condition) {
-        errors.push(`Step "${step.id}": conditional must have a "condition" input`);
+        const severity = mode === 'draft' ? 'info' : 'error';
+        addIssue(severity, step.id, 'MISSING_REQUIRED_INPUT', `Step "${step.id}": conditional must have a "condition" input`, 'inputs.condition');
       }
       if (!step.inputs.then || !Array.isArray(step.inputs.then)) {
-        errors.push(`Step "${step.id}": conditional must have a "then" array`);
+        const severity = mode === 'draft' ? 'info' : 'error';
+        addIssue(severity, step.id, 'MISSING_REQUIRED_INPUT', `Step "${step.id}": conditional must have a "then" array`, 'inputs.then');
       }
     }
 
     // Validate loop inline step
     if (step.tool === 'loop' && step.inputs) {
       if (!step.inputs.items) {
-        errors.push(`Step "${step.id}": loop must have an "items" input`);
+        const severity = mode === 'draft' ? 'info' : 'error';
+        addIssue(severity, step.id, 'MISSING_REQUIRED_INPUT', `Step "${step.id}": loop must have an "items" input`, 'inputs.items');
       }
       if (!step.inputs.as || typeof step.inputs.as !== 'string') {
-        errors.push(`Step "${step.id}": loop must have a string "as" input`);
+        const severity = mode === 'draft' ? 'info' : 'error';
+        addIssue(severity, step.id, 'MISSING_REQUIRED_INPUT', `Step "${step.id}": loop must have a string "as" input`, 'inputs.as');
       }
       if (!step.inputs.step || typeof step.inputs.step !== 'object') {
-        errors.push(`Step "${step.id}": loop must have a "step" object`);
+        const severity = mode === 'draft' ? 'info' : 'error';
+        addIssue(severity, step.id, 'MISSING_REQUIRED_INPUT', `Step "${step.id}": loop must have a "step" object`, 'inputs.step');
       } else if (step.inputs.step.tool && !ALL_TOOLS.has(step.inputs.step.tool)) {
-        errors.push(`Step "${step.id}": loop sub-step has unknown tool "${step.inputs.step.tool}"`);
+        addIssue('error', step.id, 'INVALID_TOOL', `Step "${step.id}": loop sub-step has unknown tool "${step.inputs.step.tool}"`);
       }
     }
   }
 
   // Check for circular dependencies
-  const cycleErrors = detectCycles(definition.steps);
-  errors.push(...cycleErrors);
+  const cycleResult = detectCyclesAsIssues(definition.steps);
+  for (const issue of cycleResult) {
+    addIssue('error', issue.stepId, 'CIRCULAR_DEPENDENCY', issue.message);
+  }
 
-  return errors;
+  // Draft-only checks: orphan nodes
+  if (mode === 'draft') {
+    for (const step of definition.steps || []) {
+      const isReferenced = (definition.steps || []).some(
+        other => other.id !== step.id &&
+          extractStepReferences(other).some(ref => ref.stepId === step.id)
+      );
+      const hasReferences = extractStepReferences(step).length > 0;
+      if (!isReferenced && !hasReferences && (definition.steps || []).length > 1) {
+        addIssue('info', step.id, 'ORPHAN_NODE', `Step "${step.id}" is not connected to any other step`);
+      }
+    }
+  }
+
+  return formatResponse(mode, issues, (definition.steps || []).length);
+}
+
+/**
+ * Extract step references from a step for orphan detection.
+ * @param {object} step
+ * @returns {Array<{stepId: string, field?: string}>}
+ */
+function extractStepReferences(step) {
+  const refs = [];
+  if (!step.inputs) return refs;
+  
+  const deps = extractDependencies(step.inputs);
+  for (const dep of deps) {
+    if (dep !== 'inputs' && dep !== 'defaults' && dep !== 'item' && dep !== 'index') {
+      refs.push({ stepId: dep });
+    }
+  }
+  
+  return refs;
+}
+
+/**
+ * Format the response based on validation mode.
+ * @param {string} mode
+ * @param {Array} issues
+ * @param {number} totalSteps
+ * @returns {string[]|object}
+ */
+function formatResponse(mode, issues, totalSteps) {
+  const errors = issues.filter(i => i.severity === 'error');
+  const warnings = issues.filter(i => i.severity === 'warning');
+  const info = issues.filter(i => i.severity === 'info');
+
+  if (mode === 'draft') {
+    return {
+      valid: errors.length === 0,
+      mode: 'draft',
+      issues,
+      stats: {
+        totalSteps,
+        errors: errors.length,
+        warnings: warnings.length,
+        info: info.length
+      }
+    };
+  }
+
+  // Strict mode: backward-compatible format
+  if (errors.length > 0) {
+    return errors.map(e => e.message);
+  }
+
+  // In strict mode, warnings and info are also treated as errors
+  const allIssues = issues.filter(i => i.severity !== 'info' || mode === 'strict');
+  if (allIssues.length > 0) {
+    return allIssues.map(e => e.message);
+  }
+
+  return [];
+}
+
+/**
+ * Detect circular dependencies and return as issue objects.
+ * @param {Array} steps
+ * @returns {Array<{stepId: string, message: string}>}
+ */
+function detectCyclesAsIssues(steps) {
+  const issues = [];
+  const stepMap = new Map(steps.map(s => [s.id, s]));
+  const adjList = new Map();
+
+  // Build adjacency list from template dependencies
+  for (const step of steps) {
+    const deps = extractDependencies(step.inputs || {});
+    if (step.condition) {
+      const condDeps = extractDependencies(step.condition);
+      for (const d of condDeps) deps.add(d);
+    }
+    if (step.forEach) {
+      const forDeps = extractDependencies(step.forEach);
+      for (const d of forDeps) deps.add(d);
+    }
+    adjList.set(step.id, deps);
+  }
+
+  // DFS cycle detection
+  const WHITE = 0, GRAY = 1, BLACK = 2;
+  const color = new Map(steps.map(s => [s.id, WHITE]));
+
+  function dfs(nodeId, path) {
+    color.set(nodeId, GRAY);
+    path.push(nodeId);
+
+    const neighbors = adjList.get(nodeId) || new Set();
+    for (const dep of neighbors) {
+      if (!stepMap.has(dep)) continue; // Unknown deps caught by other checks
+      if (color.get(dep) === GRAY) {
+        const cycleStart = path.indexOf(dep);
+        const cycle = path.slice(cycleStart).concat(dep);
+        issues.push({
+          stepId: cycle[0],
+          message: `Circular dependency: ${cycle.join(' -> ')}`
+        });
+        return;
+      }
+      if (color.get(dep) === WHITE) {
+        dfs(dep, path);
+      }
+    }
+
+    path.pop();
+    color.set(nodeId, BLACK);
+  }
+
+  for (const step of steps) {
+    if (color.get(step.id) === WHITE) {
+      dfs(step.id, []);
+    }
+  }
+
+  return issues;
 }
 
 /**
