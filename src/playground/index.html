@@ -4874,6 +4874,77 @@ select:focus { outline: none; border-color: var(--accent); }
     gap: 12px;
   }
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   Export Dialog
+   ══════════════════════════════════════════════════════════════════ */
+.export-modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
+  z-index: 2000; display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity 0.2s ease;
+}
+.export-modal-overlay.open { opacity: 1; pointer-events: auto; }
+.export-modal {
+  background: var(--bg-surface); border: 1px solid var(--border);
+  border-radius: 14px; max-width: 560px; width: 92%; max-height: 80vh;
+  overflow-y: auto; padding: 24px; position: relative;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  animation: exportModalIn 0.2s ease-out;
+}
+@keyframes exportModalIn {
+  from { opacity: 0; transform: scale(0.95) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+.export-modal h2 { margin: 0 0 4px; font-size: 18px; color: var(--text); }
+.export-modal .export-subtitle { color: var(--text-muted); font-size: 13px; margin-bottom: 16px; }
+.export-modal .export-close {
+  position: absolute; top: 16px; right: 16px; background: none; border: none;
+  color: var(--text-muted); font-size: 20px; cursor: pointer; padding: 4px 8px;
+}
+.export-modal .export-close:hover { color: var(--text); }
+.export-format-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.export-format-chip {
+  padding: 8px 16px; border: 1px solid var(--border); border-radius: 8px;
+  background: var(--bg); color: var(--text-muted); cursor: pointer;
+  font-size: 13px; transition: all 0.15s;
+}
+.export-format-chip:hover { border-color: var(--accent); color: var(--text); }
+.export-format-chip.active { border-color: var(--accent); background: var(--accent); color: #fff; }
+.export-preview {
+  background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 12px; margin: 12px 0; max-height: 200px; overflow: auto;
+  font-family: 'SF Mono', monospace; font-size: 12px; color: var(--text-muted);
+  white-space: pre-wrap; word-break: break-all;
+}
+.export-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+.export-actions button {
+  padding: 8px 20px; border-radius: 8px; font-size: 13px; cursor: pointer;
+  border: 1px solid var(--border); background: var(--bg); color: var(--text);
+  transition: all 0.15s;
+}
+.export-actions button:hover { border-color: var(--accent); }
+.export-actions .export-primary {
+  background: var(--accent); color: #fff; border-color: var(--accent);
+}
+.export-actions .export-primary:hover { opacity: 0.9; }
+.export-snack {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  background: var(--accent); color: #fff; padding: 10px 24px; border-radius: 8px;
+  font-size: 13px; z-index: 3000; animation: exportSnackIn 0.2s ease-out;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+}
+@keyframes exportSnackIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+.export-toolbar-btn {
+  background: none; border: 1px solid var(--border); border-radius: 6px;
+  color: var(--text-muted); cursor: pointer; padding: 4px 8px; display: inline-flex;
+  align-items: center; gap: 4px; font-size: 12px; transition: all 0.15s;
+}
+.export-toolbar-btn:hover { border-color: var(--accent); color: var(--accent); }
+.export-toolbar-btn svg { width: 14px; height: 14px; }
 </style>
 </head>
 <body>
@@ -5374,6 +5445,7 @@ Semantic search understands meaning beyond keyword matching</textarea>
     </div>
     <button class="btn" id="searchBtn" onclick="doSearch(false)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M21 21l-4.3-4.3M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16z"/></svg>Search</button>
     <button class="btn btn-secondary" id="searchRerankBtn" onclick="doSearch(true)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M3 6h18M7 12h10M10 18h4"/></svg>Rerank</button>
+    <button class="export-toolbar-btn" id="searchExportBtn" onclick="openExportDialog('search')" style="display:none;" title="Export results"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h10M8 14V5M5 8l3-3 3 3"/></svg> Export</button>
   </div>
 
   <div class="error-msg" id="searchError"></div>
@@ -5506,6 +5578,7 @@ Semantic search understands meaning beyond keyword matching</textarea>
     <p class="page-header-subtitle">Compare model speed, cost, and quality</p>
     <p class="page-header-hint">Run latency tests, compare ranking accuracy, analyze quantization trade-offs, and estimate costs across models.</p>
     <a class="page-header-docs" href="https://docs.vaicli.com/docs/commands/evaluation/benchmark" target="_blank" rel="noopener" title="Benchmark documentation"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 1h7l3 3v11H3z"/><path d="M10 1v3h3"/></svg>Docs</a>
+    <button class="export-toolbar-btn" id="benchExportBtn" onclick="openExportDialog('benchmark')" style="display:none;" title="Export benchmark results"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h10M8 14V5M5 8l3-3 3 3"/></svg> Export</button>
   </div>
 
   <!-- Sub-panel switcher -->
@@ -5993,6 +6066,9 @@ Reranking models rescore initial search results to improve relevance ordering.</
         <span>·</span>
         <span id="chatStatusDb">No database</span>
       </div>
+      <button class="export-toolbar-btn" id="chatExportBtn" onclick="openExportDialog('chat')" style="display:none;" title="Export chat session">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h10M8 14V5M5 8l3-3 3 3"/></svg> Export
+      </button>
       <button class="chat-config-toggle" id="chatOpenSettings" onclick="openChatSettings()" title="Configure in Settings">
         <svg width="14" height="14" viewBox="0 0 24 24"><use href="#lg-config"/></svg>
         Configure
@@ -6057,8 +6133,8 @@ Reranking models rescore initial search results to improve relevance ordering.</
         <button class="wf-run-btn" id="wfRunBtn" onclick="wfExecute()" disabled title="Run workflow">&#9654; Run</button>
         <button class="wf-stop-btn" id="wfStopBtn" onclick="wfStopExecution()" style="display:none;" title="Stop workflow">&#9632; Stop</button>
         <span class="wf-toolbar-sep"></span>
-        <button onclick="wfExportJson()" id="wfExportBtn" disabled title="Export workflow JSON">
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h10M8 14V5M5 8l3-3 3 3"/></svg>
+        <button onclick="openExportDialog('workflow')" id="wfExportBtn" disabled title="Export workflow (⌘E)">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h10M8 14V5M5 8l3-3 3 3"/></svg> Export
         </button>
         <span class="wf-toolbar-spacer"></span>
         <div class="wf-toolbar-toggle-group">
@@ -7984,6 +8060,15 @@ window.doSearch = async function(withRerank) {
 
     renderSearchResults(embeddingResults, rerankResults);
     document.getElementById('searchResult').classList.add('visible');
+    // Capture for export
+    window._lastSearchResults = {
+      query,
+      model: embedModel,
+      results: (rerankResults || embeddingResults).map((r, i) => ({
+        rank: i + 1, score: r.score, text: r.text, source: `document-${r.index + 1}`,
+        ...(rerankResults ? { rerankedScore: r.score } : {}),
+      })),
+    };
     CostTracker.addOperation('search', embedModel, embedData.usage?.total_tokens || 0);
     if (withRerank && rerankResults) {
       const rerankModel = document.getElementById('searchRerankModel').value;
@@ -8691,6 +8776,19 @@ window.doBenchLatency = async function() {
     // Save to history
     saveBenchHistory(results, texts.length, rounds);
     renderHistory();
+
+    // Capture for export
+    window._lastBenchmarkResults = {
+      name: 'Latency Benchmark',
+      date: new Date().toISOString(),
+      results: results.map(r => ({
+        model: r.model, avg_ms: Math.round(r.avg), p50_ms: Math.round(r.p50),
+        min_ms: Math.round(r.min), max_ms: Math.round(r.max),
+        dimensions: r.dims, tokens: r.tokens,
+      })),
+    };
+    const benchBtn = document.getElementById('benchExportBtn');
+    if (benchBtn) benchBtn.style.display = '';
   }
 
   setLoading('benchLatencyBtn', false);
@@ -11926,6 +12024,23 @@ async function sendChatMessage() {
     // Remove typing if still present
     if (typing.parentNode) typing.remove();
 
+    // Capture for export
+    if (!window._chatExportData) {
+      window._chatExportData = {
+        sessionId: 'playground-' + Date.now().toString(36),
+        startedAt: new Date().toISOString(),
+        provider, model: modelVal, collection: collection ? `${db}.${collection}` : undefined,
+        turns: [],
+      };
+    }
+    window._chatExportData.turns.push({ role: 'user', content: query, timestamp: new Date().toISOString() });
+    if (fullText) {
+      window._chatExportData.turns.push({
+        role: 'assistant', content: fullText, timestamp: new Date().toISOString(),
+        context: sources.map(s => ({ source: s.source, score: s.score })),
+      });
+    }
+
   } catch (err) {
     if (typing.parentNode) typing.remove();
     if (thinkingPanel) thinkingPanel.finalize();
@@ -14774,6 +14889,7 @@ function wfStoreOpen() {
   overlay.classList.add('open');
   document.getElementById('wfStoreBtn').classList.add('active');
   if (!_wfStoreCatalog) wfStoreFetchCatalog();
+  else wfStoreRender();
 }
 
 function wfStoreClose() {
@@ -15487,6 +15603,275 @@ let wfInitialized = false;
     }
   };
 })();
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     Export Dialog Modal
+     ══════════════════════════════════════════════════════════════════ -->
+<div class="export-modal-overlay" id="exportOverlay" onclick="if(event.target===this)closeExportDialog()">
+  <div class="export-modal">
+    <button class="export-close" onclick="closeExportDialog()">&times;</button>
+    <h2>Export</h2>
+    <div class="export-subtitle" id="exportSubtitle">Workflow Canvas</div>
+    <div style="font-size:13px;color:var(--text-muted);margin-bottom:8px;">Format</div>
+    <div class="export-format-chips" id="exportFormatChips"></div>
+    <div class="export-preview" id="exportPreview" style="display:none;"></div>
+    <div class="export-actions">
+      <button onclick="exportToClipboard()">Copy to Clipboard</button>
+      <button class="export-primary" onclick="exportToFile()">Save File</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════════
+// Export System — Playground + Electron Integration
+// ══════════════════════════════════════════════════════════════════
+
+const EXPORT_FORMATS = {
+  workflow:  ['json', 'mermaid', 'markdown', 'png', 'svg', 'clipboard'],
+  search:   ['json', 'jsonl', 'csv', 'markdown', 'clipboard'],
+  chat:     ['json', 'markdown', 'pdf', 'clipboard'],
+  benchmark:['json', 'csv', 'markdown', 'png', 'svg', 'clipboard'],
+  explore:  ['json', 'png', 'svg'],
+};
+
+const FORMAT_LABELS = {
+  json: 'JSON', jsonl: 'JSONL', csv: 'CSV', markdown: 'Markdown',
+  mermaid: 'Mermaid', svg: 'SVG', png: 'PNG', pdf: 'PDF', clipboard: 'Clipboard',
+};
+
+const FORMAT_EXTS = {
+  json: '.json', jsonl: '.jsonl', csv: '.csv', markdown: '.md',
+  mermaid: '.mmd', svg: '.svg', png: '.png', pdf: '.pdf',
+};
+
+const CONTEXT_LABELS = {
+  workflow: 'Workflow Canvas', search: 'Search Results',
+  chat: 'Chat Session', benchmark: 'Benchmark Results', explore: 'Explore Visualization',
+};
+
+let _exportContext = null;
+let _exportFormat = 'json';
+
+function openExportDialog(context) {
+  _exportContext = context;
+  const formats = EXPORT_FORMATS[context] || ['json'];
+  _exportFormat = formats[0];
+
+  document.getElementById('exportSubtitle').textContent = CONTEXT_LABELS[context] || context;
+
+  // Build format chips
+  const container = document.getElementById('exportFormatChips');
+  container.innerHTML = formats.filter(f => f !== 'clipboard').map(f =>
+    `<button class="export-format-chip${f === _exportFormat ? ' active' : ''}" data-fmt="${f}" onclick="selectExportFormat('${f}')">${FORMAT_LABELS[f]}</button>`
+  ).join('');
+
+  updateExportPreview();
+  document.getElementById('exportOverlay').classList.add('open');
+}
+
+function closeExportDialog() {
+  document.getElementById('exportOverlay').classList.remove('open');
+  _exportContext = null;
+}
+
+function selectExportFormat(fmt) {
+  _exportFormat = fmt;
+  document.querySelectorAll('.export-format-chip').forEach(c => c.classList.toggle('active', c.dataset.fmt === fmt));
+  updateExportPreview();
+}
+
+function updateExportPreview() {
+  const preview = document.getElementById('exportPreview');
+  const binaryFormats = ['png', 'svg', 'pdf'];
+
+  if (binaryFormats.includes(_exportFormat)) {
+    preview.style.display = 'block';
+    preview.textContent = `[${FORMAT_LABELS[_exportFormat]} will be generated on export]`;
+    return;
+  }
+
+  try {
+    const data = getExportData(_exportContext);
+    if (!data) { preview.style.display = 'none'; return; }
+
+    // Generate preview via server API
+    const body = JSON.stringify({ format: _exportFormat, data, options: {} });
+    fetch('/api/export/' + _exportContext, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body })
+      .then(r => r.text())
+      .then(text => {
+        preview.style.display = 'block';
+        preview.textContent = text.length > 2000 ? text.slice(0, 2000) + '\n...' : text;
+      })
+      .catch(() => { preview.style.display = 'none'; });
+  } catch { preview.style.display = 'none'; }
+}
+
+function getExportData(context) {
+  switch (context) {
+    case 'workflow':
+      return typeof wfState !== 'undefined' && wfState.activeWorkflow ? wfState.activeWorkflow : null;
+    case 'search':
+      return window._lastSearchResults || null;
+    case 'chat':
+      return window._chatExportData || null;
+    case 'benchmark':
+      return window._lastBenchmarkResults || null;
+    default:
+      return null;
+  }
+}
+
+async function exportToFile() {
+  const data = getExportData(_exportContext);
+  if (!data) { showExportSnack('Nothing to export'); return; }
+
+  try {
+    const body = JSON.stringify({ format: _exportFormat, data, options: {} });
+    const resp = await fetch('/api/export/' + _exportContext, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body,
+    });
+
+    const filename = resp.headers.get('content-disposition')?.match(/filename="(.+)"/)?.[1]
+      || `export${FORMAT_EXTS[_exportFormat] || '.txt'}`;
+
+    const isBinary = ['png', 'pdf'].includes(_exportFormat);
+
+    // Electron: use native save dialog
+    if (window.vai && window.vai.export) {
+      let content;
+      if (isBinary) {
+        const buf = await resp.arrayBuffer();
+        content = btoa(String.fromCharCode(...new Uint8Array(buf)));
+      } else {
+        content = await resp.text();
+      }
+
+      const filters = [{ name: FORMAT_LABELS[_exportFormat], extensions: [FORMAT_EXTS[_exportFormat]?.slice(1) || '*'] }];
+      const result = await window.vai.export.saveFile({ content, filename, filters, isBinary });
+      if (result && result.success) {
+        showExportSnack(`Saved to ${result.filePath}`);
+        closeExportDialog();
+      }
+    } else {
+      // Browser: download via blob
+      const blob = await resp.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showExportSnack(`Downloaded ${filename}`);
+      closeExportDialog();
+    }
+  } catch (err) {
+    showExportSnack('Export failed: ' + err.message);
+  }
+}
+
+async function exportToClipboard() {
+  const data = getExportData(_exportContext);
+  if (!data) { showExportSnack('Nothing to export'); return; }
+
+  try {
+    // Use a text-friendly format for clipboard
+    const clipFormat = ['png', 'svg', 'pdf'].includes(_exportFormat) ? 'json' : _exportFormat;
+    const body = JSON.stringify({ format: clipFormat, data, options: {} });
+    const resp = await fetch('/api/export/' + _exportContext, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body,
+    });
+    const text = await resp.text();
+
+    if (window.vai && window.vai.export) {
+      await window.vai.export.copyToClipboard({ content: text, type: 'text' });
+    } else {
+      await navigator.clipboard.writeText(text);
+    }
+    showExportSnack('Copied to clipboard');
+    closeExportDialog();
+  } catch (err) {
+    showExportSnack('Copy failed: ' + err.message);
+  }
+}
+
+function showExportSnack(msg) {
+  const existing = document.querySelector('.export-snack');
+  if (existing) existing.remove();
+  const el = document.createElement('div');
+  el.className = 'export-snack';
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+
+// ── Keyboard shortcut: ⌘E / Ctrl+E ──
+document.addEventListener('keydown', (e) => {
+  if ((e.metaKey || e.ctrlKey) && e.key === 'e' && !e.shiftKey) {
+    e.preventDefault();
+    const overlay = document.getElementById('exportOverlay');
+    if (overlay.classList.contains('open')) {
+      closeExportDialog();
+    } else {
+      // Detect current tab context
+      const activeTab = document.querySelector('.tab-btn.active');
+      const tab = activeTab?.dataset?.tab;
+      const contextMap = {
+        workflows: 'workflow', search: 'search', chat: 'chat',
+        benchmark: 'benchmark', explore: 'explore',
+      };
+      const context = contextMap[tab];
+      if (context && getExportData(context)) {
+        openExportDialog(context);
+      }
+    }
+  }
+});
+
+// ── Electron menu trigger ──
+if (window.vai && window.vai.export && window.vai.export.onTrigger) {
+  window.vai.export.onTrigger(() => {
+    const activeTab = document.querySelector('.tab-btn.active');
+    const tab = activeTab?.dataset?.tab;
+    const contextMap = {
+      workflows: 'workflow', search: 'search', chat: 'chat',
+      benchmark: 'benchmark', explore: 'explore',
+    };
+    const context = contextMap[tab];
+    if (context) openExportDialog(context);
+  });
+}
+
+// ── Show export buttons when data becomes available ──
+// Hooks into existing search/chat/benchmark result handlers
+
+// Search: show export btn after results arrive
+const _origDoSearch = typeof doSearch === 'function' ? doSearch : null;
+if (_origDoSearch) {
+  // We patch via a MutationObserver on the result container instead
+}
+const searchResultEl = document.getElementById('searchResult');
+if (searchResultEl) {
+  new MutationObserver(() => {
+    const btn = document.getElementById('searchExportBtn');
+    if (btn && searchResultEl.children.length > 0) btn.style.display = '';
+  }).observe(searchResultEl, { childList: true });
+}
+
+// Chat: show export btn after first message
+const chatMessagesEl = document.getElementById('chatMessages');
+if (chatMessagesEl) {
+  new MutationObserver(() => {
+    const btn = document.getElementById('chatExportBtn');
+    const msgs = chatMessagesEl.querySelectorAll('.chat-message:not(.system-msg)');
+    if (btn) btn.style.display = msgs.length > 0 ? '' : 'none';
+  }).observe(chatMessagesEl, { childList: true });
+}
 </script>
 
 </body>
