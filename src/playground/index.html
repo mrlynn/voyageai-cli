@@ -5137,6 +5137,114 @@ select:focus { outline: none; border-color: var(--accent); }
 .command-palette-badge.explainer { background: rgba(102, 187, 106, 0.2); color: #66BB6A; }
 .command-palette-badge.recent { background: rgba(158, 158, 158, 0.2); color: #9E9E9E; }
 
+/* Sub-palette header with back arrow */
+.command-palette-header {
+  display: flex;
+  align-items: center;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.command-palette-back {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px;
+  margin-right: 8px;
+  border-radius: 4px;
+  transition: all 0.1s;
+}
+
+.command-palette-back:hover {
+  background: rgba(0, 212, 170, 0.12);
+  color: var(--accent);
+}
+
+.command-palette-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+/* Preview pane */
+.command-palette-with-preview {
+  display: flex;
+}
+
+.command-palette-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.command-palette-preview {
+  width: 240px;
+  border-left: 1px solid var(--border);
+  background: var(--bg-surface);
+  flex-shrink: 0;
+}
+
+.command-palette-preview-content {
+  padding: 16px;
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.4;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.command-palette-preview-title {
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+
+.command-palette-preview-description {
+  margin-bottom: 12px;
+}
+
+.command-palette-preview-steps {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.command-palette-preview-steps li {
+  padding: 2px 0;
+  position: relative;
+  padding-left: 12px;
+}
+
+.command-palette-preview-steps li::before {
+  content: '•';
+  position: absolute;
+  left: 0;
+  color: var(--accent);
+}
+
+/* Transition effects */
+.command-palette-results-transition {
+  opacity: 1;
+  transition: opacity 0.15s ease;
+}
+
+.command-palette-results-transition.fade-out {
+  opacity: 0;
+}
+
+/* Recent items clock icon */
+.command-palette-item.recent .command-palette-icon::before {
+  content: '⏱';
+}
+
+/* Hide preview on narrow viewports */
+@media (max-width: 800px) {
+  .command-palette-preview {
+    display: none;
+  }
+}
+
 .command-palette-footer {
   padding: 10px 16px;
   border-top: 1px solid var(--border);
@@ -15878,6 +15986,12 @@ let wfInitialized = false;
      ══════════════════════════════════════════════════════════════════ -->
 <div class="command-palette-overlay" id="commandPaletteOverlay" onclick="if(event.target===this)closeCommandPalette()">
   <div class="command-palette">
+    <!-- Sub-palette header (hidden by default) -->
+    <div class="command-palette-header" id="commandPaletteHeader" style="display: none;">
+      <button class="command-palette-back" id="commandPaletteBack" onclick="goBackToMainPalette()">←</button>
+      <div class="command-palette-title" id="commandPaletteTitle"></div>
+    </div>
+    
     <input 
       type="text" 
       class="command-palette-input" 
@@ -15891,11 +16005,23 @@ let wfInitialized = false;
       aria-label="Command palette search"
       aria-autocomplete="list"
     />
-    <div class="command-palette-results" id="commandPaletteResults" role="listbox" aria-label="Commands">
-      <div class="command-palette-empty">
-        Press ⌘K to open • Type to search • ↑↓ to navigate • ⏎ to execute
+    
+    <div class="command-palette-with-preview">
+      <div class="command-palette-main">
+        <div class="command-palette-results" id="commandPaletteResults" role="listbox" aria-label="Commands">
+          <div class="command-palette-empty">
+            Press ⌘K to open • Type to search • ↑↓ to navigate • ⏎ to execute
+          </div>
+        </div>
+      </div>
+      
+      <!-- Preview pane (shown only for certain items on wide viewports) -->
+      <div class="command-palette-preview" id="commandPalettePreview" style="display: none;">
+        <div class="command-palette-preview-content" id="commandPalettePreviewContent">
+        </div>
       </div>
     </div>
+    
     <div class="command-palette-footer">
       <span><kbd class="command-palette-key">↑</kbd><kbd class="command-palette-key">↓</kbd> Navigate</span>
       <span><kbd class="command-palette-key">⏎</kbd> Select</span>
@@ -16664,7 +16790,7 @@ if (chatMessagesEl) {
 }
 
 // ══════════════════════════════════════════════════════════════════
-// Command Palette Implementation
+// Command Palette Implementation — Phase 2
 // ══════════════════════════════════════════════════════════════════
 
 // Fuzzy search algorithm - from spec section 4.1
@@ -16701,7 +16827,7 @@ function fuzzyScore(query, text) {
   return Math.max(0, 0.8 - gapPenalty + wordBoundaryBonus);
 }
 
-// Search registry function - from spec section 4.1
+// Search registry function - enhanced with recency bonus
 function searchRegistry(query, registry, recentIds = []) {
   if (!query.trim()) {
     // Empty query: show recent items first, then suggested actions
@@ -16727,8 +16853,113 @@ function searchRegistry(query, registry, recentIds = []) {
     .slice(0, 12); // Max 12 visible results
 }
 
-// Command Registry - all static items from spec section 3.3
-const commandRegistry = [
+// Get current context for contextual commands
+function getCommandPaletteContext() {
+  const activeTab = document.querySelector('.tab-btn.active')?.dataset?.tab || 'home';
+  return {
+    activeTab,
+    hasResults: true, // Could be enhanced to check actual data
+    hasActiveWorkflow: activeTab === 'workflows' && wfState?.activeWorkflow,
+    hasActiveChatSession: activeTab === 'chat',
+    isConnected: true // Could check actual connection state
+  };
+}
+
+// Generate dynamic workflow commands from wfState
+function generateWorkflowCommands() {
+  const commands = [];
+  
+  if (!wfState) return commands;
+  
+  // Built-in workflows
+  if (wfState.workflows) {
+    wfState.workflows.forEach(wf => {
+      commands.push({
+        id: `workflow-${wf.name.toLowerCase().replace(/\s+/g, '-')}`,
+        label: `Run "${wf.name}"`,
+        description: wf.description || 'Built-in workflow',
+        category: 'workflow',
+        keywords: [...(wf.tags || []), ...(wf.category ? [wf.category] : []), 'builtin', 'template'],
+        icon: '🔧',
+        priority: 3,
+        workflowData: wf,
+        execute: () => {
+          switchTab('workflows');
+          // Could load the workflow in the canvas
+          if (typeof loadWorkflow === 'function') {
+            loadWorkflow(wf);
+          }
+        }
+      });
+    });
+  }
+  
+  // Community workflows
+  if (wfState.community) {
+    wfState.community.forEach(wf => {
+      commands.push({
+        id: `workflow-community-${wf.name.toLowerCase().replace(/\s+/g, '-')}`,
+        label: `Run "${wf.name}"`,
+        description: wf.description || 'Community workflow',
+        category: 'workflow',
+        keywords: [...(wf.tags || []), ...(wf.category ? [wf.category] : []), 'community', 'external'],
+        icon: '🌐',
+        priority: 4,
+        workflowData: wf,
+        execute: () => {
+          switchTab('workflows');
+          if (typeof loadWorkflow === 'function') {
+            loadWorkflow(wf);
+          }
+        }
+      });
+    });
+  }
+  
+  return commands;
+}
+
+// Generate contextual commands based on active tab
+function generateContextualCommands() {
+  const context = getCommandPaletteContext();
+  const commands = [];
+  
+  // Export commands based on active tab
+  const exportCommands = [
+    { id: 'action-export-mermaid', label: 'Export as Mermaid', description: 'Export workflow as Mermaid diagram', when: ctx => ctx.activeTab === 'workflows', icon: '📊' },
+    { id: 'action-export-png', label: 'Export as PNG', description: 'Export current view as PNG image', when: ctx => ['workflows', 'benchmark', 'explore'].includes(ctx.activeTab), icon: '🖼️' },
+    { id: 'action-export-svg', label: 'Export as SVG', description: 'Export current view as SVG', when: ctx => ['workflows', 'benchmark', 'explore'].includes(ctx.activeTab), icon: '🎨' },
+    { id: 'action-export-csv', label: 'Export as CSV', description: 'Export results as CSV', when: ctx => ['search', 'benchmark'].includes(ctx.activeTab), icon: '📄' },
+    { id: 'action-export-markdown', label: 'Export as Markdown', description: 'Export current view as Markdown', when: ctx => ['workflows', 'search', 'chat'].includes(ctx.activeTab), icon: '📝' },
+    { id: 'action-export-pdf', label: 'Export as PDF', description: 'Export chat session as PDF', when: ctx => ctx.activeTab === 'chat', icon: '📋' },
+    { id: 'action-validate-workflow', label: 'Validate Workflow', description: 'Check workflow definition for errors', when: ctx => ctx.activeTab === 'workflows', icon: '✅' },
+    { id: 'action-dry-run', label: 'Dry Run Workflow', description: 'Preview execution plan without running', when: ctx => ctx.activeTab === 'workflows', icon: '🔍' }
+  ];
+  
+  exportCommands.forEach(cmd => {
+    if (!cmd.when || cmd.when(context)) {
+      commands.push({
+        ...cmd,
+        category: 'action',
+        keywords: ['export', 'save', cmd.label.toLowerCase().split(' ')].flat(),
+        priority: 3,
+        execute: () => {
+          // Generic export handler - could be enhanced
+          if (typeof openExportDialog === 'function') {
+            openExportDialog(context.activeTab);
+          } else {
+            alert(`Export as ${cmd.label.split(' ')[2]} not yet implemented`);
+          }
+        }
+      });
+    }
+  });
+  
+  return commands;
+}
+
+// Static command registry
+const staticCommandRegistry = [
   // Navigation Commands
   { id: 'nav-home', label: 'Home', description: 'Dashboard, announcements, marketplace', category: 'navigation', keywords: ['dashboard', 'landing', 'start'], icon: '🏠', shortcut: '⌘1', priority: 1, execute: () => switchTab('home') },
   { id: 'nav-embed', label: 'Embed', description: 'Generate and inspect embeddings', category: 'navigation', keywords: ['embedding', 'generate', 'vector'], icon: '⚡', shortcut: '⌘2', priority: 1, execute: () => switchTab('embed') },
@@ -16744,47 +16975,264 @@ const commandRegistry = [
   { id: 'nav-settings', label: 'Settings', description: 'App configuration', category: 'navigation', keywords: ['preferences', 'config', 'options'], icon: '⚙️', shortcut: '⌘,', priority: 2, execute: () => switchTab('settings') },
 
   // Action Commands
-  { id: 'action-export', label: 'Export...', description: 'Export the current view', category: 'action', keywords: ['export', 'share', 'save', 'download'], icon: '📤', shortcut: '⌘E', priority: 3, execute: () => { const activeTab = document.querySelector('.tab-btn.active'); const tab = activeTab?.dataset?.tab; const contextMap = { workflows: 'workflow', search: 'search', chat: 'chat', benchmark: 'benchmark', explore: 'explore' }; const context = contextMap[tab]; if (context && getExportData && getExportData(context)) { openExportDialog(context); } else { alert('Nothing to export in current view'); } }},
-  { id: 'action-toggle-theme', label: 'Toggle Dark/Light Mode', description: 'Switch between dark and light themes', category: 'action', keywords: ['theme', 'dark', 'light', 'mode'], icon: '🌙', priority: 4, execute: () => { const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark'; document.documentElement.setAttribute('data-theme', currentTheme === 'dark' ? 'light' : 'dark'); }},
+  { id: 'action-export', label: 'Export...', description: 'Export the current view', category: 'action', keywords: ['export', 'share', 'save', 'download'], icon: '📤', shortcut: '⌘E', priority: 3, 
+    execute: () => {
+      const context = getCommandPaletteContext();
+      if (typeof openExportDialog === 'function') {
+        openExportDialog(context.activeTab);
+      } else {
+        alert('Export dialog not available');
+      }
+    }
+  },
+  
+  // Sub-palette actions
+  { id: 'action-run-workflow', label: 'Run Workflow...', description: 'Select and run a workflow', category: 'action', keywords: ['workflow', 'run', 'execute', 'pipeline'], icon: '🔄', priority: 2, 
+    execute: () => showWorkflowSubPalette()
+  },
+  { id: 'action-resume-chat', label: 'Resume Chat Session...', description: 'Continue a previous chat', category: 'action', keywords: ['chat', 'resume', 'continue', 'history'], icon: '💬', priority: 2, 
+    execute: () => showChatSessionSubPalette()
+  },
+  
+  { id: 'action-toggle-theme', label: 'Toggle Dark/Light Mode', description: 'Switch between dark and light themes', category: 'action', keywords: ['theme', 'dark', 'light', 'mode'], icon: '🌙', priority: 4, 
+    execute: () => {
+      const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', currentTheme === 'dark' ? 'light' : 'dark');
+    }
+  },
   
   // Settings Commands
-  { id: 'setting-api-key', label: 'Configure API Key', description: 'Set your Voyage AI API key', category: 'setting', keywords: ['api', 'key', 'voyage', 'auth'], icon: '🔐', priority: 6, execute: () => { switchTab('settings'); setTimeout(() => switchSettingsSection('api'), 100); }},
-  { id: 'setting-mongodb-uri', label: 'Configure MongoDB URI', description: 'Set your MongoDB connection string', category: 'setting', keywords: ['mongo', 'mongodb', 'uri', 'connection', 'database'], icon: '🍃', priority: 6, execute: () => { switchTab('settings'); setTimeout(() => switchSettingsSection('connection'), 100); }},
-  { id: 'setting-dark-mode', label: 'Toggle Dark Mode', description: 'Switch between dark and light themes', category: 'setting', keywords: ['dark', 'light', 'theme', 'mode', 'appearance'], icon: '🌙', priority: 4, execute: () => { const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark'; document.documentElement.setAttribute('data-theme', currentTheme === 'dark' ? 'light' : 'dark'); }},
+  { id: 'setting-api-key', label: 'Configure API Key', description: 'Set your Voyage AI API key', category: 'setting', keywords: ['api', 'key', 'voyage', 'auth'], icon: '🔐', priority: 6, 
+    execute: () => {
+      switchTab('settings');
+      setTimeout(() => {
+        if (typeof switchSettingsSection === 'function') switchSettingsSection('api');
+      }, 100);
+    }
+  },
+  { id: 'setting-mongodb-uri', label: 'Configure MongoDB URI', description: 'Set your MongoDB connection string', category: 'setting', keywords: ['mongo', 'mongodb', 'uri', 'connection', 'database'], icon: '🍃', priority: 6, 
+    execute: () => {
+      switchTab('settings');
+      setTimeout(() => {
+        if (typeof switchSettingsSection === 'function') switchSettingsSection('connection');
+      }, 100);
+    }
+  },
 
-  // Explainer Commands - all 31 topics from explanations.js
-  { id: 'explain-embeddings', label: 'Learn: Embeddings', description: 'What are vector embeddings?', category: 'explainer', keywords: ['embeddings', 'vectors', 'what are', 'introduction'], icon: '📚', priority: 7, execute: () => { switchTab('explore'); /* Could open specific explainer modal */ }},
-  { id: 'explain-reranking', label: 'Learn: Reranking', description: 'Two-stage retrieval with rerankers', category: 'explainer', keywords: ['reranking', 'two-stage', 'retrieval', 'precision'], icon: '📚', priority: 7, execute: () => { switchTab('explore'); }},
-  { id: 'explain-vector-search', label: 'Learn: Vector Search', description: 'MongoDB Atlas Vector Search', category: 'explainer', keywords: ['vector', 'search', 'atlas', 'similarity', 'knn'], icon: '📚', priority: 7, execute: () => { switchTab('explore'); }},
-  { id: 'explain-rag', label: 'Learn: RAG Pipelines', description: 'Retrieval-Augmented Generation', category: 'explainer', keywords: ['rag', 'retrieval', 'augmented', 'generation', 'pipeline'], icon: '📚', priority: 7, execute: () => { switchTab('explore'); }},
-  { id: 'explain-cosine-similarity', label: 'Learn: Cosine Similarity', description: 'Measuring vector distance', category: 'explainer', keywords: ['cosine', 'similarity', 'distance', 'comparison'], icon: '📚', priority: 7, execute: () => { switchTab('explore'); }},
-  { id: 'explain-two-stage-retrieval', label: 'Learn: Two-Stage Retrieval', description: 'The embed → search → rerank pattern', category: 'explainer', keywords: ['two-stage', 'retrieval', 'embed', 'rerank', 'pattern'], icon: '📚', priority: 7, execute: () => { switchTab('explore'); }},
-  { id: 'explain-input-type', label: 'Learn: Input Type', description: 'Query vs document embedding types', category: 'explainer', keywords: ['input-type', 'query', 'document', 'asymmetric'], icon: '📚', priority: 7, execute: () => { switchTab('explore'); }},
-  { id: 'explain-models', label: 'Learn: Voyage AI Models', description: 'Choosing the right model', category: 'explainer', keywords: ['models', 'voyage-4', 'large', 'lite', 'domain'], icon: '📚', priority: 7, execute: () => { switchTab('explore'); }},
-  { id: 'explain-api-keys', label: 'Learn: API Keys', description: 'Managing API keys in Atlas', category: 'explainer', keywords: ['api-keys', 'atlas', 'authentication', 'management'], icon: '📚', priority: 7, execute: () => { switchTab('explore'); }},
-  { id: 'explain-api-access', label: 'Learn: API Access Methods', description: 'MongoDB Atlas vs. Voyage AI platform keys', category: 'explainer', keywords: ['api-access', 'mongodb', 'voyage', 'platform', 'endpoints'], icon: '📚', priority: 7, execute: () => { switchTab('explore'); }},
-  { id: 'explain-batch-processing', label: 'Learn: Batch Processing', description: 'Embedding large datasets efficiently', category: 'explainer', keywords: ['batch-processing', 'large', 'datasets', 'efficiency'], icon: '📚', priority: 7, execute: () => { switchTab('explore'); }},
-  { id: 'explain-quantization', label: 'Learn: Quantization', description: 'Reduce storage costs with lower-precision embeddings', category: 'explainer', keywords: ['quantization', 'int8', 'ubinary', 'compression', 'storage'], icon: '📚', priority: 7, execute: () => { switchTab('explore'); }},
-  { id: 'explain-benchmarking', label: 'Learn: Benchmarking & Model Selection', description: 'How to choose the right model for your use case', category: 'explainer', keywords: ['benchmarking', 'model', 'selection', 'comparison'], icon: '📚', priority: 7, execute: () => { switchTab('explore'); }},
-  { id: 'explain-mixture-of-experts', label: 'Learn: Mixture-of-Experts (MoE)', description: 'How voyage-4-large achieves SOTA quality at 40% lower cost', category: 'explainer', keywords: ['moe', 'mixture', 'experts', 'architecture', 'sparse'], icon: '📚', priority: 7, execute: () => { switchTab('explore'); }},
-  { id: 'explain-shared-embedding-space', label: 'Learn: Shared Embedding Space', description: 'How Voyage 4 models produce compatible embeddings', category: 'explainer', keywords: ['shared', 'space', 'cross-model', 'asymmetric', 'compatible'], icon: '📚', priority: 7, execute: () => { switchTab('explore'); }},
-  { id: 'explain-rteb-benchmarks', label: 'Learn: RTEB Benchmark Scores', description: 'Retrieval quality scores across embedding providers', category: 'explainer', keywords: ['rteb', 'benchmark', 'ndcg', 'evaluation', 'quality'], icon: '📚', priority: 7, execute: () => { switchTab('explore'); }},
-  { id: 'explain-voyage-4-nano', label: 'Learn: Voyage 4 Nano', description: 'Free, local-first embeddings with shared space compatibility', category: 'explainer', keywords: ['nano', 'free', 'open-weight', 'huggingface', 'local'], icon: '📚', priority: 7, execute: () => { switchTab('explore'); }},
-  { id: 'explain-multimodal-embeddings', label: 'Learn: Multimodal Embeddings', description: 'Embed images and text into the same vector space', category: 'explainer', keywords: ['multimodal', 'images', 'text', 'cross-modal', 'vision'], icon: '📚', priority: 7, execute: () => { switchTab('explore'); }},
-  { id: 'explain-cross-modal-search', label: 'Learn: Cross-Modal Search', description: 'Search images with text and text with images', category: 'explainer', keywords: ['cross-modal', 'search', 'images', 'text', 'unified'], icon: '📚', priority: 7, execute: () => { switchTab('explore'); }},
-  { id: 'explain-modality-gap', label: 'Learn: The Modality Gap', description: 'Why CLIP-style models fail at mixed search — and how Voyage solves it', category: 'explainer', keywords: ['modality-gap', 'clip', 'mixed', 'search', 'voyage'], icon: '📚', priority: 7, execute: () => { switchTab('explore'); }},
-  { id: 'explain-multimodal-rag', label: 'Learn: Multimodal RAG', description: 'Build RAG pipelines over documents with images, charts, and tables', category: 'explainer', keywords: ['multimodal-rag', 'documents', 'images', 'charts', 'tables'], icon: '📚', priority: 7, execute: () => { switchTab('explore'); }},
+  // Explainer Commands - key topics
+  { id: 'explain-embeddings', label: 'Learn: Embeddings', description: 'What are vector embeddings?', category: 'explainer', keywords: ['embeddings', 'vectors', 'what are', 'introduction'], icon: '📚', priority: 7, execute: () => switchTab('explore') },
+  { id: 'explain-reranking', label: 'Learn: Reranking', description: 'Two-stage retrieval with rerankers', category: 'explainer', keywords: ['reranking', 'two-stage', 'retrieval', 'precision'], icon: '📚', priority: 7, execute: () => switchTab('explore') },
+  { id: 'explain-vector-search', label: 'Learn: Vector Search', description: 'MongoDB Atlas Vector Search', category: 'explainer', keywords: ['vector', 'search', 'atlas', 'similarity', 'knn'], icon: '📚', priority: 7, execute: () => switchTab('explore') },
+  { id: 'explain-rag', label: 'Learn: RAG Pipelines', description: 'Retrieval-Augmented Generation', category: 'explainer', keywords: ['rag', 'retrieval', 'augmented', 'generation', 'pipeline'], icon: '📚', priority: 7, execute: () => switchTab('explore') },
+  { id: 'explain-models', label: 'Learn: Voyage AI Models', description: 'Choosing the right model', category: 'explainer', keywords: ['models', 'voyage-4', 'large', 'lite', 'domain'], icon: '📚', priority: 7, execute: () => switchTab('explore') },
+  { id: 'explain-quantization', label: 'Learn: Quantization', description: 'Reduce storage costs with lower-precision embeddings', category: 'explainer', keywords: ['quantization', 'int8', 'ubinary', 'compression', 'storage'], icon: '📚', priority: 7, execute: () => switchTab('explore') }
 ];
 
-// Command Palette State
+// Build complete command registry (static + dynamic)
+function buildCommandRegistry() {
+  return [
+    ...staticCommandRegistry,
+    ...generateWorkflowCommands(),
+    ...generateContextualCommands()
+  ];
+}
+
+// Enhanced recent items tracking
+let recentItemsTracker = {
+  items: [], // Array of { id, action, timestamp, details }
+  
+  addItem(id, action, details = {}) {
+    this.items = this.items.filter(item => item.id !== id); // Remove duplicate
+    this.items.unshift({ id, action, timestamp: Date.now(), details });
+    this.items = this.items.slice(0, 10); // Keep last 10
+  },
+  
+  getRecentIds() {
+    return this.items.map(item => item.id);
+  },
+  
+  clear() {
+    this.items = [];
+  }
+};
+
+// Track various user actions
+function trackUserAction(type, details) {
+  const timestamp = Date.now();
+  let id, action;
+  
+  switch (type) {
+    case 'tab-navigation':
+      id = `nav-${details.tab}`;
+      action = `Visited ${details.tab}`;
+      break;
+    case 'workflow-run':
+      id = `workflow-${details.workflowName.toLowerCase().replace(/\s+/g, '-')}`;
+      action = `Ran "${details.workflowName}"`;
+      break;
+    case 'export':
+      id = `action-export-${details.format}`;
+      action = `Exported as ${details.format.toUpperCase()}`;
+      break;
+    case 'chat-session':
+      id = `chat-session-${details.sessionId}`;
+      action = `Chat session`;
+      break;
+    default:
+      return;
+  }
+  
+  recentItemsTracker.addItem(id, action, details);
+}
+
+// Command Palette State - enhanced for Phase 2
 let commandPaletteState = {
   isOpen: false,
   query: '',
   selectedIndex: 0,
   categoryFilter: null,
   results: [],
-  recentCommands: []
+  recentCommands: [],
+  subPalette: null, // { type: 'workflow' | 'chat', items: [...] }
+  previewData: null
 };
+
+// Sub-palette functions
+function showWorkflowSubPalette() {
+  const header = document.getElementById('commandPaletteHeader');
+  const title = document.getElementById('commandPaletteTitle');
+  const input = document.getElementById('commandPaletteInput');
+  
+  header.style.display = 'flex';
+  title.textContent = 'Select a workflow';
+  input.placeholder = 'Type to filter workflows...';
+  
+  const workflows = generateWorkflowCommands();
+  commandPaletteState.subPalette = { type: 'workflow', items: workflows };
+  commandPaletteState.query = '';
+  commandPaletteState.selectedIndex = 0;
+  
+  input.value = '';
+  renderCommandPaletteResults();
+}
+
+function showChatSessionSubPalette() {
+  const header = document.getElementById('commandPaletteHeader');
+  const title = document.getElementById('commandPaletteTitle');
+  const input = document.getElementById('commandPaletteInput');
+  
+  header.style.display = 'flex';
+  title.textContent = 'Resume chat session';
+  input.placeholder = 'Type to filter chat sessions...';
+  
+  // Generate mock chat sessions (could be enhanced to use real data)
+  const chatSessions = [
+    { id: 'chat-session-1', label: 'Legal Document Analysis', description: 'Last message: "Can you summarize the key terms?"', category: 'recent', icon: '💬', priority: 1, 
+      execute: () => { switchTab('chat'); /* Load session */ } },
+    { id: 'chat-session-2', label: 'Research Query', description: 'Last message: "What are the latest developments?"', category: 'recent', icon: '💬', priority: 1,
+      execute: () => { switchTab('chat'); /* Load session */ } },
+    { id: 'chat-session-3', label: 'Code Review', description: 'Last message: "Please explain this function."', category: 'recent', icon: '💬', priority: 1,
+      execute: () => { switchTab('chat'); /* Load session */ } }
+  ];
+  
+  commandPaletteState.subPalette = { type: 'chat', items: chatSessions };
+  commandPaletteState.query = '';
+  commandPaletteState.selectedIndex = 0;
+  
+  input.value = '';
+  renderCommandPaletteResults();
+}
+
+function goBackToMainPalette() {
+  const header = document.getElementById('commandPaletteHeader');
+  const input = document.getElementById('commandPaletteInput');
+  
+  header.style.display = 'none';
+  input.placeholder = 'Type a command or search...';
+  
+  commandPaletteState.subPalette = null;
+  commandPaletteState.query = '';
+  commandPaletteState.selectedIndex = 0;
+  
+  input.value = '';
+  renderCommandPaletteResults();
+}
+
+// Preview functions
+function updatePreviewPane(selectedItem) {
+  const preview = document.getElementById('commandPalettePreview');
+  const previewContent = document.getElementById('commandPalettePreviewContent');
+  
+  // Hide preview on narrow viewports
+  if (window.innerWidth <= 800) {
+    preview.style.display = 'none';
+    return;
+  }
+  
+  if (!selectedItem) {
+    preview.style.display = 'none';
+    return;
+  }
+  
+  let content = '';
+  
+  switch (selectedItem.category) {
+    case 'workflow':
+      preview.style.display = 'block';
+      content = `
+        <div class="command-palette-preview-title">${selectedItem.label}</div>
+        <div class="command-palette-preview-description">${selectedItem.description}</div>
+        ${selectedItem.workflowData ? `
+          <div class="command-palette-preview-steps">
+            <li>Input processing</li>
+            <li>Vector embedding</li>
+            <li>Search & retrieval</li>
+            <li>Output generation</li>
+          </div>
+        ` : ''}
+      `;
+      break;
+      
+    case 'explainer':
+      preview.style.display = 'block';
+      content = `
+        <div class="command-palette-preview-title">${selectedItem.label}</div>
+        <div class="command-palette-preview-description">${selectedItem.description}</div>
+        <div style="font-style: italic; color: var(--text-muted);">
+          Click to open detailed explanation and examples in the Explore tab.
+        </div>
+      `;
+      break;
+      
+    case 'recent':
+      if (selectedItem.id.startsWith('chat-session-')) {
+        preview.style.display = 'block';
+        content = `
+          <div class="command-palette-preview-title">${selectedItem.label}</div>
+          <div class="command-palette-preview-description">${selectedItem.description}</div>
+        `;
+      } else {
+        preview.style.display = 'none';
+      }
+      break;
+      
+    case 'setting':
+      preview.style.display = 'block';
+      content = `
+        <div class="command-palette-preview-title">${selectedItem.label}</div>
+        <div class="command-palette-preview-description">${selectedItem.description}</div>
+        <div style="font-style: italic; color: var(--text-muted); margin-top: 8px;">
+          Current: Not configured
+        </div>
+      `;
+      break;
+      
+    default:
+      preview.style.display = 'none';
+  }
+  
+  previewContent.innerHTML = content;
+}
 
 // Command Palette Functions
 function openCommandPalette() {
@@ -16794,6 +17242,11 @@ function openCommandPalette() {
   commandPaletteState.isOpen = true;
   commandPaletteState.query = '';
   commandPaletteState.selectedIndex = 0;
+  commandPaletteState.subPalette = null;
+  
+  // Reset to main palette view
+  document.getElementById('commandPaletteHeader').style.display = 'none';
+  input.placeholder = 'Type a command or search...';
   
   overlay.classList.add('open');
   input.value = '';
@@ -16807,6 +17260,9 @@ function closeCommandPalette() {
   
   commandPaletteState.isOpen = false;
   overlay.classList.remove('open');
+  
+  // Hide preview
+  document.getElementById('commandPalettePreview').style.display = 'none';
 }
 
 function toggleCommandPalette() {
@@ -16819,14 +17275,20 @@ function toggleCommandPalette() {
 
 function renderCommandPaletteResults() {
   const resultsContainer = document.getElementById('commandPaletteResults');
-  const { query, selectedIndex, categoryFilter } = commandPaletteState;
+  const { query, selectedIndex, categoryFilter, subPalette } = commandPaletteState;
   
-  let filteredRegistry = commandRegistry;
-  if (categoryFilter) {
-    filteredRegistry = commandRegistry.filter(item => item.category === categoryFilter);
+  let registry;
+  if (subPalette) {
+    registry = subPalette.items;
+  } else {
+    registry = buildCommandRegistry();
+    
+    if (categoryFilter) {
+      registry = registry.filter(item => item.category === categoryFilter);
+    }
   }
   
-  const results = searchRegistry(query, filteredRegistry, commandPaletteState.recentCommands);
+  const results = searchRegistry(query, registry, recentItemsTracker.getRecentIds());
   commandPaletteState.results = results;
   
   if (results.length === 0) {
@@ -16835,37 +17297,65 @@ function renderCommandPaletteResults() {
         ${query ? 'No commands matching "' + query + '"' : 'Type to search commands...'}
       </div>
     `;
+    updatePreviewPane(null);
     return;
   }
   
-  // Group results by category
-  const groupedResults = {};
-  results.forEach(item => {
-    if (!groupedResults[item.category]) {
-      groupedResults[item.category] = [];
-    }
-    groupedResults[item.category].push(item);
-  });
-  
+  // Group results by category for main palette only
   let html = '';
-  const categories = Object.keys(groupedResults);
   
-  categories.forEach((category, categoryIndex) => {
-    if (categories.length > 1 && !query) {
-      const categoryTitle = category.charAt(0).toUpperCase() + category.slice(1);
-      html += `<div class="command-palette-section-title">${categoryTitle}</div>`;
-    }
+  if (!subPalette && !query) {
+    // Show grouped sections for empty query in main palette
+    const groupedResults = {};
+    results.forEach(item => {
+      if (!groupedResults[item.category]) {
+        groupedResults[item.category] = [];
+      }
+      groupedResults[item.category].push(item);
+    });
     
-    groupedResults[category].forEach((item, itemIndex) => {
-      const globalIndex = results.indexOf(item);
-      const isSelected = globalIndex === selectedIndex;
+    const categories = Object.keys(groupedResults);
+    
+    categories.forEach((category, categoryIndex) => {
+      if (categories.length > 1) {
+        let categoryTitle = category.charAt(0).toUpperCase() + category.slice(1);
+        if (category === 'recent') categoryTitle = 'Recently Used';
+        html += `<div class="command-palette-section-title">${categoryTitle}</div>`;
+      }
+      
+      groupedResults[category].forEach((item) => {
+        const globalIndex = results.indexOf(item);
+        const isSelected = globalIndex === selectedIndex;
+        const isRecent = recentItemsTracker.getRecentIds().includes(item.id);
+        
+        html += `
+          <div class="command-palette-item ${isSelected ? 'selected' : ''} ${isRecent ? 'recent' : ''}" 
+               data-index="${globalIndex}"
+               role="option" 
+               aria-selected="${isSelected}">
+            <div class="command-palette-icon">${isRecent ? '⏱' : (item.icon || '•')}</div>
+            <div class="command-palette-content">
+              <div class="command-palette-label">${item.label}</div>
+              <div class="command-palette-description">${item.description}</div>
+            </div>
+            <div class="command-palette-badge ${item.category}">${item.category}</div>
+            ${item.shortcut ? `<div class="command-palette-key">${item.shortcut}</div>` : ''}
+          </div>
+        `;
+      });
+    });
+  } else {
+    // Flat list for sub-palettes or when searching
+    results.forEach((item, index) => {
+      const isSelected = index === selectedIndex;
+      const isRecent = recentItemsTracker.getRecentIds().includes(item.id);
       
       html += `
-        <div class="command-palette-item ${isSelected ? 'selected' : ''}" 
-             data-index="${globalIndex}"
+        <div class="command-palette-item ${isSelected ? 'selected' : ''} ${isRecent ? 'recent' : ''}" 
+             data-index="${index}"
              role="option" 
              aria-selected="${isSelected}">
-          <div class="command-palette-icon">${item.icon || '•'}</div>
+          <div class="command-palette-icon">${isRecent ? '⏱' : (item.icon || '•')}</div>
           <div class="command-palette-content">
             <div class="command-palette-label">${item.label}</div>
             <div class="command-palette-description">${item.description}</div>
@@ -16875,13 +17365,17 @@ function renderCommandPaletteResults() {
         </div>
       `;
     });
-  });
+  }
   
   resultsContainer.innerHTML = html;
   
+  // Update preview pane
+  const selectedItem = results[selectedIndex];
+  updatePreviewPane(selectedItem);
+  
   // Update ARIA attributes
   const input = document.getElementById('commandPaletteInput');
-  input.setAttribute('aria-activedescendant', results[selectedIndex] ? `command-item-${selectedIndex}` : '');
+  input.setAttribute('aria-activedescendant', selectedItem ? `command-item-${selectedIndex}` : '');
 }
 
 function executeSelectedCommand() {
@@ -16889,11 +17383,11 @@ function executeSelectedCommand() {
   const selectedCommand = results[selectedIndex];
   
   if (selectedCommand && selectedCommand.execute) {
-    // Add to recent commands
-    if (!commandPaletteState.recentCommands.includes(selectedCommand.id)) {
-      commandPaletteState.recentCommands.unshift(selectedCommand.id);
-      commandPaletteState.recentCommands = commandPaletteState.recentCommands.slice(0, 10);
-    }
+    // Add to recent commands using enhanced tracker
+    recentItemsTracker.addItem(selectedCommand.id, selectedCommand.label, { 
+      category: selectedCommand.category,
+      timestamp: Date.now()
+    });
     
     closeCommandPalette();
     
@@ -16909,12 +17403,16 @@ function executeSelectedCommand() {
 function handleCommandPaletteKeydown(e) {
   if (!commandPaletteState.isOpen) return;
   
-  const { results } = commandPaletteState;
+  const { results, subPalette } = commandPaletteState;
   
   switch (e.key) {
     case 'Escape':
       e.preventDefault();
-      closeCommandPalette();
+      if (subPalette) {
+        goBackToMainPalette();
+      } else {
+        closeCommandPalette();
+      }
       break;
       
     case 'ArrowDown':
@@ -16936,7 +17434,7 @@ function handleCommandPaletteKeydown(e) {
       
     case 'Tab':
       e.preventDefault();
-      // Category cycling could be implemented here
+      // Could implement category filtering here
       break;
   }
 }
@@ -16973,12 +17471,23 @@ document.getElementById('commandPaletteResults')?.addEventListener('click', (e) 
   }
 });
 
+// Hook into tab switching to track navigation
+const originalSwitchTab = window.switchTab || switchTab;
+if (typeof switchTab === 'function') {
+  window.switchTab = function(tabId) {
+    trackUserAction('tab-navigation', { tab: tabId });
+    return originalSwitchTab(tabId);
+  };
+}
+
 // Expose command palette globally
 window.commandPalette = {
   open: openCommandPalette,
   close: closeCommandPalette,
   toggle: toggleCommandPalette,
-  state: commandPaletteState
+  state: commandPaletteState,
+  trackAction: trackUserAction,
+  recentItems: recentItemsTracker
 };
 </script>
 
