@@ -350,6 +350,74 @@ body {
   flex-direction: column;
   overflow: hidden;
   z-index: 100;
+  transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1), min-width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.sidebar.collapsed {
+  width: 56px;
+  min-width: 56px;
+}
+.sidebar.collapsed .sidebar-title,
+.sidebar.collapsed .sidebar-nav-label,
+.sidebar.collapsed .sidebar-nav-divider,
+.sidebar.collapsed .status-label,
+.sidebar.collapsed .sidebar-bug-label,
+.sidebar.collapsed .sidebar-docs-link span,
+.sidebar.collapsed .sidebar-model-group,
+.sidebar.collapsed .sidebar-footer > div:last-child { display: none; }
+.sidebar.collapsed .tab-btn {
+  justify-content: center;
+  padding: 10px;
+  border-left-width: 2px;
+}
+.sidebar.collapsed .tab-btn span:not(.tab-btn-icon) { display: none; }
+.sidebar.collapsed .sidebar-settings-btn { display: none; }
+.sidebar.collapsed .sidebar-drag-region { justify-content: center; padding: 0; padding-top: 52px; }
+body:not(.is-electron) .sidebar.collapsed .sidebar-drag-region { padding-top: 16px; padding-bottom: 12px; }
+
+/* Sidebar collapse toggle */
+.sidebar-collapse-btn {
+  -webkit-app-region: no-drag;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  flex-shrink: 0;
+  font-size: 14px;
+  line-height: 1;
+}
+.sidebar-collapse-btn:hover { color: var(--text); background: rgba(255,255,255,0.06); }
+[data-theme="light"] .sidebar-collapse-btn:hover { background: rgba(0,0,0,0.04); }
+.sidebar.collapsed .sidebar-collapse-btn { transform: rotate(180deg); }
+
+/* Sidebar tooltip for collapsed mode */
+.sidebar.collapsed .tab-btn {
+  position: relative;
+}
+.sidebar.collapsed .tab-btn::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: calc(100% + 8px);
+  top: 50%;
+  transform: translateY(-50%);
+  background: #2d333b;
+  color: #e6edf3;
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s 0.15s;
+  z-index: 1000;
+}
+.sidebar.collapsed .tab-btn:hover::after {
+  opacity: 1;
 }
 
 .sidebar-drag-region {
@@ -4908,26 +4976,27 @@ select:focus { outline: none; border-color: var(--accent); }
   <div class="sidebar-drag-region">
     <img class="sidebar-logo" id="sidebarLogo" src="/icons/dark/64.png" alt="Vai">
     <span class="sidebar-title">Vai</span>
+    <button class="sidebar-collapse-btn" id="sidebarCollapseBtn" onclick="toggleSidebarCollapse()" title="Toggle sidebar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
     <button class="sidebar-settings-btn" data-tab="settings" title="Settings"><svg width="16" height="16" viewBox="0 0 24 24"><use href="#lg-config"/></svg></button>
   </div>
   <nav class="sidebar-nav">
     <div class="sidebar-nav-group" role="tablist" aria-label="Tools">
       <div class="sidebar-nav-label" id="nav-tools-label">Tools</div>
-      <button class="tab-btn active" data-tab="home" role="tab" aria-selected="true" aria-controls="tab-home" id="tab-btn-home"><span class="tab-btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span><span>Home</span></button>
-      <button class="tab-btn" data-tab="embed" role="tab" aria-selected="false" aria-controls="tab-embed" id="tab-btn-embed"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-lightning"/></svg></span><span>Embed</span></button>
-      <button class="tab-btn" data-tab="compare" role="tab" aria-selected="false" aria-controls="tab-compare" id="tab-btn-compare"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-arrows"/></svg></span><span>Compare</span></button>
-      <button class="tab-btn" data-tab="search" role="tab" aria-selected="false" aria-controls="tab-search" id="tab-btn-search"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-search"/></svg></span><span>Search</span></button>
-      <button class="tab-btn" data-tab="multimodal" role="tab" aria-selected="false" aria-controls="tab-multimodal" id="tab-btn-multimodal"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-image"/></svg></span><span>Multimodal</span></button>
-      <button class="tab-btn" data-tab="generate" role="tab" aria-selected="false" aria-controls="tab-generate" id="tab-btn-generate"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-code"/></svg></span><span>Generate</span></button>
-      <button class="tab-btn" data-tab="chat" role="tab" aria-selected="false" aria-controls="tab-chat" id="tab-btn-chat"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-chat"/></svg></span><span>Chat</span></button>
-      <button class="tab-btn" data-tab="workflows" role="tab" aria-selected="false" aria-controls="tab-workflows" id="tab-btn-workflows"><span class="tab-btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="3"/><circle cx="19" cy="6" r="3"/><circle cx="19" cy="18" r="3"/><line x1="7.7" y1="10.7" x2="16.3" y2="7.3"/><line x1="7.7" y1="13.3" x2="16.3" y2="16.7"/></svg></span><span>Workflows</span></button>
+      <button class="tab-btn active" data-tab="home" data-tooltip="Home" role="tab" aria-selected="true" aria-controls="tab-home" id="tab-btn-home"><span class="tab-btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span><span>Home</span></button>
+      <button class="tab-btn" data-tab="embed" data-tooltip="Embed" role="tab" aria-selected="false" aria-controls="tab-embed" id="tab-btn-embed"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-lightning"/></svg></span><span>Embed</span></button>
+      <button class="tab-btn" data-tab="compare" data-tooltip="Compare" role="tab" aria-selected="false" aria-controls="tab-compare" id="tab-btn-compare"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-arrows"/></svg></span><span>Compare</span></button>
+      <button class="tab-btn" data-tab="search" data-tooltip="Search" role="tab" aria-selected="false" aria-controls="tab-search" id="tab-btn-search"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-search"/></svg></span><span>Search</span></button>
+      <button class="tab-btn" data-tab="multimodal" data-tooltip="Multimodal" role="tab" aria-selected="false" aria-controls="tab-multimodal" id="tab-btn-multimodal"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-image"/></svg></span><span>Multimodal</span></button>
+      <button class="tab-btn" data-tab="generate" data-tooltip="Generate" role="tab" aria-selected="false" aria-controls="tab-generate" id="tab-btn-generate"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-code"/></svg></span><span>Generate</span></button>
+      <button class="tab-btn" data-tab="chat" data-tooltip="Chat" role="tab" aria-selected="false" aria-controls="tab-chat" id="tab-btn-chat"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-chat"/></svg></span><span>Chat</span></button>
+      <button class="tab-btn" data-tab="workflows" data-tooltip="Workflows" role="tab" aria-selected="false" aria-controls="tab-workflows" id="tab-btn-workflows"><span class="tab-btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="3"/><circle cx="19" cy="6" r="3"/><circle cx="19" cy="18" r="3"/><line x1="7.7" y1="10.7" x2="16.3" y2="7.3"/><line x1="7.7" y1="13.3" x2="16.3" y2="16.7"/></svg></span><span>Workflows</span></button>
     </div>
     <div class="sidebar-nav-divider"></div>
     <div class="sidebar-nav-group" role="tablist" aria-label="Learn">
       <div class="sidebar-nav-label" id="nav-learn-label">Learn</div>
-      <button class="tab-btn" data-tab="benchmark" role="tab" aria-selected="false" aria-controls="tab-benchmark" id="tab-btn-benchmark"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-gauge"/></svg></span><span>Benchmark</span></button>
-      <button class="tab-btn" data-tab="explore" role="tab" aria-selected="false" aria-controls="tab-explore" id="tab-btn-explore"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-bulb"/></svg></span><span>Explore</span></button>
-      <button class="tab-btn" data-tab="about" role="tab" aria-selected="false" aria-controls="tab-about" id="tab-btn-about"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-info"/></svg></span><span>About</span></button>
+      <button class="tab-btn" data-tab="benchmark" data-tooltip="Benchmark" role="tab" aria-selected="false" aria-controls="tab-benchmark" id="tab-btn-benchmark"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-gauge"/></svg></span><span>Benchmark</span></button>
+      <button class="tab-btn" data-tab="explore" data-tooltip="Explore" role="tab" aria-selected="false" aria-controls="tab-explore" id="tab-btn-explore"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-bulb"/></svg></span><span>Explore</span></button>
+      <button class="tab-btn" data-tab="about" data-tooltip="About" role="tab" aria-selected="false" aria-controls="tab-about" id="tab-btn-about"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-info"/></svg></span><span>About</span></button>
     </div>
   </nav>
   <div class="sidebar-footer">
@@ -12966,6 +13035,102 @@ function wfOpenInspector() {
   wfSyncPanelUI();
   wfSaveLayoutState();
 }
+
+// ── Sidebar Collapse ──
+function toggleSidebarCollapse() {
+  const sidebar = document.querySelector('.sidebar');
+  if (!sidebar) return;
+  sidebar.classList.toggle('collapsed');
+  // Persist
+  const state = wfGetLayoutState();
+  if (!state.sidebar) state.sidebar = {};
+  state.sidebar.collapsed = sidebar.classList.contains('collapsed');
+  try { localStorage.setItem('vai-workflow-layout', JSON.stringify(state)); } catch(e) {}
+}
+function restoreSidebarState() {
+  const state = wfGetLayoutState();
+  if (state.sidebar && state.sidebar.collapsed) {
+    const sidebar = document.querySelector('.sidebar');
+    if (sidebar) sidebar.classList.add('collapsed');
+  }
+}
+restoreSidebarState();
+
+// ── Keyboard Shortcuts (Workflows tab only) ──
+let _wfLastOpenedPanel = null; // 'library' or 'properties'
+(function() {
+  const origToggleLib = window.wfToggleLibrary;
+  window.wfToggleLibrary = function() {
+    origToggleLib();
+    const lib = document.getElementById('wfLibrary');
+    if (lib && !lib.classList.contains('collapsed')) _wfLastOpenedPanel = 'library';
+  };
+  const origToggleInsp = window.wfToggleInspector;
+  window.wfToggleInspector = function() {
+    origToggleInsp();
+    const insp = document.getElementById('wfInspector');
+    if (insp && !insp.classList.contains('collapsed')) _wfLastOpenedPanel = 'properties';
+  };
+})();
+
+document.addEventListener('keydown', function(e) {
+  // Only active when Workflows tab is visible
+  const wfTab = document.getElementById('tab-workflows');
+  if (!wfTab || wfTab.style.display === 'none' || !wfTab.classList.contains('active')) {
+    // Check if tab-btn-workflows is active instead
+    const wfBtn = document.getElementById('tab-btn-workflows');
+    if (!wfBtn || !wfBtn.classList.contains('active')) return;
+  }
+
+  const mod = e.metaKey || e.ctrlKey;
+  if (!mod && e.key !== 'Escape') return;
+
+  // Cmd/Ctrl + Shift + B → Toggle sidebar
+  if (mod && e.shiftKey && (e.key === 'B' || e.key === 'b')) {
+    e.preventDefault();
+    toggleSidebarCollapse();
+    return;
+  }
+  // Cmd/Ctrl + B → Toggle Library
+  if (mod && !e.shiftKey && (e.key === 'B' || e.key === 'b')) {
+    e.preventDefault();
+    wfToggleLibrary();
+    return;
+  }
+  // Cmd/Ctrl + I → Toggle Properties
+  if (mod && (e.key === 'I' || e.key === 'i')) {
+    e.preventDefault();
+    wfToggleInspector();
+    return;
+  }
+  // Cmd/Ctrl + \ → Collapse both panels
+  if (mod && e.key === '\\') {
+    e.preventDefault();
+    const lib = document.getElementById('wfLibrary');
+    const insp = document.getElementById('wfInspector');
+    if (lib && !lib.classList.contains('collapsed')) { lib.classList.add('collapsed'); }
+    if (insp && !insp.classList.contains('collapsed')) { insp.classList.add('collapsed'); }
+    wfSyncPanelUI();
+    wfSaveLayoutState();
+    return;
+  }
+  // Escape → Close most recently opened panel
+  if (e.key === 'Escape' && !mod) {
+    if (_wfLastOpenedPanel === 'library') {
+      const lib = document.getElementById('wfLibrary');
+      if (lib && !lib.classList.contains('collapsed')) { wfToggleLibrary(); _wfLastOpenedPanel = null; return; }
+    }
+    if (_wfLastOpenedPanel === 'properties') {
+      const insp = document.getElementById('wfInspector');
+      if (insp && !insp.classList.contains('collapsed')) { wfToggleInspector(); _wfLastOpenedPanel = null; return; }
+    }
+    // Fallback: close properties then library
+    const insp = document.getElementById('wfInspector');
+    if (insp && !insp.classList.contains('collapsed')) { wfToggleInspector(); return; }
+    const lib = document.getElementById('wfLibrary');
+    if (lib && !lib.classList.contains('collapsed')) { wfToggleLibrary(); return; }
+  }
+});
 
 // ── Node Selection ──
 function wfSelectNode(stepId) {
