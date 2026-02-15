@@ -1,0 +1,25 @@
+{
+  "name": "rag-chat: no results above relevance threshold",
+  "inputs": {
+    "question": "What is the meaning of life?",
+    "collection": "technical-docs",
+    "collection2": "",
+    "limit": 5,
+    "min_score": 0.5,
+    "system_prompt": "You are a helpful assistant.",
+    "chat_history": ""
+  },
+  "mocks": {
+    "query": { "results": [{ "text": "MongoDB Atlas provides cloud database services.", "source": "overview.md", "score": 0.15 }], "resultCount": 1 },
+    "rerank": { "results": [{ "text": "MongoDB Atlas provides cloud database services.", "source": "overview.md", "score": 0.12 }], "resultCount": 1 }
+  },
+  "expect": {
+    "steps": {
+      "search_primary": { "status": "completed" },
+      "rerank": { "status": "completed" },
+      "filter_relevant": { "status": "completed" },
+      "no_context_response": { "status": "completed" }
+    },
+    "noErrors": true
+  }
+}

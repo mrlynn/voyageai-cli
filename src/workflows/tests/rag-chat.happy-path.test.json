@@ -1,0 +1,26 @@
+{
+  "name": "rag-chat: happy path with relevant results",
+  "inputs": {
+    "question": "How do I create a vector search index?",
+    "collection": "docs",
+    "collection2": "",
+    "limit": 5,
+    "min_score": 0.3,
+    "system_prompt": "You are a helpful assistant. Cite sources.",
+    "chat_history": ""
+  },
+  "mocks": {
+    "query": { "results": [{ "text": "To create a vector search index, use the Atlas UI or CLI...", "source": "atlas-docs.md", "score": 0.92 }, { "text": "Vector indexes support cosine, euclidean, and dotProduct similarity.", "source": "vector-guide.md", "score": 0.85 }], "resultCount": 2 },
+    "rerank": { "results": [{ "text": "To create a vector search index, use the Atlas UI or CLI...", "source": "atlas-docs.md", "score": 0.95 }, { "text": "Vector indexes support cosine, euclidean, and dotProduct similarity.", "source": "vector-guide.md", "score": 0.78 }], "resultCount": 2 },
+    "generate": { "text": "To create a vector search index, you can use the Atlas UI or the CLI. According to the documentation (atlas-docs.md), the process involves...", "model": "claude-sonnet", "provider": "anthropic" }
+  },
+  "expect": {
+    "steps": {
+      "search_primary": { "status": "completed" },
+      "rerank": { "status": "completed" },
+      "filter_relevant": { "status": "completed" },
+      "generate_answer": { "status": "completed" }
+    },
+    "noErrors": true
+  }
+}

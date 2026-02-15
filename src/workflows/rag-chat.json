@@ -1,0 +1,165 @@
+{
+  "$schema": "https://vai.dev/schemas/workflow-v1.json",
+  "name": "RAG Chat",
+  "description": "Retrieval-Augmented Generation chat: searches your knowledge base, reranks for relevance, filters low-quality matches, and generates a grounded answer with source citations",
+  "version": "1.0.0",
+  "branding": {
+    "icon": "message-circle",
+    "color": "#7C3AED"
+  },
+  "inputs": {
+    "question": {
+      "type": "string",
+      "description": "The user's question or message",
+      "required": true
+    },
+    "collection": {
+      "type": "string",
+      "description": "Knowledge base collection to search",
+      "required": true
+    },
+    "collection2": {
+      "type": "string",
+      "description": "Optional second collection for broader search (leave empty to skip)",
+      "default": ""
+    },
+    "limit": {
+      "type": "number",
+      "description": "Maximum documents to retrieve per collection",
+      "default": 10
+    },
+    "min_score": {
+      "type": "number",
+      "description": "Minimum relevance score (0-1) to include a document",
+      "default": 0.3
+    },
+    "system_prompt": {
+      "type": "string",
+      "description": "Custom system prompt for the LLM",
+      "default": "You are a knowledgeable assistant. Answer questions accurately based on the provided context. Always cite your sources by referencing the document name or source field. If the context does not contain enough information to answer fully, say so clearly and explain what information is missing. Never fabricate information that is not in the provided context."
+    },
+    "chat_history": {
+      "type": "string",
+      "description": "Previous conversation turns (for multi-turn context)",
+      "default": ""
+    }
+  },
+  "defaults": {},
+  "steps": [
+    {
+      "id": "search_primary",
+      "name": "Search primary knowledge base",
+      "tool": "query",
+      "inputs": {
+        "query": "{{ inputs.question }}",
+        "collection": "{{ inputs.collection }}",
+        "limit": "{{ inputs.limit }}",
+        "rerank": false
+      }
+    },
+    {
+      "id": "check_multi",
+      "name": "Check if second collection is configured",
+      "tool": "conditional",
+      "inputs": {
+        "condition": "{{ inputs.collection2.length > 0 }}",
+        "then": ["search_secondary"],
+        "else": ["skip_merge"]
+      }
+    },
+    {
+      "id": "search_secondary",
+      "name": "Search secondary knowledge base",
+      "tool": "query",
+      "inputs": {
+        "query": "{{ inputs.question }}",
+        "collection": "{{ inputs.collection2 }}",
+        "limit": "{{ inputs.limit }}",
+        "rerank": false
+      }
+    },
+    {
+      "id": "skip_merge",
+      "name": "Pass primary results through",
+      "tool": "template",
+      "inputs": {
+        "text": "Using {{ search_primary.output.resultCount }} results from primary collection"
+      }
+    },
+    {
+      "id": "merge_results",
+      "name": "Merge results from all collections",
+      "tool": "merge",
+      "inputs": {
+        "arrays": [
+          "{{ search_primary.output.results }}",
+          "{{ search_secondary.output.results }}"
+        ],
+        "dedup": true,
+        "dedup_field": "source"
+      },
+      "condition": "{{ inputs.collection2.length > 0 }}"
+    },
+    {
+      "id": "rerank",
+      "name": "Rerank by relevance to question",
+      "tool": "rerank",
+      "inputs": {
+        "query": "{{ inputs.question }}",
+        "documents": "{{ merge_results.output.results || search_primary.output.results }}"
+      }
+    },
+    {
+      "id": "filter_relevant",
+      "name": "Filter out low-relevance documents",
+      "tool": "filter",
+      "inputs": {
+        "array": "{{ rerank.output.results }}",
+        "condition": "item.score >= {{ inputs.min_score }}"
+      }
+    },
+    {
+      "id": "check_context",
+      "name": "Check if any relevant context was found",
+      "tool": "conditional",
+      "inputs": {
+        "condition": "{{ filter_relevant.output.resultCount > 0 }}",
+        "then": ["build_prompt", "generate_answer"],
+        "else": ["no_context_response"]
+      }
+    },
+    {
+      "id": "build_prompt",
+      "name": "Assemble prompt with context and history",
+      "tool": "template",
+      "inputs": {
+        "text": "{{ inputs.chat_history ? 'Previous conversation:\\n' + inputs.chat_history + '\\n\\n' : '' }}Based on the following knowledge base documents, answer this question: {{ inputs.question }}"
+      }
+    },
+    {
+      "id": "generate_answer",
+      "name": "Generate grounded answer with LLM",
+      "tool": "generate",
+      "inputs": {
+        "prompt": "{{ build_prompt.output.text }}",
+        "context": "{{ filter_relevant.output.results }}",
+        "systemPrompt": "{{ inputs.system_prompt }}"
+      }
+    },
+    {
+      "id": "no_context_response",
+      "name": "Handle no relevant context found",
+      "tool": "template",
+      "inputs": {
+        "text": "I searched the knowledge base but didn't find documents relevant enough to answer your question confidently. The query '{{ inputs.question }}' returned {{ rerank.output.resultCount }} results, but none met the minimum relevance threshold of {{ inputs.min_score }}. Try rephrasing your question or lowering the min_score threshold."
+      }
+    }
+  ],
+  "output": {
+    "answer": "{{ generate_answer.output.text || no_context_response.output.text }}",
+    "sources": "{{ filter_relevant.output.results }}",
+    "sourceCount": "{{ filter_relevant.output.resultCount }}",
+    "model": "{{ generate_answer.output.model }}",
+    "question": "{{ inputs.question }}"
+  }
+}
