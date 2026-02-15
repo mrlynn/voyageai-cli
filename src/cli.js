@@ -40,6 +40,7 @@ const { registerMcpServer } = require('./commands/mcp-server');
 const { registerWorkflow } = require('./commands/workflow');
 const { registerIndexWorkspace } = require('./commands/index-workspace');
 const { registerExport } = require('./commands/export');
+const { registerImport } = require('./commands/import');
 const { showBanner, showQuickStart, getVersion } = require('./lib/banner');
 
 const version = getVersion();
@@ -84,6 +85,7 @@ registerMcpServer(program);
 registerWorkflow(program);
 registerIndexWorkspace(program);
 registerExport(program);
+registerImport(program);
 
 // Append disclaimer to all help output
 program.addHelpText('after', `
