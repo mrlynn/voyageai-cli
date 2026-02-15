@@ -62,7 +62,8 @@
       "Bash(kill:*)",
       "Bash(PATH=\"/opt/homebrew/bin:$PATH\" /opt/homebrew/bin/node /opt/homebrew/bin/npx docusaurus build:*)",
       "Bash(wc:*)",
-      "Bash(done)"
+      "Bash(done)",
+      "Bash(python3:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
