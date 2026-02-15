@@ -247,6 +247,24 @@ function createPlaygroundServer() {
         return;
       }
 
+      // Serve vendor assets (bundled JS libraries)
+      const vendorMatch = req.url.match(/^\/vendor\/([a-zA-Z0-9_.-]+\.js)$/);
+      if (req.method === 'GET' && vendorMatch) {
+        const vendorPath = path.join(__dirname, '..', 'playground', 'vendor', vendorMatch[1]);
+        if (fs.existsSync(vendorPath)) {
+          const data = fs.readFileSync(vendorPath);
+          res.writeHead(200, {
+            'Content-Type': 'application/javascript; charset=utf-8',
+            'Cache-Control': 'public, max-age=86400',
+          });
+          res.end(data);
+        } else {
+          res.writeHead(404);
+          res.end('Vendor asset not found');
+        }
+        return;
+      }
+
       // API: Models
       if (req.method === 'GET' && req.url === '/api/models') {
         const models = MODEL_CATALOG.filter(m => !m.legacy && !m.local && !m.unreleased);
