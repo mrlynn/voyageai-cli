@@ -3272,10 +3272,11 @@ select:focus { outline: none; border-color: var(--accent); }
   background: var(--bg);
   background-image: radial-gradient(circle, var(--border) 1px, transparent 1px);
   background-size: 20px 20px;
+  padding-bottom: 48px;
 }
 .wf-canvas-toolbar {
   position: absolute; top: 12px; left: 12px; right: 12px; z-index: 10;
-  display: flex; gap: 4px; align-items: center;
+  display: flex; gap: 6px; align-items: center; flex-wrap: wrap;
 }
 .wf-canvas-toolbar button {
   width: 32px; height: 32px; border-radius: 8px;
@@ -3765,7 +3766,7 @@ select:focus { outline: none; border-color: var(--accent); }
 .wf-canvas-toolbar .wf-stop-btn:hover { opacity: 0.9; background: #c0392b; }
 /* Execution status bar */
 .wf-exec-status {
-  position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%);
+  position: absolute; bottom: 56px; left: 50%; transform: translateX(-50%);
   z-index: 10; display: flex; align-items: center; gap: 8px;
   padding: 6px 16px; border-radius: 20px;
   background: var(--bg-card); border: 1px solid var(--border);
@@ -4103,7 +4104,7 @@ select:focus { outline: none; border-color: var(--accent); }
   color: var(--text); border-bottom: 1px solid var(--border);
 }
 .wf-inspector-body {
-  padding: 16px; flex: 1; overflow-y: auto;
+  padding: 16px; padding-bottom: 56px; flex: 1; overflow-y: auto;
 }
 .wf-inspector-empty {
   color: var(--text-muted); font-size: 13px; text-align: center;
