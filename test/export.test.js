@@ -494,3 +494,55 @@ describe('Round-trip', () => {
     assert.equal(reimported.output, '{{ brief.output }}');
   });
 });
+
+// ════════════════════════════════════════════════════════════════════
+// Phase 3 — Import + detectType
+// ════════════════════════════════════════════════════════════════════
+
+const { detectType } = require('../src/commands/import');
+const { validateWorkflow } = require('../src/lib/workflow');
+
+describe('Import — Type Detection', () => {
+  it('detects workflow by steps array', () => {
+    assert.equal(detectType(SIMPLE_WORKFLOW), 'workflow');
+  });
+
+  it('detects chat by turns array', () => {
+    assert.equal(detectType(CHAT_DATA), 'chat');
+  });
+
+  it('detects chat from export wrapper with _context', () => {
+    assert.equal(detectType({ _context: 'chat', turns: [] }), 'chat');
+  });
+
+  it('detects workflow from export wrapper with _context', () => {
+    assert.equal(detectType({ _context: 'workflow', name: 'x', steps: [{ id: 'a' }] }), 'workflow');
+  });
+
+  it('returns null for unknown data', () => {
+    assert.equal(detectType({ foo: 'bar' }), null);
+  });
+});
+
+describe('Import — Round-trip Validation', () => {
+  it('exported workflow JSON re-validates after stripping metadata', async () => {
+    const result = await exportArtifact({
+      context: 'workflow',
+      format: 'json',
+      data: SIMPLE_WORKFLOW,
+      options: { includeMetadata: true },
+    });
+    const reimported = JSON.parse(result.content);
+
+    // Strip export keys like import command does
+    delete reimported._exportMeta;
+    delete reimported._metadata;
+    delete reimported._execution;
+    delete reimported._context;
+    delete reimported._dependencyMap;
+    delete reimported._executionLayers;
+
+    const errors = validateWorkflow(reimported);
+    assert.deepStrictEqual(errors, []);
+  });
+});
