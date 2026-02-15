@@ -3025,10 +3025,15 @@ select:focus { outline: none; border-color: var(--accent); }
   min-height: 0;
 }
 .wf-library {
-  width: 220px; min-width: 180px; flex-shrink: 0;
+  width: 220px; min-width: 0; flex-shrink: 0;
   border-right: 1px solid var(--border);
   display: flex; flex-direction: column;
   background: var(--bg);
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+.wf-library.collapsed {
+  width: 0; border-right: none;
 }
 .wf-library-header {
   padding: 14px 16px 10px; font-weight: 700; font-size: 13px;
@@ -3098,8 +3103,8 @@ select:focus { outline: none; border-color: var(--accent); }
   background-size: 20px 20px;
 }
 .wf-canvas-toolbar {
-  position: absolute; top: 12px; right: 12px; z-index: 10;
-  display: flex; gap: 4px;
+  position: absolute; top: 12px; left: 12px; right: 12px; z-index: 10;
+  display: flex; gap: 4px; align-items: center;
 }
 .wf-canvas-toolbar button {
   width: 32px; height: 32px; border-radius: 8px;
@@ -3169,6 +3174,119 @@ select:focus { outline: none; border-color: var(--accent); }
 .wf-palette-item:active { cursor: grabbing; }
 .wf-palette-icon { width: 20px; text-align: center; display: flex; align-items: center; justify-content: center; }
 .wf-palette-label { font-weight: 500; }
+
+/* ── Workflow Node Help ── */
+.wf-palette-item { position: relative; }
+.wf-help-trigger {
+  position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+  width: 20px; height: 20px; border-radius: 50%;
+  border: 1px solid var(--border); background: var(--bg);
+  color: var(--text-muted); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+  padding: 0; z-index: 2;
+}
+.wf-palette-item:hover .wf-help-trigger { opacity: 1; }
+.wf-help-trigger:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+.wf-help-trigger svg { width: 12px; height: 12px; }
+
+.wf-inspector-help-btn {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 8px; border-radius: 4px;
+  border: 1px solid var(--border); background: var(--bg);
+  color: var(--text-muted); font-size: 11px; cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+  margin-left: 8px; vertical-align: middle;
+}
+.wf-inspector-help-btn:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+.wf-inspector-help-btn svg { width: 12px; height: 12px; }
+
+.wf-help-modal-backdrop {
+  position: fixed; inset: 0; z-index: 10000;
+  background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+  animation: wfStoreDetailFadeIn 0.12s ease-out;
+}
+.wf-help-modal {
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 12px; width: 540px; max-width: 92vw;
+  max-height: 82vh; display: flex; flex-direction: column;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.3);
+  animation: wfStoreDetailFadeIn 0.12s ease-out;
+}
+.wf-help-modal-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 16px 20px; border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.wf-help-modal-header .wf-help-icon {
+  width: 32px; height: 32px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.wf-help-modal-header .wf-help-title { font-size: 16px; font-weight: 600; flex: 1; }
+.wf-help-modal-header .wf-help-category-badge {
+  font-size: 10px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.5px; padding: 2px 8px; border-radius: 4px;
+  background: var(--bg-card); color: var(--text-muted); flex-shrink: 0;
+}
+.wf-help-modal-header .wf-help-close-btn {
+  width: 28px; height: 28px; border-radius: 6px;
+  border: 1px solid var(--border); background: var(--bg);
+  color: var(--text-muted); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; padding: 0; transition: background 0.15s ease, color 0.15s ease;
+}
+.wf-help-modal-header .wf-help-close-btn:hover { background: var(--bg-card); color: var(--text); }
+
+.wf-help-modal-body {
+  overflow-y: auto; padding: 20px; flex: 1;
+}
+.wf-help-section { margin-bottom: 20px; }
+.wf-help-section:last-child { margin-bottom: 0; }
+.wf-help-section-title {
+  font-size: 11px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 8px;
+}
+.wf-help-section p {
+  font-size: 13px; line-height: 1.6; color: var(--text); margin: 0;
+}
+
+.wf-help-io-table {
+  width: 100%; border-collapse: collapse; font-size: 12px;
+}
+.wf-help-io-table th {
+  text-align: left; padding: 6px 8px; font-weight: 600;
+  color: var(--text-muted); border-bottom: 1px solid var(--border);
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.3px;
+}
+.wf-help-io-table td {
+  padding: 6px 8px; border-bottom: 1px solid var(--border);
+  color: var(--text); vertical-align: top;
+}
+.wf-help-io-table tr:last-child td { border-bottom: none; }
+.wf-help-io-table .wf-help-key {
+  font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px;
+  color: var(--accent); white-space: nowrap;
+}
+.wf-help-io-table .wf-help-type {
+  font-size: 10px; color: var(--text-muted); white-space: nowrap;
+}
+.wf-help-io-table .wf-help-required {
+  display: inline-block; font-size: 9px; font-weight: 600;
+  color: #ff6b6b; background: rgba(255,107,107,0.1);
+  padding: 1px 4px; border-radius: 3px; margin-left: 4px;
+}
+
+.wf-help-tip {
+  display: flex; gap: 8px; margin-bottom: 8px;
+  font-size: 13px; line-height: 1.5; color: var(--text);
+}
+.wf-help-tip:last-child { margin-bottom: 0; }
+.wf-help-tip-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent); flex-shrink: 0; margin-top: 7px;
+}
 
 /* ── Workflow Store ── */
 .wf-store-overlay {
@@ -3665,38 +3783,76 @@ select:focus { outline: none; border-color: var(--accent); }
 .wf-edge--else { stroke-dasharray: 6 4; opacity: 0.4; }
 .wf-edge--skipped { opacity: 0.12; stroke-dasharray: 4 4; }
 /* Inspector */
+/* ── Library collapse chevron ── */
+.wf-library-collapse-btn {
+  width: 28px; height: 28px; border: none; background: none;
+  color: var(--text-muted); cursor: pointer; font-size: 14px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 6px; transition: color 0.15s, background 0.15s;
+  flex-shrink: 0; padding: 0;
+}
+.wf-library-collapse-btn:hover { color: var(--text); background: var(--bg-card); }
+
+/* ── Canvas edge handles ── */
+.wf-edge-handle {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  width: 28px; height: 56px; z-index: 20;
+  background: var(--bg-card); border: 1px solid var(--border);
+  color: var(--text-muted); cursor: pointer;
+  display: none; align-items: center; justify-content: center;
+  font-size: 14px; transition: background 0.15s, color 0.15s;
+}
+.wf-edge-handle:hover { background: var(--bg); color: var(--text); }
+.wf-edge-handle--left {
+  left: 0; border-radius: 0 8px 8px 0; border-left: none;
+}
+.wf-edge-handle--right {
+  right: 0; border-radius: 8px 0 0 8px; border-right: none;
+}
+.wf-edge-handle.visible { display: flex; }
+
+/* ── Toolbar panel toggle group ── */
+.wf-toolbar-spacer { flex: 1; }
+.wf-toolbar-toggle-group {
+  display: flex; background: var(--bg); border-radius: 6px; padding: 2px;
+  border: 1px solid var(--border);
+}
+.wf-toolbar-toggle-group button {
+  width: auto !important; height: 28px !important; padding: 0 10px !important;
+  border: none !important; border-radius: 4px !important;
+  background: transparent !important; color: var(--text-muted) !important;
+  font-size: 11px !important; font-weight: 500 !important; cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.wf-toolbar-toggle-group button.active {
+  background: rgba(0,212,170,0.15) !important; color: var(--accent) !important;
+}
+.wf-toolbar-toggle-group button:hover:not(.active) {
+  color: var(--text) !important;
+}
+
+/* ── Inspector (upgraded) ── */
 .wf-inspector {
   flex-shrink: 0; position: relative;
   display: flex; flex-direction: row;
   background: var(--bg);
-  transition: width 0.25s ease;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   width: 300px;
   overflow: hidden;
   align-self: stretch;
+  border-left: 1px solid var(--border);
 }
 .wf-inspector.collapsed {
-  width: 28px;
+  width: 0; border-left: none;
 }
 .wf-inspector-toggle {
-  width: 28px; flex-shrink: 0; align-self: stretch;
-  border: none; border-left: 1px solid var(--border);
-  background: var(--bg); color: var(--text-muted);
-  cursor: pointer; font-size: 14px; padding: 0;
-  display: flex; align-items: center; justify-content: center;
-  transition: color 0.15s, background 0.15s;
-}
-.wf-inspector-toggle:hover {
-  color: var(--text); background: var(--bg-card);
-}
-.wf-inspector.collapsed .wf-inspector-toggle {
-  border-left: 1px solid var(--border);
+  display: none; /* replaced by edge handle */
 }
 .wf-inspector.collapsed .wf-inspector-content {
   display: none;
 }
 .wf-inspector-content {
   flex: 1; display: flex; flex-direction: column;
-  border-left: 1px solid var(--border);
   overflow-y: auto; min-width: 0; height: 100%;
 }
 .wf-inspector-header {
@@ -3763,11 +3919,11 @@ select:focus { outline: none; border-color: var(--accent); }
 .wf-inspector-result.error { border-color: #e74c3c; }
 /* Responsive */
 @media (max-width: 900px) {
-  .wf-library { display: none; }
+  .wf-library { width: 0; border-right: none; }
   .wf-inspector:not(.collapsed) { width: 240px; }
 }
 @media (max-width: 600px) {
-  .wf-inspector { display: none; }
+  .wf-inspector { width: 0; border-left: none; }
 }
 /* Workflow visualizer light mode */
 [data-theme="light"] .wf-node-label { fill: #001E2B; }
@@ -5704,7 +5860,7 @@ Reranking models rescore initial search results to improve relevance ordering.</
 <!-- ========== WORKFLOWS TAB ========== -->
 <div class="tab-panel" id="tab-workflows" role="tabpanel" aria-labelledby="tab-btn-workflows" tabindex="0">
   <div class="wf-container">
-    <div class="wf-library">
+    <div class="wf-library" id="wfLibrary">
       <div class="wf-library-header">
         <div class="wf-library-tabs" style="flex:1;">
           <button class="wf-lib-tab active" data-lib-tab="library" onclick="wfSwitchLibTab('library')">Library</button>
@@ -5713,6 +5869,7 @@ Reranking models rescore initial search results to improve relevance ordering.</
         <button class="wf-store-btn" id="wfStoreBtn" onclick="wfStoreOpen()" title="Browse Workflow Store">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
         </button>
+        <button class="wf-library-collapse-btn" onclick="wfToggleLibrary()" title="Collapse library">&#x2039;</button>
       </div>
       <div class="wf-library-list" id="wfLibraryList">
         <div style="padding: 16px; color: var(--text-muted); font-size: 12px;">Loading...</div>
@@ -5743,7 +5900,15 @@ Reranking models rescore initial search results to improve relevance ordering.</
         <button onclick="wfExportJson()" id="wfExportBtn" disabled title="Export workflow JSON">
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h10M8 14V5M5 8l3-3 3 3"/></svg>
         </button>
+        <span class="wf-toolbar-spacer"></span>
+        <div class="wf-toolbar-toggle-group">
+          <button id="wfToggleLibBtn" class="active" onclick="wfToggleLibrary()">Library</button>
+          <button id="wfTogglePropsBtn" class="active" onclick="wfToggleInspector()">Props</button>
+        </div>
       </div>
+      <!-- Edge handles for collapsed panels -->
+      <div class="wf-edge-handle wf-edge-handle--left" id="wfEdgeHandleLeft" onclick="wfToggleLibrary()" title="Expand library">&#x203A;</div>
+      <div class="wf-edge-handle wf-edge-handle--right" id="wfEdgeHandleRight" onclick="wfToggleInspector()" title="Expand properties">&#x2039;</div>
       <!-- Execution status bar -->
       <div class="wf-exec-status" id="wfExecStatus" style="display:none;">
         <span class="wf-exec-status-dot"></span>
@@ -5782,7 +5947,6 @@ Reranking models rescore initial search results to improve relevance ordering.</
       </div>
     </div>
     <div class="wf-inspector collapsed" id="wfInspector">
-      <button class="wf-inspector-toggle" id="wfInspectorToggle" onclick="wfToggleInspector()" title="Toggle inspector">&lsaquo;</button>
       <div class="wf-inspector-content">
         <div class="wf-inspector-header" id="wfInspectorHeader">Inspector</div>
         <div class="wf-inspector-body" id="wfInspectorBody">
@@ -5807,6 +5971,14 @@ Reranking models rescore initial search results to improve relevance ordering.</
       </div>
     </div>
     <pre class="wf-output-modal-body" id="wfOutputModalBody"></pre>
+  </div>
+</div>
+
+<!-- ── Workflow Node Help Modal ── -->
+<div class="wf-help-modal-backdrop" id="wfHelpModalBackdrop" style="display:none;" onclick="wfCloseHelpModal()">
+  <div class="wf-help-modal" onclick="event.stopPropagation()">
+    <div class="wf-help-modal-header" id="wfHelpModalHeader"></div>
+    <div class="wf-help-modal-body" id="wfHelpModalBody"></div>
   </div>
 </div>
 
@@ -12583,21 +12755,74 @@ function wfDrawEdge(fromId, toId, positions) {
   return g;
 }
 
+// ── Panel Layout State ──
+let _wfLayoutSaveTimer = null;
+function wfGetLayoutState() {
+  try {
+    const s = localStorage.getItem('vai-workflow-layout');
+    if (s) return JSON.parse(s);
+  } catch(e) {}
+  return { library: { open: true }, properties: { open: true } };
+}
+function wfSaveLayoutState() {
+  clearTimeout(_wfLayoutSaveTimer);
+  _wfLayoutSaveTimer = setTimeout(() => {
+    const lib = document.getElementById('wfLibrary');
+    const insp = document.getElementById('wfInspector');
+    const state = {
+      library: { open: lib ? !lib.classList.contains('collapsed') : true },
+      properties: { open: insp ? !insp.classList.contains('collapsed') : true }
+    };
+    try { localStorage.setItem('vai-workflow-layout', JSON.stringify(state)); } catch(e) {}
+  }, 300);
+}
+function wfSyncPanelUI() {
+  const lib = document.getElementById('wfLibrary');
+  const insp = document.getElementById('wfInspector');
+  const libBtn = document.getElementById('wfToggleLibBtn');
+  const propsBtn = document.getElementById('wfTogglePropsBtn');
+  const leftHandle = document.getElementById('wfEdgeHandleLeft');
+  const rightHandle = document.getElementById('wfEdgeHandleRight');
+  const libCollapsed = lib && lib.classList.contains('collapsed');
+  const inspCollapsed = insp && insp.classList.contains('collapsed');
+  if (libBtn) libBtn.classList.toggle('active', !libCollapsed);
+  if (propsBtn) propsBtn.classList.toggle('active', !inspCollapsed);
+  if (leftHandle) leftHandle.classList.toggle('visible', !!libCollapsed);
+  if (rightHandle) rightHandle.classList.toggle('visible', !!inspCollapsed);
+}
+function wfRestoreLayoutState() {
+  const state = wfGetLayoutState();
+  const lib = document.getElementById('wfLibrary');
+  const insp = document.getElementById('wfInspector');
+  if (lib) lib.classList.toggle('collapsed', !state.library.open);
+  if (insp) insp.classList.toggle('collapsed', !state.properties.open);
+  wfSyncPanelUI();
+}
+
+// ── Library Toggle ──
+function wfToggleLibrary() {
+  const panel = document.getElementById('wfLibrary');
+  if (!panel) return;
+  panel.classList.toggle('collapsed');
+  wfSyncPanelUI();
+  wfSaveLayoutState();
+}
+
 // ── Inspector Toggle ──
 function wfToggleInspector() {
   const panel = document.getElementById('wfInspector');
-  const btn = document.getElementById('wfInspectorToggle');
   if (!panel) return;
   panel.classList.toggle('collapsed');
-  if (btn) btn.innerHTML = panel.classList.contains('collapsed') ? '&lsaquo;' : '&rsaquo;';
+  wfSyncPanelUI();
+  wfSaveLayoutState();
 }
 
 function wfOpenInspector() {
   const panel = document.getElementById('wfInspector');
-  const btn = document.getElementById('wfInspectorToggle');
   if (!panel || !panel.classList.contains('collapsed')) return;
   panel.classList.remove('collapsed');
-  if (btn) btn.innerHTML = '&rsaquo;';
+  wfSyncPanelUI();
+  wfSaveLayoutState();
 }
 
 // ── Node Selection ──
@@ -12729,10 +12954,13 @@ function wfUpdateInspector() {
 
   let html = '';
 
-  // Tool badge (always shown)
+  // Tool badge (always shown) with help button
   html += `<div class="wf-inspector-section">
     <div class="wf-inspector-section-title">Tool</div>
-    <span class="wf-tool-badge" style="background:${meta.color}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="${meta.icon || WF_FALLBACK_ICON}"/></svg>${meta.label}</span>
+    <div style="display:flex;align-items:center;">
+      <span class="wf-tool-badge" style="background:${meta.color}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="${meta.icon || WF_FALLBACK_ICON}"/></svg>${meta.label}</span>
+      <button class="wf-inspector-help-btn" onclick="wfOpenHelpModal('${step.tool}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Help</button>
+    </div>
   </div>`;
 
   if (wfState.builderMode) {
@@ -13390,9 +13618,105 @@ function wfCopyOutput() {
   });
 }
 
-// Close modal on Escape
+// ── Node Help Modal ──
+let _nodeHelpCache = null;
+async function getNodeHelp() {
+  if (_nodeHelpCache) return _nodeHelpCache;
+  try {
+    const res = await fetch('/api/workflows/node-help');
+    const data = await res.json();
+    _nodeHelpCache = data.nodeHelp || {};
+  } catch { _nodeHelpCache = {}; }
+  return _nodeHelpCache;
+}
+
+async function wfOpenHelpModal(tool) {
+  const helpData = await getNodeHelp();
+  const help = helpData[tool];
+  const meta = WF_NODE_META[tool] || { icon: WF_FALLBACK_ICON, label: tool, color: '#666', category: 'unknown' };
+  const categoryLabel = WF_CATEGORY_LABELS[meta.category] || meta.category || 'Unknown';
+
+  const headerEl = document.getElementById('wfHelpModalHeader');
+  const bodyEl = document.getElementById('wfHelpModalBody');
+  const backdrop = document.getElementById('wfHelpModalBackdrop');
+  if (!headerEl || !bodyEl || !backdrop) return;
+
+  // Build header
+  const isEmoji = !meta.icon.includes(' ');
+  const iconHtml = isEmoji
+    ? `<div class="wf-help-icon" style="background:${meta.color}22;font-size:18px;">${meta.icon}</div>`
+    : `<div class="wf-help-icon" style="background:${meta.color}22;color:${meta.color};"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="${meta.icon}"/></svg></div>`;
+
+  headerEl.innerHTML = iconHtml
+    + `<span class="wf-help-title">${escapeHtml(meta.label)}</span>`
+    + `<span class="wf-help-category-badge">${escapeHtml(categoryLabel)}</span>`
+    + `<button class="wf-help-close-btn" onclick="wfCloseHelpModal()" title="Close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`;
+
+  // Build body
+  if (!help) {
+    bodyEl.innerHTML = `<div class="wf-help-section"><p>No help content available for this node yet.</p></div>`;
+    backdrop.style.display = 'flex';
+    return;
+  }
+
+  let html = '';
+
+  // Overview
+  if (help.description) {
+    html += `<div class="wf-help-section"><div class="wf-help-section-title">Overview</div><p>${escapeHtml(help.description)}</p></div>`;
+  }
+
+  // How it Works
+  if (help.howItWorks) {
+    html += `<div class="wf-help-section"><div class="wf-help-section-title">How it Works</div><p>${escapeHtml(help.howItWorks)}</p></div>`;
+  }
+
+  // Inputs
+  if (help.inputs && help.inputs.length > 0) {
+    html += `<div class="wf-help-section"><div class="wf-help-section-title">Inputs</div><table class="wf-help-io-table"><thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead><tbody>`;
+    for (const inp of help.inputs) {
+      const reqBadge = inp.required ? '<span class="wf-help-required">required</span>' : '';
+      html += `<tr><td><span class="wf-help-key">${escapeHtml(inp.key)}</span>${reqBadge}</td><td><span class="wf-help-type">${escapeHtml(inp.type)}</span></td><td>${escapeHtml(inp.desc)}</td></tr>`;
+    }
+    html += '</tbody></table></div>';
+  }
+
+  // Outputs
+  if (help.outputs && help.outputs.length > 0) {
+    html += `<div class="wf-help-section"><div class="wf-help-section-title">Output</div><table class="wf-help-io-table"><thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead><tbody>`;
+    for (const out of help.outputs) {
+      html += `<tr><td><span class="wf-help-key">${escapeHtml(out.key)}</span></td><td><span class="wf-help-type">${escapeHtml(out.type)}</span></td><td>${escapeHtml(out.desc)}</td></tr>`;
+    }
+    html += '</tbody></table></div>';
+  }
+
+  // Tips
+  if (help.tips && help.tips.length > 0) {
+    html += `<div class="wf-help-section"><div class="wf-help-section-title">Tips</div>`;
+    for (const tip of help.tips) {
+      html += `<div class="wf-help-tip"><span class="wf-help-tip-dot"></span><span>${escapeHtml(tip)}</span></div>`;
+    }
+    html += '</div>';
+  }
+
+  bodyEl.innerHTML = html;
+  backdrop.style.display = 'flex';
+}
+
+function wfCloseHelpModal() {
+  const backdrop = document.getElementById('wfHelpModalBackdrop');
+  if (backdrop) backdrop.style.display = 'none';
+}
+
+// Close modals on Escape
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
+    const helpBackdrop = document.getElementById('wfHelpModalBackdrop');
+    if (helpBackdrop && helpBackdrop.style.display !== 'none') {
+      wfCloseHelpModal();
+      e.preventDefault();
+      return;
+    }
     const backdrop = document.getElementById('wfOutputModalBackdrop');
     if (backdrop && backdrop.style.display !== 'none') {
       wfCloseOutputModal();
@@ -13561,6 +13885,7 @@ function wfRenderPalette() {
       html += `<div class="wf-palette-item" draggable="true" ondragstart="event.dataTransfer.setData('text/plain','${item.tool}')" onclick="wfAddNodeFromPalette('${item.tool}')">
         <span class="wf-palette-icon" style="color:${item.color}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="${item.icon || WF_FALLBACK_ICON}"/></svg></span>
         <span class="wf-palette-label">${item.label}</span>
+        <button class="wf-help-trigger" onclick="event.stopPropagation();wfOpenHelpModal('${item.tool}')" title="Help: ${item.label}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></button>
       </div>`;
     }
     html += '</div>';
@@ -14443,6 +14768,7 @@ document.addEventListener('keydown', (e) => {
 });
 
 function wfInit() {
+  wfRestoreLayoutState();
   wfLoadLibrary();
   wfInitPan();
 }
