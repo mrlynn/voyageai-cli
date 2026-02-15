@@ -2385,6 +2385,22 @@ select:focus { outline: none; border-color: var(--accent); }
   background: rgba(136,147,151,0.12);
   color: var(--text-muted);
 }
+/* MCP integration cards */
+.mcp-card { display:flex; align-items:center; gap:14px; padding:14px 16px; background:var(--bg-surface); border:1px solid var(--border); border-radius:var(--radius); transition:border-color 0.15s; }
+.mcp-card:hover { border-color:var(--accent); }
+.mcp-card-icon { width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; background:rgba(0,212,170,0.08); }
+.mcp-card-info { flex:1; min-width:0; }
+.mcp-card-name { font-size:13px; font-weight:600; color:var(--text); }
+.mcp-card-path { font-size:11px; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:2px; }
+.mcp-card-actions { flex-shrink:0; display:flex; align-items:center; gap:8px; }
+.mcp-card-status { display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:600; padding:3px 10px; border-radius:4px; white-space:nowrap; }
+.mcp-card-status.installed { background:rgba(0,212,170,0.10); color:var(--success); }
+.mcp-card-status.not-installed { background:rgba(136,147,151,0.10); color:var(--text-muted); }
+.mcp-install-btn { padding:5px 14px; font-size:12px; font-weight:600; border-radius:5px; border:1px solid var(--accent); background:transparent; color:var(--accent); cursor:pointer; font-family:var(--font); transition:all 0.15s; }
+.mcp-install-btn:hover { background:var(--accent); color:var(--bg); }
+.mcp-install-btn.uninstall { border-color:var(--error); color:var(--error); }
+.mcp-install-btn.uninstall:hover { background:var(--error); color:#fff; }
+.mcp-install-btn:disabled { opacity:0.5; pointer-events:none; }
 /* Chat not-configured state */
 .chat-not-configured {
   display: flex;
@@ -3912,6 +3928,78 @@ select:focus { outline: none; border-color: var(--accent); }
   font-size: 9px; fill: rgba(255,255,255,0.6);
   pointer-events: none; text-anchor: middle;
 }
+
+/* Draft validation visual states */
+.wf-node-warning rect { 
+  stroke: #FFB74D !important; 
+  stroke-dasharray: 6 3; 
+  stroke-width: 2; 
+}
+.wf-node-info { 
+  opacity: 0.6; 
+}
+.wf-node-error rect { 
+  stroke: #EF5350 !important; 
+  stroke-width: 3; 
+}
+.wf-node-orphan rect { 
+  stroke: #616161 !important; 
+  stroke-dasharray: 2 4; 
+  stroke-width: 2; 
+}
+.wf-validation-badge {
+  font-size: 10px;
+  text-anchor: middle;
+  dominant-baseline: central;
+  pointer-events: none;
+  cursor: default;
+}
+.wf-validation-badge-bg {
+  rx: 6;
+  ry: 6;
+  pointer-events: all;
+  cursor: help;
+}
+.wf-validation-bar {
+  position: fixed;
+  top: 44px;
+  left: 260px;
+  right: 0;
+  height: 28px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  display: none;
+  align-items: center;
+  padding: 0 16px;
+  font-size: 12px;
+  z-index: 50;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+.wf-validation-bar:hover {
+  background: var(--bg-card);
+}
+.wf-validation-bar.warning {
+  color: #FFB74D;
+  border-bottom-color: #FFB74D;
+}
+.wf-validation-bar.info {
+  color: #889397;
+  border-bottom-color: #889397;
+}
+.wf-validation-bar.error {
+  color: #EF5350;
+  border-bottom-color: #EF5350;
+}
+
+/* Light mode variants */
+[data-theme="light"] .wf-node-warning rect { stroke: #FF8F00 !important; }
+[data-theme="light"] .wf-node-error rect { stroke: #C62828 !important; }
+[data-theme="light"] .wf-node-orphan rect { stroke: #424242 !important; }
+[data-theme="light"] .wf-validation-bar.warning { color: #FF8F00; border-bottom-color: #FF8F00; }
+[data-theme="light"] .wf-validation-bar.error { color: #C62828; border-bottom-color: #C62828; }
+[data-theme="light"] .wf-validation-bar.info { color: #424242; border-bottom-color: #424242; }
+
 /* Port styles */
 .wf-port { pointer-events: none; transition: fill 0.2s, stroke 0.2s; }
 .wf-port-in { fill: var(--bg-card); }
@@ -6622,6 +6710,10 @@ Reranking models rescore initial search results to improve relevance ordering.</
           <button id="wfTogglePropsBtn" class="active" onclick="wfToggleInspector()">Props</button>
         </div>
       </div>
+      <!-- Draft validation status bar -->
+      <div class="wf-validation-bar" id="wfValidationBar">
+        <span id="wfValidationBarText"></span>
+      </div>
       <!-- Edge handles for collapsed panels -->
       <div class="wf-edge-handle wf-edge-handle--left" id="wfEdgeHandleLeft" onclick="wfToggleLibrary()" title="Expand library">&#x203A;</div>
       <div class="wf-edge-handle wf-edge-handle--right" id="wfEdgeHandleRight" onclick="wfToggleInspector()" title="Expand properties">&#x2039;</div>
@@ -7073,6 +7165,10 @@ Reranking models rescore initial search results to improve relevance ordering.</
         <svg width="16" height="16" viewBox="0 0 24 24"><use href="#lg-shield"/></svg>
         <span>Data &amp; Privacy</span>
       </button>
+      <button class="settings-nav-item" data-settings-section="mcp">
+        <svg width="16" height="16" viewBox="0 0 24 24"><use href="#lg-plug"/></svg>
+        <span>MCP</span>
+      </button>
       <button class="settings-nav-item" data-settings-section="health">
         <svg width="16" height="16" viewBox="0 0 24 24"><use href="#lg-pulse"/></svg>
         <span>Health Check</span>
@@ -7453,6 +7549,22 @@ Reranking models rescore initial search results to improve relevance ordering.</
               <span class="version-badge" id="settingsCliVersion">—</span>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- ── MCP Integrations ── -->
+      <div class="settings-panel" id="settings-mcp">
+        <div class="settings-panel-header">
+          <h3 class="settings-panel-title">MCP Integrations</h3>
+          <p class="settings-panel-subtitle">Install the vai MCP server into your AI tools and editors</p>
+        </div>
+        <div class="settings-section">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+            <span class="settings-section-title" style="margin:0;">AI Tools</span>
+            <button class="btn" id="mcpRefreshBtn" onclick="loadMcpStatus()" style="padding:6px 16px;font-size:13px;">Refresh Status</button>
+          </div>
+          <div id="mcpLoading" style="display:none;text-align:center;padding:24px 0;color:var(--text-muted);font-size:13px;">Loading MCP status...</div>
+          <div id="mcpGrid" style="display:flex;flex-direction:column;gap:10px;"></div>
         </div>
       </div>
 
@@ -10466,6 +10578,74 @@ async function runDoctorCheck() {
   btn.textContent = 'Run Health Check';
 }
 
+// ── MCP Integrations ──
+var MCP_TOOL_ICONS = { claude:'\u{1F4AC}', 'claude-code':'\u{1F4BB}', cursor:'\u{1F5B1}', windsurf:'\u{1F30A}', vscode:'\u{1F4DD}', 'vscode-insiders':'\u{1F9EA}' };
+
+async function loadMcpStatus() {
+  var grid = document.getElementById('mcpGrid');
+  var loading = document.getElementById('mcpLoading');
+  if (!grid) return;
+  grid.innerHTML = '';
+  loading.style.display = 'block';
+  try {
+    var res = await fetch('/api/mcp/status');
+    var data = await res.json();
+    loading.style.display = 'none';
+    for (var i = 0; i < data.length; i++) {
+      var item = data[i];
+      var isInstalled = item.status.indexOf('installed') !== -1;
+      var icon = MCP_TOOL_ICONS[item.target] || '\u{1F527}';
+      var card = document.createElement('div');
+      card.className = 'mcp-card';
+      card.id = 'mcp-card-' + item.target;
+      var shortPath = item.configPath !== 'N/A' ? item.configPath.replace(/^.*\//, '.../') : '';
+      card.innerHTML = '<div class="mcp-card-icon">' + icon + '</div>' +
+        '<div class="mcp-card-info"><div class="mcp-card-name">' + item.name + '</div>' +
+        '<div class="mcp-card-path" title="' + (item.configPath || '') + '">' + shortPath + '</div></div>' +
+        '<div class="mcp-card-actions"><span class="mcp-card-status ' + (isInstalled ? 'installed' : 'not-installed') + '">' + (isInstalled ? 'Installed' : 'Not configured') + '</span>' +
+        (isInstalled
+          ? '<button class="mcp-install-btn uninstall" onclick="mcpUninstall(\'' + item.target + '\')">Remove</button>'
+          : '<button class="mcp-install-btn" onclick="mcpInstall(\'' + item.target + '\')">Install</button>') +
+        '</div>';
+      grid.appendChild(card);
+    }
+  } catch (err) {
+    loading.style.display = 'none';
+    grid.innerHTML = '<div style="text-align:center;padding:24px 0;color:var(--text-muted);font-size:13px;">Failed to load MCP status: ' + err.message + '</div>';
+  }
+}
+
+async function mcpInstall(target) {
+  var card = document.getElementById('mcp-card-' + target);
+  var btn = card && card.querySelector('.mcp-install-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Installing...'; }
+  try {
+    var res = await fetch('/api/mcp/install', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({target:target}) });
+    var data = await res.json();
+    if (data.installed) { flashSaved(); loadMcpStatus(); }
+    else if (data.message && data.message.indexOf('already configured') !== -1) {
+      if (confirm(data.message + '\n\nOverwrite existing configuration?')) {
+        var res2 = await fetch('/api/mcp/install', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({target:target, force:true}) });
+        var data2 = await res2.json();
+        if (data2.installed) flashSaved();
+        loadMcpStatus();
+      } else { loadMcpStatus(); }
+    } else { alert(data.message || 'Installation failed'); loadMcpStatus(); }
+  } catch (err) { alert('Install failed: ' + err.message); loadMcpStatus(); }
+}
+
+async function mcpUninstall(target) {
+  var card = document.getElementById('mcp-card-' + target);
+  var btn = card && card.querySelector('.mcp-install-btn.uninstall');
+  if (btn) { btn.disabled = true; btn.textContent = 'Removing...'; }
+  try {
+    var res = await fetch('/api/mcp/uninstall', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({target:target}) });
+    var data = await res.json();
+    if (data.removed) flashSaved(); else alert(data.message || 'Uninstall failed');
+    loadMcpStatus();
+  } catch (err) { alert('Uninstall failed: ' + err.message); loadMcpStatus(); }
+}
+
 // ── Update Checker ──
 function checkForAppUpdate() {
   if (!window.vai || !window.vai.isElectron) return;
@@ -11697,6 +11877,7 @@ function switchSettingsSection(section) {
   // Scroll content area to top
   const content = document.querySelector('.settings-content');
   if (content) content.scrollTop = 0;
+  if (section === 'mcp') loadMcpStatus();
 }
 
 function openChatSettings() {
@@ -12691,7 +12872,7 @@ init();
 
 /* ── Cost Dashboard ── */
 #costStatusBar {
-  position: fixed; bottom: 0; left: 0; right: 0; z-index: 9999;
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
   background: var(--bg-surface); border-top: 1px solid var(--border);
   padding: 8px 16px; font-size: 13px; color: var(--text-dim);
   display: flex; align-items: center; gap: 12px; backdrop-filter: blur(8px);
@@ -12708,7 +12889,7 @@ init();
 }
 #costDetailsToggle:hover { background: var(--bg-card); }
 #costDetailPanel {
-  position: fixed; bottom: 40px; left: 0; right: 0; z-index: 9998;
+  position: fixed; bottom: 40px; left: 0; right: 0; z-index: 300;
   background: var(--bg-surface); border-top: 1px solid var(--border);
   max-height: 0; overflow: hidden; transition: max-height 0.3s ease;
 }
@@ -12731,7 +12912,7 @@ init();
 .cost-toast {
   position: fixed; bottom: 52px; left: 50%; transform: translateX(-50%);
   background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px;
-  padding: 8px 16px; font-size: 12px; color: var(--text-dim); z-index: 10000;
+  padding: 8px 16px; font-size: 12px; color: var(--text-dim); z-index: 1000;
   font-family: 'SF Mono', 'Fira Code', monospace; white-space: nowrap;
   animation: costToastIn 0.2s ease, costToastOut 0.3s ease 2.7s forwards;
   pointer-events: none;
@@ -14087,9 +14268,16 @@ function wfExportJson() {
 }
 
 // ── Dry Run ──
-function wfDryRun() {
+async function wfDryRun() {
   const def = wfState.activeWorkflow;
   if (!def || !wfState.layers) return;
+  
+  // Strict validation before dry run
+  const validation = await wfValidateBuilder();
+  if (validation && !validation.valid) {
+    wfShowValidationErrors(validation.errors || [], 'Dry Run');
+    return;
+  }
 
   const layers = wfState.layers;
   const stepMap = {};
@@ -14373,6 +14561,13 @@ async function wfExecute() {
 async function wfExecuteWithInputs(inputs) {
   const def = wfState.activeWorkflow;
   if (!def || wfState.executing) return;
+  
+  // Strict validation before execution
+  const validation = await wfValidateBuilder();
+  if (validation && !validation.valid) {
+    wfShowValidationErrors(validation.errors || [], 'Run Workflow');
+    return;
+  }
 
   wfState.executing = true;
   wfState.executionResults = {};
@@ -14885,6 +15080,9 @@ function wfNewWorkflow() {
 
   // Set viewBox
   wfApplyViewBox();
+  
+  // Trigger draft validation with debounce
+  wfTriggerDraftValidation(300);
 }
 
 // ── Builder: Edit current workflow ──
@@ -15010,6 +15208,9 @@ function wfCanvasDrop(e) {
   wfRefreshNodes();
   wfSelectNode(id);
   wfState.dirtyFlag = true;
+  
+  // Trigger draft validation with debounce for drag-drop
+  wfTriggerDraftValidation(300);
 }
 
 // ── Builder: Mutation helpers ──
@@ -15030,6 +15231,9 @@ function wfEditStepInput(stepId, key, value) {
   // Rebuild graph in case template refs changed
   wfBuildGraph();
   wfRefreshNodes();
+  
+  // Trigger draft validation with debounce for config changes
+  wfTriggerDraftValidation(500);
 }
 
 function wfEditStepId(oldId, newId) {
@@ -15061,6 +15265,9 @@ function wfEditStepId(oldId, newId) {
   wfBuildGraph();
   wfRefreshNodes();
   wfUpdateInspector();
+  
+  // Trigger draft validation with debounce for ID changes
+  wfTriggerDraftValidation(500);
 }
 
 function wfDeleteStep(stepId) {
@@ -15073,6 +15280,9 @@ function wfDeleteStep(stepId) {
   wfBuildGraph();
   wfRefreshNodes();
   wfUpdateInspector();
+  
+  // Trigger draft validation immediately on node deletion
+  wfTriggerDraftValidation(0);
 }
 
 function wfEditWorkflowField(field, value) {
@@ -15095,6 +15305,384 @@ async function wfValidateBuilder() {
   } catch (err) {
     return { valid: false, errors: [err.message] };
   }
+}
+
+// ── Client-side Draft Validator ──
+const VALID_TOOLS = [
+  'query', 'search', 'rerank', 'embed', 'similarity', 'ingest', 
+  'collections', 'models', 'explain', 'estimate', 'merge', 'filter', 
+  'transform', 'generate', 'conditional', 'loop', 'template', 
+  'chunk', 'aggregate', 'http'
+];
+
+function draftValidate(workflow) {
+  const issues = [];
+  const steps = workflow.steps || [];
+  const stepIds = new Set(steps.map(s => s.id));
+
+  // Duplicate IDs (always error)
+  const seen = new Set();
+  for (const step of steps) {
+    if (seen.has(step.id)) {
+      issues.push({ 
+        severity: 'error', 
+        stepId: step.id, 
+        code: 'DUPLICATE_ID',
+        message: `Duplicate step ID "${step.id}"` 
+      });
+    }
+    seen.add(step.id);
+  }
+
+  // Invalid tools (always error)
+  for (const step of steps) {
+    if (step.tool && !VALID_TOOLS.includes(step.tool)) {
+      issues.push({ 
+        severity: 'error', 
+        stepId: step.id, 
+        code: 'INVALID_TOOL',
+        message: `Unknown tool "${step.tool}"` 
+      });
+    }
+  }
+
+  // Unknown step references (warning in draft)
+  const templateRefPattern = /\{\{\s*(\w+)\.output/g;
+  for (const step of steps) {
+    const json = JSON.stringify(step.inputs || {});
+    let match;
+    while ((match = templateRefPattern.exec(json)) !== null) {
+      const refId = match[1];
+      if (refId !== 'inputs' && refId !== 'defaults' && !stepIds.has(refId)) {
+        issues.push({ 
+          severity: 'warning', 
+          stepId: step.id, 
+          code: 'UNKNOWN_STEP_REF',
+          message: `References unknown step "${refId}"`, 
+          referencedStep: refId 
+        });
+      }
+    }
+  }
+
+  // Orphan nodes (info in draft)
+  const referenced = new Set();
+  const hasRefs = new Set();
+  for (const step of steps) {
+    const json = JSON.stringify(step.inputs || {});
+    let match;
+    const refPattern = /\{\{\s*(\w+)\.output/g;
+    while ((match = refPattern.exec(json)) !== null) {
+      if (match[1] !== 'inputs' && match[1] !== 'defaults') {
+        referenced.add(match[1]);
+        hasRefs.add(step.id);
+      }
+    }
+  }
+  
+  for (const step of steps) {
+    if (!referenced.has(step.id) && !hasRefs.has(step.id) && steps.length > 1) {
+      issues.push({ 
+        severity: 'info', 
+        stepId: step.id, 
+        code: 'ORPHAN_NODE',
+        message: `Step "${step.id}" is not connected to any other step` 
+      });
+    }
+  }
+
+  // Circular dependencies (always error) - simplified check
+  function hasCycle() {
+    const visiting = new Set();
+    const visited = new Set();
+    
+    function visit(stepId) {
+      if (visiting.has(stepId)) return true; // cycle found
+      if (visited.has(stepId)) return false;
+      
+      visiting.add(stepId);
+      const step = steps.find(s => s.id === stepId);
+      if (step) {
+        const json = JSON.stringify(step.inputs || {});
+        let match;
+        const refPattern = /\{\{\s*(\w+)\.output/g;
+        while ((match = refPattern.exec(json)) !== null) {
+          if (match[1] !== 'inputs' && match[1] !== 'defaults') {
+            if (visit(match[1])) return true;
+          }
+        }
+      }
+      visiting.delete(stepId);
+      visited.add(stepId);
+      return false;
+    }
+    
+    for (const step of steps) {
+      if (!visited.has(step.id) && visit(step.id)) return true;
+    }
+    return false;
+  }
+  
+  if (hasCycle()) {
+    issues.push({
+      severity: 'error',
+      stepId: steps[0]?.id || '',
+      code: 'CIRCULAR_DEPENDENCY',
+      message: 'Circular dependency detected in workflow'
+    });
+  }
+
+  const errors = issues.filter(i => i.severity === 'error');
+  return {
+    valid: errors.length === 0,
+    mode: 'draft',
+    issues,
+    stats: {
+      totalSteps: steps.length,
+      errors: errors.length,
+      warnings: issues.filter(i => i.severity === 'warning').length,
+      info: issues.filter(i => i.severity === 'info').length
+    }
+  };
+}
+
+// ── Validation State Management ──
+function wfApplyValidationState(issues) {
+  const svg = document.getElementById('wf-canvas');
+  if (!svg) return;
+  
+  // Clear existing validation classes and badges
+  svg.querySelectorAll('.wf-node').forEach(node => {
+    node.classList.remove('wf-node-warning', 'wf-node-info', 'wf-node-error', 'wf-node-orphan');
+    // Remove existing badges
+    node.querySelectorAll('.wf-validation-badge-group').forEach(badge => badge.remove());
+  });
+  
+  // Group issues by step ID
+  const stepIssues = {};
+  for (const issue of issues) {
+    if (!stepIssues[issue.stepId]) stepIssues[issue.stepId] = [];
+    stepIssues[issue.stepId].push(issue);
+  }
+  
+  // Apply visual states to nodes
+  for (const [stepId, stepIssueList] of Object.entries(stepIssues)) {
+    const node = svg.querySelector(`[data-step-id="${stepId}"]`);
+    if (!node) continue;
+    
+    // Determine highest severity for visual state
+    const hasError = stepIssueList.some(i => i.severity === 'error');
+    const hasWarning = stepIssueList.some(i => i.severity === 'warning');
+    const hasInfo = stepIssueList.some(i => i.severity === 'info');
+    const hasOrphan = stepIssueList.some(i => i.code === 'ORPHAN_NODE');
+    
+    if (hasError) {
+      node.classList.add('wf-node-error');
+    } else if (hasWarning) {
+      node.classList.add('wf-node-warning');
+    } else if (hasOrphan) {
+      node.classList.add('wf-node-orphan');
+    } else if (hasInfo) {
+      node.classList.add('wf-node-info');
+    }
+    
+    // Add badge with tooltip
+    const badges = [];
+    if (hasError) badges.push({ icon: '❌', type: 'error' });
+    else if (hasWarning) badges.push({ icon: '⚠️', type: 'warning' });
+    else if (hasOrphan) badges.push({ icon: '', type: 'orphan' }); // No badge for orphan
+    else if (hasInfo) badges.push({ icon: '🔧', type: 'info' });
+    
+    if (badges.length > 0) {
+      const badge = badges[0]; // Show only the most severe
+      if (badge.icon) { // Only show badge if there's an icon
+        const badgeGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        badgeGroup.className = 'wf-validation-badge-group';
+        
+        const bgRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        bgRect.className = 'wf-validation-badge-bg';
+        bgRect.setAttribute('x', '44');
+        bgRect.setAttribute('y', '2');
+        bgRect.setAttribute('width', '16');
+        bgRect.setAttribute('height', '16');
+        bgRect.setAttribute('fill', badge.type === 'error' ? '#EF5350' : badge.type === 'warning' ? '#FFB74D' : '#616161');
+        
+        const badgeText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        badgeText.className = 'wf-validation-badge';
+        badgeText.setAttribute('x', '52');
+        badgeText.setAttribute('y', '10');
+        badgeText.setAttribute('fill', 'white');
+        badgeText.textContent = badge.icon;
+        
+        badgeGroup.appendChild(bgRect);
+        badgeGroup.appendChild(badgeText);
+        
+        // Add tooltip
+        const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+        title.textContent = stepIssueList.map(i => i.message).join('\n');
+        badgeGroup.appendChild(title);
+        
+        node.appendChild(badgeGroup);
+      }
+    }
+  }
+  
+  // Update validation status bar
+  wfUpdateValidationBar(issues);
+}
+
+function wfUpdateValidationBar(issues) {
+  const bar = document.getElementById('wfValidationBar');
+  const text = document.getElementById('wfValidationBarText');
+  if (!bar || !text) return;
+  
+  const errors = issues.filter(i => i.severity === 'error').length;
+  const warnings = issues.filter(i => i.severity === 'warning').length;
+  const infos = issues.filter(i => i.severity === 'info').length;
+  
+  if (errors > 0) {
+    bar.className = 'wf-validation-bar error';
+    bar.style.display = 'flex';
+    text.textContent = `❌ ${errors} structural error${errors === 1 ? '' : 's'} — must fix before running`;
+  } else if (warnings > 0) {
+    bar.className = 'wf-validation-bar warning';
+    bar.style.display = 'flex';
+    text.textContent = `⚠️ ${warnings} unresolved reference${warnings === 1 ? '' : 's'}`;
+  } else if (infos > 0) {
+    bar.className = 'wf-validation-bar info';
+    bar.style.display = 'flex';
+    text.textContent = `🔧 ${infos} step${infos === 1 ? '' : 's'} need${infos === 1 ? 's' : ''} configuration`;
+  } else {
+    bar.style.display = 'none';
+  }
+  
+  // Make status bar clickable to pan to first issue
+  bar.onclick = () => {
+    if (issues.length > 0) {
+      const firstIssue = issues[0];
+      wfPanToNode(firstIssue.stepId);
+    }
+  };
+}
+
+function wfPanToNode(stepId) {
+  const position = wfState.nodePositions[stepId];
+  if (!position) return;
+  
+  const svg = document.getElementById('wf-canvas');
+  if (!svg) return;
+  
+  const rect = svg.getBoundingClientRect();
+  const centerX = rect.width / 2;
+  const centerY = rect.height / 2;
+  
+  wfState.panX = centerX / wfState.zoom - position.x - 30; // 30 = half node width
+  wfState.panY = centerY / wfState.zoom - position.y - 20; // 20 = half node height
+  
+  wfRefreshNodes();
+}
+
+// Show validation errors in dry-run panel instead of toasts
+function wfShowValidationErrors(errors, action = 'Action') {
+  const canvasArea = document.querySelector('.wf-canvas-area');
+  if (!canvasArea) return;
+  
+  // Remove any existing overlay
+  canvasArea.querySelectorAll('.wf-dryrun-overlay').forEach(el => el.remove());
+  
+  const overlay = document.createElement('div');
+  overlay.className = 'wf-dryrun-overlay';
+  
+  const panel = document.createElement('div');
+  panel.className = 'wf-dryrun-panel';
+  
+  const header = document.createElement('div');
+  header.className = 'wf-dryrun-header';
+  header.innerHTML = `
+    <h3>Validation Errors</h3>
+    <button onclick="this.closest('.wf-dryrun-overlay').remove()" style="background:none;border:none;color:var(--text-dim);font-size:18px;cursor:pointer;">✕</button>
+  `;
+  
+  const content = document.createElement('div');
+  content.className = 'wf-dryrun-content';
+  content.innerHTML = `
+    <div class="wf-validation-errors">
+      <p style="margin-bottom: 12px; color: var(--text-dim);">
+        Cannot ${action.toLowerCase()} due to the following errors:
+      </p>
+      <ul>
+        ${errors.map(error => `<li>${error}</li>`).join('')}
+      </ul>
+    </div>
+  `;
+  
+  const footer = document.createElement('div');
+  footer.className = 'wf-dryrun-footer';
+  footer.innerHTML = `
+    <button class="wf-dryrun-close" onclick="this.closest('.wf-dryrun-overlay').remove()">
+      Close
+    </button>
+  `;
+  
+  panel.appendChild(header);
+  panel.appendChild(content);
+  panel.appendChild(footer);
+  overlay.appendChild(panel);
+  canvasArea.appendChild(overlay);
+}
+
+// Standalone validate workflow function for command palette
+async function wfValidateWorkflow() {
+  const def = wfState.activeWorkflow;
+  if (!def) return;
+  
+  const validation = await wfValidateBuilder();
+  if (validation && !validation.valid) {
+    wfShowValidationErrors(validation.errors || [], 'Validate');
+  } else {
+    // Show success message
+    const canvasArea = document.querySelector('.wf-canvas-area');
+    if (!canvasArea) return;
+    
+    // Remove any existing overlay
+    canvasArea.querySelectorAll('.wf-dryrun-overlay').forEach(el => el.remove());
+    
+    const overlay = document.createElement('div');
+    overlay.className = 'wf-dryrun-overlay';
+    
+    const panel = document.createElement('div');
+    panel.className = 'wf-dryrun-panel';
+    panel.innerHTML = `
+      <div class="wf-dryrun-header">
+        <h3>Validation Success</h3>
+        <button onclick="this.closest('.wf-dryrun-overlay').remove()" style="background:none;border:none;color:var(--text-dim);font-size:18px;cursor:pointer;">✕</button>
+      </div>
+      <div class="wf-dryrun-content">
+        <p style="color: var(--success); text-align: center; padding: 24px;">
+          ✅ Workflow validation passed. Ready to run!
+        </p>
+      </div>
+      <div class="wf-dryrun-footer">
+        <button class="wf-dryrun-close" onclick="this.closest('.wf-dryrun-overlay').remove()">Close</button>
+      </div>
+    `;
+    
+    overlay.appendChild(panel);
+    canvasArea.appendChild(overlay);
+  }
+}
+
+// Debounced validation triggering
+let wfDraftValidateTimeout = null;
+
+function wfTriggerDraftValidation(delayMs = 0) {
+  if (!wfState.builderMode || !wfState.activeWorkflow) return;
+  
+  clearTimeout(wfDraftValidateTimeout);
+  wfDraftValidateTimeout = setTimeout(() => {
+    const result = draftValidate(wfState.activeWorkflow);
+    wfApplyValidationState(result.issues);
+  }, delayMs);
 }
 
 // ── Builder: Edge drag ──
@@ -15178,6 +15766,9 @@ function wfEdgeDropOnInput(toId) {
     wfRelayout();
     wfRefreshNodes();
     if (wfState.selectedNodeId === toId) wfUpdateInspector();
+    
+    // Trigger draft validation immediately on edge connection
+    wfTriggerDraftValidation(0);
   }
 
   // Clean up drag state
@@ -17073,11 +17664,15 @@ function generateContextualCommands() {
         keywords: ['export', 'save', cmd.label.toLowerCase().split(' ')].flat(),
         priority: 3,
         execute: () => {
-          // Generic export handler - could be enhanced
-          if (typeof openExportDialog === 'function') {
+          // Special handlers for specific actions
+          if (cmd.id === 'action-validate-workflow') {
+            wfValidateWorkflow();
+          } else if (cmd.id === 'action-dry-run') {
+            wfDryRun();
+          } else if (typeof openExportDialog === 'function') {
             openExportDialog(context.activeTab);
           } else {
-            alert(`Export as ${cmd.label.split(' ')[2]} not yet implemented`);
+            alert(`${cmd.label} not yet implemented`);
           }
         }
       });
