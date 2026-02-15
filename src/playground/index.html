@@ -15767,34 +15767,44 @@ function updateExportPreview() {
 
   content.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-muted);font-size:13px;">Generating preview…</div>';
 
-  // For PNG/PDF, fetch as blob; for SVG, get both source + rendered
-  const fetchFormat = ['png', 'pdf'].includes(_exportFormat) ? _exportFormat : (_exportFormat === 'svg' ? 'svg' : _exportFormat);
-
+  // Generate preview: use server API for binary formats, client-side for text formats
   if (['png', 'pdf'].includes(_exportFormat)) {
+    // Binary formats need server-side rendering (Playwright)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 20000);
     fetch('/api/export/' + _exportContext, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ format: _exportFormat, data, options: {} }),
+      signal: controller.signal,
     })
-      .then(r => r.blob())
+      .then(r => { clearTimeout(timeoutId); if (!r.ok) return r.text().then(t => { throw new Error(t); }); return r.blob(); })
       .then(blob => {
         const url = URL.createObjectURL(blob);
         _exportPreviewCache[cacheKey] = { blobUrl: url, mimeType: _exportFormat === 'png' ? 'image/png' : 'application/pdf' };
         renderPreviewContent(content, _exportPreviewCache[cacheKey], _exportFormat, _exportPreviewTab);
       })
-      .catch(() => { content.innerHTML = '<div style="padding:16px;color:var(--text-muted);">Preview unavailable</div>'; });
+      .catch(err => { content.innerHTML = `<div style="padding:16px;color:#f44;">Preview error: ${escapeHtmlExport(err.message || String(err))}</div>`; });
   } else {
-    fetch('/api/export/' + _exportContext, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ format: _exportFormat, data, options: {} }),
-    })
-      .then(r => r.text())
-      .then(text => {
-        _exportPreviewCache[cacheKey] = { text };
-        renderPreviewContent(content, _exportPreviewCache[cacheKey], _exportFormat, _exportPreviewTab);
+    // Text formats: generate client-side for instant preview
+    try {
+      const text = generatePreviewClientSide(_exportContext, _exportFormat, data);
+      _exportPreviewCache[cacheKey] = { text };
+      renderPreviewContent(content, _exportPreviewCache[cacheKey], _exportFormat, _exportPreviewTab);
+    } catch (err) {
+      // Fallback to server API
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+      fetch('/api/export/' + _exportContext, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ format: _exportFormat, data, options: {} }),
+        signal: controller.signal,
       })
-      .catch(() => { content.innerHTML = '<div style="padding:16px;color:var(--text-muted);">Preview unavailable</div>'; });
+        .then(r => { clearTimeout(timeoutId); if (!r.ok) return r.text().then(t => { throw new Error(t); }); return r.text(); })
+        .then(text => { _exportPreviewCache[cacheKey] = { text }; renderPreviewContent(content, _exportPreviewCache[cacheKey], _exportFormat, _exportPreviewTab); })
+        .catch(err2 => { content.innerHTML = `<div style="padding:16px;color:#f44;">Preview error: ${escapeHtmlExport(err2.message || String(err2))}</div>`; });
+    }
   }
 }
 
@@ -15871,6 +15881,143 @@ function renderPreviewContent(el, cached, format, tab) {
     default:
       el.innerHTML = `<div class="export-preview-source">${escapeHtmlExport(cached.text || '')}</div>`;
   }
+}
+
+// ── Client-side preview generation (no server round-trip) ──
+
+function generatePreviewClientSide(context, format, data) {
+  if (format === 'json') {
+    return JSON.stringify(data, null, 2);
+  }
+  if (format === 'jsonl') {
+    const items = data.results || data.rows || [];
+    return items.map(r => JSON.stringify(r)).join('\n');
+  }
+  if (format === 'csv') {
+    return generateCsvPreview(data);
+  }
+  if (format === 'markdown') {
+    return generateMarkdownPreviewData(context, data);
+  }
+  if (format === 'mermaid') {
+    return generateMermaidPreview(data);
+  }
+  if (format === 'svg') {
+    // SVG needs server-side Playwright — trigger fallback
+    throw new Error('SVG requires server');
+  }
+  throw new Error('Unknown format');
+}
+
+function generateCsvPreview(data) {
+  const rows = data.results || data.rows || [];
+  if (rows.length === 0) return '';
+  const cols = Object.keys(rows[0]);
+  const escapeCsv = (v) => {
+    const s = String(v ?? '');
+    return s.includes(',') || s.includes('"') || s.includes('\n') ? '"' + s.replace(/"/g, '""') + '"' : s;
+  };
+  return [cols.join(','), ...rows.map(r => cols.map(c => escapeCsv(r[c])).join(','))].join('\n');
+}
+
+function generateMarkdownPreviewData(context, data) {
+  if (context === 'workflow') {
+    const lines = [`# ${data.name || 'Workflow'}`, ''];
+    if (data.description) { lines.push(data.description, ''); }
+    if (data.version) lines.push(`**Version:** ${data.version}`);
+    const tools = (data.steps || []).map(s => s.tool).filter(Boolean);
+    if (tools.length) lines.push(`**Tools used:** ${[...new Set(tools)].join(', ')}`);
+    lines.push('');
+    if (data.inputs && Object.keys(data.inputs).length > 0) {
+      lines.push('## Inputs', '', '| Parameter | Type | Required | Default |', '|-----------|------|----------|---------|');
+      for (const [k, v] of Object.entries(data.inputs)) {
+        lines.push(`| ${k} | ${v.type || 'string'} | ${v.required ? 'Yes' : 'No'} | ${v.default ?? '—'} |`);
+      }
+      lines.push('');
+    }
+    if (data.steps) {
+      lines.push('## Steps', '');
+      data.steps.forEach((s, i) => {
+        lines.push(`### ${i+1}. ${s.name || s.description || s.id}`);
+        if (s.tool) lines.push(`- **Tool:** ${s.tool}`);
+        lines.push('');
+      });
+    }
+    return lines.join('\n');
+  }
+  if (context === 'search') {
+    const lines = ['# Search Results', ''];
+    if (data.query) lines.push(`**Query:** ${data.query}`, '');
+    (data.results || []).forEach((r, i) => {
+      lines.push(`### ${i+1}. ${r.source || 'Result'} (score: ${r.score ?? '—'})`);
+      if (r.text) lines.push('', `> ${r.text.slice(0, 200)}`, '');
+    });
+    return lines.join('\n');
+  }
+  if (context === 'chat') {
+    const lines = ['# Chat Session', ''];
+    (data.turns || []).forEach(t => {
+      lines.push(`**${t.role === 'user' ? 'User' : 'vai'}:**`, t.content || '', '', '---', '');
+    });
+    return lines.join('\n');
+  }
+  if (context === 'benchmark') {
+    const results = data.results || data.rows || [];
+    if (results.length === 0) return '# Benchmark Results\n\nNo data.';
+    const cols = Object.keys(results[0]);
+    const lines = ['# Benchmark Results', '', '| ' + cols.join(' | ') + ' |', '| ' + cols.map(() => '---').join(' | ') + ' |'];
+    results.forEach(r => lines.push('| ' + cols.map(c => String(r[c] ?? '')).join(' | ') + ' |'));
+    return lines.join('\n');
+  }
+  return JSON.stringify(data, null, 2);
+}
+
+function generateMermaidPreview(data) {
+  const steps = data.steps || [];
+  if (steps.length === 0) return 'graph TD\n    empty["No steps"]';
+
+  const TOOL_CATS = { query: 'retrieval', search: 'retrieval', rerank: 'retrieval', embed: 'embedding', similarity: 'embedding', generate: 'generation', ingest: 'ingestion' };
+  const EMOJI = { retrieval: '🔍', embedding: '🧬', generation: '✨', ingestion: '📥', control: '⚙️', utility: '🔧' };
+  const getCat = (t) => TOOL_CATS[t] || (['merge','filter','transform','conditional','loop','template'].includes(t) ? 'control' : 'utility');
+
+  const lines = ["%%{init: {'theme': 'dark', 'themeVariables': { 'primaryColor': '#00D4AA' }}}%%", 'graph TD'];
+  const cats = new Set();
+
+  // Nodes
+  for (const s of steps) {
+    const cat = getCat(s.tool);
+    cats.add(cat);
+    const label = `${EMOJI[cat] || '🔧'} ${s.name || s.description || s.id}`;
+    lines.push(`    ${s.id}(["${label}"]):::${cat}`);
+  }
+  lines.push('');
+
+  // Edges — scan inputs for {{ ref.output }} template patterns
+  const stepIds = new Set(steps.map(s => s.id));
+  for (const s of steps) {
+    const inputStr = JSON.stringify(s.inputs || {});
+    for (const sid of stepIds) {
+      if (sid !== s.id && inputStr.includes(sid)) {
+        lines.push(`    ${sid} --> ${s.id}`);
+      }
+    }
+  }
+  lines.push('');
+
+  // Class defs
+  const classDefs = {
+    retrieval: 'classDef retrieval fill:#00838F,stroke:#00D4AA,color:#fff',
+    embedding: 'classDef embedding fill:#4A148C,stroke:#CE93D8,color:#fff',
+    generation: 'classDef generation fill:#6A1B9A,stroke:#CE93D8,color:#fff',
+    control: 'classDef control fill:#424242,stroke:#9E9E9E,color:#fff',
+    utility: 'classDef utility fill:#E65100,stroke:#FFB74D,color:#fff',
+    ingestion: 'classDef ingestion fill:#1B5E20,stroke:#66BB6A,color:#fff',
+  };
+  for (const cat of cats) {
+    if (classDefs[cat]) lines.push(`    ${classDefs[cat]}`);
+  }
+
+  return lines.join('\n');
 }
 
 // ── Preview helpers ──
