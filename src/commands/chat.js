@@ -499,7 +499,7 @@ async function handleSlashCommand(input, ctx) {
       console.log('  /context    Show retrieved context from last query');
       console.log('  /clear      Clear conversation history');
       console.log('  /model      Show or switch LLM model (/model <name>)');
-      console.log('  /export     Export conversation (markdown or json)');
+      console.log('  /export [format] [file]  Export conversation (markdown, json, pdf)');
       if (isAgent) {
         console.log('  /tools      Show tool calls from last response');
         console.log('  /export-workflow  Export last tool sequence as workflow');
@@ -613,17 +613,38 @@ async function handleSlashCommand(input, ctx) {
     }
 
     case '/export': {
-      const format = parts[1] || 'md';
-      if (format === 'json') {
-        const data = history.exportJSON();
-        const filename = `chat-${history.sessionId.slice(0, 8)}.json`;
-        fs.writeFileSync(filename, JSON.stringify(data, null, 2) + '\n');
+      const format = parts[1] || 'markdown';
+      const outFile = parts[2] || null;
+      const validFormats = ['json', 'markdown', 'md', 'pdf'];
+
+      if (!validFormats.includes(format)) {
+        console.log(pc.dim(`  Unknown format: ${format}. Use: ${validFormats.join(', ')}`));
+        return true;
+      }
+
+      try {
+        const { exportArtifact } = require('../lib/export');
+        const chatData = history.exportJSON();
+        const effectiveFormat = format === 'md' ? 'markdown' : format;
+
+        const result = await exportArtifact({
+          context: 'chat',
+          format: effectiveFormat,
+          data: chatData,
+          options: {},
+        });
+
+        const isBinary = Buffer.isBuffer(result.content);
+        const filename = outFile || result.suggestedFilename;
+
+        if (isBinary) {
+          fs.writeFileSync(filename, result.content);
+        } else {
+          fs.writeFileSync(filename, result.content, 'utf-8');
+        }
         console.log(ui.success(`Exported to ${filename}`));
-      } else {
-        const md = history.exportMarkdown();
-        const filename = `chat-${history.sessionId.slice(0, 8)}.md`;
-        fs.writeFileSync(filename, md);
-        console.log(ui.success(`Exported to ${filename}`));
+      } catch (err) {
+        console.log(pc.red(`  Export failed: ${err.message}`));
       }
       return true;
     }
