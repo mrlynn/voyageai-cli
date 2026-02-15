@@ -22,6 +22,6 @@ function normalizeBenchmark(data, options = {}) {
   };
 }
 
-const BENCHMARK_FORMATS = ['json', 'csv', 'markdown', 'clipboard'];
+const BENCHMARK_FORMATS = ['json', 'csv', 'markdown', 'svg', 'png', 'clipboard'];
 
 module.exports = { normalizeBenchmark, BENCHMARK_FORMATS };

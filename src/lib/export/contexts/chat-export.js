@@ -36,6 +36,6 @@ function normalizeChat(data, options = {}) {
   };
 }
 
-const CHAT_FORMATS = ['json', 'markdown', 'clipboard'];
+const CHAT_FORMATS = ['json', 'markdown', 'pdf', 'clipboard'];
 
 module.exports = { normalizeChat, CHAT_FORMATS };

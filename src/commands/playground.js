@@ -1532,6 +1532,32 @@ function createPlaygroundServer() {
         }
       }
 
+      // ── Export API endpoints ──
+      const exportMatch = req.url.match(/^\/api\/export\/(workflow|chat|search|benchmark)$/);
+      if (req.method === 'POST' && exportMatch) {
+        const context = exportMatch[1];
+        try {
+          const body = JSON.parse(await readBody(req));
+          const { exportArtifact } = require('../lib/export');
+          const result = await exportArtifact({
+            context,
+            format: body.format || 'json',
+            data: body.data || {},
+            options: body.options || {},
+          });
+          const isBinary = Buffer.isBuffer(result.content);
+          res.writeHead(200, {
+            'Content-Type': result.mimeType,
+            'Content-Disposition': `attachment; filename="${result.suggestedFilename}"`,
+          });
+          res.end(isBinary ? result.content : result.content);
+        } catch (err) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: err.message }));
+        }
+        return;
+      }
+
       // 404
       res.writeHead(404, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: 'Not found' }));
