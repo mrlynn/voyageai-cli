@@ -15306,7 +15306,7 @@ async function wfValidateBuilder() {
     const res = await fetch('/api/workflows/validate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(def),
+      body: JSON.stringify({ definition: def }),
     });
     return await res.json();
   } catch (err) {
