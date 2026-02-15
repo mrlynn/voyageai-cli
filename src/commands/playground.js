@@ -478,6 +478,62 @@ function createPlaygroundServer() {
         return;
       }
 
+      // API: MCP status — installation status across all tools
+      if (req.method === 'GET' && req.url === '/api/mcp/status') {
+        try {
+          const { statusAll } = require('../mcp/install');
+          const results = statusAll();
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify(results));
+        } catch (err) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: err.message }));
+        }
+        return;
+      }
+
+      // API: MCP install — install vai into a target tool
+      if (req.method === 'POST' && req.url === '/api/mcp/install') {
+        try {
+          const body = await readBody(req);
+          const { target, force } = JSON.parse(body);
+          if (!target) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'target is required' }));
+            return;
+          }
+          const { installTarget } = require('../mcp/install');
+          const result = installTarget(target, { force: force || false });
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify(result));
+        } catch (err) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: err.message }));
+        }
+        return;
+      }
+
+      // API: MCP uninstall — remove vai from a target tool
+      if (req.method === 'POST' && req.url === '/api/mcp/uninstall') {
+        try {
+          const body = await readBody(req);
+          const { target } = JSON.parse(body);
+          if (!target) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'target is required' }));
+            return;
+          }
+          const { uninstallTarget } = require('../mcp/install');
+          const result = uninstallTarget(target);
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify(result));
+        } catch (err) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: err.message }));
+        }
+        return;
+      }
+
       // API: Settings origins — where each config value comes from
       if (req.method === 'GET' && req.url === '/api/settings/origins') {
         const { resolveLLMConfig } = require('../lib/llm');

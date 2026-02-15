@@ -5238,10 +5238,131 @@ select:focus { outline: none; border-color: var(--accent); }
   content: '⏱';
 }
 
+/* Reduced motion support - Phase 3 */
+@media (prefers-reduced-motion: reduce) {
+  .command-palette-overlay {
+    transition: none;
+  }
+  
+  .command-palette {
+    transition: none;
+  }
+  
+  .command-palette-results-transition {
+    transition: none;
+  }
+  
+  .command-palette-item {
+    transition: none;
+  }
+  
+  .command-palette-back {
+    transition: none;
+  }
+}
+
+/* Light mode refinements - Phase 3 */
+[data-theme="light"] .command-palette-overlay {
+  background: rgba(0, 30, 43, 0.4);
+  backdrop-filter: blur(8px);
+}
+
+[data-theme="light"] .command-palette {
+  background: #FFFFFF;
+  border: 1px solid #E8EDEB;
+  box-shadow: 0 24px 48px rgba(0, 30, 43, 0.15);
+}
+
+[data-theme="light"] .command-palette-input {
+  color: #001E2B;
+  border-bottom-color: #E8EDEB;
+}
+
+[data-theme="light"] .command-palette-input::placeholder {
+  color: #889397;
+}
+
+[data-theme="light"] .command-palette-item:hover,
+[data-theme="light"] .command-palette-item.selected {
+  background: rgba(0, 158, 128, 0.08);
+}
+
+[data-theme="light"] .command-palette-item.selected {
+  border-left-color: #009E80;
+}
+
+[data-theme="light"] .command-palette-back:hover {
+  background: rgba(0, 158, 128, 0.08);
+  color: #009E80;
+}
+
+[data-theme="light"] .command-palette-header {
+  border-bottom-color: #E8EDEB;
+}
+
+[data-theme="light"] .command-palette-preview {
+  background: #F9FBFA;
+  border-left-color: #E8EDEB;
+}
+
+[data-theme="light"] .command-palette-footer {
+  background: #F9FBFA;
+  border-top-color: #E8EDEB;
+}
+
+/* Long workflow name truncation - Phase 3 Edge Case */
+.command-palette-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 350px; /* Approximately 50 characters at 14px font */
+}
+
 /* Hide preview on narrow viewports */
 @media (max-width: 800px) {
   .command-palette-preview {
     display: none;
+  }
+}
+
+/* Onboarding tooltip - Phase 3 */
+.onboarding-tooltip {
+  position: fixed;
+  top: 60px;
+  right: 20px;
+  background: linear-gradient(135deg, #00D4AA, #40E0FF);
+  color: #FFFFFF;
+  padding: 8px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: all 0.3s ease;
+  z-index: 2000;
+  pointer-events: none;
+  box-shadow: 0 4px 16px rgba(0, 212, 170, 0.3);
+}
+
+.onboarding-tooltip.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+[data-theme="light"] .onboarding-tooltip {
+  background: linear-gradient(135deg, #009E80, #0088CC);
+  box-shadow: 0 4px 16px rgba(0, 158, 128, 0.2);
+}
+
+/* Reduce motion for onboarding tooltip */
+@media (prefers-reduced-motion: reduce) {
+  .onboarding-tooltip {
+    transition: opacity 0.1s;
+    transform: none;
+  }
+  
+  .onboarding-tooltip.show {
+    transform: none;
   }
 }
 
@@ -5396,6 +5517,10 @@ select:focus { outline: none; border-color: var(--accent); }
   <!-- SearchCode (Vector Search) -->
   <symbol id="lg-search-code" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
     <path d="m13 13.5 2-2.5-2-2.5"/><path d="m9 8.5-2 2.5 2 2.5"/><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+  </symbol>
+  <!-- Plug (MCP Integrations) -->
+  <symbol id="lg-plug" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 22v-5"/><path d="M9 8V2"/><path d="M15 8V2"/><path d="M18 8v5a6 6 0 0 1-6 6 6 6 0 0 1-6-6V8z"/>
   </symbol>
 </svg>
 
@@ -16031,6 +16156,10 @@ let wfInitialized = false;
   </div>
 </div>
 
+<!-- ══════════════════════════════════════════════════════════════════
+     Phase 3: Onboarding Tooltip (dynamically created in JavaScript)
+     ══════════════════════════════════════════════════════════════════ -->
+
 <script>
 // ══════════════════════════════════════════════════════════════════
 // Export System — Playground + Electron Integration
@@ -17094,7 +17223,9 @@ let commandPaletteState = {
   results: [],
   recentCommands: [],
   subPalette: null, // { type: 'workflow' | 'chat', items: [...] }
-  previewData: null
+  previewData: null,
+  lastToggleTime: 0, // Phase 3: for debouncing
+  onboardingShown: false // Phase 3: first-time onboarding
 };
 
 // Sub-palette functions
@@ -17253,6 +17384,52 @@ function openCommandPalette() {
   input.focus();
   
   renderCommandPaletteResults();
+  
+  // Phase 3: Show onboarding tooltip on first open (if not already shown)
+  showOnboardingTooltipIfNeeded();
+}
+
+// Phase 3: Onboarding tooltip for first-time users
+function showOnboardingTooltipIfNeeded() {
+  if (commandPaletteState.onboardingShown) return;
+  
+  // Create tooltip element
+  const tooltip = document.createElement('div');
+  tooltip.className = 'onboarding-tooltip';
+  tooltip.textContent = 'Press ⌘K to search commands';
+  document.body.appendChild(tooltip);
+  
+  // Show after 2 seconds, dismiss after 5 seconds or on keypress
+  setTimeout(() => {
+    tooltip.classList.add('show');
+    
+    // Auto-dismiss after 5 seconds
+    const dismissTimeout = setTimeout(() => {
+      dismissOnboardingTooltip(tooltip);
+    }, 5000);
+    
+    // Dismiss on any keypress
+    const keypressHandler = () => {
+      clearTimeout(dismissTimeout);
+      dismissOnboardingTooltip(tooltip);
+      document.removeEventListener('keydown', keypressHandler, true);
+    };
+    
+    document.addEventListener('keydown', keypressHandler, true);
+  }, 2000);
+  
+  commandPaletteState.onboardingShown = true;
+}
+
+function dismissOnboardingTooltip(tooltip) {
+  if (tooltip && tooltip.parentNode) {
+    tooltip.classList.remove('show');
+    setTimeout(() => {
+      if (tooltip.parentNode) {
+        tooltip.parentNode.removeChild(tooltip);
+      }
+    }, 300);
+  }
 }
 
 function closeCommandPalette() {
@@ -17266,6 +17443,13 @@ function closeCommandPalette() {
 }
 
 function toggleCommandPalette() {
+  // Phase 3 Edge Case: Debounce rapid ⌘K presses at 200ms
+  const now = Date.now();
+  if (now - commandPaletteState.lastToggleTime < 200) {
+    return;
+  }
+  commandPaletteState.lastToggleTime = now;
+
   if (commandPaletteState.isOpen) {
     closeCommandPalette();
   } else {
@@ -17294,7 +17478,10 @@ function renderCommandPaletteResults() {
   if (results.length === 0) {
     resultsContainer.innerHTML = `
       <div class="command-palette-empty">
-        ${query ? 'No commands matching "' + query + '"' : 'Type to search commands...'}
+        ${query ? `
+          <div style="margin-bottom: 8px;">No commands matching <strong>"${query}"</strong></div>
+          <div style="font-size: 12px; color: var(--text-muted);">Try a different search term or press <kbd style="background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 1px 4px; font-family: var(--mono);">Tab</kbd> to filter by category</div>
+        ` : 'Type to search commands...'}
       </div>
     `;
     updatePreviewPane(null);
@@ -17389,14 +17576,19 @@ function executeSelectedCommand() {
       timestamp: Date.now()
     });
     
+    // Phase 3 Edge Case: Close palette immediately on execute
+    // so subsequent keystrokes go to the new view
     closeCommandPalette();
     
-    try {
-      selectedCommand.execute();
-    } catch (error) {
-      console.error('Command execution failed:', error);
-      alert('Failed to execute command: ' + error.message);
-    }
+    // Small delay to ensure palette is closed before execution
+    setTimeout(() => {
+      try {
+        selectedCommand.execute();
+      } catch (error) {
+        console.error('Command execution failed:', error);
+        alert('Failed to execute command: ' + error.message);
+      }
+    }, 10);
   }
 }
 
@@ -17450,6 +17642,24 @@ document.addEventListener('keydown', (e) => {
   // Global ⌘K / Ctrl+K shortcut
   if ((e.metaKey || e.ctrlKey) && e.key === 'k' && !e.shiftKey) {
     e.preventDefault();
+    
+    // Phase 3 Edge Case: Ensure command palette opens above modals
+    // Check for existing modals and set higher z-index if needed
+    const existingModals = document.querySelectorAll('.modal, .explore-modal, .cost-modal, [class*="modal"]');
+    const commandPaletteOverlay = document.getElementById('commandPaletteOverlay');
+    let maxZIndex = 3000; // Default z-index
+    
+    existingModals.forEach(modal => {
+      const zIndex = parseInt(window.getComputedStyle(modal).zIndex, 10);
+      if (!isNaN(zIndex) && zIndex >= maxZIndex) {
+        maxZIndex = zIndex + 10;
+      }
+    });
+    
+    if (commandPaletteOverlay) {
+      commandPaletteOverlay.style.zIndex = maxZIndex;
+    }
+    
     toggleCommandPalette();
     return;
   }
@@ -17478,6 +17688,23 @@ if (typeof switchTab === 'function') {
     trackUserAction('tab-navigation', { tab: tabId });
     return originalSwitchTab(tabId);
   };
+}
+
+// Phase 3: Electron menu integration
+if (window.electronAPI && window.electronAPI.ipcRenderer) {
+  window.electronAPI.ipcRenderer.on('command-palette:toggle', () => {
+    toggleCommandPalette();
+  });
+}
+
+// Also listen for the export trigger from menu
+if (window.electronAPI && window.electronAPI.ipcRenderer) {
+  window.electronAPI.ipcRenderer.on('export:trigger', () => {
+    const context = getCommandPaletteContext();
+    if (typeof openExportDialog === 'function') {
+      openExportDialog(context.activeTab);
+    }
+  });
 }
 
 // Expose command palette globally
