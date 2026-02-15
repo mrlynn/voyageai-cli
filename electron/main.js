@@ -710,6 +710,15 @@ function buildMenu() {
         { role: 'copy' },
         { role: 'paste' },
         { role: 'selectAll' },
+        { type: 'separator' },
+        {
+          label: 'Command Palette...',
+          accelerator: 'CmdOrCtrl+K',
+          click: () => {
+            const win = BrowserWindow.getFocusedWindow();
+            if (win) win.webContents.send('command-palette:toggle');
+          },
+        },
       ],
     },
     {
