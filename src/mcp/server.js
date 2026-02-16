@@ -72,7 +72,7 @@ async function runHttpServer({ port = 3100, host = '127.0.0.1', sse = false } = 
   const allKeys = envKey ? [...serverKeys, envKey] : serverKeys;
   const requireAuth = allKeys.length > 0;
 
-  /** Bearer token authentication middleware */
+  /** Bearer token authentication middleware (timing-safe comparison) */
   function authenticateRequest(req, res, next) {
     if (!requireAuth) return next();
     const authHeader = req.headers.authorization;
@@ -80,7 +80,13 @@ async function runHttpServer({ port = 3100, host = '127.0.0.1', sse = false } = 
       return res.status(401).json({ error: 'Missing or invalid Authorization header' });
     }
     const token = authHeader.slice(7);
-    if (!allKeys.includes(token)) {
+    const tokenBuf = Buffer.from(token);
+    const match = allKeys.some(key => {
+      const keyBuf = Buffer.from(key);
+      if (keyBuf.length !== tokenBuf.length) return false;
+      return crypto.timingSafeEqual(keyBuf, tokenBuf);
+    });
+    if (!match) {
       return res.status(401).json({ error: 'Invalid API key' });
     }
     next();
@@ -99,7 +105,6 @@ async function runHttpServer({ port = 3100, host = '127.0.0.1', sse = false } = 
 
     // Check Voyage AI connectivity
     try {
-      const { getConfigValue } = require('../lib/config');
       const hasKey = !!(process.env.VOYAGE_API_KEY || getConfigValue('apiKey'));
       health.voyageAi = hasKey ? 'configured' : 'not configured';
     } catch {
@@ -108,7 +113,6 @@ async function runHttpServer({ port = 3100, host = '127.0.0.1', sse = false } = 
 
     // Check MongoDB connectivity
     try {
-      const { getConfigValue } = require('../lib/config');
       const hasUri = !!(process.env.MONGODB_URI || getConfigValue('mongodbUri'));
       health.mongodb = hasUri ? 'configured' : 'not configured';
     } catch {

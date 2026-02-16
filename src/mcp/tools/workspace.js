@@ -7,6 +7,7 @@ const { getMongoCollection } = require('../../lib/mongo');
 const { getDefaultModel } = require('../../lib/catalog');
 const { chunk } = require('../../lib/chunker');
 const { loadProject } = require('../../lib/project');
+const { resolveDbCollection } = require('../utils');
 
 /**
  * File patterns for different content types.
@@ -28,18 +29,6 @@ const DEFAULT_IGNORE = [
   'package-lock.json', 'yarn.lock', 'pnpm-lock.yaml', 'Cargo.lock',
   '*.min.js', '*.min.css', '*.map', '*.chunk.js',
 ];
-
-/**
- * Resolve db/collection from tool input, falling back to project config.
- */
-function resolveDbCollection(input) {
-  const { config: proj } = loadProject();
-  const db = input.db || proj.db;
-  const collection = input.collection || proj.collection;
-  if (!db) throw new Error('No database specified. Pass db parameter or configure via vai init.');
-  if (!collection) throw new Error('No collection specified. Pass collection parameter or configure via vai init.');
-  return { db, collection };
-}
 
 /**
  * Check if a path should be ignored.

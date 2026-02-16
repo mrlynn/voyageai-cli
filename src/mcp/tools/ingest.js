@@ -5,6 +5,7 @@ const { generateEmbeddings } = require('../../lib/api');
 const { getMongoCollection } = require('../../lib/mongo');
 const { loadProject } = require('../../lib/project');
 const { getDefaultModel } = require('../../lib/catalog');
+const { resolveDbCollection } = require('../utils');
 
 /**
  * Handler for vai_ingest: chunk, embed, and store a document.
@@ -12,12 +13,8 @@ const { getDefaultModel } = require('../../lib/catalog');
  * @returns {Promise<{structuredContent: object, content: Array}>}
  */
 async function handleVaiIngest(input) {
+  const { db, collection: collName } = resolveDbCollection(input);
   const { config: proj } = loadProject();
-  const db = input.db || proj.db;
-  const collName = input.collection || proj.collection;
-  if (!db) throw new Error('No database specified. Pass db parameter or configure via vai init.');
-  if (!collName) throw new Error('No collection specified. Pass collection parameter or configure via vai init.');
-
   const model = input.model || proj.model || getDefaultModel();
   const start = Date.now();
 
