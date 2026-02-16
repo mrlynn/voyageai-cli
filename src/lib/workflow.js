@@ -98,6 +98,25 @@ function validateWorkflow(definition, { mode = 'strict' } = {}) {
     }
   }
 
+  // Validate formatters section (optional)
+  if (definition.formatters) {
+    if (typeof definition.formatters !== 'object' || Array.isArray(definition.formatters)) {
+      addIssue('error', null, 'INVALID_FORMATTERS', '"formatters" must be a plain object');
+    } else {
+      const f = definition.formatters;
+      const validFormats = ['json', 'table', 'markdown', 'text', 'csv'];
+      if (f.default && !validFormats.includes(f.default)) {
+        addIssue('warning', null, 'INVALID_FORMATTER_DEFAULT', `formatters.default "${f.default}" is not a recognized format (${validFormats.join(', ')})`);
+      }
+      if (f.columns && !Array.isArray(f.columns)) {
+        addIssue('error', null, 'INVALID_FORMATTER_COLUMNS', 'formatters.columns must be an array of strings');
+      }
+      if (f.title && typeof f.title !== 'string') {
+        addIssue('error', null, 'INVALID_FORMATTER_TITLE', 'formatters.title must be a string');
+      }
+    }
+  }
+
   // Step-level validation
   const stepIds = new Set();
   const duplicateIds = new Set();
@@ -1867,6 +1886,7 @@ async function executeWorkflow(definition, opts = {}) {
     steps: stepResults,
     totalTimeMs: Date.now() - startTime,
     layers,
+    formatters: definition.formatters || null,
   };
 }
 

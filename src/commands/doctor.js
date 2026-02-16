@@ -121,7 +121,7 @@ async function checkApiConnection() {
       });
       
       // Send minimal request body
-      req.write(JSON.stringify({ model: 'voyage-3-lite', input: ['test'] }));
+      req.write(JSON.stringify({ model: 'voyage-4-lite', input: ['test'] }));
       req.end();
     });
     
