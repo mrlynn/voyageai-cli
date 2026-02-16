@@ -177,3 +177,8 @@ function generateKey() {
 }
 
 module.exports = { createServer, runStdioServer, runHttpServer, generateKey };
+
+// Allow direct execution: `node src/mcp/server.js`
+if (require.main === module) {
+  runStdioServer();
+}
