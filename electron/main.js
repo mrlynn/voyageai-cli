@@ -472,6 +472,13 @@ function downloadUpdate() {
   if (!app.isPackaged) {
     return Promise.resolve({ error: 'dev_mode' });
   }
+  // Clear stale differential-update cache to prevent hung downloads
+  try {
+    const cachePath = path.join(app.getPath('cache'), `${app.getName()}-updater`);
+    if (fs.existsSync(cachePath)) {
+      fs.rmSync(cachePath, { recursive: true, force: true });
+    }
+  } catch (_) { /* best effort */ }
   return autoUpdater.downloadUpdate().then(() => {
     return { success: true };
   }).catch((err) => {

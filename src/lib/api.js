@@ -195,6 +195,36 @@ async function generateEmbeddings(texts, options = {}) {
   return apiRequest('/embeddings', body);
 }
 
+/**
+ * Generate multimodal embeddings for inputs containing text, images, and/or video.
+ * Uses the /multimodalembeddings endpoint with a different input format.
+ * @param {Array<Array<{type: string, text?: string, image_base64?: string, video_base64?: string}>>} inputs
+ *   Array of content arrays. Each content array is a list of content items for one input.
+ *   Example: [[{type: 'text', text: 'hello'}, {type: 'image_base64', image_base64: 'data:image/png;base64,...'}]]
+ * @param {object} options
+ * @param {string} [options.model] - Model name (default: voyage-multimodal-3.5)
+ * @param {string} [options.inputType] - Input type (query|document)
+ * @param {number} [options.outputDimension] - Output dimensions
+ * @returns {Promise<object>} API response with embeddings
+ */
+async function generateMultimodalEmbeddings(inputs, options = {}) {
+  const model = options.model || 'voyage-multimodal-3.5';
+
+  const body = {
+    inputs: inputs.map(contentArray => ({ content: contentArray })),
+    model,
+  };
+
+  if (options.inputType) {
+    body.input_type = options.inputType;
+  }
+  if (options.outputDimension) {
+    body.output_dimension = options.outputDimension;
+  }
+
+  return apiRequest('/multimodalembeddings', body);
+}
+
 module.exports = {
   API_BASE,
   ATLAS_API_BASE,
@@ -204,4 +234,5 @@ module.exports = {
   requireApiKey,
   apiRequest,
   generateEmbeddings,
+  generateMultimodalEmbeddings,
 };
