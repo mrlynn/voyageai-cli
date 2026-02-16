@@ -64,10 +64,10 @@ function registerAbout(program) {
       console.log('');
       console.log(`  ${pc.cyan('💰 Best Value')}`);
       console.log(`     Up to 83% cost reduction with asymmetric retrieval: embed`);
-      console.log(`     documents with voyage-3-lite, query with voyage-3-large.`);
+      console.log(`     documents with voyage-4-lite, query with voyage-4-large.`);
       console.log('');
       console.log(`  ${pc.cyan('🔗 Shared Embedding Space')}`);
-      console.log(`     All Voyage-3 models share the same embedding space — mix`);
+      console.log(`     All Voyage 4 models share the same embedding space, so you can mix`);
       console.log(`     and match models for optimal cost-quality tradeoffs.`);
       console.log('');
       console.log(`  ${pc.cyan('🏢 Domain-Specific Models')}`);
@@ -75,7 +75,7 @@ function registerAbout(program) {
       console.log(`     content that outperform general-purpose alternatives.`);
       console.log('');
       console.log(`  ${pc.cyan('⚡ Reranking')}`);
-      console.log(`     Two-stage retrieval with rerank-2 boosts precision by`);
+      console.log(`     Two-stage retrieval with rerank-2.5 boosts precision by`);
       console.log(`     re-scoring candidates with a powerful cross-encoder.`);
       console.log('');
 

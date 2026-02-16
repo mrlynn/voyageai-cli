@@ -134,7 +134,7 @@ function registerPlayground(program) {
  */
 function createPlaygroundServer() {
   const { getApiBase, requireApiKey, generateEmbeddings } = require('../lib/api');
-  const { MODEL_CATALOG } = require('../lib/catalog');
+  const { MODEL_CATALOG, BENCHMARK_SCORES } = require('../lib/catalog');
   const { cosineSimilarity } = require('../lib/math');
   const { getConfigValue } = require('../lib/config');
 
@@ -270,6 +270,13 @@ function createPlaygroundServer() {
         const models = MODEL_CATALOG.filter(m => !m.legacy && !m.local && !m.unreleased);
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ models }));
+        return;
+      }
+
+      // API: Full Model Catalog (for Models tab)
+      if (req.method === 'GET' && req.url === '/api/models/catalog') {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ models: MODEL_CATALOG, benchmarks: BENCHMARK_SCORES }));
         return;
       }
 
@@ -1604,6 +1611,7 @@ function createPlaygroundServer() {
               totalTimeMs: result.totalTimeMs,
               layers: result.layers,
               steps: result.steps,
+              formatters: result.formatters || null,
             })}\n\n`);
           } catch (err) {
             res.write(`event: error\ndata: ${JSON.stringify({ error: err.message })}\n\n`);

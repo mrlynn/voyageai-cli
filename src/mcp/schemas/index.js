@@ -124,6 +124,100 @@ const explainCodeSchema = {
   model: z.string().optional().describe('Voyage AI embedding model'),
 };
 
+/** vai_code_index input schema */
+const codeIndexSchema = {
+  source: z.string().min(1).describe(
+    'Local directory path or GitHub repo URL (e.g., "/path/to/project" or "https://github.com/org/repo")'
+  ),
+  db: z.string().optional().describe('MongoDB database name. Default: "vai_code_search"'),
+  collection: z.string().optional().describe(
+    'Collection name. Auto-derived from project name if omitted.'
+  ),
+  model: z.string().optional().describe(
+    'Embedding model. Default: auto-detected (voyage-code-3 for code, voyage-4-large for docs)'
+  ),
+  branch: z.string().default('main').describe('Git branch for remote repos'),
+  maxFiles: z.number().int().min(1).max(10000).default(5000)
+    .describe('Maximum files to index'),
+  maxFileSize: z.number().int().min(1000).max(1000000).default(100000)
+    .describe('Maximum file size in bytes'),
+  chunkSize: z.number().int().min(100).max(4000).default(512)
+    .describe('Target chunk size in characters'),
+  chunkOverlap: z.number().int().min(0).max(500).default(50)
+    .describe('Overlap between chunks in characters'),
+  batchSize: z.number().int().min(1).max(50).default(20)
+    .describe('Files per embedding batch'),
+  refresh: z.boolean().default(false)
+    .describe('Incremental refresh: only re-index changed files'),
+  contentType: z.enum(['code', 'docs', 'config', 'all']).default('code')
+    .describe('Type of content to index'),
+};
+
+/** vai_code_search input schema */
+const codeSearchSchema = {
+  query: z.string().min(1).max(5000).describe(
+    'Natural language search query (e.g., "where do we handle auth timeouts")'
+  ),
+  db: z.string().optional().describe('MongoDB database name'),
+  collection: z.string().optional().describe('Collection with indexed code'),
+  limit: z.number().int().min(1).max(50).default(10)
+    .describe('Maximum number of results'),
+  language: z.string().optional()
+    .describe('Filter by programming language (e.g., "js", "py", "go")'),
+  category: z.enum(['code', 'docs', 'config']).optional()
+    .describe('Filter by content category'),
+  rerank: z.boolean().default(true)
+    .describe('Rerank results with Voyage AI reranker for better relevance'),
+  rerankModel: z.enum(['rerank-2.5', 'rerank-2.5-lite']).default('rerank-2.5')
+    .describe('Reranking model'),
+  model: z.string().optional()
+    .describe('Embedding model for query. Default: voyage-code-3'),
+  filter: z.record(z.string(), z.unknown()).optional()
+    .describe('Additional MongoDB filter on metadata fields'),
+};
+
+/** vai_code_query input schema */
+const codeQuerySchema = {
+  query: z.string().min(1).max(5000).describe(
+    'Question about the codebase (e.g., "how does the auth middleware work")'
+  ),
+  db: z.string().optional().describe('MongoDB database name'),
+  collection: z.string().optional().describe('Collection with indexed code'),
+  limit: z.number().int().min(1).max(20).default(5)
+    .describe('Maximum results (fewer, higher quality)'),
+  language: z.string().optional()
+    .describe('Filter by programming language'),
+  model: z.string().optional()
+    .describe('Embedding model. Default: voyage-code-3'),
+  filter: z.record(z.string(), z.unknown()).optional()
+    .describe('Additional MongoDB filter'),
+};
+
+/** vai_code_find_similar input schema */
+const codeFindSimilarSchema = {
+  code: z.string().min(1).max(10000).describe(
+    'Code snippet to find similar implementations for'
+  ),
+  db: z.string().optional().describe('MongoDB database name'),
+  collection: z.string().optional().describe('Collection with indexed code'),
+  limit: z.number().int().min(1).max(50).default(10)
+    .describe('Maximum results'),
+  language: z.string().optional()
+    .describe('Filter by programming language'),
+  model: z.string().optional()
+    .describe('Embedding model. Default: voyage-code-3'),
+  threshold: z.number().min(0).max(1).default(0.5)
+    .describe('Minimum similarity score (0-1)'),
+  filter: z.record(z.string(), z.unknown()).optional()
+    .describe('Additional MongoDB filter'),
+};
+
+/** vai_code_status input schema */
+const codeStatusSchema = {
+  db: z.string().optional().describe('MongoDB database name'),
+  collection: z.string().optional().describe('Collection to check'),
+};
+
 module.exports = {
   querySchema,
   searchSchema,
@@ -139,4 +233,9 @@ module.exports = {
   indexWorkspaceSchema,
   searchCodeSchema,
   explainCodeSchema,
+  codeIndexSchema,
+  codeSearchSchema,
+  codeQuerySchema,
+  codeFindSimilarSchema,
+  codeStatusSchema,
 };

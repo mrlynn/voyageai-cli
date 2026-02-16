@@ -83,7 +83,7 @@ We'll embed these ${SAMPLE_DOCS.length} sample documents:
   console.log(pc.bold('\nStep 2: Embedding Documents'));
   console.log(pc.dim('─'.repeat(40)));
   console.log(`
-Running: ${pc.cyan('vai embed --model voyage-3-lite')}
+Running: ${pc.cyan('vai embed --model voyage-4-lite')}
 `);
   
   let embeddings;
@@ -91,7 +91,7 @@ Running: ${pc.cyan('vai embed --model voyage-3-lite')}
     process.stdout.write('  Embedding documents... ');
     const result = await embed({
       texts: SAMPLE_DOCS,
-      model: 'voyage-3-lite',
+      model: 'voyage-4-lite',
       inputType: 'document',
     });
     embeddings = result.embeddings;
@@ -99,7 +99,7 @@ Running: ${pc.cyan('vai embed --model voyage-3-lite')}
     console.log(`
   ${pc.green('✓')} Created ${embeddings.length} embeddings
   ${pc.dim(`  Dimensions: ${embeddings[0].length}`)}
-  ${pc.dim(`  Model: voyage-3-lite`)}
+  ${pc.dim(`  Model: voyage-4-lite`)}
 `);
   } catch (err) {
     console.log(pc.red('✗'));
@@ -123,7 +123,7 @@ Query: "${pc.cyan(query)}"
     process.stdout.write('  Embedding query... ');
     const queryResult = await embed({
       texts: [query],
-      model: 'voyage-3-lite',
+      model: 'voyage-4-lite',
       inputType: 'query',
     });
     const queryEmbedding = queryResult.embeddings[0];

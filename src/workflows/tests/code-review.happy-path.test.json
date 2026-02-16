@@ -1,0 +1,120 @@
+{
+  "name": "code-review: find similar patterns with contextual search",
+  "inputs": {
+    "source": "/Users/dev/myapp",
+    "code": "async function retryWithBackoff(fn, maxRetries = 3) {\n  for (let i = 0; i < maxRetries; i++) {\n    try { return await fn(); }\n    catch (e) { if (i === maxRetries - 1) throw e; await sleep(Math.pow(2, i) * 1000); }\n  }\n}",
+    "question": "are there other retry or backoff implementations?",
+    "language": "js",
+    "limit": 5
+  },
+  "mocks": {
+    "code_status": {
+      "totalChunks": 1823,
+      "uniqueFiles": 247,
+      "languages": { "js": 180, "ts": 45, "json": 22 },
+      "lastIndexed": "2026-02-16T12:00:00.000Z",
+      "indexes": [{ "name": "code_search_index", "status": "READY" }]
+    },
+    "code_index": null,
+    "code_find_similar": {
+      "results": [
+        {
+          "source": "src/lib/http-client.js",
+          "language": "js",
+          "startLine": 88,
+          "endLine": 112,
+          "symbols": ["retryRequest", "exponentialDelay"],
+          "content": "async function retryRequest(url, opts, retries = 5) {\n  const exponentialDelay = (attempt) => Math.pow(2, attempt) * 500;\n  for (let attempt = 0; attempt < retries; attempt++) { ... }",
+          "score": 0.921,
+          "chunkType": "boundary"
+        },
+        {
+          "source": "src/lib/queue.js",
+          "language": "js",
+          "startLine": 34,
+          "endLine": 58,
+          "symbols": ["processWithRetry"],
+          "content": "async function processWithRetry(task, { maxAttempts = 3, backoff = 'exponential' }) { ... }",
+          "score": 0.867,
+          "chunkType": "boundary"
+        },
+        {
+          "source": "src/utils/resilience.js",
+          "language": "js",
+          "startLine": 1,
+          "endLine": 30,
+          "symbols": ["circuitBreaker", "withTimeout"],
+          "content": "function circuitBreaker(fn, { threshold = 5, resetMs = 30000 }) { ... }",
+          "score": 0.743,
+          "chunkType": "boundary"
+        }
+      ],
+      "metadata": {
+        "collection": "myapp_code",
+        "model": "voyage-code-3",
+        "resultCount": 3,
+        "timeMs": 187
+      }
+    },
+    "code_search": {
+      "results": [
+        {
+          "source": "src/lib/http-client.js",
+          "language": "js",
+          "startLine": 1,
+          "endLine": 25,
+          "symbols": ["createClient", "DEFAULT_TIMEOUT"],
+          "content": "const DEFAULT_TIMEOUT = 30000;\nfunction createClient(baseUrl, opts) { ... }",
+          "score": 0.856
+        },
+        {
+          "source": "docs/resilience.md",
+          "language": "md",
+          "startLine": 1,
+          "endLine": 40,
+          "symbols": [],
+          "content": "# Resilience Patterns\n\nThis project uses exponential backoff with jitter for all HTTP retries...",
+          "score": 0.812
+        }
+      ],
+      "metadata": {
+        "collection": "myapp_code",
+        "model": "voyage-code-3",
+        "rerankModel": "rerank-2.5",
+        "reranked": true,
+        "resultCount": 2,
+        "timeMs": 234
+      }
+    },
+    "code_query": {
+      "results": [
+        {
+          "source": "src/lib/http-client.js",
+          "language": "js",
+          "startLine": 88,
+          "endLine": 112,
+          "symbols": ["retryRequest", "exponentialDelay"],
+          "content": "async function retryRequest(url, opts, retries = 5) { ... }",
+          "score": 0.943
+        }
+      ],
+      "metadata": {
+        "collection": "myapp_code",
+        "model": "voyage-code-3",
+        "reranked": true,
+        "resultCount": 1,
+        "timeMs": 198
+      }
+    }
+  },
+  "expect": {
+    "steps": {
+      "check_index": { "status": "completed" },
+      "index_codebase": { "status": "skipped" },
+      "find_similar": { "status": "completed" },
+      "contextual_search": { "status": "completed" },
+      "deep_query": { "status": "completed" }
+    },
+    "noErrors": true
+  }
+}
