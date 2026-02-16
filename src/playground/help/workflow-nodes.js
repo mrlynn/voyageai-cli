@@ -469,4 +469,129 @@ module.exports = {
       'Response size is limited to 5MB. For large payloads, use streaming or pagination on the external API.',
     ],
   },
+
+  // ── Code Search ──
+
+  code_index: {
+    description:
+      'Index a local directory or GitHub repository for semantic code search. Uses voyage-code-3 by default for code-optimized embeddings.',
+    howItWorks:
+      'Scans the target codebase for source files, splits them into chunks using language-aware boundary detection (function/class boundaries), generates embeddings with voyage-code-3, and stores the chunks in MongoDB Atlas with a vector search index.',
+    inputs: [
+      { key: 'source', type: 'string', required: true, desc: 'Local directory path or GitHub repo URL (e.g., "/path/to/project" or "https://github.com/org/repo").' },
+      { key: 'db', type: 'string', required: false, desc: 'MongoDB database name. Default: "vai_code_search".' },
+      { key: 'collection', type: 'string', required: false, desc: 'Collection name. Auto-derived from project name if omitted.' },
+      { key: 'refresh', type: 'boolean', required: false, desc: 'If true, only re-index changed files (incremental). Default: false.' },
+      { key: 'model', type: 'string', required: false, desc: 'Embedding model. Default: voyage-code-3 for code, voyage-4-large for docs.' },
+      { key: 'branch', type: 'string', required: false, desc: 'Git branch for remote repos. Default: "main".' },
+      { key: 'maxFiles', type: 'number', required: false, desc: 'Maximum files to index. Default: 5000.' },
+      { key: 'chunkSize', type: 'number', required: false, desc: 'Target chunk size in characters. Default: 512.' },
+    ],
+    outputs: [
+      { key: 'filesFound', type: 'number', desc: 'Total source files discovered.' },
+      { key: 'filesIndexed', type: 'number', desc: 'Files successfully indexed.' },
+      { key: 'chunksCreated', type: 'number', desc: 'Total embedding chunks stored.' },
+      { key: 'totalTokens', type: 'number', desc: 'Voyage AI tokens consumed.' },
+      { key: 'model', type: 'string', desc: 'Embedding model used.' },
+    ],
+    tips: [
+      'Use refresh: true for incremental indexing after the first full index.',
+      'GitHub repos require a GITHUB_TOKEN for private repositories.',
+      'voyage-code-3 understands code structure, function signatures, and programming idioms.',
+    ],
+  },
+
+  code_search: {
+    description:
+      'Semantic search across an indexed codebase. Finds functions, classes, and modules related to a natural language query.',
+    howItWorks:
+      'Embeds your query with voyage-code-3, runs vector search against the code index in MongoDB Atlas, then reranks results with rerank-2.5 for best relevance. Returns file paths, line numbers, and matched code snippets.',
+    inputs: [
+      { key: 'query', type: 'string', required: true, desc: 'Natural language search query (e.g., "where do we handle auth timeouts").' },
+      { key: 'db', type: 'string', required: false, desc: 'MongoDB database name.' },
+      { key: 'collection', type: 'string', required: false, desc: 'Collection with indexed code.' },
+      { key: 'limit', type: 'number', required: false, desc: 'Maximum results. Default: 10.' },
+      { key: 'language', type: 'string', required: false, desc: 'Filter by language (e.g., "js", "py", "go").' },
+      { key: 'rerank', type: 'boolean', required: false, desc: 'Rerank with Voyage AI for better relevance. Default: true.' },
+    ],
+    outputs: [
+      { key: 'results', type: 'array', desc: 'Matched code chunks with source, filePath, startLine, endLine, symbols, content, score.' },
+      { key: 'metadata', type: 'object', desc: 'Search metadata: collection, model, reranked, timeMs, resultCount, tokens.' },
+    ],
+    tips: [
+      'Describe what the code does in plain language rather than using exact syntax.',
+      'Filter by language to reduce noise when the codebase is polyglot.',
+      'Reranking significantly improves relevance for code search.',
+    ],
+  },
+
+  code_query: {
+    description:
+      'Full RAG query against an indexed codebase. Optimized for answering questions like "how does X work" or "where is Y implemented".',
+    howItWorks:
+      'Works like code_search but with tighter defaults: fetches fewer results (5), always reranks, and uses a higher candidate multiplier for better quality.',
+    inputs: [
+      { key: 'query', type: 'string', required: true, desc: 'Question about the codebase (e.g., "how does the auth middleware work").' },
+      { key: 'db', type: 'string', required: false, desc: 'MongoDB database name.' },
+      { key: 'collection', type: 'string', required: false, desc: 'Collection with indexed code.' },
+      { key: 'limit', type: 'number', required: false, desc: 'Maximum results. Default: 5.' },
+      { key: 'language', type: 'string', required: false, desc: 'Filter by programming language.' },
+    ],
+    outputs: [
+      { key: 'results', type: 'array', desc: 'Top matched code chunks with source, content, scores, and symbols.' },
+      { key: 'metadata', type: 'object', desc: 'Query metadata: timing, model, token usage.' },
+    ],
+    tips: [
+      'Best for "how" and "where" questions about existing code.',
+      'Pair with the generate node to produce explanations from the retrieved code context.',
+      'Use a condition to skip this step if no question was provided.',
+    ],
+  },
+
+  code_find_similar: {
+    description:
+      'Find code semantically similar to a given snippet. Paste a function, class, or code block and find related implementations.',
+    howItWorks:
+      'Embeds the provided code snippet with voyage-code-3 and searches the indexed codebase for chunks with high vector similarity. Results are filtered by a threshold score.',
+    inputs: [
+      { key: 'code', type: 'string', required: true, desc: 'Code snippet to find similar implementations for.' },
+      { key: 'db', type: 'string', required: false, desc: 'MongoDB database name.' },
+      { key: 'collection', type: 'string', required: false, desc: 'Collection with indexed code.' },
+      { key: 'limit', type: 'number', required: false, desc: 'Maximum results. Default: 10.' },
+      { key: 'language', type: 'string', required: false, desc: 'Filter by programming language.' },
+      { key: 'threshold', type: 'number', required: false, desc: 'Minimum similarity score (0-1). Default: 0.5.' },
+    ],
+    outputs: [
+      { key: 'results', type: 'array', desc: 'Similar code chunks with source, filePath, startLine, endLine, content, and similarity score.' },
+      { key: 'metadata', type: 'object', desc: 'Search metadata: collection, model, threshold, timing.' },
+    ],
+    tips: [
+      'Useful for finding duplicate logic, alternative implementations, or code that follows similar patterns.',
+      'Lower the threshold (e.g., 0.3) to find more distant but still related code.',
+      'voyage-code-3 understands both code structure and intent, so it can match functionally similar code even with different syntax.',
+    ],
+  },
+
+  code_status: {
+    description:
+      'Check the status of a code search index. Shows file count, chunk count, languages, and vector search index health.',
+    howItWorks:
+      'Queries the MongoDB collection for aggregate statistics about indexed code: unique files, languages, last indexing time, and the state of the vector search index.',
+    inputs: [
+      { key: 'db', type: 'string', required: false, desc: 'MongoDB database name. Default: "vai_code_search".' },
+      { key: 'collection', type: 'string', required: false, desc: 'Collection to check.' },
+    ],
+    outputs: [
+      { key: 'totalChunks', type: 'number', desc: 'Total embedding chunks in the index.' },
+      { key: 'filesIndexed', type: 'number', desc: 'Number of unique source files.' },
+      { key: 'languages', type: 'array', desc: 'Programming languages detected in the index.' },
+      { key: 'lastIndexed', type: 'string', desc: 'Timestamp of the most recent indexing.' },
+      { key: 'indexes', type: 'array', desc: 'Vector search index names and their status.' },
+    ],
+    tips: [
+      'Use as a guard step with a condition to skip re-indexing if the index already has content.',
+      'Check the index status before running search steps to give helpful error messages.',
+      'The indexes array shows whether the vector search index is READY or still building.',
+    ],
+  },
 };

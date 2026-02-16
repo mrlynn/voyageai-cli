@@ -16,6 +16,7 @@ const {
 const VAI_TOOLS = new Set([
   'query', 'search', 'rerank', 'embed', 'similarity',
   'ingest', 'collections', 'models', 'explain', 'estimate',
+  'code_index', 'code_search', 'code_query', 'code_find_similar', 'code_status',
 ]);
 
 const CONTROL_FLOW_TOOLS = new Set(['merge', 'filter', 'transform', 'generate', 'conditional', 'loop', 'template']);
@@ -1596,6 +1597,55 @@ async function executeGenerate(inputs) {
 }
 
 // ════════════════════════════════════════════════════════════════════
+// Code Search Tool Executors
+// ════════════════════════════════════════════════════════════════════
+
+/**
+ * Execute a code_index step: index a local directory or GitHub repo.
+ */
+async function executeCodeIndex(inputs) {
+  const { handleCodeIndex } = require('../mcp/tools/code-search');
+  const result = await handleCodeIndex(inputs);
+  return result.structuredContent;
+}
+
+/**
+ * Execute a code_search step: semantic search across an indexed codebase.
+ */
+async function executeCodeSearch(inputs) {
+  const { handleCodeSearch } = require('../mcp/tools/code-search');
+  const result = await handleCodeSearch(inputs);
+  return result.structuredContent;
+}
+
+/**
+ * Execute a code_query step: RAG query against indexed code.
+ */
+async function executeCodeQuery(inputs) {
+  const { handleCodeQuery } = require('../mcp/tools/code-search');
+  const result = await handleCodeQuery(inputs);
+  return result.structuredContent;
+}
+
+/**
+ * Execute a code_find_similar step: find code similar to a snippet.
+ */
+async function executeCodeFindSimilar(inputs) {
+  const { handleCodeFindSimilar } = require('../mcp/tools/code-search');
+  const result = await handleCodeFindSimilar(inputs);
+  return result.structuredContent;
+}
+
+/**
+ * Execute a code_status step: check index health.
+ */
+async function executeCodeStatus(inputs) {
+  const { handleCodeStatus } = require('../mcp/tools/code-search');
+  const result = await handleCodeStatus(inputs);
+  return result.structuredContent;
+}
+
+// ════════════════════════════════════════════════════════════════════
 // Step Dispatcher
 // ════════════════════════════════════════════════════════════════════
 
@@ -1653,6 +1703,18 @@ async function executeStep(step, resolvedInputs, defaults, context) {
       return executeExplain(resolvedInputs);
     case 'estimate':
       return executeEstimate(resolvedInputs);
+
+    // Code search tools
+    case 'code_index':
+      return executeCodeIndex(resolvedInputs);
+    case 'code_search':
+      return executeCodeSearch(resolvedInputs);
+    case 'code_query':
+      return executeCodeQuery(resolvedInputs);
+    case 'code_find_similar':
+      return executeCodeFindSimilar(resolvedInputs);
+    case 'code_status':
+      return executeCodeStatus(resolvedInputs);
 
     default:
       throw new Error(`Unknown tool: "${step.tool}"`);
@@ -1914,9 +1976,10 @@ function coerceInput(value, type) {
  * prompt users for missing inputs before execution.
  *
  * @param {object} definition - Workflow definition with an `inputs` property
+ * @param {object} [cachedInputs] - Previously cached input values (from last run)
  * @returns {import('./wizard').Step[]}
  */
-function buildInputSteps(definition) {
+function buildInputSteps(definition, cachedInputs = {}) {
   if (!definition.inputs) return [];
   return Object.entries(definition.inputs).map(([key, spec]) => ({
     id: key,
@@ -1925,6 +1988,10 @@ function buildInputSteps(definition) {
     required: !!spec.required,
     placeholder: spec.type === 'number' ? 'number' : (spec.type || 'string'),
     defaultValue: spec.default !== undefined ? String(spec.default) : undefined,
+    getDefault: () => {
+      if (key in cachedInputs) return String(cachedInputs[key]);
+      return spec.default !== undefined ? String(spec.default) : undefined;
+    },
     validate: (val) => {
       if (spec.type === 'number' && val && isNaN(Number(val))) {
         return 'Must be a number';
@@ -2082,6 +2149,9 @@ module.exports = {
   executeHttp,
   executeIngest,
   executeAggregate,
+
+  // Dependency graph
+  buildDependencyGraph,
 
   // Main execution
   executeStep,

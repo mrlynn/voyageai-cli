@@ -396,7 +396,7 @@ describe('executeTransform', () => {
 describe('listBuiltinWorkflows', () => {
   it('returns all built-in templates', () => {
     const templates = listBuiltinWorkflows();
-    assert.equal(templates.length, 10);
+    assert.equal(templates.length, 11);
   });
 
   it('each template has name, description, file', () => {
@@ -446,8 +446,8 @@ describe('built-in template validation', () => {
 // ── Constants ──
 
 describe('tool constants', () => {
-  it('VAI_TOOLS contains all 10 vai tools', () => {
-    assert.equal(VAI_TOOLS.size, 10);
+  it('VAI_TOOLS contains all 15 vai tools', () => {
+    assert.equal(VAI_TOOLS.size, 15);
     assert.ok(VAI_TOOLS.has('query'));
     assert.ok(VAI_TOOLS.has('search'));
     assert.ok(VAI_TOOLS.has('rerank'));
@@ -458,6 +458,11 @@ describe('tool constants', () => {
     assert.ok(VAI_TOOLS.has('models'));
     assert.ok(VAI_TOOLS.has('explain'));
     assert.ok(VAI_TOOLS.has('estimate'));
+    assert.ok(VAI_TOOLS.has('code_index'));
+    assert.ok(VAI_TOOLS.has('code_search'));
+    assert.ok(VAI_TOOLS.has('code_query'));
+    assert.ok(VAI_TOOLS.has('code_find_similar'));
+    assert.ok(VAI_TOOLS.has('code_status'));
   });
 
   it('CONTROL_FLOW_TOOLS contains 4 tools', () => {

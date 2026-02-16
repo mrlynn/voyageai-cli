@@ -63,6 +63,7 @@
       "inputs": {
         "code": "{{ inputs.code }}",
         "db": "{{ defaults.db }}",
+        "collection": "{{ index_codebase.output.collection || check_index.output.collection }}",
         "limit": "{{ inputs.limit }}",
         "language": "{{ inputs.language }}",
         "threshold": 0.4
@@ -73,8 +74,9 @@
       "name": "Search for related architectural context",
       "tool": "code_search",
       "inputs": {
-        "query": "{{ inputs.question || 'functions and modules related to: ' + inputs.code.substring(0, 200) }}",
+        "query": "{{ inputs.question || 'functions and modules related to: ' + inputs.code }}",
         "db": "{{ defaults.db }}",
+        "collection": "{{ index_codebase.output.collection || check_index.output.collection }}",
         "limit": "{{ inputs.limit }}",
         "language": "{{ inputs.language }}",
         "rerank": true
@@ -87,6 +89,7 @@
       "inputs": {
         "query": "{{ inputs.question }}",
         "db": "{{ defaults.db }}",
+        "collection": "{{ index_codebase.output.collection || check_index.output.collection }}",
         "limit": 3,
         "language": "{{ inputs.language }}"
       },

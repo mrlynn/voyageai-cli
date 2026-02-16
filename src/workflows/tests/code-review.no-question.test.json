@@ -9,6 +9,7 @@
     "code_status": {
       "totalChunks": 500,
       "uniqueFiles": 80,
+      "collection": "myapp_code",
       "languages": { "js": 60, "ts": 20 },
       "lastIndexed": "2026-02-16T10:00:00.000Z",
       "indexes": [{ "name": "code_search_index", "status": "READY" }]

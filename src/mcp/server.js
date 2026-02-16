@@ -10,6 +10,7 @@ const { registerUtilityTools } = require('./tools/utility');
 const { registerIngestTool } = require('./tools/ingest');
 const { registerWorkspaceTools } = require('./tools/workspace');
 const { registerCodeSearchTools } = require('./tools/code-search');
+const { registerAuthoringTools } = require('./tools/authoring');
 
 const VERSION = require('../../package.json').version;
 
@@ -31,6 +32,7 @@ function createServer() {
   registerIngestTool(server, schemas);
   registerWorkspaceTools(server, schemas);
   registerCodeSearchTools(server, schemas);
+  registerAuthoringTools(server, schemas);
 
   return server;
 }

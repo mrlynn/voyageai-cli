@@ -11,6 +11,7 @@
     "code_status": {
       "totalChunks": 1823,
       "uniqueFiles": 247,
+      "collection": "myapp_code",
       "languages": { "js": 180, "ts": 45, "json": 22 },
       "lastIndexed": "2026-02-16T12:00:00.000Z",
       "indexes": [{ "name": "code_search_index", "status": "READY" }]
