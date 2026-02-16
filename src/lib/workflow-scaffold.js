@@ -298,7 +298,7 @@ function scaffoldPackage(options) {
     if (tool === 'query' || tool === 'search') {
       sampleMocks[tool] = { results: [{ text: 'Sample result', score: 0.95 }], resultCount: 1 };
     } else if (tool === 'embed') {
-      sampleMocks[tool] = { embedding: [0.1, 0.2, 0.3], model: 'voyage-3-large', dimensions: 3 };
+      sampleMocks[tool] = { embedding: [0.1, 0.2, 0.3], model: 'voyage-4-large', dimensions: 3 };
     } else if (tool === 'rerank') {
       sampleMocks[tool] = { results: [{ text: 'Reranked result', score: 0.98 }], resultCount: 1 };
     } else if (tool === 'generate') {

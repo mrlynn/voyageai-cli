@@ -111,7 +111,7 @@ module.exports = {
       'Sends the input text to the Voyage AI embeddings API, which returns a high-dimensional vector representation. The vector captures the semantic meaning of the text and can be used for similarity comparisons, clustering, or storage.',
     inputs: [
       { key: 'text', type: 'string', required: true, desc: 'The text to embed.' },
-      { key: 'model', type: 'string', required: false, desc: 'Voyage AI embedding model (default: voyage-3-large).' },
+      { key: 'model', type: 'string', required: false, desc: 'Voyage AI embedding model (default: voyage-4-large).' },
       { key: 'inputType', type: 'string', required: false, desc: 'Whether this text is a "document" or a "query". Affects embedding optimization.' },
     ],
     outputs: [
@@ -121,7 +121,7 @@ module.exports = {
     ],
     tips: [
       'Set inputType to "query" for search queries and "document" for content being indexed. This optimizes the embedding for its intended use.',
-      'Use voyage-3-large for highest quality, voyage-3-lite for lower latency and cost.',
+      'Use voyage-4-large for highest quality, voyage-4-lite for lower latency and cost.',
       'Embeddings from different models are not comparable. Always use the same model for queries and documents.',
     ],
   },

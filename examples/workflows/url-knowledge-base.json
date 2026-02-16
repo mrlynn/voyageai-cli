@@ -7,14 +7,14 @@
     "question": { "type": "string", "required": true, "description": "Question to ask about the URL content" },
     "db": { "type": "string", "default": "vai_urls", "description": "Database name" },
     "collection": { "type": "string", "default": "content", "description": "Collection name" },
-    "model": { "type": "string", "default": "voyage-3-large", "description": "Embedding model" },
+    "model": { "type": "string", "default": "voyage-4-large", "description": "Embedding model" },
     "chunk_size": { "type": "number", "default": 512, "description": "Chunk size in tokens" },
     "chunk_strategy": { "type": "string", "default": "recursive", "description": "Chunking strategy: fixed, sentence, paragraph, recursive, or markdown" }
   },
   "defaults": {
     "db": "vai_urls",
     "collection": "content",
-    "model": "voyage-3-large"
+    "model": "voyage-4-large"
   },
   "steps": [
     {

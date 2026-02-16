@@ -18,11 +18,11 @@ Voyage AI provides **state-of-the-art embedding models** with the best quality-t
 
 | Advantage | What It Means |
 |-----------|---------------|
-| **🎯 #1 on MTEB** | Voyage-3 ranks first on retrieval benchmarks, outperforming OpenAI, Cohere, and other providers |
-| **💰 Up to 83% Cost Savings** | Asymmetric retrieval: embed docs with `voyage-3-lite`, query with `voyage-3-large` — same quality, fraction of the cost |
-| **🔗 Shared Embedding Space** | All Voyage-3 models produce compatible embeddings — mix and match for optimal cost-quality tradeoffs |
+| **🎯 #1 on RTEB** | Voyage 4 ranks first on retrieval benchmarks, outperforming OpenAI, Cohere, and other providers |
+| **💰 Up to 83% Cost Savings** | Asymmetric retrieval: embed docs with `voyage-4-lite`, query with `voyage-4-large`, same quality, fraction of the cost |
+| **🔗 Shared Embedding Space** | All Voyage 4 models produce compatible embeddings, so you can mix and match for optimal cost-quality tradeoffs |
 | **🏢 Domain-Specific Models** | Specialized models for code, finance, law, and multilingual content that beat general-purpose alternatives |
-| **⚡ Two-Stage Retrieval** | Rerank-2 boosts search precision by re-scoring candidates with a powerful cross-encoder |
+| **⚡ Two-Stage Retrieval** | Rerank-2.5 boosts search precision by re-scoring candidates with a powerful cross-encoder |
 
 **Get started:**
 ```bash

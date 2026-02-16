@@ -6474,9 +6474,9 @@ Reranking models rescore initial search results to improve relevance ordering.</
       <div style="margin-top:16px;padding:12px;background:var(--accent-glow);border-radius:8px;border-left:3px solid var(--accent);">
         <strong style="color:var(--accent);">💡 Pro Tip: Asymmetric Retrieval</strong>
         <p style="margin:8px 0 0 0;font-size:13px;color:var(--text);">
-          Embed your document corpus with <code style="background:var(--surface);padding:2px 6px;border-radius:4px;">voyage-3-lite</code> ($0.02/M) and 
-          query with <code style="background:var(--surface);padding:2px 6px;border-radius:4px;">voyage-3</code> ($0.06/M). 
-          Because all Voyage-3 models share the same embedding space, you get top-tier retrieval quality at a fraction of the cost.
+          Embed your document corpus with <code style="background:var(--surface);padding:2px 6px;border-radius:4px;">voyage-4-lite</code> ($0.02/M) and
+          query with <code style="background:var(--surface);padding:2px 6px;border-radius:4px;">voyage-4</code> ($0.06/M).
+          Because all Voyage 4 models share the same embedding space, you get top-tier retrieval quality at a fraction of the cost.
         </p>
       </div>
     </div>
@@ -6489,8 +6489,8 @@ Reranking models rescore initial search results to improve relevance ordering.</
           <div style="font-size:20px;margin-bottom:8px;">🔗</div>
           <div style="font-weight:600;margin-bottom:4px;">Shared Embedding Space</div>
           <div style="font-size:13px;color:var(--text-dim);">
-            All Voyage-3 models produce compatible embeddings. Mix <code>voyage-3-large</code> for queries 
-            with <code>voyage-3-lite</code> for documents — they work together seamlessly.
+            All Voyage 4 models produce compatible embeddings. Mix <code>voyage-4-large</code> for queries
+            with <code>voyage-4-lite</code> for documents, and they work together seamlessly.
           </div>
         </div>
         <div style="padding:16px;background:var(--surface);border-radius:8px;border:1px solid var(--border);">
@@ -7112,7 +7112,7 @@ Reranking models rescore initial search results to improve relevance ordering.</
               <option value="voyage-4-large">voyage-4-large</option>
               <option value="voyage-4">voyage-4</option>
               <option value="voyage-4-lite">voyage-4-lite</option>
-              <option value="voyage-3-large">voyage-3-large</option>
+              <option value="voyage-code-3">voyage-code-3</option>
             </select>
           </label>
           <label>
@@ -15325,7 +15325,7 @@ const WF_INPUT_DEFS = {
   search:      [{ key: 'query', type: 'text', required: true, placeholder: 'Search query' }, { key: 'collection', type: 'text', required: false }, { key: 'db', type: 'text', required: false }, { key: 'limit', type: 'number', required: false, placeholder: '10' }, { key: 'filter', type: 'json', required: false, placeholder: '{}' }],
   rerank:      [{ key: 'query', type: 'text', required: true }, { key: 'documents', type: 'json', required: true, placeholder: '["doc1","doc2"]' }, { key: 'model', type: 'text', required: false, placeholder: 'rerank-2.5' }],
   ingest:      [{ key: 'text', type: 'textarea', required: true }, { key: 'collection', type: 'text', required: false }, { key: 'db', type: 'text', required: false }, { key: 'source', type: 'text', required: false }, { key: 'chunkSize', type: 'number', required: false, placeholder: '512' }, { key: 'chunkStrategy', type: 'select', required: false, options: ['fixed','sentence','paragraph','recursive','markdown'] }],
-  embed:       [{ key: 'text', type: 'text', required: true, placeholder: 'Text to embed' }, { key: 'model', type: 'text', required: false, placeholder: 'voyage-3-large' }, { key: 'inputType', type: 'select', required: false, options: ['document','query'] }],
+  embed:       [{ key: 'text', type: 'text', required: true, placeholder: 'Text to embed' }, { key: 'model', type: 'text', required: false, placeholder: 'voyage-4-large' }, { key: 'inputType', type: 'select', required: false, options: ['document','query'] }],
   similarity:  [{ key: 'text1', type: 'text', required: true }, { key: 'text2', type: 'text', required: true }, { key: 'model', type: 'text', required: false }],
   collections: [{ key: 'db', type: 'text', required: false }],
   models:      [{ key: 'category', type: 'select', required: false, options: ['embedding','rerank','all'] }],

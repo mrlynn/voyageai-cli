@@ -93,6 +93,7 @@ function registerWorkflow(program) {
     .option('--db <name>', 'Override default database')
     .option('--collection <name>', 'Override default collection')
     .option('--json', 'Output results as JSON', false)
+    .option('-o, --output <format>', 'Output format: json, table, markdown, text, csv, value:<path>')
     .option('--quiet', 'Suppress progress output', false)
     .option('--dry-run', 'Show execution plan without running', false)
     .option('--verbose', 'Show step details', false)
@@ -233,32 +234,17 @@ function registerWorkflow(program) {
         wfDone();
 
         // Output
-        if (opts.json) {
+        const { formatWorkflowOutput, autoDetectFormat } = require('../lib/workflow-formatters');
+        const fmtHints = definition.formatters || {};
+
+        if (opts.json || opts.output === 'json') {
           console.log(JSON.stringify(result.output, null, 2));
+        } else if (opts.output) {
+          console.log(formatWorkflowOutput(result.output, opts.output, fmtHints));
         } else if (result.output) {
-          // Pretty-print top results if they exist
-          const output = result.output;
-          if (output.results && Array.isArray(output.results)) {
-            const top = output.results.slice(0, 5);
-            console.log(pc.bold('Top results:'));
-            for (let i = 0; i < top.length; i++) {
-              const r = top[i];
-              const source = r.source || r.text?.slice(0, 50) || `result ${i + 1}`;
-              const score = r.score != null ? ` (${r.score.toFixed(2)})` : '';
-              console.log(`  ${pc.dim(`[${i + 1}]`)} ${source}${pc.dim(score)}`);
-            }
-          } else if (output.summary) {
-            console.log(output.summary);
-          } else if (output.comparison) {
-            console.log(pc.bold('Cost comparison:'));
-            for (const item of output.comparison) {
-              if (item && item.model) {
-                console.log(`  ${pc.cyan(item.model)}: $${item.totalCost} total (embed: $${item.embeddingCost}, queries: $${item.monthlyQueryCost}/mo)`);
-              }
-            }
-          } else {
-            console.log(JSON.stringify(output, null, 2));
-          }
+          // Auto-detect best format from output shape and workflow hints
+          const bestFormat = autoDetectFormat(result.output, fmtHints);
+          console.log(formatWorkflowOutput(result.output, bestFormat, fmtHints));
         }
       } catch (err) {
         console.error(ui.error(err.message));
