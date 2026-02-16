@@ -1055,6 +1055,8 @@ select:focus { outline: none; border-color: var(--accent); }
   padding: 20px;
   cursor: pointer;
   transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
 }
 .explore-card:hover {
   border-color: var(--accent);
@@ -3148,7 +3150,7 @@ select:focus { outline: none; border-color: var(--accent); }
 .wf-library-item {
   padding: 10px 12px; border-radius: 8px; cursor: pointer;
   margin-bottom: 4px; transition: background 0.15s;
-  border: 1px solid transparent;
+  border: 1px solid transparent; position: relative;
 }
 .wf-library-item:hover { background: var(--bg-card); }
 .wf-library-item.active {
@@ -3372,6 +3374,71 @@ select:focus { outline: none; border-color: var(--accent); }
 }
 .wf-inspector-help-btn:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
 .wf-inspector-help-btn svg { width: 12px; height: 12px; }
+
+/* Workflow info button (library items) */
+.wf-library-item-info {
+  position: absolute; top: 10px; right: 8px;
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--bg-surface); border: 1px solid var(--border);
+  color: var(--text-muted); font-size: 11px; font-weight: 600;
+  display: none; align-items: center; justify-content: center;
+  cursor: pointer; z-index: 2; transition: all 0.15s;
+  font-family: var(--font); line-height: 1;
+}
+.wf-library-item:hover .wf-library-item-info { display: flex; }
+.wf-library-item-info:hover { border-color: var(--accent); color: var(--accent); background: var(--bg); }
+/* Toolbar info button */
+.wf-toolbar-info-btn {
+  background: none; border: 1px solid var(--border); color: var(--text-muted);
+  border-radius: 6px; width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.15s;
+}
+.wf-toolbar-info-btn:hover { border-color: var(--accent); color: var(--accent); }
+.wf-toolbar-info-btn:disabled { opacity: 0.3; cursor: default; pointer-events: none; }
+/* Workflow info modal */
+.wf-info-modal-backdrop {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 10000; animation: wfStoreDetailFadeIn 0.12s ease-out;
+}
+.wf-info-modal {
+  background: var(--bg); border: 1px solid var(--border); border-radius: 12px;
+  width: 480px; max-height: 80vh; overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+.wf-info-modal-header {
+  padding: 16px 20px 12px; display: flex; align-items: center; gap: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.wf-info-modal-close {
+  position: absolute; top: 12px; right: 12px; background: none; border: none;
+  color: var(--text-muted); font-size: 18px; cursor: pointer; padding: 4px 8px;
+  border-radius: 6px; transition: all 0.15s;
+}
+.wf-info-modal-close:hover { background: var(--bg-surface); color: var(--text); }
+.wf-info-modal-body { padding: 16px 20px; }
+.wf-info-modal-section { margin-bottom: 14px; }
+.wf-info-modal-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 6px; font-weight: 600; }
+.wf-info-modal-stats { display: flex; gap: 16px; }
+.wf-info-modal-stat { text-align: center; }
+.wf-info-modal-stat-val { font-size: 16px; font-weight: 700; color: var(--text); }
+.wf-info-modal-stat-lbl { font-size: 10px; color: var(--text-muted); }
+.wf-info-modal-tools { display: flex; flex-wrap: wrap; gap: 4px; }
+.wf-info-modal-tool { font-size: 11px; padding: 2px 8px; border-radius: 4px; border: 1px solid; font-family: var(--mono); }
+.wf-info-modal-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.wf-info-modal-tag { font-size: 11px; padding: 2px 8px; border-radius: 10px; background: var(--bg-surface); color: var(--text-muted); }
+.wf-info-modal-actions { padding: 12px 20px; border-top: 1px solid var(--border); display: flex; gap: 8px; }
+.wf-info-modal-hero {
+  padding: 20px; border-radius: 12px 12px 0 0; position: relative;
+  display: flex; align-items: center; gap: 14px;
+}
+.wf-info-modal-hero-icon {
+  width: 40px; height: 40px; border-radius: 10px; background: rgba(255,255,255,0.15);
+  display: flex; align-items: center; justify-content: center; color: #fff; flex-shrink: 0;
+}
+.wf-info-modal-hero-name { font-size: 18px; font-weight: 700; color: #fff; }
+.wf-info-modal-hero-pkg { font-size: 11px; color: rgba(255,255,255,0.7); font-family: var(--mono); }
 
 .wf-help-modal-backdrop {
   position: fixed; inset: 0; z-index: 10000;
@@ -4333,6 +4400,52 @@ select:focus { outline: none; border-color: var(--accent); }
   height: calc(100vh - 120px);
 }
 
+/* Brand Shape Decorations */
+.brand-shape-layer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+.brand-shape-layer svg {
+  position: absolute;
+  pointer-events: none;
+  width: 100%;
+  height: 100%;
+}
+.home-section-divider {
+  height: 40px;
+  position: relative;
+  overflow: hidden;
+  pointer-events: none;
+  margin: 8px 0;
+}
+.home-section-divider svg {
+  width: 100%;
+  height: 100%;
+}
+.explore-card-nebula {
+  position: absolute;
+  top: -40px;
+  right: -40px;
+  width: 160px;
+  height: 160px;
+  pointer-events: none;
+  z-index: 0;
+}
+.wf-store-brand-shapes {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+.wf-store-brand-shapes svg {
+  position: absolute;
+  pointer-events: none;
+}
+
 /* Announcements Banner */
 .home-announcements {
   margin-bottom: 48px;
@@ -4368,7 +4481,7 @@ select:focus { outline: none; border-color: var(--accent); }
 
 .home-announcement-card .badge {
   display: inline-block;
-  background: linear-gradient(135deg, #00ED64, #00C2FF);
+  background: linear-gradient(135deg, #00D4AA, #40E0FF);
   color: white;
   padding: 4px 12px;
   border-radius: 12px;
@@ -4396,7 +4509,7 @@ select:focus { outline: none; border-color: var(--accent); }
 }
 
 .home-announcement-card .cta {
-  background: linear-gradient(135deg, #00ED64, #00C2FF);
+  background: linear-gradient(135deg, #00D4AA, #40E0FF);
   color: white;
   border: none;
   padding: 12px 24px;
@@ -4408,7 +4521,7 @@ select:focus { outline: none; border-color: var(--accent); }
 
 .home-announcement-card .cta:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 32px rgba(0, 237, 100, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 212, 170, 0.3);
 }
 
 .home-announcement-dismiss {
@@ -4446,7 +4559,7 @@ select:focus { outline: none; border-color: var(--accent); }
 }
 
 .home-announcement-dot.active {
-  background: linear-gradient(135deg, #00ED64, #00C2FF);
+  background: linear-gradient(135deg, #00D4AA, #40E0FF);
 }
 
 .home-announcements-restore {
@@ -4542,7 +4655,7 @@ select:focus { outline: none; border-color: var(--accent); }
 }
 
 .home-marketplace-cta {
-  background: linear-gradient(135deg, #00ED64, #00C2FF);
+  background: linear-gradient(135deg, #00D4AA, #40E0FF);
   color: white;
   border: none;
   padding: 10px 20px;
@@ -4554,7 +4667,7 @@ select:focus { outline: none; border-color: var(--accent); }
 
 .home-marketplace-cta:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(0, 237, 100, 0.3);
+  box-shadow: 0 4px 16px rgba(0, 212, 170, 0.3);
 }
 
 .home-section-header a:hover {
@@ -4576,7 +4689,7 @@ select:focus { outline: none; border-color: var(--accent); }
   border: 1px solid var(--border);
   border-radius: 12px;
   border-left: 4px solid transparent;
-  border-left-color: #00ED64;
+  border-left-color: #00D4AA;
   background: linear-gradient(90deg, transparent, var(--bg-card) 4px);
   transition: all 0.2s;
   animation: fadeInUp 0.6s ease-out;
@@ -4709,7 +4822,7 @@ select:focus { outline: none; border-color: var(--accent); }
 }
 
 .home-workflow-domain {
-  background: rgba(0, 237, 100, 0.1);
+  background: rgba(0, 212, 170, 0.1);
   color: var(--accent);
   padding: 4px 8px;
   border-radius: 6px;
@@ -4765,7 +4878,7 @@ select:focus { outline: none; border-color: var(--accent); }
 }
 
 .home-domain-pill:hover {
-  background: linear-gradient(135deg, #00ED64, #00C2FF);
+  background: linear-gradient(135deg, #00D4AA, #40E0FF);
   color: white;
   border-color: transparent;
   transform: translateY(-1px);
@@ -4871,6 +4984,8 @@ select:focus { outline: none; border-color: var(--accent); }
   padding-top: 32px;
   border-top: 1px solid var(--border);
   text-align: center;
+  position: relative;
+  overflow: hidden;
 }
 
 .home-footer-links {
@@ -5730,6 +5845,8 @@ select:focus { outline: none; border-color: var(--accent); }
       </div>
     </div>
 
+    <div class="home-section-divider" id="divider1"></div>
+
     <!-- What's New (Release Notes) -->
     <div class="home-section" id="homeReleases">
       <div class="home-section-header">
@@ -5740,6 +5857,8 @@ select:focus { outline: none; border-color: var(--accent); }
         <!-- Release items will be inserted here -->
       </div>
     </div>
+
+    <div class="home-section-divider" id="divider2"></div>
 
     <!-- Marketplace Spotlight -->
     <div class="home-section">
@@ -5787,6 +5906,8 @@ select:focus { outline: none; border-color: var(--accent); }
         </div>
       </div>
     </div>
+
+    <div class="home-section-divider" id="divider3"></div>
 
     <!-- Quick Actions -->
     <div class="home-section">
@@ -5837,13 +5958,14 @@ select:focus { outline: none; border-color: var(--accent); }
 
     <!-- Footer -->
     <div class="home-footer">
-      <div class="home-footer-links">
+      <div class="brand-shape-layer" id="footerLattice" style="top: auto; bottom: 0; height: 80px;"></div>
+      <div class="home-footer-links" style="position: relative; z-index: 1;">
         <a href="https://docs.vaicli.com" target="_blank" rel="noopener">Documentation</a>
         <a href="https://github.com/mrlynn/voyageai-cli" target="_blank" rel="noopener">GitHub</a>
         <a href="#" onclick="reportBug()">Report Bug</a>
         <!-- <a href="#" target="_blank" rel="noopener">Community / Discord</a> -->
       </div>
-      <div class="home-footer-branding">
+      <div class="home-footer-branding" style="position: relative; z-index: 1;">
         <span>Built with Voyage AI + MongoDB Atlas</span>
         <span id="homeFooterVersion">Version 1.0.0 • © 2026 VAI</span>
       </div>
@@ -6705,6 +6827,7 @@ Reranking models rescore initial search results to improve relevance ordering.</
         <button onclick="openExportDialog('workflow')" id="wfExportBtn" disabled title="Export workflow (⌘E)">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
         </button>
+        <button class="wf-toolbar-info-btn" id="wfInfoBtn" onclick="wfShowWorkflowInfo()" disabled title="Workflow info">&#9432;</button>
         <span class="wf-toolbar-spacer"></span>
         <div class="wf-toolbar-toggle-group">
           <button id="wfToggleLibBtn" class="active" onclick="wfToggleLibrary()">Library</button>
@@ -6803,6 +6926,13 @@ Reranking models rescore initial search results to improve relevance ordering.</
       <button class="wf-input-modal-cancel" onclick="wfCloseInputModal()">Cancel</button>
       <button class="wf-input-modal-run" onclick="wfInputModalSubmit()">Run Workflow</button>
     </div>
+  </div>
+</div>
+
+<!-- Workflow Info Modal -->
+<div class="wf-info-modal-backdrop" id="wfInfoModalBackdrop" style="display:none;" onclick="wfCloseInfoModal()">
+  <div class="wf-info-modal" onclick="event.stopPropagation()">
+    <div id="wfInfoModalContent"></div>
   </div>
 </div>
 
@@ -7651,6 +7781,180 @@ Reranking models rescore initial search results to improve relevance ordering.</
 (function() {
 'use strict';
 
+// ── Brand Shape Generators ──
+// Seeded PRNG (mulberry32) + SVG shape generators per vai-brand-shape-design-spec.md
+function seededRandom(seed) {
+  let s = seed | 0;
+  return function() {
+    s = (s + 0x6D2B79F5) | 0;
+    let t = Math.imul(s ^ (s >>> 15), 1 | s);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function generateNebulaSVG(w, h, seed, opts = {}) {
+  const rng = seededRandom(seed);
+  const count = opts.count || (opts.variant === 'rich' ? 6 : opts.variant === 'subtle' ? 3 : 4);
+  const opMax = opts.variant === 'rich' ? 0.15 : opts.variant === 'subtle' ? 0.06 : 0.10;
+  const opMin = opts.variant === 'rich' ? 0.05 : opts.variant === 'subtle' ? 0.03 : 0.04;
+  const blur = Math.round(Math.min(w, h) * 0.10);
+  const id = 'nb' + seed;
+  let els = '';
+  for (let i = 0; i < count; i++) {
+    const cx = w * (0.15 + rng() * 0.70);
+    const cy = h * (0.15 + rng() * 0.70);
+    const rx = 30 + rng() * 80 * (w / 300);
+    const ry = 25 + rng() * 60 * (h / 300);
+    const op = opMin + rng() * (opMax - opMin);
+    const color = rng() < 0.55 ? '#00D4AA' : '#40E0FF';
+    const rot = Math.round(rng() * 360);
+    els += `<ellipse cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" rx="${rx.toFixed(1)}" ry="${ry.toFixed(1)}" fill="${color}" opacity="${op.toFixed(3)}" transform="rotate(${rot} ${cx.toFixed(1)} ${cy.toFixed(1)})" filter="url(#${id})"/>`;
+  }
+  const sparkleCount = opts.sparkles !== false ? 20 + Math.round(rng() * 15) : 0;
+  for (let i = 0; i < sparkleCount; i++) {
+    const sx = w * (0.1 + rng() * 0.8);
+    const sy = h * (0.1 + rng() * 0.8);
+    const sr = 0.5 + rng() * 1.5;
+    const so = 0.15 + rng() * 0.45;
+    const sc = rng() < 0.5 ? '#00D4AA' : '#40E0FF';
+    els += `<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="${sr.toFixed(1)}" fill="${sc}" opacity="${so.toFixed(2)}"/>`;
+  }
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true"><defs><filter id="${id}"><feGaussianBlur stdDeviation="${blur}"/></filter></defs>${els}</svg>`;
+}
+
+function generateParticleFieldSVG(w, h, seed, opts = {}) {
+  const rng = seededRandom(seed);
+  const count = opts.dense ? 100 + Math.round(rng() * 20) : 50 + Math.round(rng() * 20);
+  const variant = opts.variant || 'scattered';
+  const particles = [];
+  let clusters;
+  if (variant === 'clustered') {
+    const nc = 3 + Math.round(rng() * 3);
+    clusters = Array.from({length: nc}, () => ({x: w * (0.15 + rng() * 0.7), y: h * (0.15 + rng() * 0.7)}));
+  }
+  for (let i = 0; i < count; i++) {
+    let px, py;
+    if (variant === 'flowing') {
+      px = rng() * w;
+      py = h * 0.5 + Math.sin((px / w) * Math.PI * 2 + rng() * 0.5) * h * 0.3 + (rng() - 0.5) * h * 0.15;
+    } else if (variant === 'clustered' && clusters) {
+      const c = clusters[Math.floor(rng() * clusters.length)];
+      px = c.x + (rng() - 0.5) * w * 0.25;
+      py = c.y + (rng() - 0.5) * h * 0.25;
+    } else {
+      px = rng() * w;
+      py = rng() * h;
+    }
+    const pr = 1 + rng() * 3;
+    const po = 0.2 + rng() * 0.5;
+    const pc = rng() < 0.65 ? '#00D4AA' : '#40E0FF';
+    particles.push({x: px, y: py, r: pr, o: po, c: pc});
+  }
+  let els = particles.map(p => `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${p.r.toFixed(1)}" fill="${p.c}" opacity="${p.o.toFixed(2)}"/>`).join('');
+  if (variant === 'constellation') {
+    const thresh = opts.threshold || 55;
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const dx = particles[i].x - particles[j].x, dy = particles[i].y - particles[j].y;
+        const d = Math.sqrt(dx * dx + dy * dy);
+        if (d < thresh) {
+          const lo = (0.3 * (1 - d / thresh)).toFixed(2);
+          els += `<line x1="${particles[i].x.toFixed(1)}" y1="${particles[i].y.toFixed(1)}" x2="${particles[j].x.toFixed(1)}" y2="${particles[j].y.toFixed(1)}" stroke="#00D4AA" stroke-width="0.6" opacity="${lo}"/>`;
+        }
+      }
+    }
+  }
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true">${els}</svg>`;
+}
+
+function generateLatticeSVG(w, h, seed, opts = {}) {
+  const rng = seededRandom(seed);
+  const cols = opts.columns || 10;
+  const warp = opts.warp != null ? opts.warp : 0.4;
+  const cellW = w / (cols - 1);
+  const rows = Math.max(2, Math.round(h / cellW));
+  const cellH = h / (rows - 1);
+  const pts = [];
+  for (let r = 0; r < rows; r++) {
+    pts[r] = [];
+    for (let c = 0; c < cols; c++) {
+      const edgeDist = Math.min(c, cols - 1 - c, r, rows - 1 - r) / Math.max(cols, rows);
+      const warpAmt = warp * cellW * (1 - edgeDist * 2);
+      const visible = rng() < 0.85;
+      pts[r][c] = {
+        x: c * cellW + (rng() - 0.5) * warpAmt,
+        y: r * cellH + (rng() - 0.5) * warpAmt,
+        visible
+      };
+    }
+  }
+  let els = '';
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const p = pts[r][c];
+      if (!p.visible) continue;
+      const pr = 1 + rng() * 2;
+      const po = 0.15 + rng() * 0.5;
+      const pc = rng() < 0.8 ? '#00D4AA' : '#40E0FF';
+      els += `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${pr.toFixed(1)}" fill="${pc}" opacity="${po.toFixed(2)}"/>`;
+      if (c < cols - 1 && pts[r][c + 1].visible && rng() < 0.78) {
+        const eo = (0.06 + rng() * 0.19).toFixed(2);
+        els += `<line x1="${p.x.toFixed(1)}" y1="${p.y.toFixed(1)}" x2="${pts[r][c+1].x.toFixed(1)}" y2="${pts[r][c+1].y.toFixed(1)}" stroke="#00D4AA" stroke-width="0.6" opacity="${eo}"/>`;
+      }
+      if (r < rows - 1 && pts[r + 1][c].visible && rng() < 0.78) {
+        const eo = (0.06 + rng() * 0.19).toFixed(2);
+        els += `<line x1="${p.x.toFixed(1)}" y1="${p.y.toFixed(1)}" x2="${pts[r+1][c].x.toFixed(1)}" y2="${pts[r+1][c].y.toFixed(1)}" stroke="#00D4AA" stroke-width="0.6" opacity="${eo}"/>`;
+      }
+      if (c < cols - 1 && r < rows - 1 && rng() < 0.25) {
+        const diag = pts[r + 1][c + 1];
+        if (diag.visible) {
+          const eo = (0.04 + rng() * 0.12).toFixed(2);
+          els += `<line x1="${p.x.toFixed(1)}" y1="${p.y.toFixed(1)}" x2="${diag.x.toFixed(1)}" y2="${diag.y.toFixed(1)}" stroke="#00D4AA" stroke-width="0.4" opacity="${eo}"/>`;
+        }
+      }
+    }
+  }
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true">${els}</svg>`;
+}
+
+function generateOrbitalArcsSVG(w, h, seed, opts = {}) {
+  const rng = seededRandom(seed);
+  const arcCount = opts.arcs || (2 + Math.round(rng() * 4));
+  const cx = w / 2, cy = h / 2;
+  let els = '';
+  for (let i = 0; i < arcCount; i++) {
+    const rx = w * (0.20 + rng() * 0.20);
+    const ry = h * (0.15 + rng() * 0.15);
+    const startAngle = rng() * Math.PI * 2;
+    const sweep = (60 + rng() * 180) * Math.PI / 180;
+    const rot = (-30 + rng() * 90);
+    const sw = 1 + rng() * 2;
+    const so = 0.2 + rng() * 0.5;
+    const sc = rng() < 0.65 ? '#00D4AA' : '#40E0FF';
+    const x1 = cx + rx * Math.cos(startAngle);
+    const y1 = cy + ry * Math.sin(startAngle);
+    const x2 = cx + rx * Math.cos(startAngle + sweep);
+    const y2 = cy + ry * Math.sin(startAngle + sweep);
+    const largeArc = sweep > Math.PI ? 1 : 0;
+    els += `<path d="M ${x1.toFixed(1)} ${y1.toFixed(1)} A ${rx.toFixed(1)} ${ry.toFixed(1)} ${rot.toFixed(0)} ${largeArc} 1 ${x2.toFixed(1)} ${y2.toFixed(1)}" fill="none" stroke="${sc}" stroke-width="${sw.toFixed(1)}" opacity="${so.toFixed(2)}" stroke-linecap="round"/>`;
+    const dotR = 1.5 + rng() * 2.5;
+    els += `<circle cx="${x2.toFixed(1)}" cy="${y2.toFixed(1)}" r="${dotR.toFixed(1)}" fill="${sc}" opacity="${so.toFixed(2)}"/>`;
+  }
+  const scatterCount = 8 + Math.round(rng() * 7);
+  for (let i = 0; i < scatterCount; i++) {
+    const angle = rng() * Math.PI * 2;
+    const dist = 0.3 + rng() * 0.5;
+    const sx = cx + w * dist * 0.4 * Math.cos(angle);
+    const sy = cy + h * dist * 0.4 * Math.sin(angle);
+    const sr = 0.6 + rng() * 1.4;
+    const so = 0.1 + rng() * 0.35;
+    const sc = rng() < 0.65 ? '#00D4AA' : '#40E0FF';
+    els += `<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="${sr.toFixed(1)}" fill="${sc}" opacity="${so.toFixed(2)}"/>`;
+  }
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true">${els}</svg>`;
+}
+
 // ── Theme Toggle ──
 function initThemeToggle() {
   const toggle = document.getElementById('themeToggle');
@@ -7878,6 +8182,20 @@ async function homeInit() {
     renderAnnouncements();
     renderReleases();
 
+    // Populate section dividers with flowing particle fields
+    [['divider1', 440], ['divider2', 441], ['divider3', 442]].forEach(([id, seed]) => {
+      const el = document.getElementById(id);
+      if (el && !el.innerHTML) {
+        el.innerHTML = generateParticleFieldSVG(el.offsetWidth || 900, 40, seed, {variant: 'flowing', opacity: 0.4});
+      }
+    });
+
+    // Populate footer lattice background
+    const footerLattice = document.getElementById('footerLattice');
+    if (footerLattice && !footerLattice.innerHTML) {
+      footerLattice.innerHTML = generateLatticeSVG(footerLattice.parentElement.offsetWidth || 900, 80, 780, {variant: 'dense', opacity: 0.05});
+    }
+
     // Load marketplace data in background (slower, network-dependent)
     loadMarketplaceData().then(() => {
       renderFeaturedWorkflows();
@@ -8058,10 +8376,18 @@ function renderAnnouncements() {
       ${ann.cta ? `<button class="cta" onclick="${ann.cta.action === 'navigate' ? `switchTab('${ann.cta.target.slice(1)}')` : 'void(0)'}">${ann.cta.label}</button>` : ''}
     </div>`;
   }).join('');
-  
+
+  // Inject brand nebula background layer behind cards
+  if (!carousel.querySelector('.brand-shape-layer')) {
+    const nebulaLayer = document.createElement('div');
+    nebulaLayer.className = 'brand-shape-layer';
+    nebulaLayer.innerHTML = generateNebulaSVG(carousel.offsetWidth || 800, carousel.offsetHeight || 220, 210, {variant: 'subtle', sparkles: true});
+    carousel.insertBefore(nebulaLayer, carousel.firstChild);
+  }
+
   // Render dots
   if (homeData.announcements.length > 1) {
-    dots.innerHTML = homeData.announcements.map((_, i) => 
+    dots.innerHTML = homeData.announcements.map((_, i) =>
       `<div class="home-announcement-dot${i === 0 ? ' active' : ''}" onclick="showAnnouncement(${i})"></div>`
     ).join('');
     
@@ -9107,6 +9433,7 @@ function buildExploreCards() {
   const grid = document.getElementById('exploreGrid');
   grid.innerHTML = '';
 
+  let cardIdx = 0;
   for (const [key, concept] of Object.entries(exploreConcepts)) {
     const meta = CONCEPT_META[key] || { icon: LI.package, tab: 'embed' };
     const card = document.createElement('div');
@@ -9114,12 +9441,14 @@ function buildExploreCards() {
     card.dataset.key = key;
 
     card.innerHTML = `
+      <div class="explore-card-nebula">${generateNebulaSVG(160, 160, 70 + cardIdx, {variant: 'subtle', opacity: 0.06, sparkles: false})}</div>
       <div class="explore-card-icon">${lucideIcon(meta.icon, 28)}</div>
       <div class="explore-card-title">${escapeHtml(concept.title)}</div>
       <div class="explore-card-summary">${escapeHtml(concept.summary)}</div>
     `;
     card.addEventListener('click', () => openExploreModal(key));
     grid.appendChild(card);
+    cardIdx++;
   }
 
   // Modal close handlers
@@ -13137,7 +13466,11 @@ function wfRenderLibrary() {
     const displayName = prefix + w.name.replace(/^@vaicli\/vai-workflow-/, '').replace(/^vai-workflow-/, '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
     const authorLine = w.author ? `<span style="color:var(--text-muted);font-size:10px;">by ${w.author}${w.version ? ' · v' + w.version : ''}</span>` : '';
     const tagLine = (w.tags || []).length ? `<div style="margin-top:2px;font-size:10px;color:var(--text-muted);">${w.tags.join(' · ')}</div>` : '';
+    const infoBtn = (prefix === '✓ ' || prefix === '🌐 ')
+      ? `<div class="wf-library-item-info" onclick="event.stopPropagation();wfShowWorkflowInfo('${w.name}')" title="Workflow info">i</div>`
+      : '';
     return `<div class="wf-library-item" data-wf-name="${w.name}" onclick="wfSelectWorkflow('${w.name}')">
+      ${infoBtn}
       <div class="wf-library-item-name">${displayName}</div>
       <div class="wf-library-item-desc">${w.description || ''}</div>
       ${authorLine}${tagLine}
@@ -13320,6 +13653,7 @@ async function wfSelectWorkflow(name) {
     const res = await fetch('/api/workflows/' + encodeURIComponent(name));
     const data = await res.json();
     wfState.activeWorkflow = data.definition;
+    wfState.activeWorkflowName = name;
     wfState.builderMode = false;
     wfState.selectedNodeId = null;
     wfState.executionState = {};
@@ -14256,6 +14590,7 @@ function wfSetToolbarEnabled(enabled) {
   document.getElementById('wfDryRunBtn').disabled = !enabled;
   document.getElementById('wfExportBtn').disabled = !enabled;
   document.getElementById('wfEditBtn').disabled = !enabled;
+  document.getElementById('wfInfoBtn').disabled = !enabled;
 }
 
 // ── Export workflow JSON ──
@@ -14903,13 +15238,18 @@ function wfFitToView() {
   const pad = 40;
   const vbW = maxX - minX + pad * 2;
   const vbH = maxY - minY + pad * 2;
-  wfState.panX = minX - pad;
-  wfState.panY = minY - pad;
   // Calculate zoom to fit
   const rect = svg.parentElement.getBoundingClientRect();
   const scaleX = rect.width / vbW;
   const scaleY = rect.height / vbH;
   wfState.zoom = Math.min(scaleX, scaleY, 1.5);
+  // Center content within the viewport
+  const viewW = rect.width / wfState.zoom;
+  const viewH = rect.height / wfState.zoom;
+  const contentCX = (minX + maxX) / 2;
+  const contentCY = (minY + maxY) / 2;
+  wfState.panX = contentCX - viewW / 2;
+  wfState.panY = contentCY - viewH / 2;
   wfApplyViewBox();
 }
 
@@ -15967,6 +16307,17 @@ function wfStoreOpen() {
   if (!overlay) return;
   overlay.classList.add('open');
   document.getElementById('wfStoreBtn').classList.add('active');
+  // Inject brand shapes behind store content
+  try {
+    if (!overlay.querySelector('.wf-store-brand-shapes')) {
+      const shapes = document.createElement('div');
+      shapes.className = 'wf-store-brand-shapes';
+      const w = overlay.offsetWidth || 900, h = overlay.offsetHeight || 600;
+      shapes.innerHTML = generateNebulaSVG(w, h, 260, {variant: 'medium', opacity: 0.08}) +
+        generateOrbitalArcsSVG(w, h, 410, {opacity: 0.12});
+      overlay.insertBefore(shapes, overlay.firstChild);
+    }
+  } catch (e) { console.warn('Brand shapes injection failed:', e); }
   if (!_wfStoreCatalog) wfStoreFetchCatalog();
   else wfStoreRender();
 }
@@ -15993,7 +16344,10 @@ function wfBrandingIcon(wf, size = 16) {
 
 async function wfStoreFetchCatalog() {
   try {
-    const res = await fetch('/api/workflows/catalog');
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+    const res = await fetch('/api/workflows/catalog', {signal: controller.signal});
+    clearTimeout(timeout);
     const data = await res.json();
     if (data.icons) _wfStoreIcons = data.icons;
     if (data.workflows && data.workflows.length > 0) {
@@ -16233,6 +16587,135 @@ function wfStoreShowDetail(name) {
     </div>
   </div>`;
   document.body.appendChild(modal);
+}
+
+// ── Workflow Info Modal ──
+function wfCloseInfoModal() {
+  const bd = document.getElementById('wfInfoModalBackdrop');
+  if (bd) bd.style.display = 'none';
+}
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    const bd = document.getElementById('wfInfoModalBackdrop');
+    if (bd && bd.style.display !== 'none') wfCloseInfoModal();
+  }
+});
+
+async function wfShowWorkflowInfo(name) {
+  // Resolve name: from arg, or from active workflow
+  if (!name) name = wfState.activeWorkflowName;
+  if (!name) return;
+
+  // Normalize: strip package prefix for matching
+  const shortName = name.replace(/^@vaicli\/vai-workflow-/, '').replace(/^vai-workflow-/, '');
+
+  // Ensure catalog is loaded
+  if (!_wfStoreCatalog) {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 5000);
+      const res = await fetch('/api/workflows/catalog', {signal: controller.signal});
+      clearTimeout(timeout);
+      const data = await res.json();
+      if (data.icons) _wfStoreIcons = data.icons;
+      _wfStoreCatalog = (data.workflows && data.workflows.length > 0) ? data.workflows : WF_STORE_FALLBACK;
+    } catch {
+      _wfStoreCatalog = WF_STORE_FALLBACK;
+    }
+  }
+
+  // Look up in catalog
+  const wf = (_wfStoreCatalog || []).find(w =>
+    w.name === shortName || w.name === name || w.packageName === name
+  );
+
+  const backdrop = document.getElementById('wfInfoModalBackdrop');
+  const content = document.getElementById('wfInfoModalContent');
+  if (!backdrop || !content) return;
+
+  if (wf) {
+    // Rich info from catalog
+    const toolsHtml = (wf.tools || []).map(t => {
+      const c = WF_STORE_TOOL_COLORS[t] || '#666';
+      return `<span class="wf-info-modal-tool" style="color:${c};border-color:${c}44;background:${c}11">${t}</span>`;
+    }).join('');
+    const tagsHtml = [`<span class="wf-info-modal-tag">${wf.category || 'utility'}</span>`]
+      .concat((wf.tags || []).map(t => `<span class="wf-info-modal-tag">${t}</span>`)).join('');
+    const capBadges = getCapabilityBadges(wf.tools);
+    const capHtml = capBadges.length > 0
+      ? `<div class="wf-info-modal-section"><div class="wf-info-modal-label">Capabilities</div><div style="display:flex;gap:5px;flex-wrap:wrap">${capBadges.map(b => `<span class="wf-store-badge-capability ${b.cls}">${b.emoji} ${b.label}</span>`).join('')}</div></div>`
+      : '';
+    const authorObj = wf.author && wf.author.name && wf.author.name !== 'unknown' ? wf.author : null;
+    const authorHtml = authorObj
+      ? `<div class="wf-info-modal-section" style="display:flex;align-items:center;gap:8px;">
+          ${authorObj.avatar ? `<img src="${authorObj.avatar}" style="width:24px;height:24px;border-radius:50%;" onerror="this.style.display='none'">` : ''}
+          <span style="font-size:12px;color:var(--text-dim);">by ${authorObj.url ? `<a href="${authorObj.url}" target="_blank" rel="noopener" style="color:var(--accent)">${authorObj.name}</a>` : authorObj.name}</span>
+        </div>`
+      : '';
+    const verifiedHtml = wf.verified
+      ? `<div class="wf-info-modal-section"><span style="color:var(--accent);font-size:12px;">&#10003; Verified</span></div>`
+      : '';
+    const ratingHtml = wf.rating != null
+      ? `<div class="wf-info-modal-section"><div class="wf-info-modal-label">Rating</div><span style="font-size:12px;color:var(--text-dim);">${wf.rating.toFixed(1)} / 5</span></div>`
+      : '';
+
+    content.innerHTML = `
+      <div class="wf-info-modal-hero" style="background:${wf.gradient || 'linear-gradient(135deg, #334155, #64748B)'}">
+        <button class="wf-info-modal-close" onclick="wfCloseInfoModal()">&times;</button>
+        ${wfBrandingIcon(wf, 26) ? `<div class="wf-info-modal-hero-icon">${wfBrandingIcon(wf, 26)}</div>` : ''}
+        <div>
+          <div class="wf-info-modal-hero-name">${wf.name}</div>
+          <div class="wf-info-modal-hero-pkg">${wf.packageName || ''}</div>
+        </div>
+      </div>
+      <div class="wf-info-modal-body">
+        ${authorHtml}
+        <p style="font-size:13px;color:var(--text);margin:0 0 14px;line-height:1.5;">${wf.description || ''}</p>
+        <div class="wf-info-modal-section">
+          <div class="wf-info-modal-label">Stats</div>
+          <div class="wf-info-modal-stats">
+            <div class="wf-info-modal-stat"><div class="wf-info-modal-stat-val">${wf.steps || 0}</div><div class="wf-info-modal-stat-lbl">Steps</div></div>
+            <div class="wf-info-modal-stat"><div class="wf-info-modal-stat-val">${wf.toolCount || (Array.isArray(wf.tools) ? wf.tools.length : 0)}</div><div class="wf-info-modal-stat-lbl">Tools</div></div>
+            <div class="wf-info-modal-stat"><div class="wf-info-modal-stat-val">${(wf.downloads || 0).toLocaleString()}</div><div class="wf-info-modal-stat-lbl">Downloads</div></div>
+          </div>
+        </div>
+        ${(wf.tools || []).length ? `<div class="wf-info-modal-section"><div class="wf-info-modal-label">Tools</div><div class="wf-info-modal-tools">${toolsHtml}</div></div>` : ''}
+        ${(wf.tags || []).length || wf.category ? `<div class="wf-info-modal-section"><div class="wf-info-modal-label">Tags</div><div class="wf-info-modal-tags">${tagsHtml}</div></div>` : ''}
+        ${capHtml}
+        ${verifiedHtml}
+        ${ratingHtml}
+      </div>
+      <div class="wf-info-modal-actions">
+        <button class="wf-store-detail-btn wf-store-detail-btn-secondary" style="font-size:12px;padding:6px 14px;" onclick="wfCloseInfoModal();wfStoreOpen();setTimeout(()=>wfStoreShowDetail('${wf.name}'),300)">View in Store</button>
+        <button class="wf-store-detail-btn wf-store-detail-btn-secondary" style="font-size:12px;padding:6px 14px;" onclick="wfCloseInfoModal()">Close</button>
+      </div>`;
+  } else {
+    // Simple info for built-in/example workflows
+    const def = wfState.activeWorkflow;
+    const stepCount = def && def.steps ? def.steps.length : 0;
+    const allWfs = [...(wfState.workflows || []), ...(wfState.examples || []), ...(wfState.official || []), ...(wfState.community || [])];
+    const meta = allWfs.find(w => w.name === name);
+    content.innerHTML = `
+      <div class="wf-info-modal-hero" style="background:linear-gradient(135deg, #334155, #64748B)">
+        <button class="wf-info-modal-close" onclick="wfCloseInfoModal()">&times;</button>
+        <div>
+          <div class="wf-info-modal-hero-name">${shortName.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</div>
+          <div class="wf-info-modal-hero-pkg" style="opacity:0.6">${name}</div>
+        </div>
+      </div>
+      <div class="wf-info-modal-body">
+        ${meta && meta.author ? `<div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">by ${meta.author}${meta.version ? ' &middot; v' + meta.version : ''}</div>` : ''}
+        <p style="font-size:13px;color:var(--text);margin:0 0 14px;line-height:1.5;">${meta ? meta.description || '' : ''}</p>
+        ${stepCount > 0 ? `<div class="wf-info-modal-section"><div class="wf-info-modal-label">Steps</div><span style="font-size:13px;color:var(--text)">${stepCount}</span></div>` : ''}
+        ${meta && (meta.tags || []).length ? `<div class="wf-info-modal-section"><div class="wf-info-modal-label">Tags</div><div class="wf-info-modal-tags">${meta.tags.map(t => `<span class="wf-info-modal-tag">${t}</span>`).join('')}</div></div>` : ''}
+        <div class="wf-info-modal-section"><span class="wf-info-modal-tag" style="background:var(--accent);color:#000;font-weight:600;">Built-in</span></div>
+      </div>
+      <div class="wf-info-modal-actions">
+        <button class="wf-store-detail-btn wf-store-detail-btn-secondary" style="font-size:12px;padding:6px 14px;" onclick="wfCloseInfoModal()">Close</button>
+      </div>`;
+  }
+
+  backdrop.style.display = 'flex';
 }
 
 async function wfStoreInstall(packageName, btn) {
