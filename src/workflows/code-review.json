@@ -1,0 +1,107 @@
+{
+  "$schema": "https://vai.dev/schemas/workflow-v1.json",
+  "name": "Code Review Assistant",
+  "description": "Index a codebase, find similar patterns, and surface related code for review. Paste a code snippet and get context from across the project — similar implementations, related functions, and architectural patterns.",
+  "version": "1.0.0",
+  "branding": {
+    "icon": "code",
+    "color": "#06B6D4"
+  },
+  "inputs": {
+    "source": {
+      "type": "string",
+      "description": "Local directory path or GitHub repo URL to analyze",
+      "required": true
+    },
+    "code": {
+      "type": "string",
+      "description": "Code snippet to review — finds similar patterns and related implementations",
+      "required": true
+    },
+    "question": {
+      "type": "string",
+      "description": "Optional question about the code (e.g., 'are there any other retry implementations?')",
+      "default": ""
+    },
+    "language": {
+      "type": "string",
+      "description": "Filter results to a specific language (e.g., 'js', 'py', 'go')"
+    },
+    "limit": {
+      "type": "number",
+      "description": "Maximum results per search step",
+      "default": 5
+    }
+  },
+  "defaults": {
+    "db": "vai_code_search"
+  },
+  "steps": [
+    {
+      "id": "check_index",
+      "name": "Check if codebase is already indexed",
+      "tool": "code_status",
+      "inputs": {
+        "db": "{{ defaults.db }}"
+      }
+    },
+    {
+      "id": "index_codebase",
+      "name": "Index codebase (skip if already indexed and fresh)",
+      "tool": "code_index",
+      "inputs": {
+        "source": "{{ inputs.source }}",
+        "db": "{{ defaults.db }}",
+        "refresh": true
+      },
+      "condition": "{{ !check_index.output || check_index.output.totalChunks === 0 }}"
+    },
+    {
+      "id": "find_similar",
+      "name": "Find similar code patterns across the codebase",
+      "tool": "code_find_similar",
+      "inputs": {
+        "code": "{{ inputs.code }}",
+        "db": "{{ defaults.db }}",
+        "limit": "{{ inputs.limit }}",
+        "language": "{{ inputs.language }}",
+        "threshold": 0.4
+      }
+    },
+    {
+      "id": "contextual_search",
+      "name": "Search for related architectural context",
+      "tool": "code_search",
+      "inputs": {
+        "query": "{{ inputs.question || 'functions and modules related to: ' + inputs.code.substring(0, 200) }}",
+        "db": "{{ defaults.db }}",
+        "limit": "{{ inputs.limit }}",
+        "language": "{{ inputs.language }}",
+        "rerank": true
+      }
+    },
+    {
+      "id": "deep_query",
+      "name": "Answer specific question about the code",
+      "tool": "code_query",
+      "inputs": {
+        "query": "{{ inputs.question }}",
+        "db": "{{ defaults.db }}",
+        "limit": 3,
+        "language": "{{ inputs.language }}"
+      },
+      "condition": "{{ inputs.question && inputs.question.length > 0 }}"
+    }
+  ],
+  "output": {
+    "similarPatterns": "{{ find_similar.output.results }}",
+    "similarCount": "{{ find_similar.output.metadata.resultCount }}",
+    "relatedCode": "{{ contextual_search.output.results }}",
+    "relatedCount": "{{ contextual_search.output.metadata.resultCount }}",
+    "answer": "{{ deep_query.output.results }}",
+    "indexStatus": {
+      "totalFiles": "{{ check_index.output.uniqueFiles || index_codebase.output.filesIndexed }}",
+      "totalChunks": "{{ check_index.output.totalChunks || index_codebase.output.chunksCreated }}"
+    }
+  }
+}

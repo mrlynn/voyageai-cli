@@ -1,0 +1,69 @@
+{
+  "name": "code-review: no question — skip deep_query, auto-generate search from snippet",
+  "inputs": {
+    "source": "/Users/dev/myapp",
+    "code": "class DatabasePool {\n  constructor(uri, { maxSize = 10, idleTimeoutMs = 30000 }) {\n    this.pool = [];\n    this.maxSize = maxSize;\n  }\n  async acquire() { ... }\n  release(conn) { ... }\n}",
+    "limit": 3
+  },
+  "mocks": {
+    "code_status": {
+      "totalChunks": 500,
+      "uniqueFiles": 80,
+      "languages": { "js": 60, "ts": 20 },
+      "lastIndexed": "2026-02-16T10:00:00.000Z",
+      "indexes": [{ "name": "code_search_index", "status": "READY" }]
+    },
+    "code_index": null,
+    "code_find_similar": {
+      "results": [
+        {
+          "source": "src/lib/redis-pool.js",
+          "language": "js",
+          "startLine": 5,
+          "endLine": 45,
+          "symbols": ["RedisPool", "acquire", "release"],
+          "content": "class RedisPool { constructor(opts) { ... } async acquire() { ... } }",
+          "score": 0.889,
+          "chunkType": "boundary"
+        }
+      ],
+      "metadata": {
+        "collection": "myapp_code",
+        "model": "voyage-code-3",
+        "resultCount": 1,
+        "timeMs": 156
+      }
+    },
+    "code_search": {
+      "results": [
+        {
+          "source": "src/lib/mongo.js",
+          "language": "js",
+          "startLine": 12,
+          "endLine": 50,
+          "symbols": ["getMongoCollection", "closeClient"],
+          "content": "async function getMongoCollection(db, collection) { ... }",
+          "score": 0.801
+        }
+      ],
+      "metadata": {
+        "collection": "myapp_code",
+        "model": "voyage-code-3",
+        "reranked": true,
+        "resultCount": 1,
+        "timeMs": 189
+      }
+    },
+    "code_query": null
+  },
+  "expect": {
+    "steps": {
+      "check_index": { "status": "completed" },
+      "index_codebase": { "status": "skipped" },
+      "find_similar": { "status": "completed" },
+      "contextual_search": { "status": "completed" },
+      "deep_query": { "status": "skipped" }
+    },
+    "noErrors": true
+  }
+}
