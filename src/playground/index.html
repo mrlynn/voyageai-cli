@@ -14342,6 +14342,12 @@ const WF_NODE_META = {
   chunk:       { icon: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M9 15h6M9 11h6M9 19h4', label: 'Chunk', color: '#00D4AA', category: 'processing' },
   aggregate:   { icon: 'M22 3H2l8 9.46V19l4 2v-8.54L22 3z', label: 'Aggregate', color: '#00D4AA', category: 'processing' },
   http:        { icon: 'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zM2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z', label: 'HTTP Request', color: '#F5A623', category: 'integration' },
+  // Code search tools (voyage-code-3)
+  code_index:        { icon: 'M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2zM12 11v6M9 14h6', label: 'Code Index', color: '#06B6D4', category: 'code' },
+  code_search:       { icon: 'M10 20l4-16M18 8l4 4-4 4M6 16l-4-4 4-4', label: 'Code Search', color: '#06B6D4', category: 'code' },
+  code_query:        { icon: 'M10 20l4-16M21 21l-4.3-4.3M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16z', label: 'Code Query', color: '#06B6D4', category: 'code' },
+  code_find_similar: { icon: 'M16 3h5v5M8 3H3v5M3 16v5h5M21 16v5h-5M12 8v8M8 12h8', label: 'Find Similar', color: '#06B6D4', category: 'code' },
+  code_status:       { icon: 'M22 12h-4l-3 9L9 3l-3 9H2', label: 'Code Status', color: '#06B6D4', category: 'code' },
 };
 
 // Fallback icon (gear) for unknown workflow node types
@@ -14557,6 +14563,16 @@ function wfCloseInstallDialog() {
   if (modal) modal.style.display = 'none';
 }
 
+function wfCompareVersions(a, b) {
+  const pa = (a || '0.0.0').split('.').map(Number);
+  const pb = (b || '0.0.0').split('.').map(Number);
+  for (let i = 0; i < 3; i++) {
+    if ((pa[i] || 0) > (pb[i] || 0)) return 1;
+    if ((pa[i] || 0) < (pb[i] || 0)) return -1;
+  }
+  return 0;
+}
+
 async function wfSearchNpm() {
   const query = document.getElementById('wfInstallSearch').value.trim();
   const results = document.getElementById('wfInstallResults');
@@ -14572,15 +14588,27 @@ async function wfSearchNpm() {
     results.innerHTML = data.results.map(r => {
       const isOfficial = r.name.startsWith('@vaicli/');
       const badge = isOfficial ? '<span style="background:var(--accent);color:#fff;font-size:9px;padding:1px 5px;border-radius:3px;margin-left:6px;">OFFICIAL</span>' : '';
-      const installed = [...(wfState.official||[]), ...(wfState.community||[])].some(w => w.name === r.name);
-      const btn = installed
-        ? '<button disabled style="padding:4px 10px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text-muted);font-size:11px;cursor:default;">Installed</button>'
-        : `<button onclick="wfInstallPkg('${r.name.replace(/'/g,"\\'")}')" style="padding:4px 10px;background:var(--accent);color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:11px;">Install</button>`;
+      const installedPkg = [...(wfState.official||[]), ...(wfState.community||[])].find(w => w.name === r.name);
+      const installed = !!installedPkg;
+      const installedVersion = installedPkg?.version;
+      const npmVersion = r.version;
+      const hasUpdate = installed && npmVersion && installedVersion && npmVersion !== installedVersion && wfCompareVersions(npmVersion, installedVersion) > 0;
+      let btn;
+      if (hasUpdate) {
+        btn = `<button onclick="wfInstallPkg('${r.name.replace(/'/g,"\\'")}')" style="padding:4px 10px;background:#F59E0B;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:11px;" title="Installed: v${installedVersion}">Update</button>`;
+      } else if (installed) {
+        btn = '<button disabled style="padding:4px 10px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text-muted);font-size:11px;cursor:default;">Installed</button>';
+      } else {
+        btn = `<button onclick="wfInstallPkg('${r.name.replace(/'/g,"\\'")}')" style="padding:4px 10px;background:var(--accent);color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:11px;">Install</button>`;
+      }
+      const versionInfo = hasUpdate
+        ? `v${installedVersion} → <span style="color:#F59E0B;font-weight:500;">v${npmVersion}</span>`
+        : `v${npmVersion || '?'}`;
       return `<div style="padding:10px 12px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;">
         <div style="flex:1;min-width:0;">
           <div style="font-size:13px;font-weight:500;">${r.name}${badge}</div>
           <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">${r.description || ''}</div>
-          <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">v${r.version || '?'}</div>
+          <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">${versionInfo}</div>
         </div>
         <div style="margin-left:12px;flex-shrink:0;">${btn}</div>
       </div>`;
@@ -14596,7 +14624,7 @@ async function wfInstallPkg(name) {
   const btns = results.querySelectorAll('button');
   let clickedBtn = null;
   btns.forEach(b => {
-    if (b.textContent === 'Install' && !clickedBtn) {
+    if ((b.textContent === 'Install' || b.textContent === 'Update') && !clickedBtn) {
       // Find the button in the same row as the package name
       const row = b.closest('div[style*="border-bottom"]');
       if (row && row.textContent.includes(name)) {
@@ -16059,6 +16087,31 @@ function wfStopExecution(reason) {
   wfUpdateInspector();
 }
 
+// ── Workflow Input Cache (localStorage) ──
+
+function wfSlugify(name) {
+  return String(name).toLowerCase().replace(/[\s_]+/g, '-').replace(/[^a-z0-9-]/g, '').replace(/-+/g, '-').replace(/^-|-$/g, '');
+}
+
+function wfGetInputCache(workflowName) {
+  try {
+    const slug = wfSlugify(workflowName);
+    if (!slug) return {};
+    const raw = localStorage.getItem('vai-workflow-inputs-' + slug);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    return (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) ? parsed : {};
+  } catch { return {}; }
+}
+
+function wfSaveInputCache(workflowName, inputs) {
+  try {
+    const slug = wfSlugify(workflowName);
+    if (!slug || !inputs) return;
+    localStorage.setItem('vai-workflow-inputs-' + slug, JSON.stringify(inputs));
+  } catch { /* localStorage may be full or disabled */ }
+}
+
 // ── Input Modal (pre-execution) ──
 
 function wfShowInputModal() {
@@ -16068,13 +16121,15 @@ function wfShowInputModal() {
   if (entries.length === 0) { wfExecuteWithInputs({}); return; }
 
   document.getElementById('wfInputModalTitle').textContent = (def.name || 'Workflow') + ' Inputs';
+  const cached = wfGetInputCache(def.name || '');
   let html = '';
   for (const [key, spec] of entries) {
     const req = spec.required ? ' <span style="color:#e74c3c">*</span>' : '';
     const desc = spec.description ? `<div class="wf-input-modal-desc">${escapeHtml(spec.description)}</div>` : '';
-    // Pre-fill from inspector fields if available, then from defaults
+    // Pre-fill priority: 1) inspector field, 2) cached from last run, 3) spec default
     const inspectorEl = document.getElementById('wf-input-' + key);
     let prefill = inspectorEl ? inspectorEl.value : '';
+    if (!prefill && key in cached) prefill = String(cached[key]);
     if (!prefill && spec.default !== undefined) prefill = String(spec.default);
     const placeholder = spec.type === 'number' ? 'number' : (spec.type || 'string');
     html += `<div class="wf-input-modal-field">
@@ -16144,6 +16199,9 @@ function wfInputModalSubmit() {
   }
 
   if (hasError) return;
+
+  // Cache inputs for next run
+  wfSaveInputCache(def.name || '', inputs);
 
   // Also update inspector fields to keep them in sync
   for (const [key, val] of Object.entries(inputs)) {
