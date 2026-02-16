@@ -12062,7 +12062,23 @@ function checkForAppUpdate() {
         downloadBtn.style.display = 'none';
         bannerText.style.display = 'none';
         progressWrap.style.display = 'flex';
+        // Timeout: if no progress after 30s, offer manual download
+        let gotProgress = false;
+        const dlTimeout = setTimeout(() => {
+          if (!gotProgress) {
+            progressWrap.style.display = 'none';
+            bannerText.innerHTML = 'Download stalled. <a href="#" onclick="window.vai.updates.openRelease(\'' + result.releaseUrl + '\');return false;" style="color:var(--accent);">Download manually</a>';
+            bannerText.style.display = '';
+          }
+        }, 30000);
+        // Listen for first progress event to cancel timeout
+        const unsub = window.vai.updates.onEvent((d) => {
+          if (d.event === 'download-progress') { gotProgress = true; clearTimeout(dlTimeout); unsub(); }
+          if (d.event === 'update-error') { clearTimeout(dlTimeout); unsub(); }
+          if (d.event === 'update-downloaded') { clearTimeout(dlTimeout); unsub(); }
+        });
         window.vai.updates.download().catch(() => {
+          clearTimeout(dlTimeout);
           // Fallback to manual download
           window.vai.updates.openRelease(result.releaseUrl);
         });

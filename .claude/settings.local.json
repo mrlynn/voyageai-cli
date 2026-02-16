@@ -64,7 +64,9 @@
       "Bash(wc:*)",
       "Bash(done)",
       "Bash(python3:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "WebFetch(domain:docs.voyageai.com)",
+      "WebFetch(domain:blog.voyageai.com)"
     ]
   },
   "enableAllProjectMcpServers": true,
