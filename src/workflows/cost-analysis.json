@@ -69,5 +69,10 @@
     "docs": "{{ inputs.docs }}",
     "queriesPerMonth": "{{ inputs.queries }}",
     "months": "{{ inputs.months }}"
+  },
+  "formatters": {
+    "default": "table",
+    "title": "Cost Analysis",
+    "arrayField": "comparison"
   }
 }

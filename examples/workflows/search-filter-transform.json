@@ -41,5 +41,10 @@
     "totalFound": "{{ search.output.resultCount }}",
     "afterFilter": "{{ filter_by_score.output.resultCount }}",
     "results": "{{ clean_output.output.results }}"
+  },
+  "formatters": {
+    "default": "table",
+    "title": "Search Results",
+    "columns": ["text", "source", "score"]
   }
 }

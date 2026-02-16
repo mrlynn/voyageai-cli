@@ -70,5 +70,9 @@
       "similarity": "{{ sim_b.output.similarity }}"
     },
     "report": "{{ comparison_report.output.text }}"
+  },
+  "formatters": {
+    "default": "table",
+    "title": "Embedding Model Comparison"
   }
 }
