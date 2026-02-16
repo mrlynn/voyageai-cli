@@ -21,7 +21,7 @@ badge: New
 published: 2026-02-15
 expires: 2026-03-20
 icon: 🖥️
-bg_image: /assets/announcements/circuits.jpg
+bg_color: linear-gradient(135deg, #001E2B 0%, #0A2A3A 50%, rgba(0, 212, 170, 0.08) 100%)
 cta_label: Try Workflows
 cta_action: navigate
 cta_target: /workflows
@@ -37,7 +37,7 @@ badge: New
 published: 2026-02-15
 expires: 2026-03-20
 icon: 💰
-bg_image: /assets/announcements/green-wave.jpg
+bg_color: linear-gradient(135deg, #0A1E2B 0%, #112733 50%, rgba(64, 224, 255, 0.07) 100%)
 cta_label: View Dashboard
 cta_action: navigate
 cta_target: /embed
@@ -53,7 +53,7 @@ badge: Update
 published: 2026-02-15
 expires: 2026-04-01
 icon: 🖥️
-bg_image: /assets/announcements/appstore.jpg
+bg_color: linear-gradient(135deg, #001E2B 0%, #1C2D38 100%)
 cta_label: Download
 cta_action: link
 cta_target: https://github.com/mrlynn/voyageai-cli/releases
@@ -69,7 +69,7 @@ badge: New Model
 published: 2026-02-14
 expires: 2026-03-15
 icon: 🚀
-bg_image: /assets/announcements/circuits.jpg
+bg_color: linear-gradient(135deg, rgba(0, 212, 170, 0.09) 0%, #001E2B 50%, rgba(64, 224, 255, 0.08) 100%)
 cta_label: Try It Now
 cta_action: navigate
 cta_target: /benchmark
@@ -85,7 +85,7 @@ badge: New
 published: 2026-02-12
 expires: 2026-03-01
 icon: 🏪
-bg_image: /assets/announcements/green-wave.jpg
+bg_color: linear-gradient(135deg, #112733 0%, #001E2B 100%)
 cta_label: Explore Marketplace
 cta_action: navigate
 cta_target: /workflows
@@ -101,8 +101,7 @@ badge: Update
 published: 2026-02-10
 expires: 2026-04-01
 icon: 📊
-bg_image: /assets/announcements/csvingest.jpg
-bg_color: linear-gradient(135deg, #1B5E20 0%, #2E7D32 100%)
+bg_color: linear-gradient(135deg, #001E2B 0%, rgba(0, 212, 170, 0.06) 50%, #112733 100%)
 cta_label: Learn More
 cta_action: link
 cta_target: https://docs.vaicli.com/csv-import
@@ -118,7 +117,7 @@ badge: New
 published: 2026-02-13
 expires: 2026-03-15
 icon: ⚡
-bg_image: /assets/announcements/appstore.jpg
+bg_color: linear-gradient(135deg, rgba(64, 224, 255, 0.06) 0%, #001E2B 50%, rgba(0, 212, 170, 0.06) 100%)
 cta_label: Browse Store
 cta_action: navigate
 cta_target: /workflows
