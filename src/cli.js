@@ -41,6 +41,7 @@ const { registerWorkflow } = require('./commands/workflow');
 const { registerIndexWorkspace } = require('./commands/index-workspace');
 const { registerExport } = require('./commands/export');
 const { registerImport } = require('./commands/import');
+const { registerCodeSearch } = require('./commands/code-search');
 const { showBanner, showQuickStart, getVersion } = require('./lib/banner');
 
 const version = getVersion();
@@ -86,6 +87,7 @@ registerWorkflow(program);
 registerIndexWorkspace(program);
 registerExport(program);
 registerImport(program);
+registerCodeSearch(program);
 
 // Append disclaimer to all help output
 program.addHelpText('after', `

@@ -1089,6 +1089,494 @@ select:focus { outline: none; border-color: var(--accent); }
   display: none;
 }
 
+/* ── Models Tab ── */
+.models-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.models-filter-pills {
+  display: flex;
+  gap: 6px;
+}
+.models-filter-pill {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-family: var(--font);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.models-filter-pill:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+.models-filter-pill.active {
+  background: rgba(0, 212, 170, 0.12);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.models-hero {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, rgba(0, 212, 170, 0.06), rgba(64, 224, 255, 0.06));
+  border: 1px solid rgba(0, 212, 170, 0.2);
+  margin-bottom: 24px;
+}
+.models-hero-shape {
+  position: absolute;
+  top: -30px;
+  right: -30px;
+  width: 200px;
+  height: 200px;
+  pointer-events: none;
+  z-index: 0;
+}
+.models-hero-content {
+  position: relative;
+  z-index: 1;
+}
+.models-hero-badge {
+  display: inline-block;
+  background: linear-gradient(135deg, #00D4AA, #40E0FF);
+  color: #001E2B;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+}
+.models-hero-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+.models-hero-desc {
+  font-size: 13px;
+  color: var(--text-dim);
+  line-height: 1.6;
+  max-width: 700px;
+  margin-bottom: 14px;
+}
+.models-hero-models {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.model-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 12px;
+  font-family: var(--mono);
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.model-chip:hover {
+  border-color: var(--accent);
+  background: rgba(0, 212, 170, 0.06);
+}
+.model-chip-price {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+.models-group {
+  margin-bottom: 24px;
+}
+.models-group-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.models-group-icon {
+  color: var(--accent);
+  opacity: 0.8;
+}
+.models-group-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+}
+.models-group-count {
+  font-size: 11px;
+  color: var(--text-muted);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1px 8px;
+}
+.models-group-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 14px;
+}
+.model-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+  cursor: default;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+.model-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(0, 212, 170, 0.1);
+}
+.model-card.legacy {
+  opacity: 0.5;
+}
+.model-card.legacy:hover {
+  opacity: 0.7;
+}
+.model-card-nebula {
+  position: absolute;
+  top: -40px;
+  right: -40px;
+  width: 140px;
+  height: 140px;
+  pointer-events: none;
+  z-index: 0;
+}
+.model-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  position: relative;
+  z-index: 1;
+}
+.model-card-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  font-family: var(--mono);
+}
+.model-card-type-badge {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  font-weight: 600;
+}
+.model-card-type-badge.embedding {
+  background: rgba(0, 212, 170, 0.15);
+  color: #00D4AA;
+}
+.model-card-type-badge.reranking {
+  background: rgba(64, 224, 255, 0.15);
+  color: #40E0FF;
+}
+.model-card-type-badge.multimodal {
+  background: rgba(255, 170, 64, 0.15);
+  color: #FFAA40;
+}
+.model-card-shared-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: var(--blue, #40E0FF);
+  margin-bottom: 6px;
+  position: relative;
+  z-index: 1;
+}
+.model-card-rteb {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent);
+  font-family: var(--mono);
+  z-index: 1;
+}
+.model-card-desc {
+  font-size: 13px;
+  color: var(--text-dim);
+  margin-bottom: 12px;
+  position: relative;
+  z-index: 1;
+}
+.model-card-specs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 16px;
+  font-size: 12px;
+  position: relative;
+  z-index: 1;
+}
+.model-card-spec {
+  display: flex;
+  justify-content: space-between;
+}
+.model-card-spec-label {
+  color: var(--text-muted);
+}
+.model-card-spec-value {
+  color: var(--text);
+  font-family: var(--mono);
+  font-weight: 500;
+}
+.model-card-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 12px;
+  position: relative;
+  z-index: 1;
+}
+.model-card-action {
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+  font-family: var(--font);
+  transition: all 0.15s;
+}
+.model-card-action:hover {
+  background: rgba(0, 212, 170, 0.1);
+  border-color: var(--accent);
+}
+.models-rteb-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.models-rteb-label {
+  min-width: 160px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+.models-rteb-track {
+  flex: 1;
+  height: 24px;
+  background: var(--bg-surface);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.models-rteb-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.6s ease-out;
+}
+.models-rteb-score {
+  min-width: 50px;
+  text-align: right;
+  font-family: var(--mono);
+  font-weight: 600;
+  font-size: 13px;
+}
+
+/* ── Model Picker Overlay ── */
+.model-picker-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 1001;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+.model-picker-overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+.model-picker {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  width: 480px;
+  max-width: 90vw;
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+.model-picker-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.model-picker-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+}
+.model-picker-context {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+.model-picker-close {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 22px;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+}
+.model-picker-close:hover {
+  color: var(--text);
+}
+.model-picker-search {
+  padding: 12px 20px;
+}
+.model-picker-search input {
+  width: 100%;
+  background: var(--bg-input, var(--bg-surface));
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 8px 12px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-family: var(--font);
+}
+.model-picker-recommendation {
+  padding: 0 20px 8px;
+  font-size: 12px;
+  color: var(--blue, #40E0FF);
+  display: none;
+}
+.model-picker-recommendation.visible {
+  display: block;
+}
+.model-picker-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 12px 12px;
+}
+.model-picker-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.1s;
+  border: 1px solid transparent;
+}
+.model-picker-item:hover,
+.model-picker-item:focus {
+  background: rgba(0, 212, 170, 0.06);
+  border-color: var(--border);
+  outline: none;
+}
+.model-picker-item.selected {
+  background: rgba(0, 212, 170, 0.1);
+  border-color: var(--accent);
+}
+.model-picker-item-radio {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--border);
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 2px;
+  transition: all 0.15s;
+}
+.model-picker-item.selected .model-picker-item-radio {
+  border-color: var(--accent);
+  background: var(--accent);
+  box-shadow: inset 0 0 0 3px var(--bg-card);
+}
+.model-picker-item-info {
+  flex: 1;
+  min-width: 0;
+}
+.model-picker-item-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  font-family: var(--mono);
+}
+.model-picker-item-meta {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+.model-picker-item-tags {
+  display: flex;
+  gap: 4px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+.model-picker-item-tag {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 8px;
+  background: rgba(0, 212, 170, 0.08);
+  color: var(--accent);
+}
+.model-picker-item-shared {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 8px;
+  background: rgba(64, 224, 255, 0.1);
+  color: var(--blue, #40E0FF);
+}
+.model-picker-footer {
+  padding: 10px 20px;
+  border-top: 1px solid var(--border);
+  text-align: center;
+  font-size: 12px;
+}
+.model-picker-footer a {
+  color: var(--accent);
+  text-decoration: none;
+}
+.model-picker-footer a:hover {
+  text-decoration: underline;
+}
+.model-picker-trigger {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 4px;
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+  margin-left: 4px;
+}
+.model-picker-trigger:hover {
+  color: var(--accent);
+  background: rgba(0, 212, 170, 0.08);
+  border-color: var(--accent);
+}
+[data-theme="light"] .model-card:hover {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
 /* Explore modal */
 .explore-modal-overlay {
   position: fixed;
@@ -4200,6 +4688,54 @@ select:focus { outline: none; border-color: var(--accent); }
   border-radius: 6px; padding: 8px; overflow-x: auto;
   white-space: pre-wrap; color: var(--text); margin-top: 4px;
 }
+/* Output format selector and rich rendering */
+.wf-output-format-select {
+  font-size: 11px; padding: 2px 6px; border-radius: 4px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  color: var(--text); cursor: pointer; margin-left: 8px;
+}
+.wf-output-format-select:hover { border-color: var(--accent); }
+.wf-output-table {
+  width: 100%; border-collapse: collapse; font-size: 11px;
+  color: var(--text); margin-top: 8px;
+}
+.wf-output-table th {
+  text-align: left; padding: 6px 8px; font-weight: 600;
+  border-bottom: 1px solid var(--accent); color: var(--accent);
+  font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px;
+}
+.wf-output-table td {
+  padding: 5px 8px; border-bottom: 1px solid var(--border);
+  font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px;
+}
+.wf-output-table tr:hover td { background: rgba(0,212,170,0.05); }
+.wf-output-markdown {
+  font-size: 12px; line-height: 1.5; color: var(--text); padding: 8px;
+}
+.wf-output-markdown h2, .wf-output-markdown h3 {
+  color: var(--accent); margin-top: 12px; margin-bottom: 4px;
+}
+.wf-output-markdown table {
+  border-collapse: collapse; width: 100%; margin: 8px 0;
+}
+.wf-output-markdown th, .wf-output-markdown td {
+  border: 1px solid var(--border); padding: 4px 8px; font-size: 11px;
+}
+.wf-output-text-field { margin-bottom: 12px; }
+.wf-output-text-label {
+  font-size: 10px; font-weight: 600; text-transform: uppercase;
+  color: var(--accent); letter-spacing: 0.5px; margin-bottom: 2px;
+}
+.wf-output-text-value {
+  font-size: 12px; color: var(--text); line-height: 1.5; white-space: pre-wrap;
+}
+.wf-output-metric {
+  display: inline-block; margin-right: 16px; margin-bottom: 6px;
+}
+.wf-output-metric-val {
+  font-family: 'SF Mono', 'Fira Code', monospace; font-size: 13px;
+  color: #40E0FF; font-weight: 600;
+}
 .wf-tool-badge {
   display: inline-flex; align-items: center; gap: 4px;
   padding: 2px 8px; border-radius: 10px; font-size: 11px;
@@ -5754,6 +6290,7 @@ select:focus { outline: none; border-color: var(--accent); }
     <div class="sidebar-nav-divider"></div>
     <div class="sidebar-nav-group" role="tablist" aria-label="Learn">
       <div class="sidebar-nav-label" id="nav-learn-label">Learn</div>
+      <button class="tab-btn" data-tab="models" data-tooltip="Models" role="tab" aria-selected="false" aria-controls="tab-models" id="tab-btn-models"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-bot"/></svg></span><span>Models</span></button>
       <button class="tab-btn" data-tab="benchmark" data-tooltip="Benchmark" role="tab" aria-selected="false" aria-controls="tab-benchmark" id="tab-btn-benchmark"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-gauge"/></svg></span><span>Benchmark</span></button>
       <button class="tab-btn" data-tab="explore" data-tooltip="Explore" role="tab" aria-selected="false" aria-controls="tab-explore" id="tab-btn-explore"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-bulb"/></svg></span><span>Explore</span></button>
       <button class="tab-btn" data-tab="about" data-tooltip="About" role="tab" aria-selected="false" aria-controls="tab-about" id="tab-btn-about"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-info"/></svg></span><span>About</span></button>
@@ -6474,9 +7011,9 @@ Reranking models rescore initial search results to improve relevance ordering.</
       <div style="margin-top:16px;padding:12px;background:var(--accent-glow);border-radius:8px;border-left:3px solid var(--accent);">
         <strong style="color:var(--accent);">💡 Pro Tip: Asymmetric Retrieval</strong>
         <p style="margin:8px 0 0 0;font-size:13px;color:var(--text);">
-          Embed your document corpus with <code style="background:var(--surface);padding:2px 6px;border-radius:4px;">voyage-3-lite</code> ($0.02/M) and 
-          query with <code style="background:var(--surface);padding:2px 6px;border-radius:4px;">voyage-3</code> ($0.06/M). 
-          Because all Voyage-3 models share the same embedding space, you get top-tier retrieval quality at a fraction of the cost.
+          Embed your document corpus with <code style="background:var(--surface);padding:2px 6px;border-radius:4px;">voyage-4-lite</code> ($0.02/M) and
+          query with <code style="background:var(--surface);padding:2px 6px;border-radius:4px;">voyage-4</code> ($0.06/M).
+          Because all Voyage 4 models share the same embedding space, you get top-tier retrieval quality at a fraction of the cost.
         </p>
       </div>
     </div>
@@ -6489,8 +7026,8 @@ Reranking models rescore initial search results to improve relevance ordering.</
           <div style="font-size:20px;margin-bottom:8px;">🔗</div>
           <div style="font-weight:600;margin-bottom:4px;">Shared Embedding Space</div>
           <div style="font-size:13px;color:var(--text-dim);">
-            All Voyage-3 models produce compatible embeddings. Mix <code>voyage-3-large</code> for queries 
-            with <code>voyage-3-lite</code> for documents — they work together seamlessly.
+            All Voyage 4 models produce compatible embeddings. Mix <code>voyage-4-large</code> for queries
+            with <code>voyage-4-lite</code> for documents, and they work together seamlessly.
           </div>
         </div>
         <div style="padding:16px;background:var(--surface);border-radius:8px;border:1px solid var(--border);">
@@ -7112,7 +7649,7 @@ Reranking models rescore initial search results to improve relevance ordering.</
               <option value="voyage-4-large">voyage-4-large</option>
               <option value="voyage-4">voyage-4</option>
               <option value="voyage-4-lite">voyage-4-lite</option>
-              <option value="voyage-3-large">voyage-3-large</option>
+              <option value="voyage-code-3">voyage-code-3</option>
             </select>
           </label>
           <label>
@@ -7233,6 +7770,54 @@ Reranking models rescore initial search results to improve relevance ordering.</
   </div>
 </div>
 
+<!-- ========== MODELS TAB ========== -->
+<div class="tab-panel" id="tab-models" role="tabpanel" aria-labelledby="tab-btn-models" tabindex="0">
+  <div class="page-header">
+    <h2 class="page-header-title">Models</h2>
+    <p class="page-header-subtitle">Voyage AI model showcase</p>
+    <p class="page-header-hint">Explore all Voyage AI models, compare specs, and find the right model for your use case.</p>
+    <a class="page-header-docs" href="https://docs.voyageai.com/docs/embeddings" target="_blank" rel="noopener" title="Voyage AI model docs"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 1h7l3 3v11H3z"/><path d="M10 1v3h3"/></svg>Docs</a>
+  </div>
+
+  <!-- Search + Filter -->
+  <div class="models-toolbar">
+    <input type="text" id="modelsSearch" placeholder="Search models..." oninput="filterModels()" style="max-width:280px;" aria-label="Search models">
+    <div class="models-filter-pills" id="modelsFilterPills">
+      <button class="models-filter-pill active" data-filter="all" onclick="setModelFilter('all')">All</button>
+      <button class="models-filter-pill" data-filter="embedding" onclick="setModelFilter('embedding')">Embedding</button>
+      <button class="models-filter-pill" data-filter="reranking" onclick="setModelFilter('reranking')">Reranking</button>
+      <button class="models-filter-pill" data-filter="multimodal" onclick="setModelFilter('multimodal')">Multimodal</button>
+    </div>
+  </div>
+
+  <!-- Shared Embedding Space Hero -->
+  <div class="models-hero card" id="modelsHero">
+    <div class="models-hero-shape" id="modelsHeroShape"></div>
+    <div class="models-hero-content">
+      <div class="models-hero-badge">Voyage 4 Family</div>
+      <div class="models-hero-title">Shared Embedding Space</div>
+      <div class="models-hero-desc">
+        voyage-4-large, voyage-4, and voyage-4-lite produce compatible embeddings in the same vector space.
+        Index documents with the large model for best quality, then query with the lite model at a fraction of the cost.
+        No re-indexing required.
+      </div>
+      <div class="models-hero-models" id="modelsHeroModels"></div>
+    </div>
+  </div>
+
+  <!-- Model Groups (dynamically rendered) -->
+  <div id="modelsGroups"></div>
+
+  <!-- RTEB Benchmark Chart -->
+  <div class="card" id="modelsRtebCard" style="margin-top:24px;">
+    <div class="card-title">RTEB Retrieval Benchmark (NDCG@10)</div>
+    <p style="color:var(--text-dim);font-size:13px;margin-bottom:16px;">
+      Industry-standard benchmark for retrieval quality across 29 datasets. Higher is better.
+    </p>
+    <div id="modelsRtebChart"></div>
+  </div>
+</div>
+
 <!-- ========== EXPLORE TAB ========== -->
 <div class="tab-panel" id="tab-explore" role="tabpanel" aria-labelledby="tab-btn-explore" tabindex="0">
   <div class="page-header">
@@ -7265,6 +7850,27 @@ Reranking models rescore initial search results to improve relevance ordering.</
 
 <!-- Hidden global model select (used by JS for model sync) -->
 <select id="globalModel" style="display:none;"></select>
+
+<!-- ========== MODEL PICKER OVERLAY ========== -->
+<div class="model-picker-overlay" id="modelPickerOverlay" role="dialog" aria-modal="true" aria-labelledby="modelPickerTitle">
+  <div class="model-picker">
+    <div class="model-picker-header">
+      <div>
+        <div class="model-picker-title" id="modelPickerTitle">Choose a Model</div>
+        <div class="model-picker-context" id="modelPickerContext"></div>
+      </div>
+      <button class="model-picker-close" id="modelPickerClose" aria-label="Close">&times;</button>
+    </div>
+    <div class="model-picker-search">
+      <input type="text" id="modelPickerSearch" placeholder="Search models..." oninput="filterModelPicker()" aria-label="Search models">
+    </div>
+    <div class="model-picker-recommendation" id="modelPickerRecommendation"></div>
+    <div class="model-picker-list" id="modelPickerList" role="listbox"></div>
+    <div class="model-picker-footer">
+      <a href="#" onclick="event.preventDefault(); closeModelPicker(); switchTab('models');">View all models in catalog</a>
+    </div>
+  </div>
+</div>
 
 <!-- ========== SETTINGS TAB ========== -->
 <div class="tab-panel" id="tab-settings">
@@ -8063,6 +8669,7 @@ async function init() {
   await loadConfig();
   await Promise.all([loadModels(), loadConcepts()]);
   populateModelSelects();
+  enhanceModelSelects();
   buildExploreCards();
 
   // Apply default tab setting
@@ -8145,6 +8752,9 @@ function switchTab(tab) {
   // Initialize Home page if switching to it
   if (tab === 'home') {
     homeInit();
+  }
+  if (tab === 'models') {
+    modelsInit();
   }
 }
 // Expose globally so Electron main process can call it
@@ -9540,6 +10150,393 @@ window.filterExplore = function() {
     card.style.display = text.includes(q) ? '' : 'none';
   });
 };
+
+// ── Models Tab ──
+let modelsTabData = {
+  catalog: null,
+  benchmarks: null,
+  currentFilter: 'all',
+  initialized: false
+};
+
+async function loadModelsCatalog() {
+  if (modelsTabData.catalog) return;
+  try {
+    const res = await fetch('/api/models/catalog');
+    const data = await res.json();
+    modelsTabData.catalog = data.models || [];
+    modelsTabData.benchmarks = data.benchmarks || [];
+  } catch {
+    modelsTabData.catalog = allModels;
+    modelsTabData.benchmarks = [];
+  }
+}
+
+function modelsInit() {
+  if (modelsTabData.initialized) return;
+  modelsTabData.initialized = true;
+  loadModelsCatalog().then(() => {
+    renderModelsHero();
+    renderModelsGroups();
+    renderModelsRtebChart();
+  });
+}
+
+function renderModelsHero() {
+  const heroModels = document.getElementById('modelsHeroModels');
+  const sharedModels = (modelsTabData.catalog || []).filter(
+    m => m.sharedSpace === 'voyage-4' && !m.legacy && !m.unreleased
+  );
+  heroModels.innerHTML = sharedModels.map(m =>
+    '<div class="model-chip" onclick="scrollToModelCard(\'' + m.name + '\')">' +
+      '<span>' + escapeHtml(m.name) + '</span>' +
+      '<span class="model-chip-price">' + escapeHtml(m.price) + '</span>' +
+    '</div>'
+  ).join('');
+
+  const shapeEl = document.getElementById('modelsHeroShape');
+  if (shapeEl && !shapeEl.innerHTML) {
+    shapeEl.innerHTML = generateNebulaSVG(200, 200, 900, {variant: 'rich', opacity: 0.08});
+  }
+}
+
+function getModelGroups(models) {
+  const groups = [
+    {
+      id: 'voyage-4',
+      title: 'Voyage 4 Flagship',
+      icon: LI.zap,
+      models: models.filter(m => m.family === 'voyage-4' && !m.legacy)
+    },
+    {
+      id: 'domain',
+      title: 'Domain-Specific',
+      icon: LI.target,
+      models: models.filter(m => !m.family && m.type === 'embedding' && !m.legacy && !m.multimodal)
+    },
+    {
+      id: 'multimodal',
+      title: 'Multimodal',
+      icon: LI.image,
+      models: models.filter(m => m.multimodal && !m.legacy)
+    },
+    {
+      id: 'reranking',
+      title: 'Reranking',
+      icon: LI.shuffle,
+      models: models.filter(m => m.type === 'reranking' && !m.legacy)
+    },
+    {
+      id: 'legacy',
+      title: 'Previous Generation',
+      icon: LI.timer,
+      models: models.filter(m => m.legacy === true)
+    }
+  ];
+  return groups.filter(g => g.models.length > 0);
+}
+
+function renderModelsGroups() {
+  const container = document.getElementById('modelsGroups');
+  const catalog = modelsTabData.catalog || [];
+  const groups = getModelGroups(catalog);
+
+  container.innerHTML = groups.map(function(group, gi) {
+    return '<div class="models-group" id="models-group-' + group.id + '">' +
+      '<div class="models-group-header">' +
+        '<span class="models-group-icon">' + lucideIcon(group.icon, 18) + '</span>' +
+        '<span class="models-group-title">' + escapeHtml(group.title) + '</span>' +
+        '<span class="models-group-count">' + group.models.length + '</span>' +
+      '</div>' +
+      '<div class="models-group-grid">' +
+        group.models.map(function(m, mi) { return renderModelCard(m, gi * 100 + mi); }).join('') +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function renderModelCard(model, seedOffset) {
+  var typeClass = model.multimodal ? 'multimodal' :
+                  model.type === 'reranking' ? 'reranking' : 'embedding';
+  var typeLabel = model.multimodal ? 'Multimodal' :
+                  model.type === 'reranking' ? 'Reranker' : 'Embedding';
+
+  var specs = [];
+  if (model.context) specs.push({label: 'Context', value: model.context});
+  if (model.dimensions && model.dimensions !== '\u2014') {
+    var dimDefault = model.dimensions.split('(')[0].trim().split(',')[0];
+    specs.push({label: 'Dims', value: dimDefault});
+  }
+  specs.push({label: 'Price', value: model.price});
+  if (model.architecture) specs.push({label: 'Arch', value: model.architecture === 'moe' ? 'MoE' : 'Dense'});
+
+  var sharedBadge = model.sharedSpace ?
+    '<div class="model-card-shared-badge">' + lucideIcon(LI.link, 12) + ' Shared: ' + model.sharedSpace + '</div>' : '';
+
+  var rtebBadge = model.rtebScore ?
+    '<div class="model-card-rteb">' + model.rtebScore.toFixed(1) + '</div>' : '';
+
+  var tryActions = '';
+  if (model.multimodal) {
+    tryActions = '<button class="model-card-action" onclick="event.stopPropagation(); switchTab(\'multimodal\')">Try in Multimodal</button>';
+  } else if (model.type === 'reranking') {
+    tryActions = '<button class="model-card-action" onclick="event.stopPropagation(); switchTab(\'search\')">Try in Search</button>';
+  } else if (!model.legacy) {
+    tryActions = '<button class="model-card-action" onclick="event.stopPropagation(); switchTab(\'embed\')">Try in Embed</button>' +
+                 '<button class="model-card-action" onclick="event.stopPropagation(); switchTab(\'search\')">Try in Search</button>';
+  }
+
+  return '<div class="model-card ' + (model.legacy ? 'legacy' : '') + '" data-model="' + model.name + '" data-type="' + typeClass + '" id="model-card-' + model.name + '">' +
+    '<div class="model-card-nebula">' + generateNebulaSVG(140, 140, 500 + seedOffset, {variant: 'subtle', opacity: 0.05, sparkles: false}) + '</div>' +
+    rtebBadge +
+    '<div class="model-card-header">' +
+      '<span class="model-card-name">' + escapeHtml(model.name) + '</span>' +
+      '<span class="model-card-type-badge ' + typeClass + '">' + typeLabel + '</span>' +
+    '</div>' +
+    sharedBadge +
+    '<div class="model-card-desc">' + escapeHtml(model.bestFor) + '</div>' +
+    '<div class="model-card-specs">' +
+      specs.map(function(s) {
+        return '<div class="model-card-spec">' +
+          '<span class="model-card-spec-label">' + s.label + '</span>' +
+          '<span class="model-card-spec-value">' + escapeHtml(s.value) + '</span>' +
+        '</div>';
+      }).join('') +
+    '</div>' +
+    (tryActions ? '<div class="model-card-actions">' + tryActions + '</div>' : '') +
+  '</div>';
+}
+
+function renderModelsRtebChart() {
+  var chart = document.getElementById('modelsRtebChart');
+  var benchmarks = modelsTabData.benchmarks || [];
+  if (!benchmarks.length) {
+    chart.innerHTML = '<p style="color:var(--text-muted);font-size:13px;">Benchmark data unavailable.</p>';
+    return;
+  }
+  var maxScore = Math.max.apply(null, benchmarks.map(function(b) { return b.score; }));
+  var minDisplay = 55;
+
+  chart.innerHTML = benchmarks.map(function(b) {
+    var isVoyage = b.provider === 'Voyage AI';
+    var barPct = ((b.score - minDisplay) / (maxScore - minDisplay)) * 100;
+    var color = isVoyage ? 'var(--accent)' : '#555';
+    var labelColor = isVoyage ? 'var(--accent)' : 'var(--text-dim)';
+    var fontWeight = isVoyage ? '600' : '400';
+
+    return '<div class="models-rteb-bar">' +
+      '<span class="models-rteb-label" style="color:' + labelColor + ';font-weight:' + fontWeight + ';">' + escapeHtml(b.model) + '</span>' +
+      '<div class="models-rteb-track">' +
+        '<div class="models-rteb-fill" style="width:' + barPct.toFixed(1) + '%;background:' + color + ';' + (isVoyage ? '' : 'opacity:0.6;') + '"></div>' +
+      '</div>' +
+      '<span class="models-rteb-score" style="color:' + labelColor + ';">' + b.score.toFixed(2) + '</span>' +
+    '</div>';
+  }).join('');
+}
+
+function scrollToModelCard(name) {
+  var card = document.getElementById('model-card-' + name);
+  if (card) {
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    card.style.outline = '2px solid var(--accent)';
+    setTimeout(function() { card.style.outline = ''; }, 2000);
+  }
+}
+
+window.filterModels = function() {
+  var q = document.getElementById('modelsSearch').value.toLowerCase().trim();
+  document.querySelectorAll('.model-card').forEach(function(card) {
+    if (!q) { card.style.display = ''; return; }
+    var text = card.textContent.toLowerCase();
+    card.style.display = text.includes(q) ? '' : 'none';
+  });
+  document.querySelectorAll('.models-group').forEach(function(group) {
+    var visible = group.querySelectorAll('.model-card:not([style*="display: none"])');
+    group.style.display = visible.length ? '' : 'none';
+  });
+};
+
+window.setModelFilter = function(filter) {
+  modelsTabData.currentFilter = filter;
+  document.querySelectorAll('.models-filter-pill').forEach(function(p) {
+    p.classList.toggle('active', p.dataset.filter === filter);
+  });
+  document.querySelectorAll('.model-card').forEach(function(card) {
+    if (filter === 'all') { card.style.display = ''; return; }
+    var cardType = card.dataset.type;
+    card.style.display = cardType === filter ? '' : 'none';
+  });
+  document.querySelectorAll('.models-group').forEach(function(group) {
+    var visible = group.querySelectorAll('.model-card:not([style*="display: none"])');
+    group.style.display = visible.length ? '' : 'none';
+  });
+};
+
+// ── Model Picker ──
+var modelPickerState = {
+  isOpen: false,
+  targetSelectId: null,
+  context: null,
+  selectedModel: null,
+  previousFocus: null,
+  modelType: 'embedding'
+};
+
+function openModelPicker(selectId, context) {
+  modelPickerState.isOpen = true;
+  modelPickerState.targetSelectId = selectId;
+  modelPickerState.context = context;
+  modelPickerState.previousFocus = document.activeElement;
+
+  var sel = document.getElementById(selectId);
+  modelPickerState.selectedModel = sel ? sel.value : null;
+  modelPickerState.modelType = selectId === 'searchRerankModel' ? 'reranking' : 'embedding';
+
+  var contextHints = {
+    embed: 'Choose an embedding model for vectorizing text.',
+    compare: 'Choose a model for similarity scoring.',
+    search: 'Choose an embedding model for document search.',
+    multimodal: 'Only multimodal models are available here.'
+  };
+  document.getElementById('modelPickerContext').textContent = contextHints[context] || '';
+
+  var rec = document.getElementById('modelPickerRecommendation');
+  var recommendations = {
+    embed: 'Tip: voyage-4 offers balanced quality and cost.',
+    compare: 'Tip: voyage-4-large gives highest accuracy comparisons.',
+    search: 'Tip: Use voyage-4-large for docs, voyage-4-lite for queries (shared space saves cost).',
+    multimodal: 'Tip: voyage-multimodal-3.5 supports text, images, and video.'
+  };
+  if (recommendations[context]) {
+    rec.textContent = recommendations[context];
+    rec.classList.add('visible');
+  } else {
+    rec.classList.remove('visible');
+  }
+
+  renderModelPickerList();
+  document.getElementById('modelPickerOverlay').classList.add('open');
+  setTimeout(function() {
+    document.getElementById('modelPickerSearch').focus();
+  }, 100);
+}
+
+function closeModelPicker() {
+  modelPickerState.isOpen = false;
+  document.getElementById('modelPickerOverlay').classList.remove('open');
+  document.getElementById('modelPickerSearch').value = '';
+  if (modelPickerState.previousFocus) {
+    modelPickerState.previousFocus.focus();
+    modelPickerState.previousFocus = null;
+  }
+}
+
+function selectModelFromPicker(name) {
+  var sel = document.getElementById(modelPickerState.targetSelectId);
+  if (sel) {
+    sel.value = name;
+    sel.dispatchEvent(new Event('change'));
+    localStorage.setItem('vai-playground-model', name);
+    if (modelPickerState.modelType === 'embedding') {
+      ['embedModel', 'compareModel', 'searchEmbedModel'].forEach(function(id) {
+        var otherSel = document.getElementById(id);
+        if (otherSel && otherSel !== sel) otherSel.value = name;
+      });
+    }
+  }
+  closeModelPicker();
+  sendTelemetry('model_picker_select', { model: name, context: modelPickerState.context });
+}
+
+function renderModelPickerList() {
+  var list = document.getElementById('modelPickerList');
+  var type = modelPickerState.modelType;
+  var context = modelPickerState.context;
+  var selected = modelPickerState.selectedModel;
+
+  var models;
+  if (context === 'multimodal') {
+    models = allModels.filter(function(m) { return m.multimodal; });
+  } else if (type === 'reranking') {
+    models = rerankModels;
+  } else {
+    models = embedModels;
+  }
+
+  list.innerHTML = models.map(function(m) {
+    var isSelected = m.name === selected;
+    var tags = [];
+    if (m.architecture === 'moe') tags.push({text: 'MoE', cls: 'model-picker-item-tag'});
+    if (m.sharedSpace) tags.push({text: 'Shared Space', cls: 'model-picker-item-shared'});
+    if (m.rtebScore) tags.push({text: 'RTEB ' + m.rtebScore, cls: 'model-picker-item-tag'});
+
+    var meta = [m.bestFor, m.context, m.price].filter(Boolean).join(' \u00b7 ');
+
+    return '<div class="model-picker-item ' + (isSelected ? 'selected' : '') + '" ' +
+      'role="option" aria-selected="' + isSelected + '" tabindex="0" ' +
+      'data-model="' + m.name + '" ' +
+      'onclick="selectModelFromPicker(\'' + m.name + '\')" ' +
+      'onkeydown="if(event.key===\'Enter\') selectModelFromPicker(\'' + m.name + '\')">' +
+      '<div class="model-picker-item-radio"></div>' +
+      '<div class="model-picker-item-info">' +
+        '<div class="model-picker-item-name">' + escapeHtml(m.name) + '</div>' +
+        '<div class="model-picker-item-meta">' + escapeHtml(meta) + '</div>' +
+        (tags.length ? '<div class="model-picker-item-tags">' +
+          tags.map(function(t) { return '<span class="' + t.cls + '">' + t.text + '</span>'; }).join('') +
+        '</div>' : '') +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+window.filterModelPicker = function() {
+  var q = document.getElementById('modelPickerSearch').value.toLowerCase().trim();
+  document.querySelectorAll('#modelPickerList .model-picker-item').forEach(function(item) {
+    if (!q) { item.style.display = ''; return; }
+    var text = item.textContent.toLowerCase();
+    item.style.display = text.includes(q) ? '' : 'none';
+  });
+};
+
+function enhanceModelSelects() {
+  var selectConfigs = [
+    { id: 'embedModel', context: 'embed' },
+    { id: 'compareModel', context: 'compare' },
+    { id: 'searchEmbedModel', context: 'search' },
+    { id: 'searchRerankModel', context: 'search' }
+  ];
+
+  selectConfigs.forEach(function(cfg) {
+    var sel = document.getElementById(cfg.id);
+    if (!sel || sel.dataset.pickerEnhanced) return;
+    sel.dataset.pickerEnhanced = 'true';
+
+    var pickerBtn = document.createElement('button');
+    pickerBtn.className = 'model-picker-trigger';
+    pickerBtn.type = 'button';
+    pickerBtn.title = 'Browse models';
+    pickerBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>';
+    pickerBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      openModelPicker(cfg.id, cfg.context);
+    });
+
+    sel.parentNode.insertBefore(pickerBtn, sel.nextSibling);
+  });
+}
+
+// Model picker close handlers
+document.getElementById('modelPickerClose').addEventListener('click', closeModelPicker);
+document.getElementById('modelPickerOverlay').addEventListener('click', function(e) {
+  if (e.target === document.getElementById('modelPickerOverlay')) closeModelPicker();
+});
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape' && modelPickerState.isOpen) {
+    e.preventDefault();
+    closeModelPicker();
+  }
+});
 
 // ── Benchmark: Sub-panel switching ──
 document.querySelectorAll('.bench-panel-btn').forEach(btn => {
@@ -13378,6 +14375,7 @@ let wfState = {
   draggingEdge: null,
   dragNode: null,
   dirtyFlag: false,
+  outputFormat: 'auto',
 };
 
 // ── Library ──
@@ -14388,18 +15386,27 @@ function wfUpdateInspector() {
 
       // ── OUTPUT Accordion ──
       const outputExpanded = hasDone || accStates.output === true;
+      const fmtSelectorHtml = hasDone ? `<select class="wf-output-format-select" onchange="wfChangeOutputFormat(this.value)" onclick="event.stopPropagation()">
+          <option value="auto"${wfState.outputFormat === 'auto' ? ' selected' : ''}>Auto</option>
+          <option value="json"${wfState.outputFormat === 'json' ? ' selected' : ''}>JSON</option>
+          <option value="table"${wfState.outputFormat === 'table' ? ' selected' : ''}>Table</option>
+          <option value="markdown"${wfState.outputFormat === 'markdown' ? ' selected' : ''}>Markdown</option>
+          <option value="text"${wfState.outputFormat === 'text' ? ' selected' : ''}>Text</option>
+        </select>` : '';
       html += `<div class="wf-accordion-header ${outputExpanded ? 'expanded' : ''}" onclick="wfToggleAccordion('output', this)">
         <span class="wf-acc-left"><span class="wf-chevron">&#9654;</span> OUTPUT</span>
-        <span class="wf-acc-summary"></span>
+        <span class="wf-acc-summary">${fmtSelectorHtml}</span>
       </div>
       <div class="wf-accordion-body" data-acc="output" style="max-height:${outputExpanded ? 'none' : '0px'};">
-        <div class="wf-accordion-body-inner">`;
+        <div class="wf-accordion-body-inner" id="wfOutputContent">`;
       if (hasDone) {
         const r = wfState.executionResults._done;
-        const doneJson = JSON.stringify(r.output, null, 2);
-        html += `<div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;">Completed in ${r.totalTimeMs}ms</div>
-          <div class="wf-inspector-code" style="max-height:200px;overflow:auto;color:#40E0FF;">${escapeHtml(doneJson)}</div>
-          <button class="wf-output-expand-btn" data-expand-step="_done">&#x2922; Expand</button>`;
+        const hints = r.formatters || {};
+        const fmt = wfState.outputFormat || 'auto';
+        const effectiveFmt = fmt === 'auto' ? wfAutoFormat(r.output) : fmt;
+        html += `<div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;">Completed in ${r.totalTimeMs}ms</div>`;
+        html += wfRenderOutputAs(r.output, effectiveFmt, hints);
+        html += `<button class="wf-output-expand-btn" data-expand-step="_done">&#x2922; Expand</button>`;
       } else if (def.output) {
         html += `<div class="wf-inspector-code" style="color:#40E0FF;">${escapeHtml(JSON.stringify(def.output, null, 2))}</div>`;
       } else {
@@ -14531,11 +15538,23 @@ function wfUpdateInspector() {
   if (state === 'completed' && result) {
     const outputJson = result.output ? JSON.stringify(result.output, null, 2) : '';
     const stepTitle = step.name || step.id;
+    const stepShape = result.output ? wfDetectOutputShape(result.output) : null;
+    const showStepFmtToggle = stepShape && (stepShape.type === 'array' || stepShape.type === 'comparison');
+    const stepFmtToggle = showStepFmtToggle ?
+      `<div style="margin-bottom:4px;"><select class="wf-output-format-select" style="width:auto;margin:0;" onchange="wfChangeStepFormat('${escapeHtml(step.id)}', this.value)">
+        <option value="json">JSON</option>
+        <option value="table" selected>Table</option>
+        <option value="text">Text</option>
+      </select></div>` : '';
+    const stepResultContent = showStepFmtToggle
+      ? wfRenderOutputAs(result.output, 'table', {})
+      : (outputJson ? '<div class="wf-inspector-code" style="max-height:120px;overflow:auto;">' + escapeHtml(outputJson) + '</div>' : '');
     html += `<div class="wf-inspector-section">
       <div class="wf-inspector-section-title">Result</div>
       <div class="wf-inspector-result success">
         <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">${result.timeMs}ms${result.summary ? ', ' + result.summary : ''}</div>
-        ${outputJson ? '<div class="wf-inspector-code" style="max-height:120px;overflow:auto;">' + escapeHtml(outputJson) + '</div>' : ''}
+        ${stepFmtToggle}
+        <div id="wf-step-result-${escapeHtml(step.id)}">${stepResultContent}</div>
       </div>
       ${outputJson ? '<button class="wf-output-expand-btn" data-expand-step="' + escapeHtml(step.id) + '">&#x2922; Expand</button>' : ''}
     </div>`;
@@ -14571,15 +15590,272 @@ function wfBindExpandButtons(container) {
       if (stepId === '_done') {
         title = 'Workflow Output';
         content = JSON.stringify(result.output, null, 2);
+        // Rich modal rendering for workflow output
+        const hints = result.formatters || {};
+        const fmt = wfState.outputFormat || hints.default || 'auto';
+        const effectiveFmt = fmt === 'auto' ? wfAutoFormat(result.output) : fmt;
+        wfOpenOutputModal(title, content, effectiveFmt, result.output, hints);
+        return;
       } else {
         const def = wfState.activeWorkflow;
         const step = def ? def.steps.find(s => s.id === stepId) : null;
         title = (step ? step.name || step.id : stepId) + ' Output';
         content = JSON.stringify(result.output, null, 2);
+        // Rich modal for step outputs with array/comparison shapes
+        const stepShape = result.output ? wfDetectOutputShape(result.output) : null;
+        if (stepShape && (stepShape.type === 'array' || stepShape.type === 'comparison')) {
+          wfOpenOutputModal(title, content, 'table', result.output, {});
+          return;
+        }
       }
       wfOpenOutputModal(title, content);
     });
   });
+}
+
+// ── Output Format Rendering ──
+
+function wfStringify(val) {
+  if (val == null) return '';
+  if (typeof val === 'number') return val % 1 === 0 ? String(val) : val.toFixed(4);
+  if (typeof val === 'boolean') return val ? 'true' : 'false';
+  if (typeof val === 'object') {
+    const s = JSON.stringify(val);
+    return s.length > 80 ? s.slice(0, 77) + '...' : s;
+  }
+  return String(val);
+}
+
+function wfDetectOutputShape(output) {
+  if (output == null || typeof output !== 'object') return { type: 'scalar', value: output };
+  const keys = Object.keys(output);
+  for (const key of keys) {
+    const val = output[key];
+    if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'object' && val[0] !== null) {
+      return { type: 'array', arrayKey: key, columns: Object.keys(val[0]), totalRows: val.length };
+    }
+  }
+  const objKeys = keys.filter(k => output[k] != null && typeof output[k] === 'object' && !Array.isArray(output[k]));
+  if (objKeys.length >= 2) {
+    return { type: 'comparison', objectKeys: objKeys, metricKeys: keys.filter(k => !objKeys.includes(k)) };
+  }
+  const textKeys = keys.filter(k => typeof output[k] === 'string' && output[k].length > 100);
+  if (textKeys.length > 0) {
+    return { type: 'text', textKeys, metricKeys: keys.filter(k => !textKeys.includes(k)) };
+  }
+  return { type: 'metrics', keys };
+}
+
+function wfAutoFormat(output) {
+  const shape = wfDetectOutputShape(output);
+  if (shape.type === 'array' || shape.type === 'comparison') return 'table';
+  return 'text';
+}
+
+function wfRenderOutputAs(output, format, hints) {
+  hints = hints || {};
+  if (!output) return '<div class="wf-inspector-code" style="color:#40E0FF;">(no output)</div>';
+  switch (format) {
+    case 'json':
+      return '<div class="wf-inspector-code" style="max-height:200px;overflow:auto;color:#40E0FF;">' + escapeHtml(JSON.stringify(output, null, 2)) + '</div>';
+    case 'table':
+      return wfRenderTable(output, hints);
+    case 'markdown':
+      return '<div class="wf-output-markdown">' + renderMarkdown(wfOutputToMarkdown(output, hints)) + '</div>';
+    case 'text':
+      return wfRenderText(output, hints);
+    default:
+      return '<div class="wf-inspector-code" style="max-height:200px;overflow:auto;color:#40E0FF;">' + escapeHtml(JSON.stringify(output, null, 2)) + '</div>';
+  }
+}
+
+function wfRenderTable(output, hints) {
+  const shape = wfDetectOutputShape(output);
+  let html = '';
+
+  if (shape.type === 'array') {
+    const key = hints.arrayField || shape.arrayKey;
+    const data = output[key] || [];
+    if (data.length === 0) return '<div style="color:var(--text-muted);font-size:12px;">(empty results)</div>';
+    const columns = hints.columns || shape.columns;
+
+    // Show non-array metrics above
+    const metricKeys = Object.keys(output).filter(k => k !== key && !Array.isArray(output[k]));
+    if (metricKeys.length > 0) {
+      html += '<div style="margin-bottom:8px;">';
+      metricKeys.forEach(k => {
+        html += '<div class="wf-output-metric"><div class="wf-output-text-label">' + escapeHtml(k) + '</div><div class="wf-output-metric-val">' + escapeHtml(wfStringify(output[k])) + '</div></div>';
+      });
+      html += '</div>';
+    }
+
+    html += '<table class="wf-output-table"><thead><tr>';
+    columns.forEach(c => { html += '<th>' + escapeHtml(c) + '</th>'; });
+    html += '</tr></thead><tbody>';
+    data.forEach(row => {
+      html += '<tr>';
+      columns.forEach(c => { html += '<td>' + escapeHtml(wfStringify(row[c])) + '</td>'; });
+      html += '</tr>';
+    });
+    html += '</tbody></table>';
+    return html;
+  }
+
+  if (shape.type === 'comparison') {
+    const keys = shape.objectKeys;
+    const allFields = new Set();
+    keys.forEach(k => { if (output[k]) Object.keys(output[k]).forEach(f => allFields.add(f)); });
+
+    // Show non-object metrics above
+    const metricKeys = (shape.metricKeys || []).filter(k => output[k] != null);
+    if (metricKeys.length > 0) {
+      html += '<div style="margin-bottom:8px;">';
+      metricKeys.forEach(k => {
+        html += '<div class="wf-output-metric"><div class="wf-output-text-label">' + escapeHtml(k) + '</div><div class="wf-output-metric-val">' + escapeHtml(wfStringify(output[k])) + '</div></div>';
+      });
+      html += '</div>';
+    }
+
+    html += '<table class="wf-output-table"><thead><tr><th></th>';
+    keys.forEach(k => { html += '<th>' + escapeHtml(String(k)) + '</th>'; });
+    html += '</tr></thead><tbody>';
+    allFields.forEach(f => {
+      html += '<tr><td style="font-weight:600;">' + escapeHtml(f) + '</td>';
+      keys.forEach(k => { html += '<td>' + escapeHtml(wfStringify(output[k] && output[k][f])) + '</td>'; });
+      html += '</tr>';
+    });
+    html += '</tbody></table>';
+    return html;
+  }
+
+  // Fallback: key-value table
+  html += '<table class="wf-output-table"><thead><tr><th>Field</th><th>Value</th></tr></thead><tbody>';
+  Object.entries(output).forEach(function(entry) {
+    html += '<tr><td>' + escapeHtml(entry[0]) + '</td><td>' + escapeHtml(wfStringify(entry[1])) + '</td></tr>';
+  });
+  html += '</tbody></table>';
+  return html;
+}
+
+function wfRenderText(output, hints) {
+  const shape = wfDetectOutputShape(output);
+  if (shape.type === 'scalar') return '<div style="font-size:12px;color:var(--text);">' + escapeHtml(String(output || '')) + '</div>';
+  let html = '';
+  if (hints.title) {
+    html += '<div style="font-weight:600;font-size:13px;color:var(--accent);margin-bottom:8px;">' + escapeHtml(hints.title) + '</div>';
+  }
+
+  // Metrics
+  const metricKeys = Object.keys(output).filter(k =>
+    output[k] != null && (typeof output[k] !== 'object' || typeof output[k] === 'boolean') &&
+    (typeof output[k] !== 'string' || output[k].length <= 100)
+  );
+  if (metricKeys.length > 0) {
+    html += '<div style="margin-bottom:10px;">';
+    metricKeys.forEach(k => {
+      html += '<div class="wf-output-metric"><div class="wf-output-text-label">' + escapeHtml(k) + '</div><div class="wf-output-metric-val">' + escapeHtml(wfStringify(output[k])) + '</div></div>';
+    });
+    html += '</div>';
+  }
+
+  // Object fields (comparison-like)
+  Object.keys(output).forEach(k => {
+    const v = output[k];
+    if (v != null && typeof v === 'object' && !Array.isArray(v)) {
+      html += '<div class="wf-output-text-field"><div class="wf-output-text-label">' + escapeHtml(k) + '</div>';
+      Object.entries(v).forEach(function(entry) {
+        html += '<div style="font-size:12px;margin-left:8px;"><span style="color:var(--text-muted);">' + escapeHtml(entry[0]) + ':</span> <span style="color:#40E0FF;">' + escapeHtml(wfStringify(entry[1])) + '</span></div>';
+      });
+      html += '</div>';
+    }
+  });
+
+  // Text fields
+  Object.keys(output).forEach(k => {
+    if (typeof output[k] === 'string' && output[k].length > 100) {
+      html += '<div class="wf-output-text-field"><div class="wf-output-text-label">' + escapeHtml(k) + '</div><div class="wf-output-text-value">' + escapeHtml(output[k]) + '</div></div>';
+    }
+  });
+
+  // Arrays
+  Object.keys(output).forEach(k => {
+    if (Array.isArray(output[k])) {
+      html += '<div class="wf-output-text-field"><div class="wf-output-text-label">' + escapeHtml(k) + ' (' + output[k].length + ' items)</div>';
+      html += '<div class="wf-inspector-code" style="max-height:100px;overflow:auto;">' + escapeHtml(JSON.stringify(output[k], null, 2)) + '</div></div>';
+    }
+  });
+
+  return html || '<div class="wf-inspector-code" style="color:#40E0FF;">' + escapeHtml(JSON.stringify(output, null, 2)) + '</div>';
+}
+
+function wfOutputToMarkdown(output, hints) {
+  let md = '';
+  if (hints.title) md += '## ' + hints.title + '\n\n';
+  else md += '## Workflow Output\n\n';
+  Object.entries(output).forEach(function(entry) {
+    const k = entry[0], v = entry[1];
+    if (v == null) return;
+    if (typeof v !== 'object' || typeof v === 'boolean') {
+      if (typeof v !== 'string' || v.length <= 100) {
+        md += '- **' + k + ':** ' + wfStringify(v) + '\n';
+      }
+    }
+  });
+  md += '\n';
+  // Arrays as tables
+  Object.entries(output).forEach(function(entry) {
+    const k = entry[0], v = entry[1];
+    if (!Array.isArray(v) || v.length === 0 || typeof v[0] !== 'object') return;
+    const cols = hints.columns || Object.keys(v[0]);
+    md += '### ' + k + '\n\n| ' + cols.join(' | ') + ' |\n| ' + cols.map(function() { return '---'; }).join(' | ') + ' |\n';
+    v.forEach(function(row) { md += '| ' + cols.map(function(c) { return wfStringify(row[c]); }).join(' | ') + ' |\n'; });
+    md += '\n';
+  });
+  // Comparison objects
+  const objKeys = Object.keys(output).filter(function(k) { return output[k] != null && typeof output[k] === 'object' && !Array.isArray(output[k]); });
+  if (objKeys.length >= 2) {
+    const allFields = new Set();
+    objKeys.forEach(function(k) { Object.keys(output[k]).forEach(function(f) { allFields.add(f); }); });
+    md += '| | ' + objKeys.join(' | ') + ' |\n| --- | ' + objKeys.map(function() { return '---'; }).join(' | ') + ' |\n';
+    allFields.forEach(function(f) {
+      md += '| **' + f + '** | ' + objKeys.map(function(k) { return wfStringify(output[k][f]); }).join(' | ') + ' |\n';
+    });
+    md += '\n';
+  }
+  // Long text
+  Object.entries(output).forEach(function(entry) {
+    if (typeof entry[1] === 'string' && entry[1].length > 100) {
+      md += '### ' + entry[0] + '\n\n' + entry[1] + '\n\n';
+    }
+  });
+  return md;
+}
+
+function wfChangeOutputFormat(format) {
+  wfState.outputFormat = format;
+  const r = wfState.executionResults._done;
+  if (!r) return;
+  const hints = r.formatters || {};
+  const effectiveFormat = format === 'auto' ? wfAutoFormat(r.output) : format;
+  const container = document.getElementById('wfOutputContent');
+  if (!container) return;
+  let html = '<div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;">Completed in ' + r.totalTimeMs + 'ms</div>';
+  html += wfRenderOutputAs(r.output, effectiveFormat, hints);
+  html += '<button class="wf-output-expand-btn" data-expand-step="_done">&#x2922; Expand</button>';
+  container.innerHTML = html;
+  wfBindExpandButtons(container);
+}
+
+function wfChangeStepFormat(stepId, format) {
+  const result = wfState.executionResults[stepId];
+  if (!result || !result.output) return;
+  const container = document.getElementById('wf-step-result-' + stepId);
+  if (!container) return;
+  if (format === 'json') {
+    container.innerHTML = '<div class="wf-inspector-code" style="max-height:120px;overflow:auto;">' + escapeHtml(JSON.stringify(result.output, null, 2)) + '</div>';
+  } else {
+    container.innerHTML = wfRenderOutputAs(result.output, format, {});
+  }
 }
 
 // escapeHtml is already defined globally — reuse it
@@ -14988,6 +16264,7 @@ async function wfExecuteWithInputs(inputs) {
             if (wfState.selectedNodeId === data.stepId) wfUpdateInspector();
           } else if (currentEvent === 'done') {
             wfState.executionResults._done = data;
+            wfState.outputFormat = 'auto';
             if (!wfState.selectedNodeId) wfUpdateInspector();
           } else if (currentEvent === 'error') {
             hasError = true;
@@ -15077,7 +16354,7 @@ function wfResetExecution() {
 // ── Output Modal ──
 let wfOutputModalData = '';
 
-function wfOpenOutputModal(title, content) {
+function wfOpenOutputModal(title, content, format, outputObj, hints) {
   wfOutputModalData = content;
   const backdrop = document.getElementById('wfOutputModalBackdrop');
   const titleEl = document.getElementById('wfOutputModalTitle');
@@ -15085,8 +16362,14 @@ function wfOpenOutputModal(title, content) {
   const copyLabel = document.getElementById('wfOutputCopyLabel');
   if (!backdrop || !bodyEl) return;
   titleEl.textContent = title || 'Output';
-  bodyEl.textContent = content;
   copyLabel.textContent = 'Copy';
+
+  // Rich rendering if format + output object provided
+  if (format && outputObj && format !== 'json') {
+    bodyEl.innerHTML = wfRenderOutputAs(outputObj, format, hints || {});
+  } else {
+    bodyEl.textContent = content;
+  }
   backdrop.style.display = 'flex';
 }
 
@@ -15325,7 +16608,7 @@ const WF_INPUT_DEFS = {
   search:      [{ key: 'query', type: 'text', required: true, placeholder: 'Search query' }, { key: 'collection', type: 'text', required: false }, { key: 'db', type: 'text', required: false }, { key: 'limit', type: 'number', required: false, placeholder: '10' }, { key: 'filter', type: 'json', required: false, placeholder: '{}' }],
   rerank:      [{ key: 'query', type: 'text', required: true }, { key: 'documents', type: 'json', required: true, placeholder: '["doc1","doc2"]' }, { key: 'model', type: 'text', required: false, placeholder: 'rerank-2.5' }],
   ingest:      [{ key: 'text', type: 'textarea', required: true }, { key: 'collection', type: 'text', required: false }, { key: 'db', type: 'text', required: false }, { key: 'source', type: 'text', required: false }, { key: 'chunkSize', type: 'number', required: false, placeholder: '512' }, { key: 'chunkStrategy', type: 'select', required: false, options: ['fixed','sentence','paragraph','recursive','markdown'] }],
-  embed:       [{ key: 'text', type: 'text', required: true, placeholder: 'Text to embed' }, { key: 'model', type: 'text', required: false, placeholder: 'voyage-3-large' }, { key: 'inputType', type: 'select', required: false, options: ['document','query'] }],
+  embed:       [{ key: 'text', type: 'text', required: true, placeholder: 'Text to embed' }, { key: 'model', type: 'text', required: false, placeholder: 'voyage-4-large' }, { key: 'inputType', type: 'select', required: false, options: ['document','query'] }],
   similarity:  [{ key: 'text1', type: 'text', required: true }, { key: 'text2', type: 'text', required: true }, { key: 'model', type: 'text', required: false }],
   collections: [{ key: 'db', type: 'text', required: false }],
   models:      [{ key: 'category', type: 'select', required: false, options: ['embedding','rerank','all'] }],
@@ -18184,6 +19467,7 @@ const staticCommandRegistry = [
   { id: 'nav-generate', label: 'Generate', description: 'Code generation and templates', category: 'navigation', keywords: ['code', 'template', 'scaffold'], icon: '💻', shortcut: '⌘6', priority: 1, execute: () => switchTab('generate') },
   { id: 'nav-chat', label: 'Chat', description: 'Chat with your knowledge base', category: 'navigation', keywords: ['conversation', 'ask', 'rag', 'talk'], icon: '💬', shortcut: '⌘7', priority: 1, execute: () => switchTab('chat') },
   { id: 'nav-workflows', label: 'Workflows', description: 'Visual workflow canvas', category: 'navigation', keywords: ['pipeline', 'dag', 'canvas'], icon: '🔄', shortcut: '⌘8', priority: 1, execute: () => switchTab('workflows') },
+  { id: 'nav-models', label: 'Models', description: 'Voyage AI model catalog and specs', category: 'navigation', keywords: ['model', 'voyage', 'catalog', 'specs', 'embedding', 'rerank', 'pricing'], icon: '🤖', priority: 1, execute: () => switchTab('models') },
   { id: 'nav-benchmark', label: 'Benchmark', description: 'Model comparison on your data', category: 'navigation', keywords: ['performance', 'test', 'evaluate', 'benchmark'], icon: '📊', shortcut: '⌘9', priority: 1, execute: () => switchTab('benchmark') },
   { id: 'nav-explore', label: 'Explore', description: 'Embedding space visualization', category: 'navigation', keywords: ['pca', 'tsne', 'visualize', 'scatter'], icon: '🎯', shortcut: '⌘0', priority: 1, execute: () => switchTab('explore') },
   { id: 'nav-about', label: 'About', description: 'Version and project information', category: 'navigation', keywords: ['version', 'info', 'credits'], icon: 'ℹ️', priority: 5, execute: () => switchTab('about') },
@@ -18239,7 +19523,7 @@ const staticCommandRegistry = [
   { id: 'explain-reranking', label: 'Learn: Reranking', description: 'Two-stage retrieval with rerankers', category: 'explainer', keywords: ['reranking', 'two-stage', 'retrieval', 'precision'], icon: '📚', priority: 7, execute: () => switchTab('explore') },
   { id: 'explain-vector-search', label: 'Learn: Vector Search', description: 'MongoDB Atlas Vector Search', category: 'explainer', keywords: ['vector', 'search', 'atlas', 'similarity', 'knn'], icon: '📚', priority: 7, execute: () => switchTab('explore') },
   { id: 'explain-rag', label: 'Learn: RAG Pipelines', description: 'Retrieval-Augmented Generation', category: 'explainer', keywords: ['rag', 'retrieval', 'augmented', 'generation', 'pipeline'], icon: '📚', priority: 7, execute: () => switchTab('explore') },
-  { id: 'explain-models', label: 'Learn: Voyage AI Models', description: 'Choosing the right model', category: 'explainer', keywords: ['models', 'voyage-4', 'large', 'lite', 'domain'], icon: '📚', priority: 7, execute: () => switchTab('explore') },
+  { id: 'explain-models', label: 'Learn: Voyage AI Models', description: 'Choosing the right model', category: 'explainer', keywords: ['models', 'voyage-4', 'large', 'lite', 'domain'], icon: '📚', priority: 7, execute: () => switchTab('models') },
   { id: 'explain-quantization', label: 'Learn: Quantization', description: 'Reduce storage costs with lower-precision embeddings', category: 'explainer', keywords: ['quantization', 'int8', 'ubinary', 'compression', 'storage'], icon: '📚', priority: 7, execute: () => switchTab('explore') }
 ];
 

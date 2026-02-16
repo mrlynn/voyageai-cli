@@ -9,6 +9,7 @@ const { registerManagementTools } = require('./tools/management');
 const { registerUtilityTools } = require('./tools/utility');
 const { registerIngestTool } = require('./tools/ingest');
 const { registerWorkspaceTools } = require('./tools/workspace');
+const { registerCodeSearchTools } = require('./tools/code-search');
 
 const VERSION = require('../../package.json').version;
 
@@ -29,6 +30,7 @@ function createServer() {
   registerUtilityTools(server, schemas);
   registerIngestTool(server, schemas);
   registerWorkspaceTools(server, schemas);
+  registerCodeSearchTools(server, schemas);
 
   return server;
 }
@@ -175,3 +177,8 @@ function generateKey() {
 }
 
 module.exports = { createServer, runStdioServer, runHttpServer, generateKey };
+
+// Allow direct execution: `node src/mcp/server.js`
+if (require.main === module) {
+  runStdioServer();
+}

@@ -1,0 +1,83 @@
+{
+  "name": "code-review: fresh index required (no existing index)",
+  "inputs": {
+    "source": "https://github.com/mrlynn/voyageai-cli",
+    "code": "function generateEmbeddings(texts, model) { ... }",
+    "limit": 5
+  },
+  "mocks": {
+    "code_status": {
+      "totalChunks": 0,
+      "uniqueFiles": 0,
+      "languages": {},
+      "lastIndexed": null,
+      "indexes": []
+    },
+    "code_index": {
+      "source": "https://github.com/mrlynn/voyageai-cli",
+      "sourceType": "github",
+      "db": "vai_code_search",
+      "collection": "voyageai_cli_code",
+      "model": "voyage-code-3",
+      "filesFound": 89,
+      "filesIndexed": 89,
+      "chunksCreated": 642,
+      "totalTokens": 185000,
+      "errors": [],
+      "timeMs": 8400,
+      "refresh": true,
+      "indexName": "code_search_index"
+    },
+    "code_find_similar": {
+      "results": [
+        {
+          "source": "src/lib/api.js",
+          "language": "js",
+          "startLine": 45,
+          "endLine": 78,
+          "symbols": ["generateEmbeddings", "batchEmbed"],
+          "content": "async function generateEmbeddings(texts, model, opts) { ... }",
+          "score": 0.962,
+          "chunkType": "boundary"
+        }
+      ],
+      "metadata": {
+        "collection": "voyageai_cli_code",
+        "model": "voyage-code-3",
+        "resultCount": 1,
+        "timeMs": 145
+      }
+    },
+    "code_search": {
+      "results": [
+        {
+          "source": "src/lib/api.js",
+          "language": "js",
+          "startLine": 1,
+          "endLine": 30,
+          "symbols": ["apiRequest", "BASE_URL"],
+          "content": "const BASE_URL = process.env.VOYAGE_API_URL || 'https://ai.mongodb.com/v1/'; ...",
+          "score": 0.834
+        }
+      ],
+      "metadata": {
+        "collection": "voyageai_cli_code",
+        "model": "voyage-code-3",
+        "reranked": true,
+        "resultCount": 1,
+        "timeMs": 210
+      }
+    },
+    "code_query": null
+  },
+  "expect": {
+    "steps": {
+      "check_index": { "status": "completed" },
+      "index_codebase": { "status": "completed" },
+      "find_similar": { "status": "completed" },
+      "contextual_search": { "status": "completed" },
+      "deep_query": { "status": "skipped" }
+    },
+    "noErrors": true
+  }
+}

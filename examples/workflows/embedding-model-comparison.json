@@ -5,8 +5,8 @@
   "inputs": {
     "text": { "type": "string", "required": true, "description": "Text to embed with both models" },
     "reference_query": { "type": "string", "required": true, "description": "Query to test similarity against" },
-    "model_a": { "type": "string", "default": "voyage-3-large", "description": "First embedding model" },
-    "model_b": { "type": "string", "default": "voyage-3-lite", "description": "Second embedding model" }
+    "model_a": { "type": "string", "default": "voyage-4-large", "description": "First embedding model" },
+    "model_b": { "type": "string", "default": "voyage-4-lite", "description": "Second embedding model" }
   },
   "steps": [
     {
@@ -70,5 +70,9 @@
       "similarity": "{{ sim_b.output.similarity }}"
     },
     "report": "{{ comparison_report.output.text }}"
+  },
+  "formatters": {
+    "default": "table",
+    "title": "Embedding Model Comparison"
   }
 }

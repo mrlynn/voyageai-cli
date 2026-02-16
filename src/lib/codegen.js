@@ -302,7 +302,7 @@ function renderTemplate(target, name, context) {
 function buildContext(project, options = {}) {
   const context = {
     // Core config
-    model: options.model || project.model || 'voyage-3-large',
+    model: options.model || project.model || 'voyage-4-large',
     db: options.db || project.db || 'myapp',
     collection: options.collection || project.collection || 'documents',
     field: options.field || project.field || 'embedding',
