@@ -1,7 +1,11 @@
 'use strict';
 
 const path = require('path');
-const ora = require('ora');
+let ora;
+async function getOra() {
+  if (!ora) { ora = (await import('ora')).default; }
+  return ora;
+}
 const pc = require('picocolors');
 
 /**
@@ -31,7 +35,7 @@ function registerIndexWorkspace(program) {
       const { handleIndexWorkspace } = require('../mcp/tools/workspace');
       const resolvedPath = workspacePath ? path.resolve(workspacePath) : process.cwd();
 
-      const spinner = ora(`Indexing ${resolvedPath}...`).start();
+      const spinner = (await getOra())(`Indexing ${resolvedPath}...`).start();
 
       try {
         const result = await handleIndexWorkspace({
@@ -74,7 +78,7 @@ function registerIndexWorkspace(program) {
 
         // Create index if requested
         if (opts.createIndex) {
-          const indexSpinner = ora('Creating vector search index...').start();
+          const indexSpinner = (await getOra())('Creating vector search index...').start();
           try {
             const { createVectorIndex } = require('../lib/mongo');
             await createVectorIndex(
@@ -112,7 +116,7 @@ function registerIndexWorkspace(program) {
       telemetry.send('cli_search_code_run', { language: opts.language });
 
       const { handleSearchCode } = require('../mcp/tools/workspace');
-      const spinner = ora('Searching...').start();
+      const spinner = (await getOra())('Searching...').start();
 
       try {
         const result = await handleSearchCode({
@@ -198,7 +202,7 @@ function registerIndexWorkspace(program) {
         process.exit(1);
       }
 
-      const spinner = ora('Finding relevant context...').start();
+      const spinner = (await getOra())('Finding relevant context...').start();
 
       try {
         const result = await handleExplainCode({
