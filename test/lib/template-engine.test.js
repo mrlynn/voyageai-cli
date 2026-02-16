@@ -222,6 +222,129 @@ describe('resolveString', () => {
   it('handles whitespace in template expressions', () => {
     assert.equal(resolveString('{{  inputs.query  }}', context), 'test query');
   });
+
+  // ── || (fallback) operator ──
+
+  it('resolves fallback: picks first truthy value', () => {
+    const ctx = {
+      step_a: { output: { collection: 'from_a' } },
+      step_b: { output: { collection: 'from_b' } },
+    };
+    const result = resolveString('{{ step_a.output.collection || step_b.output.collection }}', ctx);
+    assert.equal(result, 'from_a');
+  });
+
+  it('resolves fallback: falls through null to second value', () => {
+    const ctx = {
+      step_a: { output: { collection: null } },
+      step_b: { output: { collection: 'from_b' } },
+    };
+    const result = resolveString('{{ step_a.output.collection || step_b.output.collection }}', ctx);
+    assert.equal(result, 'from_b');
+  });
+
+  it('resolves fallback: falls through undefined to second value', () => {
+    const ctx = {
+      step_b: { output: { collection: 'from_b' } },
+    };
+    const result = resolveString('{{ step_a.output.collection || step_b.output.collection }}', ctx);
+    assert.equal(result, 'from_b');
+  });
+
+  it('resolves fallback: falls through empty string to second value', () => {
+    const ctx = {
+      step_a: { output: { query: '' } },
+      step_b: { output: { query: 'fallback query' } },
+    };
+    const result = resolveString('{{ step_a.output.query || step_b.output.query }}', ctx);
+    assert.equal(result, 'fallback query');
+  });
+
+  it('resolves fallback to string literal', () => {
+    const ctx = {};
+    const result = resolveString("{{ missing.path || 'default value' }}", ctx);
+    assert.equal(result, 'default value');
+  });
+
+  it('resolves fallback to number literal', () => {
+    const ctx = {};
+    const result = resolveString('{{ missing.path || 10 }}', ctx);
+    assert.equal(result, 10);
+  });
+
+  // ── + (concatenation) operator ──
+
+  it('resolves string concatenation with literal prefix', () => {
+    const ctx = { inputs: { code: 'function foo() {}' } };
+    const result = resolveString("{{ 'functions related to: ' + inputs.code }}", ctx);
+    assert.equal(result, 'functions related to: function foo() {}');
+  });
+
+  it('resolves multi-part string concatenation', () => {
+    const ctx = { inputs: { name: 'Alice', greeting: 'Hello' } };
+    const result = resolveString("{{ inputs.greeting + ', ' + inputs.name + '!' }}", ctx);
+    assert.equal(result, 'Hello, Alice!');
+  });
+
+  it('resolves concatenation with null/undefined as empty string', () => {
+    const ctx = { inputs: { name: 'Alice' } };
+    const result = resolveString("{{ 'Hello ' + missing.value + inputs.name }}", ctx);
+    assert.equal(result, 'Hello Alice');
+  });
+
+  it('resolves concatenation with object values as JSON', () => {
+    const ctx = { step: { output: { data: { a: 1 } } } };
+    const result = resolveString("{{ 'result: ' + step.output.data }}", ctx);
+    assert.equal(result, 'result: {"a":1}');
+  });
+
+  // ── || combined with + ──
+
+  it('resolves || with higher precedence than +', () => {
+    const ctx = {
+      inputs: { question: '', code: 'const x = 1;' },
+    };
+    const result = resolveString("{{ inputs.question || 'functions related to: ' + inputs.code }}", ctx);
+    assert.equal(result, 'functions related to: const x = 1;');
+  });
+
+  it('resolves || picking first truthy over concatenation', () => {
+    const ctx = {
+      inputs: { question: 'are there retry implementations?', code: 'const x = 1;' },
+    };
+    const result = resolveString("{{ inputs.question || 'functions related to: ' + inputs.code }}", ctx);
+    assert.equal(result, 'are there retry implementations?');
+  });
+
+  // ── Literals ──
+
+  it('resolves boolean literal true', () => {
+    assert.equal(resolveString('{{ true }}', {}), true);
+  });
+
+  it('resolves boolean literal false', () => {
+    assert.equal(resolveString('{{ false }}', {}), false);
+  });
+
+  it('resolves null literal', () => {
+    assert.equal(resolveString('{{ null }}', {}), null);
+  });
+
+  it('resolves number literal', () => {
+    assert.equal(resolveString('{{ 42 }}', {}), 42);
+  });
+
+  it('resolves float literal', () => {
+    assert.equal(resolveString('{{ 0.5 }}', {}), 0.5);
+  });
+
+  it('resolves string literal in single quotes', () => {
+    assert.equal(resolveString("{{ 'hello world' }}", {}), 'hello world');
+  });
+
+  it('resolves string literal in double quotes', () => {
+    assert.equal(resolveString('{{ "hello world" }}', {}), 'hello world');
+  });
 });
 
 // ── resolveTemplate ──
@@ -345,5 +468,46 @@ describe('extractDependencies', () => {
   it('handles condition strings', () => {
     const deps = extractDependencies('{{ check.output.results.length > 0 }}');
     assert.deepEqual(deps, new Set(['check']));
+  });
+
+  it('extracts step IDs from negated conditions', () => {
+    const deps = extractDependencies('{{ !check_index.output || check_index.output.totalChunks === 0 }}');
+    assert.deepEqual(deps, new Set(['check_index']));
+  });
+
+  it('extracts step IDs from || fallback expressions', () => {
+    const deps = extractDependencies('{{ index_codebase.output.collection || check_index.output.collection }}');
+    assert.deepEqual(deps, new Set(['index_codebase', 'check_index']));
+  });
+
+  it('extracts step IDs from + concatenation expressions', () => {
+    const deps = extractDependencies("{{ 'prefix: ' + step_a.output.value }}");
+    assert.deepEqual(deps, new Set(['step_a']));
+  });
+
+  it('extracts step IDs from combined || and + expressions', () => {
+    const deps = extractDependencies("{{ inputs.question || 'related to: ' + inputs.code }}");
+    // Only inputs references, no step IDs
+    assert.deepEqual(deps, new Set());
+  });
+
+  it('extracts step IDs from && conditions', () => {
+    const deps = extractDependencies('{{ step_a.output && step_b.output.count > 0 }}');
+    assert.deepEqual(deps, new Set(['step_a', 'step_b']));
+  });
+
+  it('extracts step IDs from complex negated conditions with &&', () => {
+    const deps = extractDependencies('{{ !similarity_check.output || similarity_check.output.score < 0.85 }}');
+    assert.deepEqual(deps, new Set(['similarity_check']));
+  });
+
+  it('ignores boolean/null/undefined keywords', () => {
+    const deps = extractDependencies('{{ true && step_a.output || false }}');
+    assert.deepEqual(deps, new Set(['step_a']));
+  });
+
+  it('ignores item and index in forEach contexts', () => {
+    const deps = extractDependencies('{{ item.content }}');
+    assert.deepEqual(deps, new Set());
   });
 });

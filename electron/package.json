@@ -116,6 +116,7 @@
     "@vaicli/vai-workflow-asymmetric-search": "^1.0.0",
     "@vaicli/vai-workflow-batch-quality-gate": "^1.0.0",
     "@vaicli/vai-workflow-code-migration-helper": "^1.0.0",
+    "@vaicli/vai-workflow-code-search": "^1.0.2",
     "@vaicli/vai-workflow-contract-clause-finder": "^1.0.0",
     "@vaicli/vai-workflow-doc-freshness": "^1.0.0",
     "@vaicli/vai-workflow-embedding-drift-detector": "^1.0.0",

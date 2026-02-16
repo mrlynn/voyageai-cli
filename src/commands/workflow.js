@@ -48,8 +48,13 @@ async function promptForInputs(definition, existingInputs) {
   const { buildInputSteps } = require('../lib/workflow');
   const { createCLIRenderer } = require('../lib/wizard-cli');
   const { runWizard } = require('../lib/wizard');
+  const { loadInputCache } = require('../lib/workflow-input-cache');
 
-  const allSteps = buildInputSteps(definition);
+  // Load cached inputs from last run to use as defaults
+  const workflowName = definition.name || '';
+  const cachedInputs = loadInputCache(workflowName);
+
+  const allSteps = buildInputSteps(definition, cachedInputs);
   // Only prompt for inputs not already provided
   const steps = allSteps.filter(s => !(s.id in existingInputs));
   if (steps.length === 0) return existingInputs;
@@ -232,6 +237,12 @@ function registerWorkflow(program) {
         }
 
         wfDone();
+
+        // Cache inputs for next run
+        try {
+          const { saveInputCache } = require('../lib/workflow-input-cache');
+          saveInputCache(workflowName, opts.input);
+        } catch { /* non-critical, don't fail the run */ }
 
         // Output
         const { formatWorkflowOutput, autoDetectFormat } = require('../lib/workflow-formatters');
@@ -848,8 +859,9 @@ function registerWorkflow(program) {
   // ── workflow create ──
   wfCmd
     .command('create')
-    .description('Scaffold a publish-ready npm package from a workflow')
+    .description('Interactive workflow builder -- scaffold a validated, publish-ready workflow package')
     .option('--from <file>', 'Existing workflow JSON to package')
+    .option('--from-description <desc>', 'Generate a workflow skeleton from a text description')
     .option('--name <name>', 'Package name (without vai-workflow- prefix)')
     .option('--author <name>', 'Author name')
     .option('--description <desc>', 'Package description')
@@ -857,8 +869,9 @@ function registerWorkflow(program) {
     .option('--scope <scope>', 'Package scope (e.g. "vaicli" for @vaicli/vai-workflow-*)')
     .option('--output <dir>', 'Output directory')
     .action(async (opts) => {
-      const { scaffoldPackage, toPackageName, CATEGORIES, emptyWorkflowTemplate } = require('../lib/workflow-scaffold');
-      const { loadWorkflow } = require('../lib/workflow');
+      const { scaffoldPackage, toPackageName, CATEGORIES } = require('../lib/workflow-scaffold');
+      const { loadWorkflow, validateWorkflow, buildExecutionPlan } = require('../lib/workflow');
+      const { runInteractiveBuilder, workflowFromDescription } = require('../lib/workflow-builder');
 
       let definition;
       let name = opts.name;
@@ -880,50 +893,85 @@ function registerWorkflow(program) {
         if (!description) {
           description = definition.description;
         }
-      } else if (process.stdin.isTTY) {
-        // Interactive mode
+      } else if (opts.fromDescription) {
+        // Generate from text description
         try {
+          definition = workflowFromDescription(opts.fromDescription);
+          name = name || definition.name;
+          description = description || definition.description;
+
           const p = require('@clack/prompts');
-          p.intro(pc.bold('Create a new workflow package'));
+          p.intro(pc.bold('Generated workflow from description'));
 
-          const answers = await p.group({
-            name: () => p.text({ message: 'Workflow name', placeholder: 'my-workflow', validate: v => v ? undefined : 'Required' }),
-            description: () => p.text({ message: 'Description', placeholder: 'A brief description of what this workflow does' }),
-            category: () => p.select({
-              message: 'Category',
-              options: CATEGORIES.map(c => ({ value: c, label: c })),
-            }),
-            author: () => p.text({ message: 'Author', placeholder: 'Your Name', defaultValue: getGitAuthor() }),
-          });
+          // Show what was generated
+          p.log.info(`Name: ${pc.cyan(definition.name)}`);
+          p.log.info(`Steps: ${definition.steps.map(s => `${pc.cyan(s.id)} (${s.tool})`).join(' -> ')}`);
+          p.log.info(`Inputs: ${Object.keys(definition.inputs).join(', ') || 'none'}`);
 
-          if (p.isCancel(answers)) {
-            p.cancel('Cancelled.');
-            process.exit(0);
+          // Show execution plan
+          try {
+            const layers = buildExecutionPlan(definition.steps);
+            p.log.info(pc.bold('Execution plan:'));
+            for (let i = 0; i < layers.length; i++) {
+              p.log.message(`  Layer ${i + 1}: ${layers[i].join(', ')}`);
+            }
+          } catch (e) { /* skip */ }
+
+          // Validate
+          const errors = validateWorkflow(definition);
+          if (errors.length > 0) {
+            p.log.warn('Validation issues:');
+            for (const err of errors) {
+              p.log.warn(`  ${err}`);
+            }
+          } else {
+            p.log.success('Workflow validates successfully!');
           }
 
-          name = answers.name;
-          description = answers.description;
-          category = answers.category;
-          author = answers.author;
-          definition = emptyWorkflowTemplate();
-          definition.name = name;
-          definition.description = description || '';
-          // Add a placeholder step so validation passes
-          definition.steps = [{
-            id: 'search',
-            tool: 'query',
-            name: 'Search',
-            inputs: { query: '{{ inputs.query }}' },
-          }];
-          definition.inputs = {
-            query: { type: 'string', required: true, description: 'Search query' },
-          };
+          // Ask for category if not provided
+          if (!category) {
+            const { guessCategory, extractTools } = require('../lib/workflow-scaffold');
+            category = guessCategory(extractTools(definition));
+          }
+
+          // Ask for author if not provided
+          if (!author) {
+            author = getGitAuthor();
+          }
+
+          // Confirm or edit
+          const proceed = await p.confirm({ message: 'Scaffold this workflow as a package?', initialValue: true });
+          if (p.isCancel(proceed) || !proceed) {
+            // Write just the workflow.json for manual editing
+            const fs = require('fs');
+            const filename = `${definition.name}.vai-workflow.json`;
+            fs.writeFileSync(filename, JSON.stringify(definition, null, 2) + '\n');
+            p.log.info(`Wrote ${pc.cyan(filename)} for manual editing.`);
+            p.outro('Edit the file and run `vai workflow create --from <file>` when ready.');
+            return;
+          }
         } catch (err) {
+          console.error(ui.error(`Generation failed: ${err.message}`));
+          process.exit(1);
+        }
+      } else if (process.stdin.isTTY) {
+        // Full interactive builder
+        try {
+          const result = await runInteractiveBuilder();
+          definition = result.definition;
+          name = name || result.name;
+          description = description || result.description;
+          category = category || result.category;
+          author = author || result.author;
+        } catch (err) {
+          if (err.message && err.message.includes('cancelled')) {
+            process.exit(0);
+          }
           console.error(ui.error(`Interactive mode failed: ${err.message}`));
           process.exit(1);
         }
       } else {
-        console.error(ui.error('Provide --from <file> or run interactively (TTY required).'));
+        console.error(ui.error('Provide --from <file>, --from-description "text", or run interactively (TTY required).'));
         process.exit(1);
       }
 
@@ -951,8 +999,8 @@ function registerWorkflow(program) {
         }
         console.log();
         console.log('Next steps:');
-        console.log(`  1. ${opts.from ? '' : pc.dim('Edit workflow.json with your workflow definition')}${opts.from ? 'Review README.md' : ''}`);
-        console.log(`  2. cd ${pkgName}`);
+        console.log(`  1. ${opts.from ? 'Review README.md' : `cd ${pkgName} && review workflow.json`}`);
+        console.log(`  2. ${pc.dim('vai workflow validate')} ${pkgName}/workflow.json`);
         console.log(`  3. npm publish`);
         console.log();
       } catch (err) {
@@ -1006,6 +1054,39 @@ function registerWorkflow(program) {
       console.log(ui.success(`Created ${filename}`));
       console.log(`  ${pc.dim('Run with:')} vai workflow run ${filename} --input query="your question"`);
       console.log(`  ${pc.dim('Validate:')} vai workflow validate ${filename}`);
+    });
+
+  // ── workflow clear-cache [name] ──
+  wfCmd
+    .command('clear-cache [name]')
+    .description('Clear cached workflow inputs (from previous runs)')
+    .action((name) => {
+      const { clearInputCache, loadInputCache, slugify, CACHE_PATH } = require('../lib/workflow-input-cache');
+      const fs = require('fs');
+
+      if (name) {
+        const cached = loadInputCache(name);
+        const keys = Object.keys(cached);
+        if (keys.length === 0) {
+          console.log(pc.dim(`No cached inputs for "${name}".`));
+          return;
+        }
+        clearInputCache(name);
+        console.log(ui.success(`Cleared cached inputs for "${name}" (${keys.length} field${keys.length === 1 ? '' : 's'}).`));
+      } else {
+        // Clear all
+        let count = 0;
+        try {
+          const raw = fs.readFileSync(CACHE_PATH, 'utf-8');
+          count = Object.keys(JSON.parse(raw)).length;
+        } catch { /* no file */ }
+        if (count === 0) {
+          console.log(pc.dim('No cached workflow inputs.'));
+          return;
+        }
+        clearInputCache();
+        console.log(ui.success(`Cleared cached inputs for ${count} workflow${count === 1 ? '' : 's'}.`));
+      }
     });
 }
 

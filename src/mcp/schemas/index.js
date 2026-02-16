@@ -218,6 +218,35 @@ const codeStatusSchema = {
   collection: z.string().optional().describe('Collection to check'),
 };
 
+/** vai_generate_workflow input schema */
+const generateWorkflowSchema = {
+  description: z.string().min(1).max(500).describe('Natural language description of the workflow to generate'),
+  category: z.enum(['retrieval', 'analysis', 'ingestion', 'domain-specific', 'utility', 'integration']).optional()
+    .describe('Workflow category'),
+  tools: z.array(z.string()).optional()
+    .describe('Explicit list of tools to include (e.g., ["query", "rerank", "generate"]). If omitted, tools are inferred from the description.'),
+};
+
+/** vai_validate_workflow input schema */
+const validateWorkflowSchema = {
+  workflow: z.object({
+    name: z.string().optional(),
+    description: z.string().optional(),
+    version: z.string().optional(),
+    inputs: z.record(z.string(), z.unknown()).optional(),
+    defaults: z.record(z.string(), z.unknown()).optional(),
+    steps: z.array(z.object({
+      id: z.string(),
+      tool: z.string(),
+      name: z.string().optional(),
+      inputs: z.record(z.string(), z.unknown()).optional(),
+      condition: z.string().optional(),
+      forEach: z.string().optional(),
+    })),
+    output: z.record(z.string(), z.unknown()).optional(),
+  }).describe('The workflow JSON definition to validate'),
+};
+
 module.exports = {
   querySchema,
   searchSchema,
@@ -238,4 +267,6 @@ module.exports = {
   codeQuerySchema,
   codeFindSimilarSchema,
   codeStatusSchema,
+  generateWorkflowSchema,
+  validateWorkflowSchema,
 };

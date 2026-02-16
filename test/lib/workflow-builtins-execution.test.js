@@ -170,14 +170,12 @@ describe('Workflow behavior: step-level conditions', () => {
     assert.equal(result.passed, true, result.assertions.filter(a => !a.pass).map(a => a.message).join('; '));
   });
 
-  // NOTE: Due to a known dependency extraction issue with negated conditions
-  // (!similarity_check), the ingest_doc step runs before similarity_check
-  // because the ! prefix prevents proper dependency tracking. The condition
-  // evaluates with similarity_check.output as undefined, so !undefined = true
-  // and ingest_doc always executes. This test validates actual engine behavior.
-  it('ingest_doc runs despite high similarity (dependency extraction limitation)', async () => {
+  // When similarity is above the threshold, ingest_doc should be skipped.
+  // The condition {{ !similarity_check.output || similarity_check.output.similarity < 0.85 }}
+  // evaluates to false when similarity is 0.97, correctly preventing duplicate ingestion.
+  it('ingest_doc skipped when similarity exceeds threshold', async () => {
     const result = await runWorkflowTest(wf.definition, {
-      name: 'ingest runs due to dep tracking limitation',
+      name: 'ingest skipped for duplicate',
       inputs: { text: 'existing doc', source: 'dup.md' },
       mocks: {
         search: { results: [{ text: 'existing doc', score: 0.99 }], resultCount: 1 },
@@ -188,7 +186,7 @@ describe('Workflow behavior: step-level conditions', () => {
         steps: {
           check_existing: { status: 'completed' },
           similarity_check: { status: 'completed' },
-          ingest_doc: { status: 'completed' },
+          ingest_doc: { status: 'skipped' },
         },
       },
     });

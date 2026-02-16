@@ -93,6 +93,132 @@ function resolvePath(segments, context) {
 }
 
 /**
+ * Resolve a single expression fragment (a path, string literal, or number).
+ * Returns the resolved value or undefined.
+ *
+ * @param {string} fragment - e.g. "inputs.code", "'hello'", "42"
+ * @param {object} context
+ * @returns {*}
+ */
+function resolveFragment(fragment, context) {
+  const trimmed = fragment.trim();
+  if (!trimmed) return undefined;
+
+  // String literal (single or double quotes)
+  if ((trimmed.startsWith("'") && trimmed.endsWith("'")) ||
+      (trimmed.startsWith('"') && trimmed.endsWith('"'))) {
+    return trimmed.slice(1, -1);
+  }
+
+  // Number literal
+  if (/^-?\d+(\.\d+)?$/.test(trimmed)) {
+    return parseFloat(trimmed);
+  }
+
+  // Boolean / null / undefined
+  if (trimmed === 'true') return true;
+  if (trimmed === 'false') return false;
+  if (trimmed === 'null') return null;
+  if (trimmed === 'undefined') return undefined;
+
+  // Path lookup
+  const segments = parseExpression(trimmed);
+  return resolvePath(segments, context);
+}
+
+/**
+ * Resolve an expression that may contain || (fallback) and + (concatenation).
+ *
+ * Supports:
+ *   path.to.value                          simple path
+ *   a.value || b.value                     fallback (first truthy)
+ *   'prefix: ' + path.to.value             string concatenation
+ *   a.value || 'default text'              fallback with literal
+ *   'prefix' + a.value + ' suffix'         multi-part concatenation
+ *
+ * Operator precedence: || is evaluated first (lowest), then +.
+ *
+ * @param {string} expr
+ * @param {object} context
+ * @returns {*}
+ */
+function resolveExpr(expr, context) {
+  const trimmed = expr.trim();
+
+  // Split on || (fallback operator) first
+  if (trimmed.includes('||')) {
+    const parts = splitOnOperator(trimmed, '||');
+    if (parts.length > 1) {
+      for (const part of parts) {
+        const val = resolveExpr(part.trim(), context);
+        if (val !== undefined && val !== null && val !== '' && val !== false) {
+          return val;
+        }
+      }
+      // All parts falsy: return the last one resolved
+      return resolveExpr(parts[parts.length - 1].trim(), context);
+    }
+  }
+
+  // Split on + (concatenation)
+  if (trimmed.includes('+')) {
+    const parts = splitOnOperator(trimmed, '+');
+    if (parts.length > 1) {
+      let result = '';
+      for (const part of parts) {
+        const val = resolveFragment(part.trim(), context);
+        if (val === undefined || val === null) {
+          result += '';
+        } else if (typeof val === 'object') {
+          result += JSON.stringify(val);
+        } else {
+          result += String(val);
+        }
+      }
+      return result;
+    }
+  }
+
+  // Simple fragment (path, literal, etc.)
+  return resolveFragment(trimmed, context);
+}
+
+/**
+ * Split a string on an operator, respecting string literals.
+ * Doesn't split inside quoted strings.
+ *
+ * @param {string} str
+ * @param {string} op - e.g. "||" or "+"
+ * @returns {string[]}
+ */
+function splitOnOperator(str, op) {
+  const parts = [];
+  let current = '';
+  let inSingle = false;
+  let inDouble = false;
+
+  for (let i = 0; i < str.length; i++) {
+    const ch = str[i];
+
+    if (ch === "'" && !inDouble) {
+      inSingle = !inSingle;
+      current += ch;
+    } else if (ch === '"' && !inSingle) {
+      inDouble = !inDouble;
+      current += ch;
+    } else if (!inSingle && !inDouble && str.slice(i, i + op.length) === op) {
+      parts.push(current);
+      current = '';
+      i += op.length - 1;
+    } else {
+      current += ch;
+    }
+  }
+  parts.push(current);
+  return parts;
+}
+
+/**
  * Resolve template expressions within a single string.
  *
  * If the entire string is a single template expression, return the resolved
@@ -112,8 +238,7 @@ function resolveString(str, context) {
   const soleMatch = str.match(SOLE_TEMPLATE_RE);
   if (soleMatch) {
     try {
-      const segments = parseExpression(soleMatch[1]);
-      return resolvePath(segments, context);
+      return resolveExpr(soleMatch[1], context);
     } catch {
       return undefined;
     }
@@ -122,8 +247,7 @@ function resolveString(str, context) {
   // Mixed text + templates: substitute all, coerce to string
   return str.replace(TEMPLATE_RE, (_match, expr) => {
     try {
-      const segments = parseExpression(expr);
-      const value = resolvePath(segments, context);
+      const value = resolveExpr(expr, context);
       if (value === undefined) return '';
       if (value === null) return 'null';
       if (typeof value === 'object') return JSON.stringify(value);
@@ -192,23 +316,33 @@ function extractDependencies(obj) {
       let match;
       while ((match = re.exec(value)) !== null) {
         const expr = match[1].trim();
-        // Extract the first segment (root identifier)
-        const dotIdx = expr.indexOf('.');
-        const bracketIdx = expr.indexOf('[');
-        let root;
-        if (dotIdx === -1 && bracketIdx === -1) {
-          root = expr;
-        } else if (dotIdx === -1) {
-          root = expr.slice(0, bracketIdx);
-        } else if (bracketIdx === -1) {
-          root = expr.slice(0, dotIdx);
-        } else {
-          root = expr.slice(0, Math.min(dotIdx, bracketIdx));
+        // Extract ALL root identifiers from the expression.
+        // Expressions can contain operators (&&, ||, !, ===, etc.)
+        // so we scan for all dotted-path identifiers.
+        const idRe = /(?:^|[^a-zA-Z0-9_.])([a-zA-Z_][a-zA-Z0-9_]*)(?:\.|$|\[| *[><=!&|)])/g;
+        let idMatch;
+        while ((idMatch = idRe.exec(expr)) !== null) {
+          const root = idMatch[1];
+          // Skip workflow-level references, literals, and keywords
+          if (root !== 'inputs' && root !== 'defaults' &&
+              root !== 'true' && root !== 'false' &&
+              root !== 'null' && root !== 'undefined' &&
+              root !== 'item' && root !== 'index') {
+            deps.add(root);
+          }
         }
-
-        // Skip workflow-level references
-        if (root !== 'inputs' && root !== 'defaults') {
-          deps.add(root);
+        // Also handle simple single-identifier case (e.g. "{{ stepId }}")
+        if (!expr.includes('.') && !expr.includes('[') &&
+            !expr.includes('&') && !expr.includes('|') &&
+            !expr.includes('!') && !expr.includes('=') &&
+            !expr.includes('>') && !expr.includes('<')) {
+          const root = expr;
+          if (root !== 'inputs' && root !== 'defaults' &&
+              root !== 'true' && root !== 'false' &&
+              root !== 'null' && root !== 'undefined' &&
+              root !== 'item' && root !== 'index') {
+            deps.add(root);
+          }
         }
       }
       return;
