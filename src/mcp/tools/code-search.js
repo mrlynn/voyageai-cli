@@ -23,6 +23,7 @@ const {
   fetchRepoTree,
   fetchFilesBatch,
   fetchChangedFiles,
+  resolveCommitSha,
 } = require('../../lib/github');
 
 const DEFAULT_INDEX_NAME = 'code_search_index';
@@ -82,12 +83,15 @@ async function handleCodeIndex(input) {
       const branch = input.branch || 'main';
 
       const tree = await fetchRepoTree(owner, repo, branch, token);
+      const headSha = await resolveCommitSha(owner, repo, branch, token);
       const codeFiles = tree.filter(entry => {
         const ext = path.extname(entry.path).toLowerCase();
         return CODE_EXTENSIONS.includes(ext) && entry.size <= (input.maxFileSize || 100000) && entry.size > 0;
       }).slice(0, input.maxFiles || 5000);
 
       stats.filesFound = codeFiles.length;
+
+      let didIncrementalRefresh = false;
 
       if (input.refresh) {
         // Check stored commit SHA for incremental
@@ -102,9 +106,15 @@ async function handleCodeIndex(input) {
             }
             const filesToFetch = codeFiles.filter(f => changedSet.has(f.path));
             if (filesToFetch.length === 0) {
+              // Update stored SHA even when up to date
+              await collection.updateOne(
+                { _type: 'index_meta', workspace: resolvedPath },
+                { $set: { commitSha: headSha, updatedAt: new Date().toISOString() } },
+                { upsert: true }
+              );
               return {
                 structuredContent: { ...stats, source: resolvedPath, sourceType: 'github', db, collection: collName, model, timeMs: Date.now() - start, refresh: true, indexName: DEFAULT_INDEX_NAME, message: 'Up to date' },
-                content: [{ type: 'text', text: 'Index is up to date — no changes detected.' }],
+                content: [{ type: 'text', text: 'Index is up to date, no changes detected.' }],
               };
             }
             // Only fetch changed files
@@ -114,17 +124,16 @@ async function handleCodeIndex(input) {
               if (file.error) { stats.errors.push({ file: file.path, error: file.error }); continue; }
               processFile(file.path, file.content, resolvedPath, input, allDocs, stats);
             }
+            didIncrementalRefresh = true;
           } catch {
-            // Fall through to full index if compare fails
+            // Compare failed, fall through to full index below
           }
         }
       }
 
-      if (allDocs.length === 0 && !input.refresh) {
-        // Full index
-        if (!input.refresh) {
-          await collection.deleteMany({ 'metadata.workspace': resolvedPath });
-        }
+      if (!didIncrementalRefresh && allDocs.length === 0) {
+        // Full index (either not refreshing, or incremental failed/no prior SHA)
+        await collection.deleteMany({ 'metadata.workspace': resolvedPath });
 
         const filePaths = codeFiles.map(f => f.path);
         const fetched = await fetchFilesBatch(owner, repo, filePaths, branch, token);
@@ -135,10 +144,10 @@ async function handleCodeIndex(input) {
         }
       }
 
-      // Store commit SHA for future refresh
+      // Store actual commit SHA for future refresh
       await collection.updateOne(
         { _type: 'index_meta', workspace: resolvedPath },
-        { $set: { _type: 'index_meta', workspace: resolvedPath, commitSha: input.branch || 'main', updatedAt: new Date().toISOString() } },
+        { $set: { _type: 'index_meta', workspace: resolvedPath, commitSha: headSha, updatedAt: new Date().toISOString() } },
         { upsert: true }
       );
 

@@ -4,20 +4,7 @@ const { generateEmbeddings, apiRequest } = require('../../lib/api');
 const { getMongoCollection } = require('../../lib/mongo');
 const { getDefaultModel, DEFAULT_RERANK_MODEL } = require('../../lib/catalog');
 const { loadProject } = require('../../lib/project');
-
-/**
- * Resolve db/collection from tool input, falling back to project config.
- * @param {object} input
- * @returns {{ db: string, collection: string }}
- */
-function resolveDbCollection(input) {
-  const { config: proj } = loadProject();
-  const db = input.db || proj.db;
-  const collection = input.collection || proj.collection;
-  if (!db) throw new Error('No database specified. Pass db parameter or configure via vai init.');
-  if (!collection) throw new Error('No collection specified. Pass collection parameter or configure via vai init.');
-  return { db, collection };
-}
+const { resolveDbCollection } = require('../utils');
 
 /**
  * Handler for vai_query: full RAG query (embed, vector search, rerank).
@@ -32,7 +19,7 @@ async function handleVaiQuery(input) {
   const field = proj.field || 'embedding';
   const dimensions = proj.dimensions;
   const limit = input.limit;
-  const candidateLimit = Math.min(limit * 4, 20);
+  const candidateLimit = limit * 4;
   const start = Date.now();
 
   // Step 1: Embed query

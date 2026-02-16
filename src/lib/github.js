@@ -198,6 +198,22 @@ async function fetchFilesBatch(owner, repo, filePaths, branch, token, concurrenc
   return results;
 }
 
+/**
+ * Resolve a branch name to its HEAD commit SHA.
+ * @param {string} owner
+ * @param {string} repo
+ * @param {string} branch
+ * @param {string|null} token
+ * @returns {Promise<string>} commit SHA
+ */
+async function resolveCommitSha(owner, repo, branch, token) {
+  const data = await githubFetch(
+    `https://api.github.com/repos/${owner}/${repo}/commits/${branch}`,
+    token
+  );
+  return data.sha;
+}
+
 module.exports = {
   getAuthToken,
   isGitHubUrl,
@@ -206,4 +222,5 @@ module.exports = {
   fetchFileContents,
   fetchChangedFiles,
   fetchFilesBatch,
+  resolveCommitSha,
 };
