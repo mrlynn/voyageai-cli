@@ -11904,7 +11904,8 @@ function initSettings() {
       if (el && settings[cliKey] && settings[cliKey].isSet) {
         // Don't populate masked secret values into editable fields
         if (settings[cliKey].isSecret) {
-          el.placeholder = settings[cliKey].value || el.placeholder;
+          el.value = settings[cliKey].value || '';
+          el.dataset.isMasked = 'true';
         } else {
           el.value = settings[cliKey].value || '';
         }
@@ -11938,12 +11939,28 @@ function initSettings() {
   if (mongoUriInput && mongoUriSave) {
     let mongoUriVisible = false;
     if (mongoUriToggle) {
-      mongoUriToggle.addEventListener('click', () => {
-        mongoUriVisible = !mongoUriVisible;
-        mongoUriInput.type = mongoUriVisible ? 'text' : 'password';
+      mongoUriToggle.addEventListener('click', async () => {
+        if (!mongoUriVisible) {
+          // Fetch the real unmasked value
+          try {
+            const resp = await fetch('/api/settings/reveal/mongodb-uri');
+            const data = await resp.json();
+            if (data.value) {
+              mongoUriInput.value = data.value;
+              delete mongoUriInput.dataset.isMasked;
+            }
+          } catch {}
+          mongoUriInput.type = 'text';
+          mongoUriVisible = true;
+        } else {
+          mongoUriInput.type = 'password';
+          mongoUriVisible = false;
+        }
       });
     }
     mongoUriSave.addEventListener('click', () => {
+      // Don't save masked values back
+      if (mongoUriInput.dataset.isMasked === 'true') return;
       const val = mongoUriInput.value.trim();
       fetch('/api/settings', {
         method: 'PUT',
@@ -11958,6 +11975,9 @@ function initSettings() {
           mongoUriInput.placeholder = val.slice(0, 20) + '...';
         }
       }).catch(() => {});
+    });
+    mongoUriInput.addEventListener('input', () => {
+      delete mongoUriInput.dataset.isMasked;
     });
     mongoUriInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') mongoUriSave.click();
