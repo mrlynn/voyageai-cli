@@ -322,7 +322,6 @@ function buildContext(project, options = {}) {
     // Metadata
     generatedAt: new Date().toISOString(),
     vaiVersion: getCliVersion(),
-    vaiVersion: require('../../package.json').version,
   };
 
   return context;

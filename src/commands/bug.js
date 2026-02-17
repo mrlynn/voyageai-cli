@@ -8,7 +8,8 @@ const { send: sendTelemetry } = require('../lib/telemetry');
 // Try to get package version safely
 function getVersion() {
   try {
-    return require('../../package.json').version;
+    const { getVersion: _getVersion } = require('../lib/banner');
+    return _getVersion();
   } catch {
     return 'unknown';
   }
