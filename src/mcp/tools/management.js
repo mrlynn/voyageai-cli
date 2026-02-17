@@ -11,7 +11,8 @@ const { introspectCollections } = require('../../lib/workflow-utils');
  */
 async function handleVaiCollections(input) {
   const { config: proj } = loadProject();
-  const dbName = input.db || proj.db;
+  const { getConfigValue } = require('../../lib/config');
+  const dbName = input.db || proj.db || process.env.VAI_DEFAULT_DB || getConfigValue('defaultDb');
   if (!dbName) throw new Error('No database specified. Pass db parameter or configure via vai init.');
 
   const collections = await introspectCollections(dbName);
