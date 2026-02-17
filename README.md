@@ -724,6 +724,44 @@ vai mcp --transport http --port 3100       # HTTP (remote, multi-client)
 
 ---
 
+## Project Structure
+
+This is a **monorepo-lite** that separates the CLI from the desktop app:
+
+```
+voyageai-cli/
+├── src/            ← Core library + CLI + web playground (npm package)
+├── electron/       ← Desktop app (distributed via GitHub Releases)
+├── docs/           ← Shared documentation
+├── test/           ← Test suites
+└── .github/
+    └── workflows/
+        ├── ci.yml           ← Tests + npm publish for CLI
+        └── release-app.yml  ← Electron builds + GitHub Releases
+```
+
+### Distribution Channels
+
+| Product | Channel | What users get |
+|---------|---------|----------------|
+| **CLI** (`vai`) | `npm install -g voyageai-cli` | Terminal tool, 22 commands, RAG pipeline |
+| **Web Playground** | `vai playground` | Runs locally, no install beyond the CLI |
+| **Desktop App** | [GitHub Releases](https://github.com/mrlynn/voyageai-cli/releases) | Standalone app, no Node required |
+
+### Development Scripts
+
+```bash
+# CLI development
+npm test                    # Run test suite
+npm run test:watch         # Watch mode
+
+# Electron app development  
+npm run app:install        # Install electron dependencies
+npm run app:start          # Launch electron app
+npm run app:dev            # Launch with DevTools
+npm run app:build          # Build for all platforms
+```
+
 ## Requirements
 
 - Node.js 18+

@@ -1,0 +1,30 @@
+
+> voyage-ai-playground@1.10.3 start
+> electron .
+
+[Generate] Loaded codegen from /Users/michael.lynn/code/voyageai-cli/src/lib/codegen
+[Scaffold] Loaded scaffold-structure from /Users/michael.lynn/code/voyageai-cli/src/lib/scaffold-structure
+[Server] Starting playground server...
+[Server] App packaged: false
+[Server] Source base: /Users/michael.lynn/code/voyageai-cli/src
+[Server] Playground path: /Users/michael.lynn/code/voyageai-cli/src/commands/playground.js
+[Server] Playground exists: true
+[Server] HTML path: /Users/michael.lynn/code/voyageai-cli/src/playground/index.html
+[Server] HTML exists: true
+[Server] Successfully loaded playground module
+[Server] Successfully created playground server instance
+[Server] Playground server running on http://127.0.0.1:19879
+[Window] Loading URL: http://127.0.0.1:19879
+[Window] Started loading page...
+[Window] Window ready to show
+[Window] Finished loading page
+[Window] Current URL: http://127.0.0.1:19879/
+[Window] ✅ Successfully loaded URL
+[Window] Current URL after show: http://127.0.0.1:19879/
+[catalog] built fresh in 955ms (21 workflows)
+[catalog] served from cache in 0ms
+[Window] Started loading page...
+[Window] Finished loading page
+[Window] Current URL: http://127.0.0.1:19879/
+[catalog] built fresh in 1555ms (21 workflows)
+[catalog] served from cache in 0ms
