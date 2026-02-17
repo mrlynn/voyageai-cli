@@ -606,6 +606,22 @@ function createPlaygroundServer() {
         return;
       }
 
+      // API: Settings reveal — return unmasked value for a specific secret key
+      if (req.method === 'GET' && req.url.startsWith('/api/settings/reveal/')) {
+        const { loadConfig, KEY_MAP, SECRET_KEYS } = require('../lib/config');
+        const cliKey = req.url.replace('/api/settings/reveal/', '');
+        const internalKey = KEY_MAP[cliKey];
+        if (!internalKey || !SECRET_KEYS.has(internalKey)) {
+          res.writeHead(404, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Not found or not a secret key' }));
+          return;
+        }
+        const config = loadConfig();
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ value: config[internalKey] || null }));
+        return;
+      }
+
       // API: Settings origins — where each config value comes from
       if (req.method === 'GET' && req.url === '/api/settings/origins') {
         const { resolveLLMConfig } = require('../lib/llm');
