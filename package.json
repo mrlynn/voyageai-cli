@@ -2,6 +2,7 @@
   "name": "voyageai-cli",
   "version": "1.30.9",
   "description": "CLI for Voyage AI embeddings, reranking, and MongoDB Atlas Vector Search",
+  "_comment": "This package contains the CLI + web playground. The electron/ directory is excluded via .npmignore and distributed via GitHub Releases.",
   "bin": {
     "vai": "./src/cli.js"
   },
@@ -35,7 +36,12 @@
   },
   "scripts": {
     "test": "node --test test/**/*.test.js",
-    "release": "./scripts/release.sh"
+    "release": "./scripts/release.sh",
+    "app:install": "cd electron && npm install",
+    "app:start": "cd electron && npm start",
+    "app:dev": "cd electron && npm run dev",
+    "app:build": "cd electron && npm run build",
+    "app:package": "cd electron && npm run package"
   },
   "engines": {
     "node": ">=20.0.0"

@@ -1,0 +1,29 @@
+# Electron Desktop App (distributed via GitHub Releases)
+electron/
+
+# Documentation and project files
+docs/
+screenshots/
+video/
+*.md
+!README.md
+!CHANGELOG.md
+
+# Development files
+.DS_Store
+.env*
+.vscode/
+.github/
+test/
+examples/
+*.test.js
+
+# Demo files
+demo.gif
+demo-readme.gif
+demo.tape
+voyageai-cli.png
+voyageai-cli-playground.png
+
+# Build artifacts
+dist-electron/

@@ -1,4 +1,4 @@
-name: Release Electron App
+name: Release Desktop App
 
 on:
   push:
@@ -6,107 +6,62 @@ on:
       - 'app-v*'
   workflow_dispatch:
 
-permissions:
-  contents: write
-
 jobs:
   build:
     strategy:
-      fail-fast: false
       matrix:
-        include:
-          - os: macos-latest
-            platform: mac
-            arch: universal
-            artifact_glob: '../dist-electron/*.{dmg,zip}'
-          - os: windows-latest
-            platform: win
-            arch: x64
-            artifact_glob: '../dist-electron/*.exe'
-          - os: ubuntu-latest
-            platform: linux
-            arch: x64
-            artifact_glob: '../dist-electron/*.AppImage'
-
+        os: [macos-latest, ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
-    name: Build (${{ matrix.platform }}-${{ matrix.arch }})
-
+    
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
+        
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
-          cache: npm
-          cache-dependency-path: electron/package-lock.json
-
-      - name: Install dependencies
-        working-directory: electron
+          node-version: '20'
+          cache: 'npm'
+          
+      - name: Install dependencies (root)
         run: npm ci
-
-      - name: Install parent dependencies
-        run: npm ci --ignore-scripts
         
-      - name: Build Electron app
-        working-directory: electron
-        shell: bash
+      - name: Install dependencies (electron)
         run: |
-          EXTRA_ARGS=""
-          if [ "${{ matrix.platform }}" = "mac" ] && [ -z "$CSC_LINK" ]; then
-            EXTRA_ARGS="--config.mac.identity=null"
-          fi
-          if [ "${{ matrix.arch }}" = "universal" ]; then
-            npm run package:${{ matrix.platform }} -- --arm64 --x64 --publish never $EXTRA_ARGS
-          else
-            npm run package:${{ matrix.platform }} -- --${{ matrix.arch }} --publish never $EXTRA_ARGS
-          fi
+          cd electron
+          npm ci
+          
+      - name: Build Electron App (macOS)
+        if: matrix.os == 'macos-latest'
+        run: |
+          cd electron
+          npm run build:mac
         env:
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
-          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          CSC_LINK: ${{ secrets.CSC_LINK }}
-          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
-          CSC_IDENTITY_AUTO_DISCOVERY: "true"
-
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Build Electron App (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          cd electron
+          npm run build:win
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Build Electron App (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          cd electron
+          npm run build:linux
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: dist-${{ matrix.platform }}-${{ matrix.arch }}
+          name: ${{ matrix.os }}-build
           path: |
-            dist-electron/*.dmg
-            dist-electron/*.zip
-            dist-electron/*.exe
-            dist-electron/*.AppImage
-            dist-electron/*.yml
-            dist-electron/*.blockmap
-          if-no-files-found: error
-
-  release:
-    needs: build
-    runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/app-v')
-
-    steps:
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: artifacts
-          merge-multiple: true
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          draft: false
-          generate_release_notes: true
-          files: |
-            artifacts/*.dmg
-            artifacts/*.zip
-            artifacts/*.exe
-            artifacts/*.AppImage
-            artifacts/*.yml
-            artifacts/*.blockmap
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            electron/dist/**/*.dmg
+            electron/dist/**/*.exe
+            electron/dist/**/*.AppImage
+            electron/dist/**/*.zip
+          if-no-files-found: ignore
