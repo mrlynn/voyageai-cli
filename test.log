@@ -1,0 +1,2174 @@
+
+> voyageai-cli@1.30.3 test
+> node --test test/**/*.test.js
+
+▶ about command
+  [32m✔ registers correctly on a program [90m(0.807ms)[39m[39m
+  [32m✔ has --json option [90m(0.147292ms)[39m[39m
+[32m✔ about command [90m(1.542417ms)[39m[39m
+▶ app command
+  [32m✔ registers correctly on a program [90m(0.946334ms)[39m[39m
+  [32m✔ has --install option [90m(0.109ms)[39m[39m
+  [32m✔ has --dev option [90m(0.089917ms)[39m[39m
+  [32m✔ has description mentioning Electron [90m(0.059125ms)[39m[39m
+[32m✔ app command [90m(1.807542ms)[39m[39m
+▶ benchmark command
+  [32m✔ registers as benchmark with bench alias [90m(2.06525ms)[39m[39m
+  [32m✔ has embed subcommand [90m(0.219125ms)[39m[39m
+  [32m✔ embed has --models option [90m(0.165208ms)[39m[39m
+  [32m✔ embed has --rounds option [90m(0.171292ms)[39m[39m
+  [32m✔ embed has --input option for custom text [90m(0.137042ms)[39m[39m
+  [32m✔ embed has --file option [90m(1.074042ms)[39m[39m
+  [32m✔ embed has --json and --quiet options [90m(0.409708ms)[39m[39m
+  [32m✔ embed has --dimensions option [90m(0.382708ms)[39m[39m
+  [32m✔ has rerank subcommand [90m(0.63975ms)[39m[39m
+  [32m✔ rerank has --models and --rounds options [90m(0.240166ms)[39m[39m
+  [32m✔ rerank has --query option [90m(0.129583ms)[39m[39m
+  [32m✔ rerank has --documents-file and --top-k options [90m(0.106292ms)[39m[39m
+  [32m✔ has similarity subcommand [90m(0.098666ms)[39m[39m
+  [32m✔ similarity has --models, --query, --file, --top-k options [90m(0.097666ms)[39m[39m
+  [32m✔ has cost subcommand [90m(0.077959ms)[39m[39m
+  [32m✔ cost has --models, --tokens, --volumes options [90m(0.094083ms)[39m[39m
+  [32m✔ has batch subcommand [90m(0.073291ms)[39m[39m
+  [32m✔ batch has --model, --batch-sizes, --rounds options [90m(0.077375ms)[39m[39m
+  [32m✔ all subcommands have --json output option [90m(0.122834ms)[39m[39m
+  [32m✔ all subcommands have --quiet option [90m(0.094167ms)[39m[39m
+  [32m✔ embed defaults models to voyage-4-large,voyage-4,voyage-4-lite [90m(0.11075ms)[39m[39m
+  [32m✔ rerank defaults models to rerank-2.5,rerank-2.5-lite [90m(0.140292ms)[39m[39m
+  [32m✔ cost defaults volumes to 100,1000,10000,100000 [90m(0.138666ms)[39m[39m
+  [32m✔ embed has --save option [90m(0.121375ms)[39m[39m
+  [32m✔ rerank has --save option [90m(0.095125ms)[39m[39m
+  [32m✔ has asymmetric subcommand [90m(0.092917ms)[39m[39m
+  [32m✔ asymmetric has --doc-model and --query-models options [90m(0.095ms)[39m[39m
+  [32m✔ asymmetric defaults doc-model to voyage-4-large [90m(0.096959ms)[39m[39m
+  [32m✔ has quantization subcommand with quant alias [90m(0.079125ms)[39m[39m
+  [32m✔ quantization has --model, --dtypes, --query options [90m(0.109709ms)[39m[39m
+  [32m✔ quantization defaults dtypes to float,int8,ubinary [90m(0.111333ms)[39m[39m
+  [32m✔ quantization has --dimensions, --save, --file options [90m(0.11475ms)[39m[39m
+  [32m✔ batch defaults batch-sizes to 1,5,10,25,50 [90m(0.08875ms)[39m[39m
+  [32m✔ has space subcommand [90m(1.368583ms)[39m[39m
+  [32m✔ space has --models, --text, --texts, --dimensions options [90m(0.088458ms)[39m[39m
+  [32m✔ space defaults models to voyage-4-large,voyage-4,voyage-4-lite [90m(0.077ms)[39m[39m
+  [32m✔ space has --json and --quiet options [90m(0.074667ms)[39m[39m
+[32m✔ benchmark command [90m(10.950959ms)[39m[39m
+▶ bug command
+  [32m✔ registers correctly on a program [90m(0.960875ms)[39m[39m
+  [32m✔ has --github option [90m(0.117792ms)[39m[39m
+  [32m✔ has --quick option [90m(0.069417ms)[39m[39m
+  [32m✔ has correct description [90m(0.796208ms)[39m[39m
+[32m✔ bug command [90m(2.63475ms)[39m[39m
+▶ chat command agent mode
+  [32m✔ has --mode option [90m(1.71525ms)[39m[39m
+  [32m✔ --mode defaults to pipeline [90m(0.169041ms)[39m[39m
+  [32m✔ --mode description mentions pipeline and agent [90m(0.114041ms)[39m[39m
+  [32m✔ still has all pipeline options [90m(0.128291ms)[39m[39m
+  [32m✔ has --llm-base-url option [90m(0.116ms)[39m[39m
+[32m✔ chat command agent mode [90m(2.887792ms)[39m[39m
+▶ slash commands for agent mode
+  [32m✔ /tools command is defined in handleSlashCommand [90m(0.218958ms)[39m[39m
+  [32m✔ /export-workflow command is defined in handleSlashCommand [90m(0.929709ms)[39m[39m
+  [32m✔ handleAgentTurn function is defined [90m(0.178917ms)[39m[39m
+  [32m✔ handlePipelineTurn function is defined [90m(0.125791ms)[39m[39m
+  [32m✔ imports agentChatTurn from chat module [90m(0.117875ms)[39m[39m
+  [32m✔ tracks lastToolCalls for /tools command [90m(0.107958ms)[39m[39m
+  [32m✔ exports workflow as .vai-workflow.json format [90m(0.094917ms)[39m[39m
+[32m✔ slash commands for agent mode [90m(1.920334ms)[39m[39m
+▶ chat command
+  [32m✔ registers correctly on a program [90m(1.211041ms)[39m[39m
+  [32m✔ has description mentioning RAG [90m(0.135334ms)[39m[39m
+  [32m✔ has --db option [90m(0.184084ms)[39m[39m
+  [32m✔ has --collection option [90m(0.135292ms)[39m[39m
+  [32m✔ has --session option [90m(0.128125ms)[39m[39m
+  [32m✔ has --llm-provider option [90m(0.097708ms)[39m[39m
+  [32m✔ has --llm-model option [90m(0.079708ms)[39m[39m
+  [32m✔ has --llm-api-key option [90m(0.072875ms)[39m[39m
+  [32m✔ has --max-context-docs with default 5 [90m(0.093917ms)[39m[39m
+  [32m✔ has --max-turns with default 20 [90m(1.145459ms)[39m[39m
+  [32m✔ has --no-history flag [90m(0.091833ms)[39m[39m
+  [32m✔ has --no-rerank flag [90m(0.067584ms)[39m[39m
+  [32m✔ has --no-stream flag [90m(0.05875ms)[39m[39m
+  [32m✔ has --system-prompt option [90m(0.059208ms)[39m[39m
+  [32m✔ has --text-field with default "text" [90m(0.062792ms)[39m[39m
+  [32m✔ has --filter option [90m(0.064708ms)[39m[39m
+  [32m✔ has --estimate flag [90m(0.056208ms)[39m[39m
+  [32m✔ has --json and --quiet options [90m(0.054208ms)[39m[39m
+[32m✔ chat command [90m(4.615125ms)[39m[39m
+▶ chunk command
+  [32m✔ registers correctly on a program [90m(2.881375ms)[39m[39m
+  [32m✔ accepts input as an argument [90m(0.484292ms)[39m[39m
+  [32m✔ has --strategy option [90m(0.303583ms)[39m[39m
+  [32m✔ has --chunk-size option [90m(0.195375ms)[39m[39m
+  [32m✔ has --overlap option [90m(0.228417ms)[39m[39m
+  [32m✔ has --output option for file output [90m(0.16925ms)[39m[39m
+  [32m✔ has --dry-run option [90m(0.193458ms)[39m[39m
+  [32m✔ has --stats option [90m(0.21725ms)[39m[39m
+  [32m✔ has --extensions option for directory scanning [90m(0.242958ms)[39m[39m
+  [32m✔ has --json and --quiet options [90m(0.3705ms)[39m[39m
+  [32m✔ has --text-field option for JSON input [90m(0.23175ms)[39m[39m
+[32m✔ chunk command [90m(6.737833ms)[39m[39m
+▶ code-search command
+  [32m✔ registers code-search command on a program [90m(1.330541ms)[39m[39m
+  [32m✔ has init subcommand [90m(0.17025ms)[39m[39m
+  [32m✔ has status subcommand [90m(0.139708ms)[39m[39m
+  [32m✔ has refresh subcommand [90m(0.127709ms)[39m[39m
+  [32m✔ accepts optional query argument [90m(0.094333ms)[39m[39m
+  [32m✔ has --limit option defaulting to 10 [90m(0.114791ms)[39m[39m
+  [32m✔ has --no-rerank option [90m(0.091375ms)[39m[39m
+  [32m✔ has --json option [90m(0.092292ms)[39m[39m
+  [32m✔ has --model option [90m(0.109584ms)[39m[39m
+  [32m✔ has --db and --collection options [90m(0.130292ms)[39m[39m
+  [32m✔ init has --chunk-size and --chunk-overlap [90m(0.100333ms)[39m[39m
+  [32m✔ init has --max-files option [90m(0.627375ms)[39m[39m
+  [32m✔ init has --create-index is implicit (always creates) [90m(0.097958ms)[39m[39m
+[32m✔ code-search command [90m(4.085292ms)[39m[39m
+▶ completions command
+  [32m✔ registers correctly on a program [90m(2.391542ms)[39m[39m
+  [32m✔ shows usage when called without shell argument [90m(0.797625ms)[39m[39m
+  [32m✔ outputs bash completion script [90m(0.2405ms)[39m[39m
+  [32m✔ outputs zsh completion script [90m(0.2825ms)[39m[39m
+  [32m✔ rejects unknown shell [90m(0.38875ms)[39m[39m
+[32m✔ completions command [90m(4.689875ms)[39m[39m
+▶ generateBashCompletions
+  [32m✔ includes all 21 commands (including app and completions) [90m(0.0915ms)[39m[39m
+  [32m✔ includes model completions [90m(0.043375ms)[39m[39m
+  [32m✔ includes flag completions for embed [90m(0.043708ms)[39m[39m
+  [32m✔ includes index subcommands [90m(0.035417ms)[39m[39m
+  [32m✔ includes config subcommands [90m(0.044916ms)[39m[39m
+  [32m✔ includes input-type values [90m(0.026875ms)[39m[39m
+[32m✔ generateBashCompletions [90m(0.4115ms)[39m[39m
+▶ generateZshCompletions
+  [32m✔ includes compdef header [90m(0.039458ms)[39m[39m
+  [32m✔ includes all commands with descriptions [90m(0.034833ms)[39m[39m
+  [32m✔ includes model names [90m(0.032959ms)[39m[39m
+  [32m✔ includes explain topics [90m(0.026334ms)[39m[39m
+  [32m✔ includes file completion for --file flags [90m(0.022958ms)[39m[39m
+[32m✔ generateZshCompletions [90m(0.214917ms)[39m[39m
+▶ config command
+  [32m✔ registers config command with subcommands [90m(1.063417ms)[39m[39m
+  [32m✔ config set/get/delete round-trip via lib functions [90m(0.121625ms)[39m[39m
+[32m✔ config command [90m(1.790541ms)[39m[39m
+▶ demo command
+  [32m✔ registers correctly on a program [90m(1.002792ms)[39m[39m
+  [32m✔ has --no-pause option [90m(0.116209ms)[39m[39m
+  [32m✔ has --skip-pipeline option [90m(0.085834ms)[39m[39m
+  [32m✔ has --keep option [90m(0.082416ms)[39m[39m
+  [32m✔ has correct description [90m(0.266458ms)[39m[39m
+[32m✔ demo command [90m(4.088834ms)[39m[39m
+▶ doctor command
+  [32m✔ registers correctly on a program [90m(0.921958ms)[39m[39m
+  [32m✔ has --json option [90m(0.108125ms)[39m[39m
+  [32m✔ has --verbose option [90m(0.725833ms)[39m[39m
+  [32m✔ has --fix option [90m(0.086042ms)[39m[39m
+  [32m✔ has description mentioning health checks [90m(0.066542ms)[39m[39m
+[32m✔ doctor command [90m(2.506042ms)[39m[39m
+▶ embed command
+  [32m✔ registers correctly on a program [90m(1.223375ms)[39m[39m
+  [32m✔ has --truncation flag [90m(0.178292ms)[39m[39m
+  [32m✔ has --input-type flag [90m(0.102208ms)[39m[39m
+  [32m✔ has --output-dtype flag with float default [90m(0.115875ms)[39m[39m
+[32m✔ embed command [90m(2.388625ms)[39m[39m
+▶ estimate command
+  [32m✔ registers correctly on a program [90m(1.059583ms)[39m[39m
+  [32m✔ has --docs option with default 100K [90m(0.641666ms)[39m[39m
+  [32m✔ has --queries option with default 1M [90m(0.093292ms)[39m[39m
+  [32m✔ has --doc-model option defaulting to voyage-4-large [90m(0.073083ms)[39m[39m
+  [32m✔ has --query-model option defaulting to voyage-4-lite [90m(0.082ms)[39m[39m
+  [32m✔ has --months option with default 12 [90m(0.077834ms)[39m[39m
+  [32m✔ has --json and --quiet options [90m(0.066666ms)[39m[39m
+  [32m✔ has --doc-tokens and --query-tokens options [90m(0.072458ms)[39m[39m
+  [32m✔ produces JSON output with --json flag [90m(45.665791ms)[39m[39m
+[32m✔ estimate command [90m(48.823334ms)[39m[39m
+▶ eval command
+  [32m✔ registers correctly on a program [90m(1.479042ms)[39m[39m
+  [32m✔ requires --test-set option [90m(0.169917ms)[39m[39m
+  [32m✔ has --mode option defaulting to retrieval [90m(0.163416ms)[39m[39m
+  [32m✔ has --db and --collection options [90m(0.106667ms)[39m[39m
+  [32m✔ has --rerank and --no-rerank flags [90m(0.114292ms)[39m[39m
+  [32m✔ has --k-values option defaulting to 1,3,5,10 [90m(0.092958ms)[39m[39m
+  [32m✔ has --model and --dimensions options [90m(0.108666ms)[39m[39m
+  [32m✔ has --models option for comparing multiple rerank models [90m(0.10125ms)[39m[39m
+  [32m✔ has --top-k option for reranker results [90m(0.111708ms)[39m[39m
+  [32m✔ has --limit defaulting to 20 [90m(0.135083ms)[39m[39m
+  [32m✔ has --text-field and --id-field options [90m(0.147ms)[39m[39m
+  [32m✔ has --compare option for A/B testing [90m(0.1085ms)[39m[39m
+  [32m✔ has --json and --quiet options [90m(0.796584ms)[39m[39m
+  [32m✔ has correct description mentioning MRR, NDCG, and reranking [90m(0.118583ms)[39m[39m
+[32m✔ eval command [90m(4.490292ms)[39m[39m
+▶ explain command
+  [32m✔ registers correctly on a program [90m(1.093584ms)[39m[39m
+  [32m✔ lists topics when no argument given [90m(36.760708ms)[39m[39m
+  [32m✔ shows content for a known concept [90m(1.78325ms)[39m[39m
+  [32m✔ resolves alias "embed" to embeddings [90m(1.061ms)[39m[39m
+  [32m✔ resolves alias "rerank" to reranking [90m(1.808292ms)[39m[39m
+  [32m✔ resolves alias "vectors" to vector-search [90m(0.693208ms)[39m[39m
+  [32m✔ resolves alias "similarity" to cosine-similarity [90m(0.412459ms)[39m[39m
+  [32m✔ resolves alias "two-stage" to two-stage-retrieval [90m(0.53425ms)[39m[39m
+  [32m✔ resolves alias "keys" to api-keys [90m(1.485416ms)[39m[39m
+  [32m✔ resolves alias "batch" to batch-processing [90m(1.468375ms)[39m[39m
+  [32m✔ shows error and suggestions for unknown concept [90m(1.02725ms)[39m[39m
+  [32m✔ outputs JSON for topic list with --json flag [90m(0.495625ms)[39m[39m
+  [32m✔ outputs JSON for a specific concept with --json flag [90m(0.407583ms)[39m[39m
+  [32m✔ has --json option [90m(0.079542ms)[39m[39m
+[32m✔ explain command [90m(50.095875ms)[39m[39m
+▶ generate command
+  [32m✔ registers correctly on a program [90m(1.150166ms)[39m[39m
+  [32m✔ has --target option [90m(1.547042ms)[39m[39m
+  [32m✔ has --list option [90m(0.129166ms)[39m[39m
+  [32m✔ has --model option [90m(0.0945ms)[39m[39m
+  [32m✔ has --json and --quiet options [90m(0.119333ms)[39m[39m
+  [32m✔ has correct description [90m(0.095416ms)[39m[39m
+[32m✔ generate command [90m(3.768125ms)[39m[39m
+▶ ingest
+  ▶ detectFormat
+    [32m✔ detects .csv extension [90m(3.220042ms)[39m[39m
+    [32m✔ detects .json extension [90m(0.325458ms)[39m[39m
+    [32m✔ detects .jsonl extension [90m(0.311667ms)[39m[39m
+    [32m✔ detects .ndjson extension [90m(0.264625ms)[39m[39m
+    [32m✔ detects JSONL from content when no recognized extension [90m(1.39825ms)[39m[39m
+    [32m✔ detects JSON array from content when no recognized extension [90m(1.135583ms)[39m[39m
+    [32m✔ defaults to text for plain content [90m(0.440625ms)[39m[39m
+  [32m✔ detectFormat [90m(7.783209ms)[39m[39m
+  ▶ parseFile — JSONL
+    [32m✔ parses JSONL documents with default text field [90m(0.356459ms)[39m[39m
+    [32m✔ throws on invalid JSON line [90m(0.461541ms)[39m[39m
+    [32m✔ throws when text field is missing [90m(0.345459ms)[39m[39m
+    [32m✔ uses custom text field via textField option [90m(0.324625ms)[39m[39m
+  [32m✔ parseFile — JSONL [90m(1.587792ms)[39m[39m
+  ▶ parseFile — JSON
+    [32m✔ parses JSON array from fixture [90m(0.169584ms)[39m[39m
+    [32m✔ throws on non-array JSON [90m(0.299583ms)[39m[39m
+  [32m✔ parseFile — JSON [90m(0.501709ms)[39m[39m
+  ▶ parseFile — CSV
+    [32m✔ parses CSV with header row [90m(0.211208ms)[39m[39m
+    [32m✔ throws when --text-column is not provided [90m(1.023167ms)[39m[39m
+    [32m✔ throws when column not found in headers [90m(1.11975ms)[39m[39m
+  [32m✔ parseFile — CSV [90m(2.409084ms)[39m[39m
+  ▶ parseFile — text
+    [32m✔ parses plain text — one doc per line [90m(0.22425ms)[39m[39m
+    [32m✔ skips empty lines [90m(0.34525ms)[39m[39m
+  [32m✔ parseFile — text [90m(0.61525ms)[39m[39m
+  ▶ parseCSVLine
+    [32m✔ handles simple fields [90m(0.784041ms)[39m[39m
+    [32m✔ handles quoted fields with commas [90m(0.095333ms)[39m[39m
+    [32m✔ handles escaped quotes [90m(0.085916ms)[39m[39m
+  [32m✔ parseCSVLine [90m(0.998709ms)[39m[39m
+  ▶ estimateTokens
+    [32m✔ estimates ~4 chars per token [90m(0.116291ms)[39m[39m
+    [32m✔ sums multiple texts [90m(0.089333ms)[39m[39m
+  [32m✔ estimateTokens [90m(0.229583ms)[39m[39m
+  ▶ batch splitting
+    [32m✔ batch-size controls number of batches [90m(0.132583ms)[39m[39m
+  [32m✔ batch splitting [90m(0.149875ms)[39m[39m
+  ▶ command registration
+    [32m✔ registers ingest command with required options [90m(3.585625ms)[39m[39m
+    [32m✔ --input-type defaults to document [90m(0.215792ms)[39m[39m
+  [32m✔ command registration [90m(3.851667ms)[39m[39m
+[32m✔ ingest [90m(18.6345ms)[39m[39m
+▶ init command
+  [32m✔ registers correctly on a program [90m(0.930375ms)[39m[39m
+  [32m✔ has --yes flag for non-interactive mode [90m(0.119042ms)[39m[39m
+  [32m✔ has --force flag to overwrite [90m(0.101375ms)[39m[39m
+  [32m✔ has --json and --quiet options [90m(0.077ms)[39m[39m
+  [32m✔ has correct description [90m(0.075041ms)[39m[39m
+[32m✔ init command [90m(1.92ms)[39m[39m
+▶ mcp-server command
+  [32m✔ registers correctly on a program [90m(1.462791ms)[39m[39m
+  [32m✔ has mcp alias [90m(0.917542ms)[39m[39m
+  [32m✔ has description mentioning MCP [90m(0.464083ms)[39m[39m
+  [32m✔ has --transport option with default stdio [90m(0.381667ms)[39m[39m
+  [32m✔ has --port option with default 3100 [90m(0.311708ms)[39m[39m
+  [32m✔ has --host option with default 127.0.0.1 [90m(0.24425ms)[39m[39m
+  [32m✔ has --db option [90m(0.349042ms)[39m[39m
+  [32m✔ has --collection option [90m(0.24725ms)[39m[39m
+  [32m✔ has --verbose option [90m(0.251125ms)[39m[39m
+  [32m✔ has generate-key subcommand [90m(0.348542ms)[39m[39m
+[32m✔ mcp-server command [90m(6.022709ms)[39m[39m
+▶ models command
+  [32m✔ registers correctly on a program [90m(4.565ms)[39m[39m
+  [32m✔ lists all models by default [90m(34.775833ms)[39m[39m
+  [32m✔ filters by embedding type [90m(0.953375ms)[39m[39m
+  [32m✔ filters by reranking type [90m(0.653291ms)[39m[39m
+  [32m✔ outputs JSON when --json flag is used [90m(1.547459ms)[39m[39m
+  [32m✔ hides legacy models by default [90m(1.763042ms)[39m[39m
+  [32m✔ shows legacy models when --all is used [90m(1.392916ms)[39m[39m
+  [32m✔ --all with --json shows legacy models in JSON [90m(1.833666ms)[39m[39m
+[32m✔ models command [90m(50.071209ms)[39m[39m
+- Testing Voyage AI connection...
+▶ ping command
+  [32m✔ registers correctly on a program [90m(1.0845ms)[39m[39m
+  [32m✔ prints success on valid API response [90m(66.809791ms)[39m[39m
+  [32m✔ exits with error on auth failure [90m(1.331666ms)[39m[39m
+  [32m✔ exits when VOYAGE_API_KEY is not set and no config [90m(0.565125ms)[39m[39m
+  [32m✔ outputs JSON when --json flag is used [90m(0.9255ms)[39m[39m
+[32m✔ ping command [90m(71.36ms)[39m[39m
+▶ pipeline command
+  [32m✔ registers correctly on a program [90m(1.354416ms)[39m[39m
+  [32m✔ requires input as an argument [90m(0.14575ms)[39m[39m
+  [32m✔ has --db and --collection options [90m(0.217666ms)[39m[39m
+  [32m✔ has chunking options (--strategy, --chunk-size, --overlap) [90m(0.152166ms)[39m[39m
+  [32m✔ has embedding options (--model, --dimensions) [90m(0.127542ms)[39m[39m
+  [32m✔ has --batch-size option defaulting to 25 [90m(0.10425ms)[39m[39m
+  [32m✔ has --create-index flag [90m(0.093ms)[39m[39m
+  [32m✔ has --dry-run flag [90m(0.086291ms)[39m[39m
+  [32m✔ has --field and --index options [90m(0.12275ms)[39m[39m
+  [32m✔ has --json and --quiet options [90m(0.135334ms)[39m[39m
+  [32m✔ has correct description [90m(0.087041ms)[39m[39m
+[32m✔ pipeline command [90m(3.384833ms)[39m[39m
+▶ playground command
+  [32m✔ registers correctly on a program [90m(1.249ms)[39m[39m
+  [32m✔ serves HTML on GET / [90m(16.309292ms)[39m[39m
+  [32m✔ returns JSON from GET /api/models [90m(0.884834ms)[39m[39m
+  [32m✔ returns config with hasKey boolean from GET /api/config [90m(0.641167ms)[39m[39m
+  [32m✔ returns 404 for unknown routes [90m(0.547583ms)[39m[39m
+  [32m✔ returns 400 for POST /api/embed with invalid body [90m(0.62225ms)[39m[39m
+[32m✔ playground command [90m(21.37975ms)[39m[39m
+▶ purge command
+  ▶ buildFilter
+    [32m✔ returns empty filter when no criteria provided [90m(1.047417ms)[39m[39m
+    [32m✔ builds source pattern filter with glob conversion [90m(0.101375ms)[39m[39m
+    [32m✔ builds before date filter [90m(0.6685ms)[39m[39m
+    [32m✔ throws on invalid date format [90m(0.207917ms)[39m[39m
+    [32m✔ builds model filter [90m(0.063416ms)[39m[39m
+    [32m✔ parses raw JSON filter [90m(0.052583ms)[39m[39m
+    [32m✔ throws on invalid JSON filter [90m(0.066083ms)[39m[39m
+    [32m✔ combines multiple criteria with $and [90m(0.079208ms)[39m[39m
+  [32m✔ buildFilter [90m(2.683708ms)[39m[39m
+[32m✔ purge command [90m(3.011583ms)[39m[39m
+▶ query command
+  [32m✔ registers correctly on a program [90m(1.269625ms)[39m[39m
+  [32m✔ requires text as an argument [90m(0.159917ms)[39m[39m
+  [32m✔ has --db and --collection options [90m(0.116625ms)[39m[39m
+  [32m✔ has --rerank flag (default enabled) [90m(0.092833ms)[39m[39m
+  [32m✔ has --rerank-model option [90m(0.09475ms)[39m[39m
+  [32m✔ has --limit defaulting to 20 and --top-k defaulting to 5 [90m(0.104833ms)[39m[39m
+  [32m✔ has --model option for embedding [90m(0.075792ms)[39m[39m
+  [32m✔ has --filter option for pre-filtering [90m(0.096375ms)[39m[39m
+  [32m✔ has --text-field option defaulting to text [90m(0.114375ms)[39m[39m
+  [32m✔ has --json and --quiet options [90m(0.14575ms)[39m[39m
+  [32m✔ has correct description mentioning two-stage [90m(0.079ms)[39m[39m
+[32m✔ query command [90m(3.053375ms)[39m[39m
+▶ quickstart command
+  [32m✔ registers correctly on a program [90m(0.811459ms)[39m[39m
+  [32m✔ has --skip option [90m(0.145333ms)[39m[39m
+  [32m✔ has description mentioning tutorial [90m(0.059792ms)[39m[39m
+[32m✔ quickstart command [90m(1.584417ms)[39m[39m
+{"error":"connect is not a function"}
+▶ refresh command
+  [32m✔ exports refresh function [90m(0.401584ms)[39m[39m
+  [32m✔ returns error when no documents found (mocked scenario) [90m(12.283708ms)[39m[39m
+[32m✔ refresh command [90m(13.297584ms)[39m[39m
+▶ rerank command
+  [32m✔ registers correctly on a program [90m(1.748458ms)[39m[39m
+  [32m✔ has --truncation flag [90m(0.156958ms)[39m[39m
+  [32m✔ has --return-documents flag [90m(0.089333ms)[39m[39m
+[32m✔ rerank command [90m(2.581417ms)[39m[39m
+▶ scaffold command
+  [32m✔ registers correctly on a program [90m(1.682583ms)[39m[39m
+  [32m✔ has --target option [90m(0.169084ms)[39m[39m
+  [32m✔ has --force option [90m(0.088542ms)[39m[39m
+  [32m✔ has --dry-run option [90m(0.097125ms)[39m[39m
+  [32m✔ has --json and --quiet options [90m(0.122083ms)[39m[39m
+  [32m✔ has correct description [90m(0.177541ms)[39m[39m
+[32m✔ scaffold command [90m(2.990542ms)[39m[39m
+▶ PROJECT_STRUCTURE
+  [32m✔ has vanilla target [90m(0.107834ms)[39m[39m
+  [32m✔ has nextjs target [90m(0.071ms)[39m[39m
+  [32m✔ has python target [90m(0.057333ms)[39m[39m
+  [32m✔ all targets have description, postInstall, and startCommand [90m(0.096083ms)[39m[39m
+[32m✔ PROJECT_STRUCTURE [90m(0.437084ms)[39m[39m
+▶ search command
+  [32m✔ registers correctly on a program [90m(1.780167ms)[39m[39m
+  [32m✔ has description mentioning vector search [90m(0.146209ms)[39m[39m
+  [32m✔ has --index option with default vector_index [90m(0.104959ms)[39m[39m
+  [32m✔ has --field option with default embedding [90m(0.095167ms)[39m[39m
+  [32m✔ has --model option [90m(0.117042ms)[39m[39m
+  [32m✔ has --input-type with default query [90m(0.090083ms)[39m[39m
+  [32m✔ has --limit with default 10 [90m(0.090875ms)[39m[39m
+  [32m✔ has --min-score option [90m(0.086875ms)[39m[39m
+  [32m✔ has --num-candidates option [90m(0.115542ms)[39m[39m
+  [32m✔ has --dimensions option [90m(0.129833ms)[39m[39m
+[32m✔ search command [90m(3.439959ms)[39m[39m
+▶ similarity command
+  [32m✔ registers correctly on a program [90m(1.634792ms)[39m[39m
+  [32m✔ requires at least two inputs [90m(29.490292ms)[39m[39m
+  [32m✔ accepts --against flag with multiple values [90m(0.242375ms)[39m[39m
+  [32m✔ accepts --json flag [90m(0.172ms)[39m[39m
+  [32m✔ cosineSimilarity integration — identical texts would score 1.0 [90m(0.156916ms)[39m[39m
+[32m✔ similarity command [90m(32.336083ms)[39m[39m
+▶ store command
+  [32m✔ registers correctly on a program [90m(1.663208ms)[39m[39m
+  [32m✔ has --input-type flag defaulting to document [90m(0.172292ms)[39m[39m
+[32m✔ store command [90m(2.400916ms)[39m[39m
+▶ collectInputs
+  [32m✔ parses a single key=value pair [90m(1.044875ms)[39m[39m
+  [32m✔ accumulates multiple pairs [90m(0.061166ms)[39m[39m
+  [32m✔ handles values containing = [90m(0.049084ms)[39m[39m
+  [32m✔ trims keys and values [90m(0.045084ms)[39m[39m
+  [32m✔ throws on missing = [90m(0.159375ms)[39m[39m
+[32m✔ collectInputs [90m(1.972333ms)[39m[39m
+▶ registerWorkflow
+  [32m✔ registers the workflow command with subcommands [90m(4.952875ms)[39m[39m
+  [32m✔ run command has correct options [90m(0.408667ms)[39m[39m
+[32m✔ registerWorkflow [90m(5.469292ms)[39m[39m
+API Error (400): Bad request
+Rate limited (429). Retrying in 0s... (attempt 1/3)
+▶ api
+  ▶ requireApiKey
+    [32m✔ throws/exits when VOYAGE_API_KEY is not set [90m(1.467584ms)[39m[39m
+    [32m✔ returns key when VOYAGE_API_KEY is set [90m(0.358958ms)[39m[39m
+  [32m✔ requireApiKey [90m(2.164083ms)[39m[39m
+  ▶ apiRequest
+    [32m✔ returns parsed JSON on success [90m(1.143084ms)[39m[39m
+    [32m✔ throws on non-200 response [90m(1.175834ms)[39m[39m
+    [32m✔ retries on 429 [90m(2.223542ms)[39m[39m
+  [32m✔ apiRequest [90m(4.678541ms)[39m[39m
+[32m✔ api [90m(7.18925ms)[39m[39m
+▶ banner
+  [32m✔ getVersion returns a semver string [90m(0.69475ms)[39m[39m
+  [32m✔ showBanner prints box with vai and Voyage AI CLI [90m(0.198416ms)[39m[39m
+  [32m✔ showQuickStart prints quick start commands [90m(0.140667ms)[39m[39m
+[32m✔ banner [90m(1.639833ms)[39m[39m
+▶ generateCapabilityReport
+  [32m✔ generates a report with workflow name [90m(0.923167ms)[39m[39m
+  [32m✔ lists capabilities from the definition [90m(0.064ms)[39m[39m
+  [32m✔ shows no capabilities when none detected [90m(0.055208ms)[39m[39m
+  [32m✔ formats security findings table [90m(0.092459ms)[39m[39m
+  [32m✔ shows green check when no security issues [90m(0.052708ms)[39m[39m
+  [32m✔ formats quality issues [90m(0.070792ms)[39m[39m
+  [32m✔ formats test results [90m(0.054917ms)[39m[39m
+  [32m✔ shows skip message when no test results [90m(0.05625ms)[39m[39m
+  [32m✔ shows all-passed summary when clean [90m(0.073625ms)[39m[39m
+  [32m✔ shows issues summary when problems exist [90m(0.0915ms)[39m[39m
+  [32m✔ handles null/undefined definition gracefully [90m(0.047ms)[39m[39m
+[32m✔ generateCapabilityReport [90m(2.249375ms)[39m[39m
+▶ catalog
+  [32m✔ MODEL_CATALOG is a non-empty array [90m(0.510667ms)[39m[39m
+  [32m✔ contains expected models [90m(0.064667ms)[39m[39m
+  [32m✔ DEFAULT_EMBED_MODEL is a valid embedding model [90m(0.070292ms)[39m[39m
+  [32m✔ DEFAULT_RERANK_MODEL is a valid reranking model [90m(0.085083ms)[39m[39m
+  [32m✔ DEFAULT_DIMENSIONS is 1024 [90m(0.037ms)[39m[39m
+  [32m✔ all models have required fields [90m(0.077916ms)[39m[39m
+  [32m✔ has both embedding and reranking types [90m(0.05725ms)[39m[39m
+  [32m✔ embedding models outnumber reranking models [90m(0.063875ms)[39m[39m
+  [32m✔ contains voyage-4-nano as current model [90m(0.060459ms)[39m[39m
+  [32m✔ contains legacy models with legacy flag [90m(0.1255ms)[39m[39m
+  [32m✔ legacy models have required fields [90m(0.066583ms)[39m[39m
+  [32m✔ voyage-4 family models have architecture and sharedSpace fields [90m(0.114833ms)[39m[39m
+  [32m✔ voyage-4-large has MoE architecture [90m(0.645333ms)[39m[39m
+  [32m✔ voyage-4-nano has huggingface URL and is unreleased [90m(0.067042ms)[39m[39m
+  [32m✔ embedding models have pricePerMToken for cost estimation [90m(0.072375ms)[39m[39m
+  [32m✔ BENCHMARK_SCORES contains Voyage and competitor models [90m(0.053541ms)[39m[39m
+  [32m✔ voyage-4-large has highest RTEB score [90m(0.042416ms)[39m[39m
+  [32m✔ getSharedSpaceModels returns correct models [90m(0.05075ms)[39m[39m
+[32m✔ catalog [90m(3.103084ms)[39m[39m
+▶ chat agent module
+  [32m✔ exports agentChatTurn function [90m(0.444ms)[39m[39m
+  [32m✔ exports retrieve function (unchanged) [90m(0.047375ms)[39m[39m
+  [32m✔ exports chatTurn function (unchanged) [90m(0.043584ms)[39m[39m
+  [32m✔ agentChatTurn is an async generator function [90m(0.039041ms)[39m[39m
+  [32m✔ chatTurn is an async generator function [90m(0.047666ms)[39m[39m
+[32m✔ chat agent module [90m(1.208333ms)[39m[39m
+▶ agentChatTurn behavior (mock)
+  [32m✔ yields tool_call events for each tool invocation [90m(0.10075ms)[39m[39m
+  [32m✔ done event includes metadata with agent mode info [90m(0.056ms)[39m[39m
+  [32m✔ tool_call event includes timing [90m(0.075417ms)[39m[39m
+  [32m✔ tool_call event captures errors [90m(0.052333ms)[39m[39m
+[32m✔ agentChatTurn behavior (mock) [90m(0.387ms)[39m[39m
+▶ agentChatTurn defaults injection logic
+  [32m✔ injects default db when not in args [90m(0.091667ms)[39m[39m
+  [32m✔ does not override explicit db/collection in args [90m(0.037958ms)[39m[39m
+  [32m✔ handles missing opts.db gracefully [90m(0.039125ms)[39m[39m
+[32m✔ agentChatTurn defaults injection logic [90m(0.221667ms)[39m[39m
+▶ chat module
+  [32m✔ exports retrieve function [90m(0.39125ms)[39m[39m
+  [32m✔ exports chatTurn function [90m(0.046083ms)[39m[39m
+[32m✔ chat module [90m(1.003792ms)[39m[39m
+▶ resolveSourceLabel (via module source)
+  [32m✔ uses metadata.title when available [90m(0.130875ms)[39m[39m
+  [32m✔ appends year to title when available [90m(0.041625ms)[39m[39m
+  [32m✔ prefers title over name [90m(0.041875ms)[39m[39m
+  [32m✔ falls back to name when no title [90m(0.036875ms)[39m[39m
+  [32m✔ falls back to doc.source [90m(0.047541ms)[39m[39m
+  [32m✔ falls back to metadata.source [90m(0.053791ms)[39m[39m
+  [32m✔ falls back to _id.toString() [90m(0.050375ms)[39m[39m
+  [32m✔ returns unknown when nothing available [90m(0.404958ms)[39m[39m
+  [32m✔ handles missing metadata gracefully [90m(0.046958ms)[39m[39m
+[32m✔ resolveSourceLabel (via module source) [90m(1.008333ms)[39m[39m
+▶ chunker
+  ▶ STRATEGIES
+    [32m✔ has all expected strategies [90m(0.93ms)[39m[39m
+  [32m✔ STRATEGIES [90m(1.214958ms)[39m[39m
+  ▶ DEFAULTS
+    [32m✔ has expected default values [90m(0.074708ms)[39m[39m
+  [32m✔ DEFAULTS [90m(0.119125ms)[39m[39m
+  ▶ chunk — fixed strategy
+    [32m✔ splits text into fixed-size chunks [90m(0.143584ms)[39m[39m
+    [32m✔ respects overlap [90m(0.050291ms)[39m[39m
+    [32m✔ returns empty array for empty text [90m(0.054167ms)[39m[39m
+    [32m✔ drops chunks below minSize [90m(0.053875ms)[39m[39m
+  [32m✔ chunk — fixed strategy [90m(0.898667ms)[39m[39m
+  ▶ chunk — sentence strategy
+    [32m✔ groups sentences under size limit [90m(0.194292ms)[39m[39m
+    [32m✔ keeps short text as single chunk [90m(0.06325ms)[39m[39m
+  [32m✔ chunk — sentence strategy [90m(0.326583ms)[39m[39m
+  ▶ chunk — paragraph strategy
+    [32m✔ splits on double newlines [90m(0.123791ms)[39m[39m
+    [32m✔ groups small paragraphs [90m(0.077708ms)[39m[39m
+  [32m✔ chunk — paragraph strategy [90m(0.237625ms)[39m[39m
+  ▶ chunk — recursive strategy
+    [32m✔ produces chunks under the size limit [90m(0.150292ms)[39m[39m
+    [32m✔ preserves paragraph boundaries when possible [90m(0.164792ms)[39m[39m
+    [32m✔ handles text with no natural separators [90m(0.07325ms)[39m[39m
+    [32m✔ returns single chunk for small text [90m(0.051833ms)[39m[39m
+  [32m✔ chunk — recursive strategy [90m(0.504458ms)[39m[39m
+  ▶ chunk — markdown strategy
+    [32m✔ splits on headings [90m(0.266166ms)[39m[39m
+    [32m✔ preserves heading in chunk [90m(0.042792ms)[39m[39m
+    [32m✔ splits large sections recursively [90m(0.208458ms)[39m[39m
+    [32m✔ handles multiple heading levels [90m(0.1005ms)[39m[39m
+  [32m✔ chunk — markdown strategy [90m(0.726667ms)[39m[39m
+  ▶ splitSentences
+    [32m✔ splits on sentence-ending punctuation [90m(0.060041ms)[39m[39m
+    [32m✔ handles single sentence [90m(0.035625ms)[39m[39m
+    [32m✔ handles empty string [90m(0.026708ms)[39m[39m
+  [32m✔ splitSentences [90m(0.161917ms)[39m[39m
+  ▶ estimateTokens
+    [32m✔ estimates ~4 chars per token [90m(0.04425ms)[39m[39m
+    [32m✔ rounds up [90m(0.021708ms)[39m[39m
+    [32m✔ returns 0 for empty string [90m(0.019583ms)[39m[39m
+  [32m✔ estimateTokens [90m(0.117292ms)[39m[39m
+  ▶ chunk — error handling
+    [32m✔ throws on unknown strategy [90m(0.195ms)[39m[39m
+  [32m✔ chunk — error handling [90m(0.222458ms)[39m[39m
+[32m✔ chunker [90m(5.107792ms)[39m[39m
+▶ code-search shared lib
+  ▶ getBoundaryPattern
+    [32m✔ returns pattern for .js [90m(0.460208ms)[39m[39m
+    [32m✔ maps .jsx to js pattern [90m(0.056917ms)[39m[39m
+    [32m✔ maps .tsx to ts pattern [90m(0.040584ms)[39m[39m
+    [32m✔ returns null for unknown extension [90m(0.042208ms)[39m[39m
+  [32m✔ getBoundaryPattern [90m(0.943083ms)[39m[39m
+  ▶ smartChunkCode
+    [32m✔ chunks JS code by function boundaries [90m(0.665875ms)[39m[39m
+    [32m✔ falls back to character chunking for unknown extensions [90m(0.15ms)[39m[39m
+    [32m✔ includes preamble before first boundary [90m(0.066959ms)[39m[39m
+    [32m✔ tracks line numbers [90m(0.066167ms)[39m[39m
+  [32m✔ smartChunkCode [90m(1.525ms)[39m[39m
+  ▶ extractSymbols
+    [32m✔ extracts JS function names [90m(0.291375ms)[39m[39m
+    [32m✔ extracts Python function and class names [90m(0.118958ms)[39m[39m
+    [32m✔ limits to 50 symbols [90m(0.073584ms)[39m[39m
+  [32m✔ extractSymbols [90m(0.544459ms)[39m[39m
+  ▶ shouldIgnore
+    [32m✔ ignores node_modules [90m(0.070959ms)[39m[39m
+    [32m✔ ignores wildcard patterns [90m(0.030375ms)[39m[39m
+    [32m✔ does not ignore valid files [90m(0.040666ms)[39m[39m
+  [32m✔ shouldIgnore [90m(0.205333ms)[39m[39m
+  ▶ selectCodeModel
+    [32m✔ returns voyage-code-3 for mostly code files [90m(0.086375ms)[39m[39m
+    [32m✔ returns voyage-4-large for mostly doc files [90m(0.032375ms)[39m[39m
+    [32m✔ returns voyage-code-3 for mixed files [90m(0.030042ms)[39m[39m
+    [32m✔ uses project config override [90m(0.02425ms)[39m[39m
+    [32m✔ returns default for empty file list [90m(0.021ms)[39m[39m
+  [32m✔ selectCodeModel [90m(0.24925ms)[39m[39m
+  ▶ deriveCollectionName
+    [32m✔ derives from directory name [90m(0.121708ms)[39m[39m
+  [32m✔ deriveCollectionName [90m(0.14075ms)[39m[39m
+  ▶ constants
+    [32m✔ CODE_EXTENSIONS includes common languages [90m(0.043041ms)[39m[39m
+    [32m✔ DEFAULT_IGNORE includes node_modules [90m(0.024041ms)[39m[39m
+  [32m✔ constants [90m(0.09025ms)[39m[39m
+[32m✔ code-search shared lib [90m(4.175792ms)[39m[39m
+▶ codegen
+  ▶ getPath
+    [32m✔ returns top-level property [90m(0.592375ms)[39m[39m
+    [32m✔ returns nested property [90m(0.069583ms)[39m[39m
+    [32m✔ returns undefined for missing path [90m(0.058167ms)[39m[39m
+    [32m✔ returns undefined for null object [90m(0.051708ms)[39m[39m
+    [32m✔ returns undefined for empty path [90m(0.04825ms)[39m[39m
+    [32m✔ handles intermediate null gracefully [90m(0.035875ms)[39m[39m
+  [32m✔ getPath [90m(1.259083ms)[39m[39m
+  ▶ isTruthy
+    [32m✔ empty array is falsy [90m(0.80075ms)[39m[39m
+    [32m✔ non-empty array is truthy [90m(0.086042ms)[39m[39m
+    [32m✔ empty string is falsy [90m(0.063458ms)[39m[39m
+    [32m✔ non-empty string is truthy [90m(0.077708ms)[39m[39m
+    [32m✔ zero is falsy [90m(0.038958ms)[39m[39m
+    [32m✔ null is falsy [90m(0.038292ms)[39m[39m
+    [32m✔ undefined is falsy [90m(0.030042ms)[39m[39m
+    [32m✔ object is truthy [90m(0.030625ms)[39m[39m
+    [32m✔ true is truthy [90m(0.021791ms)[39m[39m
+  [32m✔ isTruthy [90m(1.402584ms)[39m[39m
+  ▶ render
+    [32m✔ substitutes simple variables [90m(0.355ms)[39m[39m
+    [32m✔ substitutes nested variables [90m(0.105708ms)[39m[39m
+    [32m✔ replaces missing variables with empty string [90m(0.02875ms)[39m[39m
+    [32m✔ replaces null variables with empty string [90m(0.027667ms)[39m[39m
+    [32m✔ stringifies object variables as JSON [90m(0.038208ms)[39m[39m
+    [32m✔ handles multiple variables [90m(0.036625ms)[39m[39m
+    [32m✔ processes #if blocks — truthy [90m(0.038083ms)[39m[39m
+    [32m✔ processes #if blocks — falsy [90m(0.027458ms)[39m[39m
+    [32m✔ processes #if/else blocks [90m(0.027125ms)[39m[39m
+    [32m✔ processes #unless blocks — falsy shows content [90m(0.0305ms)[39m[39m
+    [32m✔ processes #unless blocks — truthy hides content [90m(0.02225ms)[39m[39m
+    [32m✔ processes #each blocks [90m(0.053709ms)[39m[39m
+    [32m✔ provides @index in #each [90m(0.027542ms)[39m[39m
+    [32m✔ provides @first and @last in #each [90m(0.033292ms)[39m[39m
+    [32m✔ spreads object items in #each [90m(0.035625ms)[39m[39m
+    [32m✔ handles empty #each array [90m(0.02425ms)[39m[39m
+    [32m✔ handles nested #if inside #each [90m(0.032084ms)[39m[39m
+  [32m✔ render [90m(1.075083ms)[39m[39m
+  ▶ listTargets
+    [32m✔ returns an array of target names [90m(0.313083ms)[39m[39m
+  [32m✔ listTargets [90m(0.337ms)[39m[39m
+  ▶ listTemplates
+    [32m✔ returns templates for vanilla target [90m(0.123667ms)[39m[39m
+    [32m✔ returns empty array for unknown target [90m(0.606625ms)[39m[39m
+  [32m✔ listTemplates [90m(0.757ms)[39m[39m
+  ▶ buildContext
+    [32m✔ returns defaults when no project or options [90m(1.178625ms)[39m[39m
+    [32m✔ project config overrides defaults [90m(0.078959ms)[39m[39m
+    [32m✔ CLI options override project config [90m(0.053875ms)[39m[39m
+    [32m✔ includes chunk config from project [90m(0.044208ms)[39m[39m
+  [32m✔ buildContext [90m(1.414875ms)[39m[39m
+[32m✔ codegen [90m(6.737333ms)[39m[39m
+▶ config lib
+  ▶ loadConfig
+    [32m✔ returns {} when config file does not exist [90m(1.5875ms)[39m[39m
+    [32m✔ returns parsed config when file exists [90m(0.904917ms)[39m[39m
+  [32m✔ loadConfig [90m(2.833625ms)[39m[39m
+  ▶ saveConfig
+    [32m✔ creates directory and file [90m(0.774084ms)[39m[39m
+    [32m✔ sets file permissions to 600 [90m(0.511042ms)[39m[39m
+  [32m✔ saveConfig [90m(1.378625ms)[39m[39m
+  ▶ setConfigValue / getConfigValue
+    [32m✔ round-trips a value [90m(0.538333ms)[39m[39m
+    [32m✔ returns undefined for missing key [90m(0.199ms)[39m[39m
+    [32m✔ handles multiple values [90m(0.424667ms)[39m[39m
+    [32m✔ overwrites existing value [90m(0.554ms)[39m[39m
+  [32m✔ setConfigValue / getConfigValue [90m(2.218833ms)[39m[39m
+  ▶ deleteConfigValue
+    [32m✔ removes a key [90m(0.4375ms)[39m[39m
+    [32m✔ does not affect other keys [90m(0.483541ms)[39m[39m
+  [32m✔ deleteConfigValue [90m(0.958541ms)[39m[39m
+  ▶ maskSecret
+    [32m✔ masks long strings: first 4 + ... + last 4 [90m(0.182166ms)[39m[39m
+    [32m✔ masks strings of exactly 10 chars [90m(0.156791ms)[39m[39m
+    [32m✔ returns **** for strings shorter than 10 chars [90m(0.17175ms)[39m[39m
+    [32m✔ returns **** for empty string [90m(0.161375ms)[39m[39m
+    [32m✔ converts non-string values to string [90m(0.147125ms)[39m[39m
+  [32m✔ maskSecret [90m(0.864833ms)[39m[39m
+[32m✔ config lib [90m(8.738125ms)[39m[39m
+▶ cost estimation
+  ▶ estimateTokens
+    [32m✔ estimates ~4 chars per token [90m(0.55075ms)[39m[39m
+    [32m✔ handles empty input [90m(0.07975ms)[39m[39m
+  [32m✔ estimateTokens [90m(0.979791ms)[39m[39m
+  ▶ estimateTokensForTexts
+    [32m✔ sums tokens across texts [90m(0.145833ms)[39m[39m
+  [32m✔ estimateTokensForTexts [90m(0.210041ms)[39m[39m
+  ▶ getModelPrice
+    [32m✔ returns price for known model [90m(0.106167ms)[39m[39m
+    [32m✔ returns null for unknown model [90m(0.091083ms)[39m[39m
+  [32m✔ getModelPrice [90m(0.37825ms)[39m[39m
+  ▶ estimateCost
+    [32m✔ calculates cost for known model [90m(0.097542ms)[39m[39m
+    [32m✔ returns null cost for unknown model [90m(0.097041ms)[39m[39m
+  [32m✔ estimateCost [90m(0.676375ms)[39m[39m
+  ▶ estimateLLMCost
+    [32m✔ calculates anthropic cost [90m(0.11175ms)[39m[39m
+    [32m✔ returns 0 for ollama [90m(0.0445ms)[39m[39m
+    [32m✔ returns null for unknown provider/model [90m(0.058209ms)[39m[39m
+  [32m✔ estimateLLMCost [90m(0.262042ms)[39m[39m
+  ▶ estimateChatCost
+    [32m✔ returns complete breakdown [90m(0.116791ms)[39m[39m
+    [32m✔ works without reranking [90m(0.041334ms)[39m[39m
+  [32m✔ estimateChatCost [90m(0.201334ms)[39m[39m
+  ▶ estimateCostComparison
+    [32m✔ returns multiple models for embedding type [90m(0.143625ms)[39m[39m
+    [32m✔ compares only same-type models [90m(0.03625ms)[39m[39m
+    [32m✔ sorts by price descending [90m(0.038791ms)[39m[39m
+  [32m✔ estimateCostComparison [90m(0.248458ms)[39m[39m
+  ▶ formatCostEstimate
+    [32m✔ produces clean comparison for known models [90m(9.740959ms)[39m[39m
+  [32m✔ formatCostEstimate [90m(9.782333ms)[39m[39m
+  ▶ formatChatCostBreakdown
+    [32m✔ produces formatted string with all stages [90m(0.179583ms)[39m[39m
+  [32m✔ formatChatCostBreakdown [90m(0.227625ms)[39m[39m
+[32m✔ cost estimation [90m(13.533917ms)[39m[39m
+▶ explanations
+  [32m✔ has all expected concepts [90m(0.482292ms)[39m[39m
+  [31m✖ listConcepts returns all concept keys [90m(0.61275ms)[39m[39m
+  [32m✔ all concepts have required fields: title, summary, content, links, tryIt [90m(0.101792ms)[39m[39m
+  [32m✔ all concepts have substantial content (at least 200 chars) [90m(0.145958ms)[39m[39m
+  [32m✔ getConcept returns concept for valid key [90m(0.04725ms)[39m[39m
+  [32m✔ getConcept returns null for invalid key [90m(0.039917ms)[39m[39m
+  ▶ alias resolution
+    [32m✔ alias map covers expected aliases [90m(0.498333ms)[39m[39m
+    [32m✔ resolveConcept resolves direct keys [90m(0.080583ms)[39m[39m
+    [32m✔ resolveConcept resolves aliases [90m(0.079708ms)[39m[39m
+    [32m✔ resolveConcept is case-insensitive [90m(0.071458ms)[39m[39m
+    [32m✔ resolveConcept returns null for unknown input [90m(0.047042ms)[39m[39m
+    [32m✔ resolveConcept returns null for empty/null input [90m(0.030542ms)[39m[39m
+  [32m✔ alias resolution [90m(0.930708ms)[39m[39m
+[31m✖ explanations [90m(3.015458ms)[39m[39m
+▶ formatTable
+  [32m✔ formats a simple table [90m(0.507042ms)[39m[39m
+  [32m✔ handles empty rows [90m(0.067958ms)[39m[39m
+  [32m✔ handles varying column widths [90m(0.058292ms)[39m[39m
+  [32m✔ uses correct separator character [90m(0.052708ms)[39m[39m
+  [32m✔ uses │ as column separator in data lines [90m(0.051458ms)[39m[39m
+  [32m✔ pads cells correctly [90m(0.044375ms)[39m[39m
+[32m✔ formatTable [90m(1.416625ms)[39m[39m
+▶ GitHub URL parsing
+  ▶ isGitHubUrl
+    [32m✔ detects full HTTPS URL [90m(0.480416ms)[39m[39m
+    [32m✔ detects without protocol [90m(0.049667ms)[39m[39m
+    [32m✔ detects owner/repo shorthand [90m(0.060916ms)[39m[39m
+    [32m✔ rejects local paths [90m(0.073041ms)[39m[39m
+    [32m✔ rejects relative paths with multiple segments [90m(0.053834ms)[39m[39m
+    [32m✔ rejects null/undefined [90m(0.0415ms)[39m[39m
+  [32m✔ isGitHubUrl [90m(1.112708ms)[39m[39m
+  ▶ parseGitHubUrl
+    [32m✔ parses full HTTPS URL [90m(0.75225ms)[39m[39m
+    [32m✔ parses URL without protocol [90m(0.095834ms)[39m[39m
+    [32m✔ parses owner/repo shorthand [90m(0.077416ms)[39m[39m
+    [32m✔ strips trailing .git [90m(0.066458ms)[39m[39m
+    [32m✔ throws on invalid input [90m(0.126334ms)[39m[39m
+    [32m✔ throws on empty input [90m(0.045042ms)[39m[39m
+  [32m✔ parseGitHubUrl [90m(1.297167ms)[39m[39m
+[32m✔ GitHub URL parsing [90m(2.78375ms)[39m[39m
+▶ history
+  ▶ generateSessionId
+    [32m✔ returns a UUID string [90m(0.687208ms)[39m[39m
+    [32m✔ generates unique IDs [90m(0.068834ms)[39m[39m
+  [32m✔ generateSessionId [90m(1.068792ms)[39m[39m
+  ▶ ChatHistory
+    [32m✔ initializes with default values [90m(0.683334ms)[39m[39m
+    [32m✔ accepts custom session ID [90m(0.569292ms)[39m[39m
+    [32m✔ adds turns [90m(1.121291ms)[39m[39m
+    [32m✔ trims to maxTurns [90m(0.247375ms)[39m[39m
+    [32m✔ getMessages returns role+content only [90m(0.336083ms)[39m[39m
+    [32m✔ getLastSources returns sources from last assistant turn [90m(0.2375ms)[39m[39m
+    [32m✔ getLastSources returns null when no context [90m(0.115416ms)[39m[39m
+    [32m✔ clear empties turns [90m(0.191625ms)[39m[39m
+    [32m✔ exportMarkdown produces valid markdown [90m(0.457208ms)[39m[39m
+    [32m✔ getMessagesWithBudget trims old turns [90m(0.39275ms)[39m[39m
+    [32m✔ getMessagesWithBudget returns all if within budget [90m(0.1165ms)[39m[39m
+    [32m✔ exportJSON includes all data [90m(0.127208ms)[39m[39m
+  [32m✔ ChatHistory [90m(5.103542ms)[39m[39m
+[32m✔ history [90m(6.561375ms)[39m[39m
+▶ resolveTextInput
+  [32m✔ returns direct text argument as array [90m(1.158666ms)[39m[39m
+  [32m✔ reads from file path [90m(0.652375ms)[39m[39m
+  [32m✔ trims file content [90m(0.205458ms)[39m[39m
+  [32m✔ prefers file over text argument [90m(0.178917ms)[39m[39m
+[32m✔ resolveTextInput [90m(3.03475ms)[39m[39m
+▶ llm tool-calling support
+  ▶ supportsTools property
+    [32m✔ anthropic supports tools [90m(0.508833ms)[39m[39m
+    [32m✔ openai supports tools [90m(0.086ms)[39m[39m
+    [32m✔ ollama supports tools [90m(0.075042ms)[39m[39m
+  [32m✔ supportsTools property [90m(0.972625ms)[39m[39m
+  ▶ chatWithTools method
+    [32m✔ anthropic has chatWithTools [90m(0.094458ms)[39m[39m
+    [32m✔ openai has chatWithTools [90m(0.062166ms)[39m[39m
+    [32m✔ ollama has chatWithTools [90m(0.114917ms)[39m[39m
+  [32m✔ chatWithTools method [90m(1.118375ms)[39m[39m
+  ▶ formatAssistantToolCall method
+    [32m✔ anthropic has formatAssistantToolCall [90m(0.104333ms)[39m[39m
+    [32m✔ openai has formatAssistantToolCall [90m(0.0725ms)[39m[39m
+    [32m✔ ollama has formatAssistantToolCall [90m(0.078334ms)[39m[39m
+  [32m✔ formatAssistantToolCall method [90m(0.361ms)[39m[39m
+  ▶ formatToolResult method
+    [32m✔ anthropic has formatToolResult [90m(0.1035ms)[39m[39m
+    [32m✔ openai has formatToolResult [90m(0.070417ms)[39m[39m
+    [32m✔ ollama has formatToolResult [90m(0.075875ms)[39m[39m
+  [32m✔ formatToolResult method [90m(0.306375ms)[39m[39m
+  ▶ Anthropic message formatting
+    [32m✔ formatAssistantToolCall passes _raw through as content [90m(0.561542ms)[39m[39m
+    [32m✔ formatAssistantToolCall builds tool_use blocks when no _raw [90m(0.264833ms)[39m[39m
+    [32m✔ formatToolResult creates user message with tool_result [90m(0.043584ms)[39m[39m
+    [32m✔ formatToolResult marks errors [90m(0.025959ms)[39m[39m
+  [32m✔ Anthropic message formatting [90m(0.945875ms)[39m[39m
+  ▶ OpenAI message formatting
+    [32m✔ formatAssistantToolCall wraps tool_calls in assistant role [90m(0.087875ms)[39m[39m
+    [32m✔ formatToolResult creates tool role message [90m(0.028625ms)[39m[39m
+  [32m✔ OpenAI message formatting [90m(0.143333ms)[39m[39m
+  ▶ Ollama message formatting
+    [32m✔ formatAssistantToolCall matches OpenAI format [90m(0.046833ms)[39m[39m
+    [32m✔ formatToolResult matches OpenAI format [90m(0.023625ms)[39m[39m
+  [32m✔ Ollama message formatting [90m(0.095917ms)[39m[39m
+[32m✔ llm tool-calling support [90m(4.456958ms)[39m[39m
+▶ llm
+  ▶ resolveLLMConfig
+    [32m✔ returns nulls when nothing configured [90m(0.772166ms)[39m[39m
+    [32m✔ respects CLI opts over everything [90m(0.965792ms)[39m[39m
+    [32m✔ uses provider defaults for model [90m(0.106333ms)[39m[39m
+  [32m✔ resolveLLMConfig [90m(2.304ms)[39m[39m
+  ▶ PROVIDER_DEFAULTS
+    [32m✔ has defaults for all providers [90m(0.051417ms)[39m[39m
+  [32m✔ PROVIDER_DEFAULTS [90m(0.119542ms)[39m[39m
+  ▶ PROVIDER_BASE_URLS
+    [32m✔ has URLs for all providers [90m(0.067167ms)[39m[39m
+  [32m✔ PROVIDER_BASE_URLS [90m(0.103291ms)[39m[39m
+  ▶ PROVIDER_MODELS
+    [32m✔ has curated models for anthropic [90m(0.086666ms)[39m[39m
+    [32m✔ has curated models for openai [90m(0.288292ms)[39m[39m
+  [32m✔ PROVIDER_MODELS [90m(0.475667ms)[39m[39m
+  ▶ listModels
+    [32m✔ returns curated list for anthropic [90m(0.109875ms)[39m[39m
+    [32m✔ returns curated list for openai [90m(0.067458ms)[39m[39m
+    [32m✔ returns empty array for unknown provider [90m(0.692625ms)[39m[39m
+    [32m✔ returns empty array for ollama when not running [90m(25.052916ms)[39m[39m
+  [32m✔ listModels [90m(26.010084ms)[39m[39m
+  ▶ vai explain chat
+    [32m✔ resolves chat aliases [90m(0.062875ms)[39m[39m
+    [32m✔ has chat concept with content [90m(0.051375ms)[39m[39m
+  [32m✔ vai explain chat [90m(0.151208ms)[39m[39m
+[32m✔ llm [90m(30.044541ms)[39m[39m
+▶ cosineSimilarity
+  [32m✔ returns 1.0 for identical vectors [90m(0.448917ms)[39m[39m
+  [32m✔ returns 0.0 for orthogonal vectors [90m(0.050083ms)[39m[39m
+  [32m✔ returns -1.0 for opposite vectors [90m(0.050125ms)[39m[39m
+  [32m✔ computes correct value for known vectors [90m(0.046541ms)[39m[39m
+  [32m✔ returns ~1.0 for vectors of different magnitudes but same direction [90m(0.042625ms)[39m[39m
+[32m✔ cosineSimilarity [90m(1.307041ms)[39m[39m
+▶ metrics
+  ▶ precisionAtK
+    [32m✔ computes precision at K=1 with hit [90m(0.43775ms)[39m[39m
+    [32m✔ computes precision at K=3 [90m(0.074ms)[39m[39m
+    [32m✔ computes precision at K=5 [90m(0.068917ms)[39m[39m
+    [32m✔ returns 0 for empty retrieved [90m(0.046166ms)[39m[39m
+    [32m✔ returns 0 when no hits [90m(0.044958ms)[39m[39m
+    [32m✔ accepts Set for relevant [90m(0.043166ms)[39m[39m
+  [32m✔ precisionAtK [90m(1.100709ms)[39m[39m
+  ▶ recallAtK
+    [32m✔ computes recall at K=1 [90m(0.087833ms)[39m[39m
+    [32m✔ computes recall at K=5 [90m(0.044459ms)[39m[39m
+    [32m✔ computes recall at K=3 [90m(1.199916ms)[39m[39m
+    [32m✔ returns 0 for empty relevant set [90m(0.076ms)[39m[39m
+  [32m✔ recallAtK [90m(1.51075ms)[39m[39m
+  ▶ reciprocalRank
+    [32m✔ returns 1.0 when first result is relevant [90m(0.088666ms)[39m[39m
+    [32m✔ returns 0.5 when first hit is at rank 2 [90m(0.279708ms)[39m[39m
+    [32m✔ returns 0 when no relevant results [90m(0.129ms)[39m[39m
+    [32m✔ returns 1/3 when first hit is at rank 3 [90m(0.035834ms)[39m[39m
+  [32m✔ reciprocalRank [90m(0.595167ms)[39m[39m
+  ▶ dcgAtK
+    [32m✔ computes DCG with hits at various positions [90m(0.051083ms)[39m[39m
+    [32m✔ returns 0 for no hits [90m(0.025791ms)[39m[39m
+  [32m✔ dcgAtK [90m(0.118583ms)[39m[39m
+  ▶ idealDcgAtK
+    [32m✔ computes ideal DCG for 3 relevant docs at K=5 [90m(0.044709ms)[39m[39m
+    [32m✔ caps at K when fewer than K relevant [90m(0.022208ms)[39m[39m
+  [32m✔ idealDcgAtK [90m(0.096333ms)[39m[39m
+  ▶ ndcgAtK
+    [32m✔ returns 1.0 for perfect ranking [90m(0.049ms)[39m[39m
+    [32m✔ returns value between 0 and 1 [90m(0.037ms)[39m[39m
+    [32m✔ returns 0 for no hits [90m(0.024042ms)[39m[39m
+    [32m✔ returns 0 for empty relevant set [90m(0.022333ms)[39m[39m
+  [32m✔ ndcgAtK [90m(0.169166ms)[39m[39m
+  ▶ averagePrecision
+    [32m✔ returns 1.0 for perfect ranking [90m(0.059542ms)[39m[39m
+    [32m✔ computes AP for mixed results [90m(0.025708ms)[39m[39m
+    [32m✔ returns 0 for no relevant [90m(0.052375ms)[39m[39m
+    [32m✔ returns 0 for no hits [90m(0.036334ms)[39m[39m
+  [32m✔ averagePrecision [90m(0.228625ms)[39m[39m
+  ▶ computeMetrics
+    [32m✔ returns all expected metric keys [90m(0.09075ms)[39m[39m
+    [32m✔ uses custom K values [90m(0.043791ms)[39m[39m
+  [32m✔ computeMetrics [90m(0.160333ms)[39m[39m
+  ▶ aggregateMetrics
+    [32m✔ computes mean of metrics across queries [90m(0.083459ms)[39m[39m
+    [32m✔ returns empty for empty input [90m(0.629334ms)[39m[39m
+  [32m✔ aggregateMetrics [90m(0.740625ms)[39m[39m
+[32m✔ metrics [90m(5.241084ms)[39m[39m
+▶ WORKFLOW_PREFIX
+  [32m✔ is vai-workflow- [90m(0.387708ms)[39m[39m
+[32m✔ WORKFLOW_PREFIX [90m(0.951125ms)[39m[39m
+▶ VAICLI_SCOPE
+  [32m✔ is @vaicli/ [90m(0.059083ms)[39m[39m
+[32m✔ VAICLI_SCOPE [90m(0.105ms)[39m[39m
+▶ VAICLI_WORKFLOW_PREFIX
+  [32m✔ is @vaicli/vai-workflow- [90m(0.048667ms)[39m[39m
+[32m✔ VAICLI_WORKFLOW_PREFIX [90m(0.093167ms)[39m[39m
+▶ isOfficialPackage
+  [32m✔ returns true for @vaicli/vai-workflow-* names [90m(0.058375ms)[39m[39m
+  [32m✔ returns false for unscoped workflow packages [90m(0.033042ms)[39m[39m
+  [32m✔ returns false for other scoped packages [90m(0.050333ms)[39m[39m
+  [32m✔ returns false for non-workflow @vaicli packages [90m(0.042291ms)[39m[39m
+[32m✔ isOfficialPackage [90m(0.275917ms)[39m[39m
+▶ isWorkflowPackage
+  [32m✔ returns true for unscoped vai-workflow-* packages [90m(0.059083ms)[39m[39m
+  [32m✔ returns true for @vaicli/vai-workflow-* packages [90m(0.039083ms)[39m[39m
+  [32m✔ returns false for non-workflow packages [90m(1.278042ms)[39m[39m
+[32m✔ isWorkflowPackage [90m(1.460125ms)[39m[39m
+▶ findLocalNodeModules
+  [32m✔ finds a node_modules directory [90m(0.274625ms)[39m[39m
+[32m✔ findLocalNodeModules [90m(0.316167ms)[39m[39m
+▶ findGlobalNodeModules
+  [32m✔ returns a string path or null [90m(148.082375ms)[39m[39m
+[32m✔ findGlobalNodeModules [90m(148.324083ms)[39m[39m
+▶ resolvePackagePath
+  [32m✔ returns null for non-installed package [90m(141.899166ms)[39m[39m
+[32m✔ resolvePackagePath [90m(142.012625ms)[39m[39m
+▶ preflight
+  ▶ formatPreflight
+    [32m✔ shows green checks for passing items [90m(1.119083ms)[39m[39m
+    [32m✔ shows red checks and fix commands for failures [90m(0.102542ms)[39m[39m
+    [32m✔ handles all checks failing [90m(0.063917ms)[39m[39m
+    [32m✔ handles checks with no fix commands [90m(0.062792ms)[39m[39m
+  [32m✔ formatPreflight [90m(1.712125ms)[39m[39m
+[32m✔ preflight [90m(2.050542ms)[39m[39m
+▶ project
+  ▶ constants
+    [32m✔ PROJECT_FILE is .vai.json [90m(0.429375ms)[39m[39m
+    [32m✔ PROJECT_VERSION is 1 [90m(0.058917ms)[39m[39m
+  [32m✔ constants [90m(0.795625ms)[39m[39m
+  ▶ defaultProjectConfig
+    [32m✔ returns an object with required fields [90m(0.094333ms)[39m[39m
+  [32m✔ defaultProjectConfig [90m(0.140083ms)[39m[39m
+  ▶ saveProject / loadProject
+    [32m✔ round-trips config through file [90m(0.862792ms)[39m[39m
+  [32m✔ saveProject / loadProject [90m(0.931917ms)[39m[39m
+  ▶ findProjectFile
+    [32m✔ returns null when no .vai.json exists [90m(0.2975ms)[39m[39m
+    [32m✔ finds .vai.json in current directory [90m(0.295083ms)[39m[39m
+    [32m✔ walks up to parent directory [90m(0.434375ms)[39m[39m
+  [32m✔ findProjectFile [90m(1.116625ms)[39m[39m
+  ▶ mergeOptions
+    [32m✔ CLI options override project config [90m(0.086708ms)[39m[39m
+    [32m✔ falls through to project config when CLI is undefined [90m(0.047875ms)[39m[39m
+    [32m✔ includes chunk config from project [90m(1.151417ms)[39m[39m
+  [32m✔ mergeOptions [90m(2.289291ms)[39m[39m
+[32m✔ project [90m(5.72975ms)[39m[39m
+▶ prompt agent support
+  ▶ AGENT_SYSTEM_PROMPT
+    [32m✔ is a non-empty string [90m(0.4995ms)[39m[39m
+    [32m✔ mentions available tools [90m(0.103833ms)[39m[39m
+    [32m✔ includes answering rules [90m(0.181042ms)[39m[39m
+    [32m✔ instructs to use tools before answering [90m(0.097167ms)[39m[39m
+    [32m✔ is different from DEFAULT_SYSTEM_PROMPT [90m(0.0735ms)[39m[39m
+  [32m✔ AGENT_SYSTEM_PROMPT [90m(1.831375ms)[39m[39m
+  ▶ buildAgentMessages
+    [32m✔ builds messages with system, user [90m(0.133417ms)[39m[39m
+    [32m✔ uses AGENT_SYSTEM_PROMPT by default [90m(0.051958ms)[39m[39m
+    [32m✔ allows overriding system prompt [90m(0.0625ms)[39m[39m
+    [32m✔ includes history between system and user [90m(0.078834ms)[39m[39m
+    [32m✔ does NOT inject context documents [90m(0.076541ms)[39m[39m
+    [32m✔ handles empty history [90m(0.043375ms)[39m[39m
+  [32m✔ buildAgentMessages [90m(0.576083ms)[39m[39m
+  ▶ pipeline prompts are unchanged
+    [32m✔ buildMessages still injects context [90m(0.141667ms)[39m[39m
+    [32m✔ DEFAULT_SYSTEM_PROMPT still exists [90m(1.023834ms)[39m[39m
+  [32m✔ pipeline prompts are unchanged [90m(1.208791ms)[39m[39m
+[32m✔ prompt agent support [90m(4.088541ms)[39m[39m
+▶ prompt
+  ▶ formatContextBlock
+    [32m✔ returns empty string for no docs [90m(0.443291ms)[39m[39m
+    [32m✔ formats documents with source and score [90m(0.079667ms)[39m[39m
+    [32m✔ uses metadata.source as fallback [90m(0.0515ms)[39m[39m
+    [32m✔ uses "unknown" when no source [90m(0.0465ms)[39m[39m
+  [32m✔ formatContextBlock [90m(0.9405ms)[39m[39m
+  ▶ buildMessages
+    [32m✔ builds basic message array with system + user [90m(0.133042ms)[39m[39m
+    [32m✔ includes context docs in user message [90m(0.052208ms)[39m[39m
+    [32m✔ includes conversation history [90m(0.067083ms)[39m[39m
+    [32m✔ appends custom instructions to base prompt [90m(0.063375ms)[39m[39m
+  [32m✔ buildMessages [90m(0.405709ms)[39m[39m
+[32m✔ prompt [90m(1.786875ms)[39m[39m
+▶ qualityAudit
+  [32m✔ should pass for valid package [90m(0.5895ms)[39m[39m
+  [32m✔ should flag short package description [90m(0.114042ms)[39m[39m
+  [32m✔ should flag missing author [90m(0.064584ms)[39m[39m
+  [32m✔ should warn about missing license [90m(0.056791ms)[39m[39m
+  [32m✔ should flag invalid category [90m(0.053417ms)[39m[39m
+  [32m✔ should flag missing category [90m(0.056584ms)[39m[39m
+  [32m✔ should flag missing README [90m(0.530458ms)[39m[39m
+  [32m✔ should flag short README [90m(0.655334ms)[39m[39m
+  [32m✔ should flag README with TODO [90m(0.384041ms)[39m[39m
+  [32m✔ should warn about single-step workflows [90m(0.105125ms)[39m[39m
+  [32m✔ should suggest branding icon [90m(0.060958ms)[39m[39m
+  [32m✔ should warn about generic names [90m(0.055875ms)[39m[39m
+  [32m✔ should export valid CATEGORIES [90m(0.048625ms)[39m[39m
+[32m✔ qualityAudit [90m(3.552125ms)[39m[39m
+▶ readers
+  ▶ SUPPORTED_EXTENSIONS
+    [32m✔ supports expected file types [90m(1.092958ms)[39m[39m
+  [32m✔ SUPPORTED_EXTENSIONS [90m(8.140875ms)[39m[39m
+  ▶ isSupported
+    [32m✔ returns true for supported extensions [90m(0.159167ms)[39m[39m
+    [32m✔ returns false for unsupported extensions [90m(0.070375ms)[39m[39m
+  [32m✔ isSupported [90m(0.311167ms)[39m[39m
+  ▶ getReaderType
+    [32m✔ returns correct type for each extension [90m(0.086833ms)[39m[39m
+    [32m✔ returns null for unsupported [90m(0.053916ms)[39m[39m
+  [32m✔ getReaderType [90m(0.197583ms)[39m[39m
+  ▶ stripHtml
+    [32m✔ removes HTML tags [90m(0.750292ms)[39m[39m
+    [32m✔ removes script and style blocks [90m(0.080167ms)[39m[39m
+    [32m✔ decodes common entities [90m(1.081ms)[39m[39m
+    [32m✔ replaces block elements with newlines [90m(0.073792ms)[39m[39m
+  [32m✔ stripHtml [90m(2.435083ms)[39m[39m
+  ▶ readFile — text
+    [32m✔ reads a text file [90m(0.558708ms)[39m[39m
+  [32m✔ readFile — text [90m(0.589125ms)[39m[39m
+  ▶ readFile — html
+    [32m✔ strips HTML tags from file [90m(0.251042ms)[39m[39m
+  [32m✔ readFile — html [90m(0.272917ms)[39m[39m
+  ▶ readFile — json
+    [32m✔ reads JSON array with text field [90m(0.882292ms)[39m[39m
+  [32m✔ readFile — json [90m(0.915834ms)[39m[39m
+  ▶ readFile — jsonl
+    [32m✔ reads JSONL with text field [90m(0.233875ms)[39m[39m
+  [32m✔ readFile — jsonl [90m(0.256625ms)[39m[39m
+  ▶ readFile — unsupported
+    [32m✔ throws for unsupported extension [90m(0.281291ms)[39m[39m
+  [32m✔ readFile — unsupported [90m(0.301083ms)[39m[39m
+  ▶ scanDirectory
+    [32m✔ finds supported files recursively [90m(1.021167ms)[39m[39m
+    [32m✔ filters by extensions [90m(0.381ms)[39m[39m
+    [32m✔ skips ignored directories [90m(0.5095ms)[39m[39m
+    [32m✔ returns sorted paths [90m(0.325708ms)[39m[39m
+  [32m✔ scanDirectory [90m(2.28525ms)[39m[39m
+[32m✔ readers [90m(16.270333ms)[39m[39m
+▶ PROJECT_STRUCTURE
+  [32m✔ has vanilla, nextjs, and python targets [90m(0.482584ms)[39m[39m
+  [32m✔ all targets have description, postInstall, and startCommand [90m(0.069166ms)[39m[39m
+  [32m✔ all targets have files array with template and output [90m(0.072125ms)[39m[39m
+  [32m✔ vanilla has package.json and server.js [90m(0.046584ms)[39m[39m
+  [32m✔ nextjs has layout.jsx and search page [90m(0.044792ms)[39m[39m
+  [32m✔ nextjs has extraFiles with static content [90m(0.048375ms)[39m[39m
+  [32m✔ python has requirements.txt and app.py [90m(0.037542ms)[39m[39m
+  [32m✔ python uses pip for postInstall [90m(0.036666ms)[39m[39m
+[32m✔ PROJECT_STRUCTURE [90m(1.52175ms)[39m[39m
+▶ isBlockedDomain
+  [32m✔ should detect blocked domains [90m(0.62375ms)[39m[39m
+  [32m✔ should allow normal domains [90m(0.057875ms)[39m[39m
+  [32m✔ should handle invalid URLs [90m(0.058833ms)[39m[39m
+[32m✔ isBlockedDomain [90m(2.411292ms)[39m[39m
+▶ extractCapabilities
+  [32m✔ should detect NETWORK capability [90m(0.151083ms)[39m[39m
+  [32m✔ should detect WRITE_DB from ingest [90m(0.064125ms)[39m[39m
+  [32m✔ should detect LLM from generate [90m(0.036917ms)[39m[39m
+  [32m✔ should detect LOOP from loop tool [90m(0.175208ms)[39m[39m
+  [32m✔ should detect LOOP from forEach [90m(0.589792ms)[39m[39m
+  [32m✔ should detect READ_DB from query [90m(0.146875ms)[39m[39m
+  [32m✔ should detect WRITE_DB from aggregate with $out [90m(0.164917ms)[39m[39m
+  [32m✔ should handle empty/null definition [90m(0.115541ms)[39m[39m
+[32m✔ extractCapabilities [90m(1.783292ms)[39m[39m
+▶ securityAudit
+  [32m✔ should flag blocked domains in http steps [90m(1.783666ms)[39m[39m
+  [32m✔ should flag non-HTTPS URLs [90m(0.114583ms)[39m[39m
+  [32m✔ should flag dynamic URLs [90m(0.052334ms)[39m[39m
+  [32m✔ should flag aggregate with allowWrites [90m(0.042917ms)[39m[39m
+  [32m✔ should flag aggregate with $out stage [90m(0.044ms)[39m[39m
+  [32m✔ should flag prompt injection patterns [90m(0.177667ms)[39m[39m
+  [32m✔ should flag system: prefix in prompts [90m(0.043791ms)[39m[39m
+  [32m✔ should flag dynamic ingest db/collection [90m(0.044583ms)[39m[39m
+  [32m✔ should flag unbounded loops [90m(0.038375ms)[39m[39m
+  [32m✔ should flag loops with high maxIterations [90m(0.031542ms)[39m[39m
+  [32m✔ should pass clean workflows [90m(0.027167ms)[39m[39m
+  [32m✔ should flag JS files in package directory [90m(0.975167ms)[39m[39m
+  [32m✔ should flag dangerous lifecycle scripts [90m(0.384416ms)[39m[39m
+  [32m✔ should handle null definition [90m(0.025041ms)[39m[39m
+[32m✔ securityAudit [90m(3.961625ms)[39m[39m
+▶ telemetry
+  [32m✔ exports send, isEnabled, and timer [90m(0.968125ms)[39m[39m
+  [32m✔ isEnabled returns false when VAI_TELEMETRY=0 [90m(0.10425ms)[39m[39m
+  [32m✔ timer returns a function [90m(0.130125ms)[39m[39m
+  [32m✔ timer done() can be called with no args [90m(0.076667ms)[39m[39m
+[32m✔ telemetry [90m(3.788792ms)[39m[39m
+▶ isTemplateString
+  [32m✔ returns true for strings with {{ }} [90m(0.486792ms)[39m[39m
+  [32m✔ returns false for strings without {{ }} [90m(0.053958ms)[39m[39m
+  [32m✔ returns false for non-strings [90m(0.92225ms)[39m[39m
+[32m✔ isTemplateString [90m(2.111417ms)[39m[39m
+▶ parseExpression
+  [32m✔ parses simple identifiers [90m(2.014375ms)[39m[39m
+  [32m✔ parses dot-separated paths [90m(0.220167ms)[39m[39m
+  [32m✔ parses deep paths [90m(0.126583ms)[39m[39m
+  [32m✔ parses array indexing [90m(0.2895ms)[39m[39m
+  [32m✔ parses multiple array indices [90m(0.089958ms)[39m[39m
+  [32m✔ handles underscores in identifiers [90m(0.085916ms)[39m[39m
+  [32m✔ trims whitespace [90m(0.285375ms)[39m[39m
+  [32m✔ throws on empty expression [90m(0.434709ms)[39m[39m
+  [32m✔ throws on invalid segment [90m(0.140875ms)[39m[39m
+[32m✔ parseExpression [90m(4.138208ms)[39m[39m
+▶ resolvePath
+  [32m✔ resolves simple paths [90m(0.254666ms)[39m[39m
+  [32m✔ resolves nested paths [90m(0.080208ms)[39m[39m
+  [32m✔ resolves array elements [90m(0.156083ms)[39m[39m
+  [32m✔ resolves to array [90m(0.100833ms)[39m[39m
+  [32m✔ returns undefined for missing paths [90m(0.045ms)[39m[39m
+  [32m✔ returns undefined for missing nested paths [90m(0.030084ms)[39m[39m
+  [32m✔ returns undefined for out-of-bounds array index [90m(0.029458ms)[39m[39m
+  [32m✔ returns undefined when indexing a non-array [90m(0.033041ms)[39m[39m
+  [32m✔ returns null/undefined for null values [90m(0.030334ms)[39m[39m
+  [32m✔ resolves numbers [90m(0.024167ms)[39m[39m
+[32m✔ resolvePath [90m(0.94525ms)[39m[39m
+▶ resolveString
+  [32m✔ returns string unchanged when no templates present [90m(0.347959ms)[39m[39m
+  [32m✔ resolves a sole template, preserving type (string) [90m(0.324958ms)[39m[39m
+  [32m✔ resolves a sole template, preserving type (number) [90m(0.210584ms)[39m[39m
+  [32m✔ resolves a sole template, preserving type (array) [90m(0.100333ms)[39m[39m
+  [32m✔ resolves mixed text+template to string [90m(0.167084ms)[39m[39m
+  [32m✔ resolves multiple templates in one string [90m(0.067917ms)[39m[39m
+  [32m✔ returns undefined for sole template with missing path [90m(0.061125ms)[39m[39m
+  [32m✔ replaces missing templates with empty string in mixed text [90m(0.107416ms)[39m[39m
+  [32m✔ handles whitespace in template expressions [90m(0.089125ms)[39m[39m
+  [32m✔ resolves fallback: picks first truthy value [90m(0.17425ms)[39m[39m
+  [32m✔ resolves fallback: falls through null to second value [90m(0.111042ms)[39m[39m
+  [32m✔ resolves fallback: falls through undefined to second value [90m(0.108041ms)[39m[39m
+  [32m✔ resolves fallback: falls through empty string to second value [90m(0.099042ms)[39m[39m
+  [32m✔ resolves fallback to string literal [90m(0.091875ms)[39m[39m
+  [32m✔ resolves fallback to number literal [90m(0.074834ms)[39m[39m
+  [32m✔ resolves string concatenation with literal prefix [90m(0.0895ms)[39m[39m
+  [32m✔ resolves multi-part string concatenation [90m(0.085417ms)[39m[39m
+  [32m✔ resolves concatenation with null/undefined as empty string [90m(0.0695ms)[39m[39m
+  [32m✔ resolves concatenation with object values as JSON [90m(0.10175ms)[39m[39m
+  [32m✔ resolves || with higher precedence than + [90m(0.086542ms)[39m[39m
+  [32m✔ resolves || picking first truthy over concatenation [90m(0.068333ms)[39m[39m
+  [32m✔ resolves boolean literal true [90m(0.060875ms)[39m[39m
+  [32m✔ resolves boolean literal false [90m(1.135833ms)[39m[39m
+  [32m✔ resolves null literal [90m(0.046833ms)[39m[39m
+  [32m✔ resolves number literal [90m(0.035209ms)[39m[39m
+  [32m✔ resolves float literal [90m(0.028833ms)[39m[39m
+  [32m✔ resolves string literal in single quotes [90m(0.021667ms)[39m[39m
+  [32m✔ resolves string literal in double quotes [90m(0.019667ms)[39m[39m
+[32m✔ resolveString [90m(4.451833ms)[39m[39m
+▶ resolveTemplate
+  [32m✔ resolves string values [90m(0.072708ms)[39m[39m
+  [32m✔ passes numbers through [90m(0.021416ms)[39m[39m
+  [32m✔ passes booleans through [90m(0.025625ms)[39m[39m
+  [32m✔ passes null through [90m(0.022166ms)[39m[39m
+  [32m✔ resolves arrays recursively [90m(0.038084ms)[39m[39m
+  [32m✔ resolves objects recursively [90m(0.042416ms)[39m[39m
+[32m✔ resolveTemplate [90m(0.27125ms)[39m[39m
+▶ resolveAllTemplates
+  [32m✔ is an alias for resolveTemplate on objects [90m(0.036167ms)[39m[39m
+[32m✔ resolveAllTemplates [90m(0.0545ms)[39m[39m
+▶ extractDependencies
+  [32m✔ extracts step IDs from template strings [90m(0.23325ms)[39m[39m
+  [32m✔ extracts multiple step IDs [90m(0.032167ms)[39m[39m
+  [32m✔ ignores "inputs" prefix [90m(0.024958ms)[39m[39m
+  [32m✔ ignores "defaults" prefix [90m(0.029167ms)[39m[39m
+  [32m✔ handles mixed inputs and step refs [90m(0.029833ms)[39m[39m
+  [32m✔ handles nested objects [90m(0.042333ms)[39m[39m
+  [32m✔ handles arrays [90m(0.029417ms)[39m[39m
+  [32m✔ returns empty set for no templates [90m(0.025625ms)[39m[39m
+  [32m✔ returns empty set for non-string values [90m(0.026625ms)[39m[39m
+  [32m✔ handles condition strings [90m(0.024042ms)[39m[39m
+  [32m✔ extracts step IDs from negated conditions [90m(0.021875ms)[39m[39m
+  [32m✔ extracts step IDs from || fallback expressions [90m(0.021541ms)[39m[39m
+  [32m✔ extracts step IDs from + concatenation expressions [90m(0.025917ms)[39m[39m
+  [32m✔ extracts step IDs from combined || and + expressions [90m(0.028041ms)[39m[39m
+  [32m✔ extracts step IDs from && conditions [90m(0.023417ms)[39m[39m
+  [32m✔ extracts step IDs from complex negated conditions with && [90m(0.021208ms)[39m[39m
+  [32m✔ ignores boolean/null/undefined keywords [90m(0.026167ms)[39m[39m
+  [32m✔ ignores item and index in forEach contexts [90m(0.018958ms)[39m[39m
+[32m✔ extractDependencies [90m(0.794416ms)[39m[39m
+▶ tool-registry
+  ▶ TOOL_DEFINITIONS
+    [32m✔ defines all 11 tools [90m(0.418667ms)[39m[39m
+    [32m✔ includes all expected tool names [90m(0.091ms)[39m[39m
+    [32m✔ every definition has name, description, schemaKey [90m(0.070458ms)[39m[39m
+  [32m✔ TOOL_DEFINITIONS [90m(0.891ms)[39m[39m
+  ▶ zodSchemaToJsonSchema
+    [32m✔ converts a simple schema to JSON Schema [90m(0.685083ms)[39m[39m
+    [32m✔ strips $schema key [90m(0.101625ms)[39m[39m
+    [32m✔ removes fields with defaults from required array [90m(0.256708ms)[39m[39m
+    [32m✔ removes required array entirely when all fields have defaults [90m(0.152625ms)[39m[39m
+    [32m✔ handles optional fields [90m(0.162583ms)[39m[39m
+  [32m✔ zodSchemaToJsonSchema [90m(1.487625ms)[39m[39m
+  ▶ getToolDefinitions
+    [32m✔ returns Anthropic format [90m(1.006958ms)[39m[39m
+    [32m✔ returns OpenAI format [90m(0.525792ms)[39m[39m
+    [32m✔ returns same number of tools in both formats [90m(0.806791ms)[39m[39m
+    [32m✔ ollama format matches openai [90m(0.38175ms)[39m[39m
+    [32m✔ generates valid JSON Schema properties for vai_query [90m(0.378833ms)[39m[39m
+  [32m✔ getToolDefinitions [90m(3.186208ms)[39m[39m
+  ▶ executeTool
+    [32m✔ throws on unknown tool [90m(4.029958ms)[39m[39m
+    [32m✔ throws on invalid input (missing required field) [90m(0.987667ms)[39m[39m
+    [32m✔ applies defaults during validation [90m(0.4315ms)[39m[39m
+  [32m✔ executeTool [90m(5.506375ms)[39m[39m
+[32m✔ tool-registry [90m(11.506292ms)[39m[39m
+▶ ui helpers
+  [32m✔ ui.success() contains ✓ [90m(0.527708ms)[39m[39m
+  [32m✔ ui.error() contains ✗ [90m(0.082125ms)[39m[39m
+  [32m✔ ui.warn() contains ⚠ [90m(0.051ms)[39m[39m
+  [32m✔ ui.info() contains ℹ [90m(0.049625ms)[39m[39m
+  [32m✔ ui.score() returns a string for various values [90m(0.077583ms)[39m[39m
+  [32m✔ ui.label() formats key: value with indentation [90m(0.055333ms)[39m[39m
+  [32m✔ ui.status() colors READY green, BUILDING yellow, FAILED red [90m(0.07325ms)[39m[39m
+  [32m✔ ui.spinner() returns an object with start and stop methods [90m(0.058333ms)[39m[39m
+  [32m✔ ui style functions exist and return strings [90m(0.068584ms)[39m[39m
+[32m✔ ui helpers [90m(1.839084ms)[39m[39m
+▶ chatSetupSteps
+  [32m✔ has 4 steps [90m(0.559125ms)[39m[39m
+  [32m✔ all steps have required fields [90m(0.120959ms)[39m[39m
+  [32m✔ step ids are provider, apiKey, model, ollamaBaseUrl [90m(0.673875ms)[39m[39m
+  [32m✔ provider step is required [90m(0.069208ms)[39m[39m
+  [32m✔ apiKey step is password type [90m(0.093292ms)[39m[39m
+  [32m✔ apiKey skips for ollama provider [90m(0.095292ms)[39m[39m
+  [32m✔ apiKey skips when already configured [90m(0.703708ms)[39m[39m
+  [32m✔ apiKey does not skip for anthropic without key [90m(0.100041ms)[39m[39m
+  [32m✔ apiKey validates minimum length [90m(0.090667ms)[39m[39m
+  [32m✔ ollamaBaseUrl skips for non-ollama providers [90m(0.091ms)[39m[39m
+  [32m✔ ollamaBaseUrl shows for ollama provider [90m(0.05275ms)[39m[39m
+  [32m✔ ollamaBaseUrl has default localhost [90m(0.047167ms)[39m[39m
+  [32m✔ provider step skips when config has llmProvider [90m(0.045291ms)[39m[39m
+  [32m✔ provider step does not skip without config [90m(0.051833ms)[39m[39m
+[32m✔ chatSetupSteps [90m(3.563875ms)[39m[39m
+▶ getProviderOptions
+  [32m✔ returns array with 3 providers [90m(49.035917ms)[39m[39m
+  [32m✔ all options have value, label, hint [90m(8.438041ms)[39m[39m
+[32m✔ getProviderOptions [90m(57.60225ms)[39m[39m
+▶ getModelOptions
+  [32m✔ returns empty array when no provider [90m(0.127916ms)[39m[39m
+  [32m✔ returns curated models for anthropic [90m(0.077875ms)[39m[39m
+  [32m✔ returns curated models for openai [90m(0.048292ms)[39m[39m
+[32m✔ getModelOptions [90m(0.299375ms)[39m[39m
+▶ init wizard steps
+  ▶ getEmbeddingModelOptions
+    [32m✔ returns non-empty array of current models [90m(0.503583ms)[39m[39m
+    [32m✔ excludes legacy and unreleased models [90m(0.071458ms)[39m[39m
+  [32m✔ getEmbeddingModelOptions [90m(0.936167ms)[39m[39m
+  ▶ getStrategyOptions
+    [32m✔ includes all strategies [90m(0.081292ms)[39m[39m
+  [32m✔ getStrategyOptions [90m(0.131459ms)[39m[39m
+  ▶ getDimensionOptions
+    [32m✔ returns options for voyage-4-large [90m(0.1365ms)[39m[39m
+    [32m✔ returns fallback for unknown model [90m(0.05175ms)[39m[39m
+  [32m✔ getDimensionOptions [90m(0.252458ms)[39m[39m
+  ▶ step definitions
+    [32m✔ has 9 steps [90m(0.079459ms)[39m[39m
+    [32m✔ all steps have required fields [90m(0.056583ms)[39m[39m
+    [32m✔ serializes all steps (none skipped by default) [90m(0.758042ms)[39m[39m
+  [32m✔ step definitions [90m(0.982042ms)[39m[39m
+  ▶ full wizard run
+    [32m✔ collects all init config [90m(0.244625ms)[39m[39m
+  [32m✔ full wizard run [90m(0.285583ms)[39m[39m
+  ▶ validation
+    [32m✔ rejects chunk size below 50 [90m(0.095042ms)[39m[39m
+    [32m✔ rejects negative overlap [90m(0.044083ms)[39m[39m
+  [32m✔ validation [90m(0.17575ms)[39m[39m
+[32m✔ init wizard steps [90m(3.284375ms)[39m[39m
+▶ wizard engine
+  ▶ resolveOptions
+    [32m✔ returns static options [90m(0.427792ms)[39m[39m
+    [32m✔ calls function options [90m(0.054584ms)[39m[39m
+  [32m✔ resolveOptions [90m(0.996916ms)[39m[39m
+  ▶ resolveDefault
+    [32m✔ returns static default [90m(0.111083ms)[39m[39m
+    [32m✔ calls getDefault function [90m(0.068958ms)[39m[39m
+  [32m✔ resolveDefault [90m(0.268959ms)[39m[39m
+  ▶ shouldSkip
+    [32m✔ returns false with no skip predicate [90m(0.074208ms)[39m[39m
+    [32m✔ evaluates skip function [90m(0.063ms)[39m[39m
+  [32m✔ shouldSkip [90m(0.198458ms)[39m[39m
+  ▶ validateStep
+    [32m✔ passes when not required and empty [90m(0.082042ms)[39m[39m
+    [32m✔ fails when required and empty [90m(0.042958ms)[39m[39m
+    [32m✔ runs custom validate [90m(0.046333ms)[39m[39m
+  [32m✔ validateStep [90m(0.249458ms)[39m[39m
+  ▶ activeIndices
+    [32m✔ returns all indices when no skips [90m(0.991125ms)[39m[39m
+    [32m✔ excludes skipped steps [90m(0.212541ms)[39m[39m
+  [32m✔ activeIndices [90m(2.585833ms)[39m[39m
+  ▶ runWizard
+    [32m✔ collects answers in order [90m(0.420709ms)[39m[39m
+    [32m✔ skips steps based on config [90m(0.163042ms)[39m[39m
+    [32m✔ supports back navigation [90m(0.136084ms)[39m[39m
+    [32m✔ handles cancel [90m(0.173084ms)[39m[39m
+    [32m✔ re-prompts on validation failure [90m(0.165125ms)[39m[39m
+    [32m✔ uses initial answers [90m(0.096042ms)[39m[39m
+    [32m✔ returns empty answers when all steps skipped [90m(0.141ms)[39m[39m
+  [32m✔ runWizard [90m(1.495166ms)[39m[39m
+  ▶ serializeSteps
+    [32m✔ strips skipped steps and resolves options [90m(0.16775ms)[39m[39m
+  [32m✔ serializeSteps [90m(0.213791ms)[39m[39m
+[32m✔ wizard engine [90m(6.590958ms)[39m[39m
+▶ Built-in workflow execution tests
+  [32m✔ test fixtures directory exists [90m(0.581166ms)[39m[39m
+  [32m✔ has test fixtures for every built-in workflow [90m(0.932375ms)[39m[39m
+  ▶ code-review (3 test cases)
+    [32m✔ code-review: fresh index required (no existing index) [90m(2.237833ms)[39m[39m
+    [32m✔ code-review: find similar patterns with contextual search [90m(0.3275ms)[39m[39m
+    [32m✔ code-review: no question — skip deep_query, auto-generate search from snippet [90m(0.266917ms)[39m[39m
+  [32m✔ code-review (3 test cases) [90m(2.951458ms)[39m[39m
+  ▶ consistency-check (2 test cases)
+    [32m✔ consistency-check: happy path (both sources have results) [90m(0.183875ms)[39m[39m
+    [32m✔ consistency-check: one source empty (comparison skipped) [90m(0.112084ms)[39m[39m
+  [32m✔ consistency-check (2 test cases) [90m(0.364958ms)[39m[39m
+  ▶ cost-analysis (1 test cases)
+    [32m✔ cost-analysis: happy path [90m(0.132291ms)[39m[39m
+  [32m✔ cost-analysis (1 test cases) [90m(0.179333ms)[39m[39m
+  ▶ enrich-and-ingest (2 test cases)
+    [32m✔ enrich-and-ingest: happy path [90m(0.262ms)[39m[39m
+    [32m✔ enrich-and-ingest: notification failure (continueOnError) [90m(0.110167ms)[39m[39m
+  [32m✔ enrich-and-ingest (2 test cases) [90m(0.422875ms)[39m[39m
+  ▶ intelligent-ingest (2 test cases)
+    [32m✔ intelligent-ingest: all chunks filtered out (too short) [90m(2.3895ms)[39m[39m
+    [32m✔ intelligent-ingest: happy path [90m(1.417583ms)[39m[39m
+  [32m✔ intelligent-ingest (2 test cases) [90m(3.854958ms)[39m[39m
+  ▶ kb-health-report (2 test cases)
+    [32m✔ kb-health-report: custom queries [90m(0.245417ms)[39m[39m
+    [32m✔ kb-health-report: happy path [90m(0.193625ms)[39m[39m
+  [32m✔ kb-health-report (2 test cases) [90m(0.471625ms)[39m[39m
+  ▶ multi-collection-search (2 test cases)
+    [32m✔ multi-collection-search: happy path [90m(0.135458ms)[39m[39m
+    [32m✔ multi-collection-search: one collection empty [90m(0.067375ms)[39m[39m
+  [32m✔ multi-collection-search (2 test cases) [90m(0.230416ms)[39m[39m
+  ▶ rag-chat (2 test cases)
+    [32m✔ rag-chat: happy path with relevant results [90m(1.008583ms)[39m[39m
+    [32m✔ rag-chat: no results above relevance threshold [90m(0.178125ms)[39m[39m
+  [32m✔ rag-chat (2 test cases) [90m(1.220417ms)[39m[39m
+  ▶ research-and-summarize (2 test cases)
+    [32m✔ research-and-summarize: happy path [90m(0.069ms)[39m[39m
+    [32m✔ research-and-summarize: no search results [90m(0.359083ms)[39m[39m
+  [32m✔ research-and-summarize (2 test cases) [90m(0.467625ms)[39m[39m
+  ▶ search-with-fallback (3 test cases)
+    [32m✔ search-with-fallback: both collections empty [90m(0.13325ms)[39m[39m
+    [32m✔ search-with-fallback: fallback branch (primary empty) [90m(0.107208ms)[39m[39m
+    [32m✔ search-with-fallback: happy path (primary has results) [90m(0.080125ms)[39m[39m
+  [32m✔ search-with-fallback (3 test cases) [90m(0.364291ms)[39m[39m
+  ▶ smart-ingest (2 test cases)
+    [32m✔ smart-ingest: duplicate detected (high similarity) [90m(0.107667ms)[39m[39m
+    [32m✔ smart-ingest: novel document (no similar docs found) [90m(0.089833ms)[39m[39m
+  [32m✔ smart-ingest (2 test cases) [90m(0.222834ms)[39m[39m
+[32m✔ Built-in workflow execution tests [90m(14.200709ms)[39m[39m
+▶ Workflow behavior: conditional branching
+  [32m✔ takes then-branch when primary returns results [90m(0.146459ms)[39m[39m
+  [32m✔ takes else-branch when primary returns empty [90m(0.131834ms)[39m[39m
+[32m✔ Workflow behavior: conditional branching [90m(0.305958ms)[39m[39m
+▶ Workflow behavior: step-level conditions
+  [32m✔ skips similarity_check when no existing docs found [90m(0.120583ms)[39m[39m
+  [32m✔ ingest_doc skipped when similarity exceeds threshold [90m(0.102ms)[39m[39m
+[32m✔ Workflow behavior: step-level conditions [90m(0.245334ms)[39m[39m
+▶ Workflow behavior: step-level conditions (consistency-check)
+  [32m✔ skips comparison when both sources are empty [90m(0.100167ms)[39m[39m
+[32m✔ Workflow behavior: step-level conditions (consistency-check) [90m(0.115333ms)[39m[39m
+▶ Workflow behavior: parallel execution
+  [32m✔ all three estimate steps run in parallel [90m(0.091334ms)[39m[39m
+[32m✔ Workflow behavior: parallel execution [90m(0.106375ms)[39m[39m
+▶ Workflow behavior: continueOnError
+  [32m✔ all steps complete with valid mocks [90m(0.113958ms)[39m[39m
+[32m✔ Workflow behavior: continueOnError [90m(0.144084ms)[39m[39m
+▶ Built-in workflow schema validation
+  [32m✔ discovers all built-in workflows (11) [90m(0.660041ms)[39m[39m
+  ▶ code-review
+    [32m✔ passes validateWorkflow() with no errors [90m(1.311459ms)[39m[39m
+    [32m✔ has a name field [90m(0.071417ms)[39m[39m
+    [32m✔ has a description [90m(0.057209ms)[39m[39m
+    [32m✔ has a version [90m(0.096958ms)[39m[39m
+    [32m✔ has at least one step [90m(0.03975ms)[39m[39m
+    [32m✔ has no duplicate step IDs [90m(0.052292ms)[39m[39m
+    [32m✔ has no circular dependencies [90m(0.141333ms)[39m[39m
+    [32m✔ builds a valid execution plan [90m(0.170084ms)[39m[39m
+    [32m✔ every step has a known tool [90m(0.089958ms)[39m[39m
+    [32m✔ every step has an id and tool [90m(0.049875ms)[39m[39m
+    [32m✔ has an output section [90m(0.042167ms)[39m[39m
+  [32m✔ code-review [90m(2.338916ms)[39m[39m
+  ▶ consistency-check
+    [32m✔ passes validateWorkflow() with no errors [90m(0.097916ms)[39m[39m
+    [32m✔ has a name field [90m(0.024ms)[39m[39m
+    [32m✔ has a description [90m(0.019292ms)[39m[39m
+    [32m✔ has a version [90m(0.044458ms)[39m[39m
+    [32m✔ has at least one step [90m(0.024375ms)[39m[39m
+    [32m✔ has no duplicate step IDs [90m(0.01925ms)[39m[39m
+    [32m✔ has no circular dependencies [90m(0.032541ms)[39m[39m
+    [32m✔ builds a valid execution plan [90m(0.049416ms)[39m[39m
+    [32m✔ every step has a known tool [90m(0.022917ms)[39m[39m
+    [32m✔ every step has an id and tool [90m(0.018541ms)[39m[39m
+    [32m✔ has an output section [90m(0.016167ms)[39m[39m
+  [32m✔ consistency-check [90m(0.473167ms)[39m[39m
+  ▶ cost-analysis
+    [32m✔ passes validateWorkflow() with no errors [90m(0.092083ms)[39m[39m
+    [32m✔ has a name field [90m(0.018375ms)[39m[39m
+    [32m✔ has a description [90m(0.017584ms)[39m[39m
+    [32m✔ has a version [90m(0.018875ms)[39m[39m
+    [32m✔ has at least one step [90m(0.810917ms)[39m[39m
+    [32m✔ has no duplicate step IDs [90m(0.022708ms)[39m[39m
+    [32m✔ has no circular dependencies [90m(0.032917ms)[39m[39m
+    [32m✔ builds a valid execution plan [90m(0.032125ms)[39m[39m
+    [32m✔ every step has a known tool [90m(0.021417ms)[39m[39m
+    [32m✔ every step has an id and tool [90m(0.017084ms)[39m[39m
+    [32m✔ has an output section [90m(0.015375ms)[39m[39m
+  [32m✔ cost-analysis [90m(1.189291ms)[39m[39m
+  ▶ enrich-and-ingest
+    [32m✔ passes validateWorkflow() with no errors [90m(0.153084ms)[39m[39m
+    [32m✔ has a name field [90m(0.020125ms)[39m[39m
+    [32m✔ has a description [90m(0.022083ms)[39m[39m
+    [32m✔ has a version [90m(0.017167ms)[39m[39m
+    [32m✔ has at least one step [90m(0.015417ms)[39m[39m
+    [32m✔ has no duplicate step IDs [90m(0.016625ms)[39m[39m
+    [32m✔ has no circular dependencies [90m(0.028042ms)[39m[39m
+    [32m✔ builds a valid execution plan [90m(0.032125ms)[39m[39m
+    [32m✔ every step has a known tool [90m(0.022917ms)[39m[39m
+    [32m✔ every step has an id and tool [90m(0.027208ms)[39m[39m
+    [32m✔ has an output section [90m(0.030208ms)[39m[39m
+  [32m✔ enrich-and-ingest [90m(0.470667ms)[39m[39m
+  ▶ intelligent-ingest
+    [32m✔ passes validateWorkflow() with no errors [90m(0.081291ms)[39m[39m
+    [32m✔ has a name field [90m(0.018333ms)[39m[39m
+    [32m✔ has a description [90m(0.015166ms)[39m[39m
+    [32m✔ has a version [90m(0.023834ms)[39m[39m
+    [32m✔ has at least one step [90m(0.0195ms)[39m[39m
+    [32m✔ has no duplicate step IDs [90m(0.016292ms)[39m[39m
+    [32m✔ has no circular dependencies [90m(0.0475ms)[39m[39m
+    [32m✔ builds a valid execution plan [90m(0.033583ms)[39m[39m
+    [32m✔ every step has a known tool [90m(0.019042ms)[39m[39m
+    [32m✔ every step has an id and tool [90m(0.022541ms)[39m[39m
+    [32m✔ has an output section [90m(0.013541ms)[39m[39m
+  [32m✔ intelligent-ingest [90m(0.403875ms)[39m[39m
+  ▶ kb-health-report
+    [32m✔ passes validateWorkflow() with no errors [90m(0.369292ms)[39m[39m
+    [32m✔ has a name field [90m(0.134667ms)[39m[39m
+    [32m✔ has a description [90m(0.07325ms)[39m[39m
+    [32m✔ has a version [90m(0.028792ms)[39m[39m
+    [32m✔ has at least one step [90m(0.02ms)[39m[39m
+    [32m✔ has no duplicate step IDs [90m(0.022125ms)[39m[39m
+    [32m✔ has no circular dependencies [90m(0.033625ms)[39m[39m
+    [32m✔ builds a valid execution plan [90m(0.026292ms)[39m[39m
+    [32m✔ every step has a known tool [90m(0.023542ms)[39m[39m
+    [32m✔ every step has an id and tool [90m(0.015583ms)[39m[39m
+    [32m✔ has an output section [90m(0.01375ms)[39m[39m
+  [32m✔ kb-health-report [90m(0.989125ms)[39m[39m
+  ▶ multi-collection-search
+    [32m✔ passes validateWorkflow() with no errors [90m(0.083541ms)[39m[39m
+    [32m✔ has a name field [90m(0.042458ms)[39m[39m
+    [32m✔ has a description [90m(0.012334ms)[39m[39m
+    [32m✔ has a version [90m(0.015167ms)[39m[39m
+    [32m✔ has at least one step [90m(0.012708ms)[39m[39m
+    [32m✔ has no duplicate step IDs [90m(0.013167ms)[39m[39m
+    [32m✔ has no circular dependencies [90m(0.021334ms)[39m[39m
+    [32m✔ builds a valid execution plan [90m(0.022667ms)[39m[39m
+    [32m✔ every step has a known tool [90m(0.019375ms)[39m[39m
+    [32m✔ every step has an id and tool [90m(0.013333ms)[39m[39m
+    [32m✔ has an output section [90m(0.011583ms)[39m[39m
+  [32m✔ multi-collection-search [90m(0.335583ms)[39m[39m
+  ▶ rag-chat
+    [32m✔ passes validateWorkflow() with no errors [90m(0.100334ms)[39m[39m
+    [32m✔ has a name field [90m(0.026917ms)[39m[39m
+    [32m✔ has a description [90m(0.012334ms)[39m[39m
+    [32m✔ has a version [90m(0.012916ms)[39m[39m
+    [32m✔ has at least one step [90m(0.011875ms)[39m[39m
+    [32m✔ has no duplicate step IDs [90m(0.025417ms)[39m[39m
+    [32m✔ has no circular dependencies [90m(0.034708ms)[39m[39m
+    [32m✔ builds a valid execution plan [90m(0.052833ms)[39m[39m
+    [32m✔ every step has a known tool [90m(0.0175ms)[39m[39m
+    [32m✔ every step has an id and tool [90m(0.015041ms)[39m[39m
+    [32m✔ has an output section [90m(0.011958ms)[39m[39m
+  [32m✔ rag-chat [90m(0.389667ms)[39m[39m
+  ▶ research-and-summarize
+    [32m✔ passes validateWorkflow() with no errors [90m(0.08375ms)[39m[39m
+    [32m✔ has a name field [90m(0.030333ms)[39m[39m
+    [32m✔ has a description [90m(0.016375ms)[39m[39m
+    [32m✔ has a version [90m(0.015042ms)[39m[39m
+    [32m✔ has at least one step [90m(0.014042ms)[39m[39m
+    [32m✔ has no duplicate step IDs [90m(0.015333ms)[39m[39m
+    [32m✔ has no circular dependencies [90m(0.017541ms)[39m[39m
+    [32m✔ builds a valid execution plan [90m(0.017917ms)[39m[39m
+    [32m✔ every step has a known tool [90m(0.015042ms)[39m[39m
+    [32m✔ every step has an id and tool [90m(0.0135ms)[39m[39m
+    [32m✔ has an output section [90m(0.01225ms)[39m[39m
+  [32m✔ research-and-summarize [90m(0.321041ms)[39m[39m
+  ▶ search-with-fallback
+    [32m✔ passes validateWorkflow() with no errors [90m(0.083375ms)[39m[39m
+    [32m✔ has a name field [90m(0.017292ms)[39m[39m
+    [32m✔ has a description [90m(0.015875ms)[39m[39m
+    [32m✔ has a version [90m(0.0235ms)[39m[39m
+    [32m✔ has at least one step [90m(0.015916ms)[39m[39m
+    [32m✔ has no duplicate step IDs [90m(0.024458ms)[39m[39m
+    [32m✔ has no circular dependencies [90m(0.026292ms)[39m[39m
+    [32m✔ builds a valid execution plan [90m(0.037041ms)[39m[39m
+    [32m✔ every step has a known tool [90m(0.015875ms)[39m[39m
+    [32m✔ every step has an id and tool [90m(0.012208ms)[39m[39m
+    [32m✔ has an output section [90m(0.014792ms)[39m[39m
+  [32m✔ search-with-fallback [90m(0.358834ms)[39m[39m
+  ▶ smart-ingest
+    [32m✔ passes validateWorkflow() with no errors [90m(0.07075ms)[39m[39m
+    [32m✔ has a name field [90m(0.019291ms)[39m[39m
+    [32m✔ has a description [90m(0.017375ms)[39m[39m
+    [32m✔ has a version [90m(0.019084ms)[39m[39m
+    [32m✔ has at least one step [90m(0.014625ms)[39m[39m
+    [32m✔ has no duplicate step IDs [90m(0.019041ms)[39m[39m
+    [32m✔ has no circular dependencies [90m(0.020292ms)[39m[39m
+    [32m✔ builds a valid execution plan [90m(0.021083ms)[39m[39m
+    [32m✔ every step has a known tool [90m(0.015583ms)[39m[39m
+    [32m✔ every step has an id and tool [90m(0.014166ms)[39m[39m
+    [32m✔ has an output section [90m(0.030166ms)[39m[39m
+  [32m✔ smart-ingest [90m(0.336166ms)[39m[39m
+[32m✔ Built-in workflow schema validation [90m(12.582167ms)[39m[39m
+▶ Draft Mode Validation
+  [32m✔ draft mode: unknown step reference is a warning, valid: true [90m(1.039875ms)[39m[39m
+  [32m✔ strict mode: same workflow fails validation (backward compat returns string[]) [90m(0.092875ms)[39m[39m
+  [32m✔ draft mode: duplicate IDs are structural errors, valid: false [90m(0.09425ms)[39m[39m
+  [32m✔ draft mode: invalid tool is structural error, valid: false [90m(0.079042ms)[39m[39m
+  [32m✔ draft mode: circular dependency is structural error, valid: false [90m(0.11325ms)[39m[39m
+  [32m✔ draft mode: orphan node flagged as info, valid: true [90m(0.101542ms)[39m[39m
+  [32m✔ draft mode: missing required input is info [90m(0.088834ms)[39m[39m
+  [32m✔ draft mode: missing workflow name is info [90m(0.064292ms)[39m[39m
+  [32m✔ default mode is strict (no options = backward compat) [90m(0.088ms)[39m[39m
+  [32m✔ draft mode stats are accurate (totalSteps, errors, warnings, info counts) [90m(1.512292ms)[39m[39m
+  [32m✔ draft mode: workflow with no issues returns valid: true, issues: [] [90m(0.111ms)[39m[39m
+  [32m✔ strict mode: response format is string[] (NOT issues array) [90m(0.080917ms)[39m[39m
+  [32m✔ draft mode: empty condition is info [90m(0.081583ms)[39m[39m
+  [32m✔ strict mode: empty condition is error [90m(0.05925ms)[39m[39m
+  [32m✔ draft mode: single step workflow has no orphan (edge case) [90m(0.047417ms)[39m[39m
+  [32m✔ draft mode: mixed severity levels correctly categorized [90m(0.102292ms)[39m[39m
+  [32m✔ draft mode: conditional branches with missing steps are warnings [90m(0.084125ms)[39m[39m
+[32m✔ Draft Mode Validation [90m(4.626583ms)[39m[39m
+▶ Backward Compatibility
+  [32m✔ existing callers with no mode parameter get strict behavior [90m(0.063041ms)[39m[39m
+  [32m✔ strict mode produces identical results to legacy validateWorkflow [90m(0.737167ms)[39m[39m
+  [32m✔ valid workflow returns empty array in strict mode [90m(0.051125ms)[39m[39m
+[32m✔ Backward Compatibility [90m(0.914417ms)[39m[39m
+▶ Edge Cases
+  [32m✔ handles invalid workflow definition gracefully [90m(0.0435ms)[39m[39m
+  [32m✔ handles workflow with no steps [90m(0.034875ms)[39m[39m
+  [32m✔ handles complex template references correctly [90m(0.052541ms)[39m[39m
+[32m✔ Edge Cases [90m(0.167ms)[39m[39m
+▶ workflow-formatters
+  ▶ FORMAT_TYPES
+    [32m✔ contains the five core formats [90m(0.513625ms)[39m[39m
+  [32m✔ FORMAT_TYPES [90m(0.855167ms)[39m[39m
+  ▶ detectOutputShape
+    [32m✔ detects scalar output [90m(0.77475ms)[39m[39m
+    [32m✔ detects array output [90m(0.062ms)[39m[39m
+    [32m✔ detects comparison output [90m(0.069709ms)[39m[39m
+    [32m✔ detects text output [90m(0.938458ms)[39m[39m
+    [32m✔ detects metrics output [90m(0.294083ms)[39m[39m
+    [32m✔ detects array within cost comparison output [90m(0.303333ms)[39m[39m
+  [32m✔ detectOutputShape [90m(2.726667ms)[39m[39m
+  ▶ resolveValuePath
+    [32m✔ resolves top-level keys [90m(0.447792ms)[39m[39m
+    [32m✔ resolves nested keys [90m(0.108666ms)[39m[39m
+    [32m✔ resolves array bracket syntax [90m(0.136709ms)[39m[39m
+    [32m✔ returns undefined for missing paths [90m(0.091708ms)[39m[39m
+  [32m✔ resolveValuePath [90m(0.996333ms)[39m[39m
+  ▶ formatWorkflowOutput — json
+    [32m✔ produces valid JSON [90m(0.177042ms)[39m[39m
+  [32m✔ formatWorkflowOutput — json [90m(0.24025ms)[39m[39m
+  ▶ formatWorkflowOutput — table
+    [32m✔ formats array output as a table [90m(0.549291ms)[39m[39m
+    [32m✔ formats comparison output as a table [90m(0.304958ms)[39m[39m
+    [32m✔ formats metrics output as key-value table [90m(0.12325ms)[39m[39m
+    [32m✔ respects hints.columns [90m(0.103292ms)[39m[39m
+  [32m✔ formatWorkflowOutput — table [90m(1.24675ms)[39m[39m
+  ▶ formatWorkflowOutput — text
+    [32m✔ formats text output with labeled fields [90m(0.497333ms)[39m[39m
+    [32m✔ formats comparison with nested fields [90m(0.06375ms)[39m[39m
+    [32m✔ uses hints.title when provided [90m(0.058667ms)[39m[39m
+    [32m✔ handles scalar output [90m(0.028583ms)[39m[39m
+  [32m✔ formatWorkflowOutput — text [90m(0.71425ms)[39m[39m
+  ▶ formatWorkflowOutput — markdown
+    [32m✔ produces markdown with heading [90m(0.175958ms)[39m[39m
+    [32m✔ uses hints.title for heading [90m(0.036792ms)[39m[39m
+    [32m✔ renders comparison as markdown table [90m(0.061292ms)[39m[39m
+  [32m✔ formatWorkflowOutput — markdown [90m(0.307084ms)[39m[39m
+  ▶ formatWorkflowOutput — csv
+    [32m✔ produces CSV for array output [90m(0.127167ms)[39m[39m
+    [32m✔ escapes commas and quotes [90m(0.039792ms)[39m[39m
+    [32m✔ produces CSV for comparison output [90m(0.0555ms)[39m[39m
+  [32m✔ formatWorkflowOutput — csv [90m(0.27ms)[39m[39m
+  ▶ formatWorkflowOutput — value:<path>
+    [32m✔ extracts a single value [90m(0.038666ms)[39m[39m
+    [32m✔ extracts an array element [90m(0.022417ms)[39m[39m
+    [32m✔ returns empty string for missing path [90m(0.021208ms)[39m[39m
+    [32m✔ JSON-stringifies object values [90m(0.041375ms)[39m[39m
+  [32m✔ formatWorkflowOutput — value:<path> [90m(0.166666ms)[39m[39m
+  ▶ autoDetectFormat
+    [32m✔ returns table for array output [90m(0.068917ms)[39m[39m
+    [32m✔ returns table for comparison output [90m(0.028125ms)[39m[39m
+    [32m✔ returns text for text output [90m(0.027542ms)[39m[39m
+    [32m✔ returns text for metrics output [90m(0.021834ms)[39m[39m
+    [32m✔ respects hints.default [90m(0.023542ms)[39m[39m
+    [32m✔ ignores invalid hints.default [90m(0.023542ms)[39m[39m
+  [32m✔ autoDetectFormat [90m(0.319792ms)[39m[39m
+[32m✔ workflow-formatters [90m(8.53ms)[39m[39m
+▶ executeHttp with extract: "text"
+  [32m✔ strips HTML tags from response body [90m(6.190166ms)[39m[39m
+  [32m✔ returns raw body when extract is not set [90m(0.25925ms)[39m[39m
+[32m✔ executeHttp with extract: "text" [90m(7.820583ms)[39m[39m
+▶ executeIngest vector index creation
+  [32m✔ creates vector_index when none exists [90m(2.098125ms)[39m[39m
+  [32m✔ skips index creation when vector_index already exists [90m(0.490959ms)[39m[39m
+  [32m✔ handles index creation errors gracefully [90m(0.654042ms)[39m[39m
+[32m✔ executeIngest vector index creation [90m(3.655542ms)[39m[39m
+▶ slugify
+  [32m✔ converts spaces to hyphens and lowercases [90m(0.775583ms)[39m[39m
+  [32m✔ strips special characters [90m(0.147584ms)[39m[39m
+  [32m✔ collapses multiple hyphens [90m(0.139333ms)[39m[39m
+  [32m✔ handles underscores [90m(0.151583ms)[39m[39m
+  [32m✔ trims leading/trailing hyphens [90m(0.120125ms)[39m[39m
+  [32m✔ returns empty string for empty input [90m(1.221333ms)[39m[39m
+[32m✔ slugify [90m(3.282417ms)[39m[39m
+▶ loadInputCache
+  [32m✔ returns empty object when cache file does not exist [90m(1.251541ms)[39m[39m
+  [32m✔ returns empty object for unknown workflow ID [90m(0.746584ms)[39m[39m
+  [32m✔ returns cached inputs for known workflow [90m(0.3625ms)[39m[39m
+  [32m✔ slugifies workflow name before lookup [90m(0.868458ms)[39m[39m
+  [32m✔ returns empty object for corrupt cache file [90m(0.681209ms)[39m[39m
+  [32m✔ returns empty object for empty workflow ID [90m(0.204667ms)[39m[39m
+[32m✔ loadInputCache [90m(4.755ms)[39m[39m
+▶ saveInputCache
+  [32m✔ creates cache file and saves inputs [90m(1.804417ms)[39m[39m
+  [32m✔ preserves other workflows in the cache [90m(0.973666ms)[39m[39m
+  [32m✔ overwrites previous cache for same workflow [90m(1.307667ms)[39m[39m
+  [32m✔ slugifies workflow name before saving [90m(0.684ms)[39m[39m
+  [32m✔ is a no-op for empty workflow ID [90m(0.295375ms)[39m[39m
+  [32m✔ is a no-op for null inputs [90m(0.201709ms)[39m[39m
+[32m✔ saveInputCache [90m(5.666125ms)[39m[39m
+▶ clearInputCache
+  [32m✔ clears a specific workflow [90m(1.737625ms)[39m[39m
+  [32m✔ clears all workflows when no ID given [90m(1.314583ms)[39m[39m
+  [32m✔ does not throw when clearing non-existent workflow [90m(0.764792ms)[39m[39m
+[32m✔ clearInputCache [90m(3.9445ms)[39m[39m
+▶ round-trip
+  [32m✔ save then load returns same data [90m(0.595875ms)[39m[39m
+  [32m✔ multiple workflows coexist [90m(0.978166ms)[39m[39m
+[32m✔ round-trip [90m(1.645667ms)[39m[39m
+▶ Tool registry updates
+  [32m✔ includes conditional, loop, template in CONTROL_FLOW_TOOLS [90m(0.4845ms)[39m[39m
+  [32m✔ includes chunk, aggregate in PROCESSING_TOOLS [90m(0.049709ms)[39m[39m
+  [32m✔ includes http in INTEGRATION_TOOLS [90m(0.049792ms)[39m[39m
+  [32m✔ ALL_TOOLS includes all new tools [90m(0.37325ms)[39m[39m
+[32m✔ Tool registry updates [90m(1.771667ms)[39m[39m
+▶ executeConditional
+  [32m✔ takes "then" branch when condition is true [90m(1.352334ms)[39m[39m
+  [32m✔ takes "else" branch when condition is false [90m(0.077417ms)[39m[39m
+  [32m✔ evaluates string conditions against context [90m(0.328959ms)[39m[39m
+  [32m✔ handles missing else gracefully [90m(0.063791ms)[39m[39m
+  [32m✔ throws when condition is missing [90m(0.30875ms)[39m[39m
+[32m✔ executeConditional [90m(3.70725ms)[39m[39m
+▶ executeTemplate
+  [32m✔ returns composed text with char count [90m(0.127834ms)[39m[39m
+  [32m✔ handles empty string [90m(0.044834ms)[39m[39m
+  [32m✔ coerces non-string to string [90m(0.032833ms)[39m[39m
+  [32m✔ throws when text is missing [90m(0.06325ms)[39m[39m
+[32m✔ executeTemplate [90m(0.337625ms)[39m[39m
+▶ validateWorkflow — conditional
+  [32m✔ accepts valid conditional step [90m(0.573458ms)[39m[39m
+  [32m✔ rejects conditional referencing unknown step [90m(0.08675ms)[39m[39m
+  [32m✔ rejects conditional without condition [90m(0.058333ms)[39m[39m
+  [32m✔ rejects conditional without then array [90m(0.050917ms)[39m[39m
+[32m✔ validateWorkflow — conditional [90m(0.832041ms)[39m[39m
+▶ validateWorkflow — loop
+  [32m✔ accepts valid loop step [90m(0.071875ms)[39m[39m
+  [32m✔ rejects loop without items [90m(0.054541ms)[39m[39m
+  [32m✔ rejects loop without as [90m(0.055667ms)[39m[39m
+  [32m✔ rejects loop with unknown sub-step tool [90m(0.040917ms)[39m[39m
+[32m✔ validateWorkflow — loop [90m(0.263125ms)[39m[39m
+▶ buildDependencyGraph — conditional branches
+  [32m✔ adds conditional as dependency for branch steps [90m(0.091375ms)[39m[39m
+[32m✔ buildDependencyGraph — conditional branches [90m(0.109041ms)[39m[39m
+▶ buildExecutionPlan — conditional ordering
+  [32m✔ places conditional before branch steps [90m(0.167208ms)[39m[39m
+[32m✔ buildExecutionPlan — conditional ordering [90m(0.184375ms)[39m[39m
+▶ executeWorkflow — conditional branching
+  [32m✔ executes then branch and skips else branch [90m(0.614458ms)[39m[39m
+  [32m✔ executes else branch when condition is false [90m(0.143ms)[39m[39m
+  [32m✔ template node composes text from resolved inputs [90m(0.249292ms)[39m[39m
+[32m✔ executeWorkflow — conditional branching [90m(1.038375ms)[39m[39m
+▶ executeChunk
+  [32m✔ chunks text with default recursive strategy [90m(1.02225ms)[39m[39m
+  [32m✔ chunks with fixed strategy [90m(0.109666ms)[39m[39m
+  [32m✔ chunks markdown and extracts headings [90m(0.229875ms)[39m[39m
+  [32m✔ attaches source to chunks [90m(0.060125ms)[39m[39m
+  [32m✔ returns empty for empty text [90m(0.622042ms)[39m[39m
+  [32m✔ throws on missing text [90m(0.321792ms)[39m[39m
+  [32m✔ chunks have correct index and charCount [90m(0.112166ms)[39m[39m
+[32m✔ executeChunk [90m(3.410916ms)[39m[39m
+▶ executeLoop
+  [32m✔ iterates over items and collects results [90m(0.541292ms)[39m[39m
+  [32m✔ handles empty array [90m(0.093125ms)[39m[39m
+  [32m✔ respects maxIterations [90m(0.170209ms)[39m[39m
+  [32m✔ loop variable accesses object properties [90m(0.076792ms)[39m[39m
+  [32m✔ throws on non-array items [90m(0.444666ms)[39m[39m
+  [32m✔ throws on missing as [90m(0.089625ms)[39m[39m
+  [32m✔ collects errors without stopping [90m(0.084334ms)[39m[39m
+[32m✔ executeLoop [90m(2.503542ms)[39m[39m
+▶ executeWorkflow — loop + chunk
+  [32m✔ chunks text then loops over chunks with template [90m(1.322917ms)[39m[39m
+  [32m✔ loop works with conditional branching [90m(0.376917ms)[39m[39m
+[32m✔ executeWorkflow — loop + chunk [90m(1.73725ms)[39m[39m
+▶ executeHttp
+  [32m✔ makes a GET request and returns JSON [90m(54.815125ms)[39m[39m
+  [32m✔ makes a POST request with JSON body [90m(4.216542ms)[39m[39m
+  [32m✔ returns text when responseType is text [90m(0.863916ms)[39m[39m
+  [32m✔ handles non-2xx status codes [90m(0.702042ms)[39m[39m
+  [32m✔ times out on slow responses [90m(102.925834ms)[39m[39m
+  [32m✔ does not follow redirects by default [90m(1.820083ms)[39m[39m
+  [32m✔ follows redirects when enabled [90m(1.446792ms)[39m[39m
+  [32m✔ passes custom headers [90m(0.828542ms)[39m[39m
+  [32m✔ throws on missing url [90m(0.114167ms)[39m[39m
+  [32m✔ falls back to text when JSON parse fails [90m(0.699459ms)[39m[39m
+[32m✔ executeHttp [90m(168.932709ms)[39m[39m
+▶ executeAggregate
+  [32m✔ throws on missing pipeline [90m(0.363666ms)[39m[39m
+  [32m✔ throws on pipeline exceeding 20 stages [90m(0.122625ms)[39m[39m
+  [32m✔ blocks $out without allowWrites [90m(0.088958ms)[39m[39m
+  [32m✔ blocks $merge without allowWrites [90m(0.091917ms)[39m[39m
+[32m✔ executeAggregate [90m(0.727ms)[39m[39m
+▶ executeWorkflow — http node
+  [32m✔ uses http node in a workflow pipeline [90m(7.226667ms)[39m[39m
+  [32m✔ http with conditional branching on status [90m(1.085ms)[39m[39m
+  [32m✔ http with continueOnError catches failures [90m(0.270416ms)[39m[39m
+[32m✔ executeWorkflow — http node [90m(8.661834ms)[39m[39m
+▶ scanNodeModules
+  [32m✔ finds vai-workflow-* packages [90m(1.535ms)[39m[39m
+  [32m✔ finds @vaicli scoped packages [90m(0.312958ms)[39m[39m
+  [32m✔ tags unscoped packages as community tier [90m(0.99025ms)[39m[39m
+  [32m✔ tags @vaicli packages as official tier [90m(0.277375ms)[39m[39m
+  [32m✔ returns empty for nonexistent directory [90m(0.72825ms)[39m[39m
+  [32m✔ returns empty for null [90m(0.039416ms)[39m[39m
+[32m✔ scanNodeModules [90m(4.502833ms)[39m[39m
+▶ validatePackage
+  [32m✔ validates a valid package with no errors [90m(0.155917ms)[39m[39m
+  [32m✔ validates an official scoped package with no errors [90m(0.398833ms)[39m[39m
+  [32m✔ reports errors for invalid workflow definition [90m(0.179834ms)[39m[39m
+  [32m✔ reports error when workflow.json is missing [90m(0.124958ms)[39m[39m
+  [32m✔ reports error for missing vai field [90m(0.091792ms)[39m[39m
+  [32m✔ handles nonexistent package path [90m(0.087125ms)[39m[39m
+[32m✔ validatePackage [90m(1.199833ms)[39m[39m
+▶ compareVersions
+  [32m✔ compares equal versions [90m(0.118667ms)[39m[39m
+  [32m✔ compares major versions [90m(0.039959ms)[39m[39m
+  [32m✔ compares minor versions [90m(0.03525ms)[39m[39m
+  [32m✔ compares patch versions [90m(0.035875ms)[39m[39m
+  [32m✔ handles v prefix [90m(0.022875ms)[39m[39m
+[32m✔ compareVersions [90m(0.315ms)[39m[39m
+▶ resolveWorkflow
+  [32m✔ resolves built-in workflows by name [90m(0.262958ms)[39m[39m
+  [32m✔ throws for unknown workflow name [90m(158.618667ms)[39m[39m
+  [32m✔ resolves local file paths [90m(0.139958ms)[39m[39m
+[32m✔ resolveWorkflow [90m(159.078583ms)[39m[39m
+▶ getRegistry
+  [32m✔ returns builtIn, official, and community arrays [90m(103.112084ms)[39m[39m
+  [32m✔ caches results [90m(84.109666ms)[39m[39m
+  [32m✔ force refresh clears cache [90m(166.017041ms)[39m[39m
+[32m✔ getRegistry [90m(353.335083ms)[39m[39m
+▶ searchLocal
+  [32m✔ returns empty array for no matches [90m(81.690916ms)[39m[39m
+[32m✔ searchLocal [90m(81.735375ms)[39m[39m
+▶ getCategories
+  [32m✔ returns an object with category counts [90m(87.29925ms)[39m[39m
+[32m✔ getCategories [90m(87.344ms)[39m[39m
+▶ toPackageName
+  [32m✔ adds vai-workflow- prefix [90m(0.577166ms)[39m[39m
+  [32m✔ slugifies spaces and special chars [90m(0.084917ms)[39m[39m
+  [32m✔ does not double-prefix [90m(0.063708ms)[39m[39m
+  [32m✔ lowercases [90m(0.067375ms)[39m[39m
+  [32m✔ adds @vaicli scope when scope is vaicli [90m(3.301958ms)[39m[39m
+  [32m✔ does not double-prefix with vaicli scope [90m(0.104459ms)[39m[39m
+[32m✔ toPackageName [90m(4.882416ms)[39m[39m
+▶ extractTools
+  [32m✔ extracts tool names from steps [90m(0.13725ms)[39m[39m
+  [32m✔ extracts tools from loop inline steps [90m(0.090125ms)[39m[39m
+  [32m✔ returns empty for no steps [90m(0.709167ms)[39m[39m
+[32m✔ extractTools [90m(1.039166ms)[39m[39m
+▶ guessCategory
+  [32m✔ guesses retrieval for query+generate [90m(0.109292ms)[39m[39m
+  [32m✔ guesses ingestion for ingest [90m(0.038625ms)[39m[39m
+  [32m✔ guesses analysis for similarity [90m(0.037542ms)[39m[39m
+  [32m✔ guesses integration for http [90m(0.033625ms)[39m[39m
+  [32m✔ defaults to utility [90m(0.030667ms)[39m[39m
+[32m✔ guessCategory [90m(0.303833ms)[39m[39m
+▶ generateReadme
+  [32m✔ generates readme with inputs table [90m(0.383667ms)[39m[39m
+  [32m✔ includes LLM prerequisite when generate is used [90m(0.083625ms)[39m[39m
+[32m✔ generateReadme [90m(0.512541ms)[39m[39m
+▶ scaffoldPackage
+  [32m✔ creates a complete package directory [90m(5.594458ms)[39m[39m
+  [32m✔ throws on invalid workflow definition [90m(0.34675ms)[39m[39m
+  [32m✔ auto-detects category from tools [90m(1.26475ms)[39m[39m
+  [32m✔ creates scoped package with publishConfig when scope is vaicli [90m(2.051875ms)[39m[39m
+  [32m✔ populates vai.inputs from workflow definition [90m(1.937792ms)[39m[39m
+[32m✔ scaffoldPackage [90m(11.282833ms)[39m[39m
+▶ toPackageName with scope
+  [32m✔ generates @vaicli scoped name when scope is vaicli [90m(0.088542ms)[39m[39m
+  [32m✔ generates unscoped name when no scope [90m(0.04525ms)[39m[39m
+  [32m✔ generates unscoped name when scope is undefined [90m(0.045708ms)[39m[39m
+[32m✔ toPackageName with scope [90m(0.232542ms)[39m[39m
+▶ scaffoldPackage with scope
+  [32m✔ creates @vaicli scoped package with publishConfig [90m(1.400042ms)[39m[39m
+[32m✔ scaffoldPackage with scope [90m(1.419083ms)[39m[39m
+▶ CATEGORIES
+  [32m✔ has the expected categories [90m(0.058083ms)[39m[39m
+[32m✔ CATEGORIES [90m(0.082792ms)[39m[39m
+▶ runWorkflowTest
+  [32m✔ passes with correct mocks and expectations [90m(2.912875ms)[39m[39m
+  [32m✔ fails when expected step is not found [90m(0.136666ms)[39m[39m
+  [32m✔ fails when output type does not match [90m(0.550875ms)[39m[39m
+  [32m✔ fails when output minLength is not met [90m(0.130292ms)[39m[39m
+  [32m✔ checks noErrors flag [90m(0.133833ms)[39m[39m
+  [32m✔ catches workflow execution errors [90m(0.151291ms)[39m[39m
+  [32m✔ works with multi-step workflows and mock injection [90m(3.790208ms)[39m[39m
+  [32m✔ checks string type in output [90m(0.492875ms)[39m[39m
+  [32m✔ handles skipped steps via conditions [90m(1.8145ms)[39m[39m
+  [32m✔ works with no expectations [90m(0.145542ms)[39m[39m
+[32m✔ runWorkflowTest [90m(10.990375ms)[39m[39m
+▶ loadTestCases
+  [32m✔ returns empty array when no tests/ directory exists [90m(3.875166ms)[39m[39m
+  [32m✔ loads test case files from tests/ directory [90m(0.761542ms)[39m[39m
+  [32m✔ ignores non-.test.json files [90m(0.724083ms)[39m[39m
+  [32m✔ handles invalid JSON gracefully [90m(0.579209ms)[39m[39m
+  [32m✔ loads multiple test files [90m(1.206459ms)[39m[39m
+[32m✔ loadTestCases [90m(7.2985ms)[39m[39m
+▶ runAllTests
+  [32m✔ runs all tests and returns aggregate results [90m(1.495667ms)[39m[39m
+  [32m✔ filters by test name [90m(1.956625ms)[39m[39m
+  [32m✔ reports failed tests in aggregate [90m(1.518625ms)[39m[39m
+  [32m✔ handles bad JSON test files in aggregate [90m(0.735416ms)[39m[39m
+[32m✔ runAllTests [90m(5.880959ms)[39m[39m
+▶ validateSchemaEnhanced
+  [32m✔ should pass for a valid workflow [90m(2.03125ms)[39m[39m
+  [32m✔ should export SCHEMA_LIMITS [90m(0.07975ms)[39m[39m
+  [32m✔ should require description of at least 10 chars [90m(0.156667ms)[39m[39m
+  [32m✔ should reject missing description [90m(0.066708ms)[39m[39m
+  [32m✔ should validate semver version [90m(0.077667ms)[39m[39m
+  [32m✔ should accept valid semver [90m(0.069875ms)[39m[39m
+  [32m✔ should require input descriptions [90m(0.069625ms)[39m[39m
+  [32m✔ should require step name field [90m(0.082083ms)[39m[39m
+  [32m✔ should require output section [90m(0.074542ms)[39m[39m
+  [32m✔ should reject too many steps [90m(1.39475ms)[39m[39m
+  [32m✔ should reject name that is too long [90m(0.321042ms)[39m[39m
+[32m✔ validateSchemaEnhanced [90m(5.5865ms)[39m[39m
+▶ validateWorkflow
+  [32m✔ accepts a valid minimal workflow [90m(1.463583ms)[39m[39m
+  [32m✔ rejects missing name [90m(0.130125ms)[39m[39m
+  [32m✔ rejects missing steps [90m(0.055292ms)[39m[39m
+  [32m✔ rejects empty steps array [90m(0.107042ms)[39m[39m
+  [32m✔ rejects non-object definition [90m(0.073542ms)[39m[39m
+  [32m✔ rejects duplicate step IDs [90m(0.083625ms)[39m[39m
+  [32m✔ rejects unknown tools [90m(0.067417ms)[39m[39m
+  [32m✔ accepts all valid tool names [90m(0.236042ms)[39m[39m
+  [32m✔ rejects missing step ID [90m(0.086ms)[39m[39m
+  [32m✔ rejects invalid input types [90m(0.113ms)[39m[39m
+  [32m✔ validates condition is a string [90m(0.071125ms)[39m[39m
+[32m✔ validateWorkflow [90m(4.201541ms)[39m[39m
+▶ detectCycles
+  [32m✔ detects a simple cycle [90m(0.3065ms)[39m[39m
+  [32m✔ detects a transitive cycle [90m(0.058875ms)[39m[39m
+  [32m✔ returns empty for acyclic graph [90m(0.070375ms)[39m[39m
+[32m✔ detectCycles [90m(0.48725ms)[39m[39m
+▶ buildDependencyGraph
+  [32m✔ identifies step dependencies from templates [90m(0.083708ms)[39m[39m
+  [32m✔ identifies dependencies from conditions [90m(0.037792ms)[39m[39m
+  [32m✔ ignores inputs and defaults prefixes [90m(0.027875ms)[39m[39m
+[32m✔ buildDependencyGraph [90m(0.180834ms)[39m[39m
+▶ buildExecutionPlan
+  [32m✔ puts independent steps in same layer [90m(0.089833ms)[39m[39m
+  [32m✔ puts dependent steps in later layer [90m(0.08375ms)[39m[39m
+  [32m✔ handles diamond dependency pattern [90m(0.04525ms)[39m[39m
+  [32m✔ handles multi-layer pipeline [90m(0.051875ms)[39m[39m
+[32m✔ buildExecutionPlan [90m(0.317ms)[39m[39m
+▶ evaluateCondition
+  [32m✔ evaluates simple comparison [90m(0.320875ms)[39m[39m
+  [32m✔ evaluates equality [90m(0.04525ms)[39m[39m
+  [32m✔ evaluates nested path lookups [90m(0.04175ms)[39m[39m
+  [32m✔ evaluates boolean AND [90m(0.053042ms)[39m[39m
+  [32m✔ evaluates boolean OR [90m(0.040542ms)[39m[39m
+  [32m✔ evaluates negation [90m(0.038917ms)[39m[39m
+  [32m✔ evaluates template expressions [90m(0.057208ms)[39m[39m
+  [32m✔ evaluates truthy/falsy values [90m(0.035292ms)[39m[39m
+  [32m✔ returns false for undefined paths [90m(0.025959ms)[39m[39m
+  [32m✔ evaluates number literals [90m(0.034ms)[39m[39m
+[32m✔ evaluateCondition [90m(0.776792ms)[39m[39m
+▶ executeMerge
+  [32m✔ concatenates arrays [90m(0.239833ms)[39m[39m
+  [32m✔ deduplicates by field [90m(0.104417ms)[39m[39m
+  [32m✔ handles empty arrays [90m(0.040541ms)[39m[39m
+  [32m✔ handles non-array items in arrays list [90m(0.035375ms)[39m[39m
+  [32m✔ throws on non-array input [90m(0.196625ms)[39m[39m
+[32m✔ executeMerge [90m(0.685542ms)[39m[39m
+▶ executeFilter
+  [32m✔ filters by condition [90m(0.112ms)[39m[39m
+  [32m✔ throws on non-array [90m(0.968292ms)[39m[39m
+  [32m✔ throws on missing condition [90m(0.053625ms)[39m[39m
+[32m✔ executeFilter [90m(1.171459ms)[39m[39m
+▶ executeTransform
+  [32m✔ picks specific fields [90m(0.099541ms)[39m[39m
+  [32m✔ passes through with no fields or mapping [90m(0.027042ms)[39m[39m
+  [32m✔ throws on non-array [90m(0.031667ms)[39m[39m
+[32m✔ executeTransform [90m(0.186416ms)[39m[39m
+▶ listBuiltinWorkflows
+  [32m✔ returns all built-in templates [90m(0.667209ms)[39m[39m
+  [32m✔ each template has name, description, file [90m(0.3345ms)[39m[39m
+[32m✔ listBuiltinWorkflows [90m(1.023708ms)[39m[39m
+▶ loadWorkflow
+  [32m✔ loads a built-in template by name [90m(0.183375ms)[39m[39m
+  [32m✔ throws on unknown template [90m(0.166542ms)[39m[39m
+[32m✔ loadWorkflow [90m(0.392417ms)[39m[39m
+▶ built-in template validation
+  [32m✔ all built-in templates pass validation [90m(0.96225ms)[39m[39m
+  [32m✔ all built-in templates have valid execution plans [90m(1.828875ms)[39m[39m
+[32m✔ built-in template validation [90m(2.858125ms)[39m[39m
+▶ tool constants
+  [32m✔ VAI_TOOLS contains all 15 vai tools [90m(0.139792ms)[39m[39m
+  [32m✔ CONTROL_FLOW_TOOLS contains 4 tools [90m(0.0585ms)[39m[39m
+  [32m✔ ALL_TOOLS is union of all tool categories [90m(0.072709ms)[39m[39m
+[32m✔ tool constants [90m(0.349291ms)[39m[39m
+▶ zip
+  [32m✔ creates a valid ZIP buffer [90m(2.278333ms)[39m[39m
+  [32m✔ handles empty files array [90m(0.1075ms)[39m[39m
+  [32m✔ includes all files in the ZIP [90m(0.126291ms)[39m[39m
+  [32m✔ preserves file content [90m(0.130083ms)[39m[39m
+[32m✔ zip [90m(3.449083ms)[39m[39m
+▶ MCP server — createServer
+  [32m✔ returns an McpServer instance [90m(3.523417ms)[39m[39m
+  [32m✔ server has connect method [90m(0.7935ms)[39m[39m
+  [32m✔ can create multiple independent servers [90m(0.542333ms)[39m[39m
+[32m✔ MCP server — createServer [90m(5.531083ms)[39m[39m
+▶ MCP server — exports
+  [32m✔ exports createServer [90m(0.074542ms)[39m[39m
+  [32m✔ exports runStdioServer [90m(0.038291ms)[39m[39m
+  [32m✔ exports runHttpServer [90m(0.046333ms)[39m[39m
+  [32m✔ exports generateKey [90m(0.036ms)[39m[39m
+[32m✔ MCP server — exports [90m(0.296833ms)[39m[39m
+▶ MCP server — tool count
+  [32m✔ server registers all 12 tools [90m(0.854041ms)[39m[39m
+[32m✔ MCP server — tool count [90m(0.914292ms)[39m[39m
+▶ MCP command registration
+  [32m✔ registers mcp-server command [90m(1.045125ms)[39m[39m
+  [32m✔ has mcp alias [90m(0.183792ms)[39m[39m
+  [32m✔ --transport defaults to stdio [90m(0.110417ms)[39m[39m
+  [32m✔ --port defaults to 3100 [90m(0.089916ms)[39m[39m
+  [32m✔ --host defaults to 127.0.0.1 [90m(0.0945ms)[39m[39m
+  [32m✔ has --db option [90m(0.082667ms)[39m[39m
+  [32m✔ has --collection option [90m(0.087667ms)[39m[39m
+  [32m✔ has --verbose flag [90m(0.088084ms)[39m[39m
+[32m✔ MCP command registration [90m(1.900208ms)[39m[39m
+▶ MCP schemas
+  [32m✔ exports all 11 schemas [90m(0.521792ms)[39m[39m
+  ▶ querySchema
+    [32m✔ accepts valid query [90m(0.814458ms)[39m[39m
+    [32m✔ rejects empty query [90m(0.267292ms)[39m[39m
+    [32m✔ applies default limit of 5 [90m(0.11075ms)[39m[39m
+    [32m✔ applies default rerank true [90m(0.058291ms)[39m[39m
+    [32m✔ accepts optional db and collection [90m(0.058917ms)[39m[39m
+    [32m✔ rejects limit > 50 [90m(0.196042ms)[39m[39m
+  [32m✔ querySchema [90m(1.66075ms)[39m[39m
+  ▶ searchSchema
+    [32m✔ accepts valid search [90m(0.336916ms)[39m[39m
+    [32m✔ applies default limit of 10 [90m(0.116ms)[39m[39m
+    [32m✔ allows limit up to 100 [90m(0.272833ms)[39m[39m
+  [32m✔ searchSchema [90m(0.909041ms)[39m[39m
+  ▶ rerankSchema
+    [32m✔ accepts valid rerank input [90m(0.521ms)[39m[39m
+    [32m✔ defaults model to rerank-2.5 [90m(0.115083ms)[39m[39m
+    [32m✔ rejects empty documents array [90m(0.195083ms)[39m[39m
+    [32m✔ only allows valid rerank models [90m(0.277958ms)[39m[39m
+  [32m✔ rerankSchema [90m(1.238667ms)[39m[39m
+  ▶ embedSchema
+    [32m✔ accepts valid embed input [90m(0.182542ms)[39m[39m
+    [32m✔ defaults model to voyage-4-large [90m(0.036959ms)[39m[39m
+    [32m✔ defaults inputType to query [90m(0.030333ms)[39m[39m
+    [32m✔ rejects empty text [90m(0.070958ms)[39m[39m
+  [32m✔ embedSchema [90m(0.381708ms)[39m[39m
+  ▶ similaritySchema
+    [32m✔ accepts two texts [90m(0.136708ms)[39m[39m
+    [32m✔ rejects missing text2 [90m(0.087041ms)[39m[39m
+  [32m✔ similaritySchema [90m(0.258167ms)[39m[39m
+  ▶ collectionsSchema
+    [32m✔ accepts empty input (all optional) [90m(0.066375ms)[39m[39m
+    [32m✔ accepts db parameter [90m(0.029625ms)[39m[39m
+  [32m✔ collectionsSchema [90m(0.118625ms)[39m[39m
+  ▶ modelsSchema
+    [32m✔ defaults category to all [90m(0.072667ms)[39m[39m
+    [32m✔ accepts embedding category [90m(0.023583ms)[39m[39m
+    [32m✔ rejects invalid category [90m(0.049375ms)[39m[39m
+  [32m✔ modelsSchema [90m(0.172667ms)[39m[39m
+  ▶ topicsSchema
+    [32m✔ accepts empty input (all optional) [90m(0.065708ms)[39m[39m
+    [32m✔ accepts search parameter [90m(0.028792ms)[39m[39m
+  [32m✔ topicsSchema [90m(0.130667ms)[39m[39m
+  ▶ explainSchema
+    [32m✔ requires topic [90m(0.096375ms)[39m[39m
+    [32m✔ accepts any topic string [90m(0.029ms)[39m[39m
+  [32m✔ explainSchema [90m(0.167833ms)[39m[39m
+  ▶ ingestSchema
+    [32m✔ requires text [90m(0.50575ms)[39m[39m
+    [32m✔ accepts valid ingest input [90m(0.05775ms)[39m[39m
+    [32m✔ defaults chunkStrategy to recursive [90m(0.041583ms)[39m[39m
+    [32m✔ defaults chunkSize to 512 [90m(0.030167ms)[39m[39m
+    [32m✔ defaults model to voyage-4-large [90m(0.027458ms)[39m[39m
+    [32m✔ accepts optional source and metadata [90m(0.804583ms)[39m[39m
+    [32m✔ rejects invalid chunk strategy [90m(0.087458ms)[39m[39m
+    [32m✔ rejects chunkSize below 100 [90m(0.077375ms)[39m[39m
+  [32m✔ ingestSchema [90m(1.712458ms)[39m[39m
+  ▶ estimateSchema
+    [32m✔ requires docs [90m(0.188292ms)[39m[39m
+    [32m✔ defaults queries to 0 and months to 12 [90m(0.033417ms)[39m[39m
+    [32m✔ rejects docs < 1 [90m(0.044958ms)[39m[39m
+    [32m✔ rejects months > 60 [90m(0.056083ms)[39m[39m
+  [32m✔ estimateSchema [90m(0.366291ms)[39m[39m
+[32m✔ MCP schemas [90m(8.406375ms)[39m[39m
+▶ MCP server
+  [32m✔ creates an McpServer instance [90m(3.6585ms)[39m[39m
+  [32m✔ server has registered tools [90m(0.446ms)[39m[39m
+[32m✔ MCP server [90m(4.7045ms)[39m[39m
+▶ MCP server exports
+  [32m✔ exports generateKey function [90m(0.072042ms)[39m[39m
+  [32m✔ exports runHttpServer function [90m(0.03525ms)[39m[39m
+[32m✔ MCP server exports [90m(0.176209ms)[39m[39m
+▶ MCP tool modules
+  [32m✔ retrieval module exports registerRetrievalTools [90m(0.146625ms)[39m[39m
+  [32m✔ embedding module exports registerEmbeddingTools [90m(0.078583ms)[39m[39m
+  [32m✔ management module exports registerManagementTools [90m(0.066541ms)[39m[39m
+  [32m✔ management module exports introspectCollections [90m(0.046208ms)[39m[39m
+  [32m✔ utility module exports registerUtilityTools [90m(0.051375ms)[39m[39m
+  [32m✔ ingest module exports registerIngestTool [90m(0.074417ms)[39m[39m
+[32m✔ MCP tool modules [90m(0.577875ms)[39m[39m
+▶ MCP SSE transport
+  [32m✔ exports setupSSE function [90m(0.353167ms)[39m[39m
+  [32m✔ exports getSessionCount function [90m(0.042416ms)[39m[39m
+  [32m✔ getSessionCount returns 0 initially [90m(0.038792ms)[39m[39m
+[32m✔ MCP SSE transport [90m(0.91175ms)[39m[39m
+▶ MCP SSE transport — HTTP integration
+  [32m✔ GET /sse returns event-stream content type [90m(8.745875ms)[39m[39m
+  [32m✔ POST /messages without sessionId returns 400 [90m(30.178375ms)[39m[39m
+  [32m✔ POST /messages with invalid sessionId returns 404 [90m(1.651042ms)[39m[39m
+[32m✔ MCP SSE transport — HTTP integration [90m(46.195084ms)[39m[39m
+▶ MCP SSE transport — auth enforcement
+  [32m✔ GET /sse is rejected without auth [90m(2.737084ms)[39m[39m
+  [32m✔ POST /messages is rejected without auth [90m(1.131084ms)[39m[39m
+[32m✔ MCP SSE transport — auth enforcement [90m(5.857292ms)[39m[39m
+▶ MCP server — SSE flag integration
+  [32m✔ runHttpServer accepts sse option without error [90m(0.094917ms)[39m[39m
+  [32m✔ mcp-server command registers --no-sse option [90m(2.459333ms)[39m[39m
+[32m✔ MCP server — SSE flag integration [90m(2.599334ms)[39m[39m
+▶ MCP code-search tools — registration
+  [32m✔ registers exactly 5 tools [90m(0.556291ms)[39m[39m
+  [32m✔ registers all code search tool names [90m(0.135125ms)[39m[39m
+  [32m✔ each tool has a handler function [90m(0.081833ms)[39m[39m
+[32m✔ MCP code-search tools — registration [90m(1.507ms)[39m[39m
+▶ MCP embedding tools — registration
+  [32m✔ registers exactly 3 tools [90m(0.534833ms)[39m[39m
+  [32m✔ registers vai_embed, vai_similarity, and vai_multimodal_embed [90m(0.687ms)[39m[39m
+  [32m✔ vai_embed uses embedSchema [90m(0.060167ms)[39m[39m
+  [32m✔ vai_similarity uses similaritySchema [90m(0.052042ms)[39m[39m
+  [32m✔ vai_embed description mentions vector [90m(0.075ms)[39m[39m
+  [32m✔ vai_similarity description mentions cosine [90m(0.053042ms)[39m[39m
+  [32m✔ handlers are async [90m(0.051ms)[39m[39m
+  [32m✔ vai_embed handler fails gracefully without API key [90m(0.682625ms)[39m[39m
+  [32m✔ vai_similarity handler fails gracefully without API key [90m(0.120625ms)[39m[39m
+[32m✔ MCP embedding tools — registration [90m(3.026ms)[39m[39m
+▶ MCP ingest tool — registration
+  [32m✔ registers exactly 1 tool [90m(0.457708ms)[39m[39m
+  [32m✔ registers vai_ingest [90m(0.063334ms)[39m[39m
+  [32m✔ uses ingestSchema [90m(0.056334ms)[39m[39m
+  [32m✔ description mentions chunking and embedding [90m(0.08375ms)[39m[39m
+  [32m✔ handler is async [90m(0.051667ms)[39m[39m
+[32m✔ MCP ingest tool — registration [90m(1.339083ms)[39m[39m
+▶ MCP ingest — chunker integration
+  [32m✔ chunker exists and is callable [90m(0.073125ms)[39m[39m
+  [32m✔ chunks text with recursive strategy [90m(0.153166ms)[39m[39m
+  [32m✔ returns empty for empty text [90m(0.05575ms)[39m[39m
+  [32m✔ sentence strategy produces chunks [90m(0.194167ms)[39m[39m
+  [32m✔ paragraph strategy produces chunks [90m(0.140209ms)[39m[39m
+  [32m✔ fixed strategy produces chunks [90m(0.074083ms)[39m[39m
+[32m✔ MCP ingest — chunker integration [90m(0.806041ms)[39m[39m
+▶ MCP management tools — registration
+  [32m✔ registers exactly 2 tools [90m(0.436459ms)[39m[39m
+  [32m✔ registers vai_collections and vai_models [90m(0.677625ms)[39m[39m
+  [32m✔ uses correct schemas [90m(0.054625ms)[39m[39m
+  [32m✔ exports introspectCollections as a function [90m(0.042333ms)[39m[39m
+  [32m✔ handlers are async [90m(0.059875ms)[39m[39m
+[32m✔ MCP management tools — registration [90m(1.86525ms)[39m[39m
+▶ MCP management — vai_models handler
+  [32m✔ returns models for category=all [90m(0.219292ms)[39m[39m
+  [32m✔ filters to embedding models only [90m(0.067666ms)[39m[39m
+  [32m✔ filters to rerank models only [90m(0.058125ms)[39m[39m
+  [32m✔ excludes legacy models [90m(0.080041ms)[39m[39m
+  [32m✔ includes model metadata fields [90m(0.0765ms)[39m[39m
+  [32m✔ text content includes pricing info [90m(0.055459ms)[39m[39m
+  [32m✔ returns empty array for category with no matching models if catalog has none [90m(0.04925ms)[39m[39m
+[32m✔ MCP management — vai_models handler [90m(0.730875ms)[39m[39m
+▶ MCP management — vai_collections handler
+  [32m✔ handler exists and is async [90m(0.062041ms)[39m[39m
+  [90m﹣ connects to MongoDB when URI is configured [90m(0.022917ms)[39m # MONGODB_URI not set[39m
+[32m✔ MCP management — vai_collections handler [90m(0.139292ms)[39m[39m
+▶ MCP retrieval tools — registration
+  [32m✔ registers exactly 3 tools [90m(0.466042ms)[39m[39m
+  [32m✔ registers vai_query, vai_search, vai_rerank [90m(0.6395ms)[39m[39m
+  [32m✔ vai_query has descriptive text mentioning RAG [90m(0.069ms)[39m[39m
+  [32m✔ vai_search has descriptive text mentioning vector [90m(0.070208ms)[39m[39m
+  [32m✔ vai_rerank has descriptive text mentioning rerank [90m(0.049958ms)[39m[39m
+  [32m✔ all tools pass schemas as their third argument [90m(0.05025ms)[39m[39m
+  [32m✔ all handlers are async functions [90m(0.0545ms)[39m[39m
+[32m✔ MCP retrieval tools — registration [90m(2.012167ms)[39m[39m
+▶ MCP retrieval — handler structure
+  [32m✔ all handlers accept input and are callable [90m(0.075208ms)[39m[39m
+[32m✔ MCP retrieval — handler structure [90m(0.132791ms)[39m[39m
+▶ MCP utility tools — registration
+  [32m✔ registers exactly 3 tools [90m(0.419333ms)[39m[39m
+  [32m✔ registers vai_topics, vai_explain, and vai_estimate [90m(0.632459ms)[39m[39m
+  [32m✔ uses correct schemas [90m(0.067125ms)[39m[39m
+[32m✔ MCP utility tools — registration [90m(1.678ms)[39m[39m
+▶ MCP utility — vai_topics handler
+  [32m✔ lists all topics when no search provided [90m(0.27875ms)[39m[39m
+  [32m✔ each topic has topic, title, and summary [90m(0.127625ms)[39m[39m
+  [32m✔ includes category groupings when listing all [90m(0.060792ms)[39m[39m
+  [32m✔ filters topics by search term [90m(0.200167ms)[39m[39m
+  [32m✔ returns empty results for nonsense search [90m(0.118792ms)[39m[39m
+  [32m✔ search for "embed" returns embedding-related topics [90m(0.096042ms)[39m[39m
+  [32m✔ omits categories when searching [90m(0.102083ms)[39m[39m
+  [32m✔ text output includes usage hint [90m(0.074834ms)[39m[39m
+[32m✔ MCP utility — vai_topics handler [90m(1.250208ms)[39m[39m
+▶ MCP utility — vai_explain handler
+  [32m✔ returns content for a known topic (embeddings) [90m(0.219625ms)[39m[39m
+  [32m✔ returns content for moe topic [90m(0.073875ms)[39m[39m
+  [32m✔ returns error for unknown topic [90m(0.0875ms)[39m[39m
+  [32m✔ includes links in structuredContent when available [90m(0.043417ms)[39m[39m
+  [32m✔ includes relatedTopics in response [90m(0.043542ms)[39m[39m
+  [32m✔ fuzzy matches partial topic names [90m(0.062625ms)[39m[39m
+  [32m✔ suggests similar topics for unknown input [90m(0.050167ms)[39m[39m
+  [32m✔ text output includes "Related" section [90m(0.045792ms)[39m[39m
+[32m✔ MCP utility — vai_explain handler [90m(0.705792ms)[39m[39m
+▶ MCP utility — vai_estimate handler
+  [32m✔ returns estimates for 10k docs / 1k queries / 12 months [90m(8.233584ms)[39m[39m
+  [32m✔ estimates are sorted by totalCost ascending [90m(0.1395ms)[39m[39m
+  [32m✔ recommendation matches first (cheapest) estimate model [90m(0.061125ms)[39m[39m
+  [32m✔ zero queries yields zero monthly cost [90m(0.079875ms)[39m[39m
+  [32m✔ each estimate has required fields [90m(0.046292ms)[39m[39m
+  [32m✔ text output includes model names and costs [90m(0.05375ms)[39m[39m
+  [32m✔ higher doc count produces higher costs [90m(0.055334ms)[39m[39m
+[32m✔ MCP utility — vai_estimate handler [90m(8.741208ms)[39m[39m
+[34mℹ tests 1451[39m
+[34mℹ suites 341[39m
+[34mℹ pass 1449[39m
+[34mℹ fail 1[39m
+[34mℹ cancelled 0[39m
+[34mℹ skipped 1[39m
+[34mℹ todo 0[39m
+[34mℹ duration_ms 5923.875792[39m
+
+[31m✖ failing tests:[39m
+
+test at test/lib/explanations.test.js:47:3
+[31m✖ listConcepts returns all concept keys [90m(0.61275ms)[39m[39m
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  31 !== 30
+  
+      at TestContext.<anonymous> (/Users/michael.lynn/code/voyageai-cli/test/lib/explanations.test.js:49:12)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Suite.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async Promise.all (index 0)
+      at async Suite.run (node:internal/test_runner/test:1533:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 31,
+    expected: 30,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

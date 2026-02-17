@@ -541,6 +541,71 @@ function createPlaygroundServer() {
         return;
       }
 
+      // API: Settings — read/write ~/.vai/config.json
+      if (req.method === 'GET' && req.url === '/api/settings') {
+        const { loadConfig, KEY_MAP, SECRET_KEYS, maskSecret } = require('../lib/config');
+        const config = loadConfig();
+
+        // Build response: CLI key name → masked/raw value, for every known key
+        const reverseMap = {};
+        for (const [cliKey, internalKey] of Object.entries(KEY_MAP)) {
+          reverseMap[internalKey] = cliKey;
+        }
+
+        const settings = {};
+        for (const [internalKey, cliKey] of Object.entries(reverseMap)) {
+          const value = config[internalKey];
+          settings[cliKey] = {
+            value: value != null ? (SECRET_KEYS.has(internalKey) ? maskSecret(value) : value) : null,
+            isSet: value != null,
+            isSecret: SECRET_KEYS.has(internalKey),
+            internalKey,
+          };
+        }
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(settings));
+        return;
+      }
+
+      if (req.method === 'PUT' && req.url === '/api/settings') {
+        const { loadConfig, saveConfig, KEY_MAP, SECRET_KEYS } = require('../lib/config');
+        const body = await readBody(req);
+        let updates;
+        try {
+          updates = JSON.parse(body);
+        } catch {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Invalid JSON' }));
+          return;
+        }
+
+        const config = loadConfig();
+        const applied = [];
+
+        for (const [cliKey, value] of Object.entries(updates)) {
+          const internalKey = KEY_MAP[cliKey];
+          if (!internalKey) {
+            continue; // Skip unknown keys
+          }
+          // Don't overwrite secrets with masked values
+          if (SECRET_KEYS.has(internalKey) && typeof value === 'string' && value.includes('...')) {
+            continue;
+          }
+          if (value === null || value === '') {
+            delete config[internalKey];
+          } else {
+            config[internalKey] = value;
+          }
+          applied.push(cliKey);
+        }
+
+        saveConfig(config);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ applied, message: `Updated ${applied.length} setting(s)` }));
+        return;
+      }
+
       // API: Settings origins — where each config value comes from
       if (req.method === 'GET' && req.url === '/api/settings/origins') {
         const { resolveLLMConfig } = require('../lib/llm');
@@ -561,8 +626,8 @@ function createPlaygroundServer() {
           provider: resolveOrigin('VAI_LLM_PROVIDER', 'llmProvider', chatConf.provider),
           model: resolveOrigin('VAI_LLM_MODEL', 'llmModel', chatConf.model),
           llmApiKey: resolveOrigin('VAI_LLM_API_KEY', 'llmApiKey'),
-          db: proj.db ? 'project' : 'default',
-          collection: proj.collection ? 'project' : 'default',
+          db: resolveOrigin(null, 'defaultDb', proj.db),
+          collection: resolveOrigin(null, 'defaultCollection', proj.collection),
         };
 
         res.writeHead(200, { 'Content-Type': 'application/json' });

@@ -529,6 +529,36 @@ function registerWorkflow(program) {
       }
     });
 
+  // ── workflow integration-test ──
+  wfCmd
+    .command('integration-test')
+    .description('Run live integration tests against use-case domain datasets')
+    .option('--domain <slug>', 'Test only a specific domain (devdocs, healthcare, finance, legal)')
+    .option('--workflow <name>', 'Test only a specific workflow')
+    .option('--no-seed', 'Skip seeding (assumes data already exists)')
+    .option('--teardown', 'Drop test collections after running')
+    .option('--sample-docs <path>', 'Override base path for sample documents')
+    .option('--json', 'Output machine-readable JSON', false)
+    .action(async (opts) => {
+      // Delegate to the integration test runner
+      const { execFileSync } = require('child_process');
+      const runnerPath = path.join(__dirname, '../../test/integration/run.js');
+      const args = [];
+      if (opts.domain) args.push('--domain', opts.domain);
+      if (opts.workflow) args.push('--workflow', opts.workflow);
+      if (opts.seed === false) args.push('--no-seed');
+      if (opts.teardown) args.push('--teardown');
+      if (opts.sampleDocs) args.push('--sample-docs', opts.sampleDocs);
+      if (opts.json) args.push('--json');
+
+      try {
+        execFileSync(process.execPath, [runnerPath, ...args], { stdio: 'inherit' });
+      } catch (err) {
+        if (err.status) process.exit(err.status);
+        throw err;
+      }
+    });
+
   // ── workflow validate <file> ──
   wfCmd
     .command('validate <file>')

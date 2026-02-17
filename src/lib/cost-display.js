@@ -89,7 +89,7 @@ function showCombinedCostSummary(operations, opts = {}) {
  * @returns {boolean}
  */
 function isEnabled() {
-  const val = getConfigValue('show-cost');
+  const val = getConfigValue('showCost') || getConfigValue('show-cost');
   return val === true || val === 'true';
 }
 

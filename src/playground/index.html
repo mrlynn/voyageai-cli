@@ -7915,6 +7915,10 @@ Reranking models rescore initial search results to improve relevance ordering.</
         <svg width="16" height="16" viewBox="0 0 24 24"><use href="#lg-config"/></svg>
         <span>General</span>
       </button>
+      <button class="settings-nav-item" data-settings-section="database">
+        <svg width="16" height="16" viewBox="0 0 24 24"><use href="#lg-database"/></svg>
+        <span>Database</span>
+      </button>
       <button class="settings-nav-item" data-settings-section="appearance">
         <svg width="16" height="16" viewBox="0 0 24 24"><use href="#lg-palette"/></svg>
         <span>Appearance</span>
@@ -8013,6 +8017,47 @@ Reranking models rescore initial search results to improve relevance ordering.</
                 <option value="benchmark">Benchmark</option>
                 <option value="explore">Explore</option>
               </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Database ── -->
+      <div class="settings-panel" id="settings-database">
+        <div class="settings-panel-header">
+          <h3 class="settings-panel-title">Database</h3>
+          <p class="settings-panel-subtitle">MongoDB Atlas connection and default targets</p>
+        </div>
+        <div class="settings-section">
+          <div class="settings-row">
+            <div class="settings-label">
+              <span class="settings-label-text">MongoDB URI <span class="settings-origin" data-origin-key="mongodbUri"></span></span>
+              <span class="settings-label-hint">Connection string for MongoDB Atlas · <a href="https://cloud.mongodb.com" target="_blank" class="settings-key-link"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:2px;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>Atlas Console</a></span>
+            </div>
+            <div class="settings-control" style="min-width:260px;">
+              <div class="settings-api-field">
+                <input type="password" id="settingsMongoUri" placeholder="mongodb+srv://user:pass@cluster.mongodb.net/" autocomplete="off" spellcheck="false">
+                <button type="button" id="settingsMongoUriToggle" title="Show/hide"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg></button>
+                <button type="button" id="settingsMongoUriSave" class="save-btn" title="Save">Save</button>
+              </div>
+            </div>
+          </div>
+          <div class="settings-row">
+            <div class="settings-label">
+              <span class="settings-label-text">Default Database <span class="settings-origin" data-origin-key="db"></span></span>
+              <span class="settings-label-hint">Used by workflows and commands when no database is specified</span>
+            </div>
+            <div class="settings-control">
+              <input type="text" class="settings-input" id="settingsDefaultDb" placeholder="e.g. my_knowledge_base">
+            </div>
+          </div>
+          <div class="settings-row">
+            <div class="settings-label">
+              <span class="settings-label-text">Default Collection <span class="settings-origin" data-origin-key="collection"></span></span>
+              <span class="settings-label-hint">Used by workflows and commands when no collection is specified</span>
+            </div>
+            <div class="settings-control">
+              <input type="text" class="settings-input" id="settingsDefaultCollection" placeholder="e.g. documents">
             </div>
           </div>
         </div>
@@ -11842,6 +11887,80 @@ function initSettings() {
         e.preventDefault();
         saveChatApiKey();
       }
+    });
+  }
+
+  // ── Database settings (read/write ~/.vai/config.json via /api/settings) ──
+  const dbSettingsFields = {
+    'settingsMongoUri': 'mongodb-uri',
+    'settingsDefaultDb': 'default-db',
+    'settingsDefaultCollection': 'default-collection',
+  };
+
+  // Load current values from ~/.vai/config.json
+  fetch('/api/settings').then(r => r.json()).then(settings => {
+    for (const [elemId, cliKey] of Object.entries(dbSettingsFields)) {
+      const el = document.getElementById(elemId);
+      if (el && settings[cliKey] && settings[cliKey].isSet) {
+        // Don't populate masked secret values into editable fields
+        if (settings[cliKey].isSecret) {
+          el.placeholder = settings[cliKey].value || el.placeholder;
+        } else {
+          el.value = settings[cliKey].value || '';
+        }
+      }
+    }
+  }).catch(() => {});
+
+  // Save non-secret fields on change (default-db, default-collection)
+  ['settingsDefaultDb', 'settingsDefaultCollection'].forEach(elemId => {
+    const el = document.getElementById(elemId);
+    if (el) {
+      let debounce;
+      el.addEventListener('input', () => {
+        clearTimeout(debounce);
+        debounce = setTimeout(() => {
+          const cliKey = dbSettingsFields[elemId];
+          fetch('/api/settings', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ [cliKey]: el.value || null }),
+          }).then(() => flashSaved()).catch(() => {});
+        }, 600);
+      });
+    }
+  });
+
+  // MongoDB URI — save button (secret field, same pattern as API key)
+  const mongoUriInput = document.getElementById('settingsMongoUri');
+  const mongoUriToggle = document.getElementById('settingsMongoUriToggle');
+  const mongoUriSave = document.getElementById('settingsMongoUriSave');
+  if (mongoUriInput && mongoUriSave) {
+    let mongoUriVisible = false;
+    if (mongoUriToggle) {
+      mongoUriToggle.addEventListener('click', () => {
+        mongoUriVisible = !mongoUriVisible;
+        mongoUriInput.type = mongoUriVisible ? 'text' : 'password';
+      });
+    }
+    mongoUriSave.addEventListener('click', () => {
+      const val = mongoUriInput.value.trim();
+      fetch('/api/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 'mongodb-uri': val || null }),
+      }).then(() => {
+        flashSaved();
+        if (val) {
+          mongoUriInput.value = '';
+          mongoUriInput.type = 'password';
+          mongoUriVisible = false;
+          mongoUriInput.placeholder = val.slice(0, 20) + '...';
+        }
+      }).catch(() => {});
+    });
+    mongoUriInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') mongoUriSave.click();
     });
   }
 

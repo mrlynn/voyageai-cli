@@ -512,6 +512,26 @@ echo "your-key" | vai config set api-key --stdin
 vai config set mongodb-uri "mongodb+srv://..."
 ```
 
+#### All Config Keys
+
+| CLI Key | Description | Example |
+|---------|-------------|---------|
+| `api-key` | Voyage AI API key | `vai config set api-key pa-...` |
+| `mongodb-uri` | MongoDB Atlas connection string | `vai config set mongodb-uri "mongodb+srv://..."` |
+| `base-url` | Override API endpoint (Atlas AI or Voyage) | `vai config set base-url https://ai.mongodb.com/v1` |
+| `default-model` | Default embedding model | `vai config set default-model voyage-3` |
+| `default-dimensions` | Default output dimensions | `vai config set default-dimensions 512` |
+| `default-db` | Default MongoDB database for workflows/commands | `vai config set default-db my_knowledge_base` |
+| `default-collection` | Default MongoDB collection for workflows/commands | `vai config set default-collection documents` |
+| `llm-provider` | LLM provider for chat/generate (`anthropic`, `openai`, `ollama`) | `vai config set llm-provider anthropic` |
+| `llm-api-key` | LLM provider API key | `vai config set llm-api-key sk-...` |
+| `llm-model` | LLM model override | `vai config set llm-model claude-sonnet-4-5-20250929` |
+| `llm-base-url` | LLM endpoint override (e.g. for Ollama) | `vai config set llm-base-url http://localhost:11434` |
+| `show-cost` | Show cost estimates after operations | `vai config set show-cost true` |
+| `telemetry` | Enable/disable anonymous usage telemetry | `vai config set telemetry false` |
+
+Config is stored in `~/.vai/config.json`. Use `vai config get` to see all values (secrets are masked) or `vai config get <key>` for a specific value. The desktop app's Settings → Database page also reads and writes this file.
+
 ### Shell Completions
 
 ```bash

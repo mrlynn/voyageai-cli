@@ -1162,6 +1162,19 @@ async function executeHttp(inputs) {
 }
 
 /**
+ * Resolve db and collection from inputs → defaults → project → vai config.
+ */
+function resolveDbAndCollection(inputs, defaults) {
+  const { loadProject } = require('./project');
+  const { getConfigValue } = require('./config');
+  const { config: proj } = loadProject();
+  return {
+    db: inputs.db || defaults.db || proj.db || process.env.VAI_DEFAULT_DB || getConfigValue('defaultDb'),
+    collection: inputs.collection || defaults.collection || proj.collection || process.env.VAI_DEFAULT_COLLECTION || getConfigValue('defaultCollection'),
+  };
+}
+
+/**
  * Execute a MongoDB aggregation pipeline step.
  *
  * @param {object} inputs - { db?, collection?, pipeline, allowWrites? }
@@ -1170,11 +1183,8 @@ async function executeHttp(inputs) {
  */
 async function executeAggregate(inputs, defaults) {
   const { getMongoCollection } = require('./mongo');
-  const { loadProject } = require('./project');
-  const { config: proj } = loadProject();
 
-  const db = inputs.db || defaults.db || proj.db;
-  const collection = inputs.collection || defaults.collection || proj.collection;
+  const { db, collection } = resolveDbAndCollection(inputs, defaults);
   const pipeline = inputs.pipeline;
   const allowWrites = inputs.allowWrites || false;
 
@@ -1217,11 +1227,8 @@ async function executeAggregate(inputs, defaults) {
 async function executeQuery(inputs, defaults) {
   const { generateEmbeddings, apiRequest } = require('./api');
   const { getMongoCollection } = require('./mongo');
-  const { loadProject } = require('./project');
-  const { config: proj } = loadProject();
 
-  const db = inputs.db || defaults.db || proj.db;
-  const collection = inputs.collection || defaults.collection || proj.collection;
+  const { db, collection } = resolveDbAndCollection(inputs, defaults);
   const model = inputs.model || defaults.model;
   const query = inputs.query;
   const limit = inputs.limit || 10;
@@ -1381,11 +1388,8 @@ async function executeIngest(inputs, defaults) {
   const { generateEmbeddings } = require('./api');
   const { getMongoCollection } = require('./mongo');
   const { chunk } = require('./chunker');
-  const { loadProject } = require('./project');
-  const { config: proj } = loadProject();
 
-  const db = inputs.db || defaults.db || proj.db;
-  const collection = inputs.collection || defaults.collection || proj.collection;
+  const { db, collection } = resolveDbAndCollection(inputs, defaults);
   const text = inputs.text;
   const source = inputs.source || 'workflow-ingest';
   const model = inputs.model || defaults.model;
@@ -1464,10 +1468,8 @@ async function executeIngest(inputs, defaults) {
  */
 async function executeCollections(inputs, defaults) {
   const { introspectCollections } = require('./workflow-utils');
-  const { loadProject } = require('./project');
-  const { config: proj } = loadProject();
 
-  const db = inputs.db || defaults.db || proj.db;
+  const { db } = resolveDbAndCollection(inputs, defaults);
   if (!db) throw new Error('collections: database not specified');
 
   const collections = await introspectCollections(db);

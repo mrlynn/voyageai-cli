@@ -18,7 +18,9 @@ const KEY_MAP = {
   'llm-api-key': 'llmApiKey',
   'llm-model': 'llmModel',
   'llm-base-url': 'llmBaseUrl',
-  'show-cost': 'show-cost',
+  'default-db': 'defaultDb',
+  'default-collection': 'defaultCollection',
+  'show-cost': 'showCost',
   'telemetry': 'telemetry',
 };
 
