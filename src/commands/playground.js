@@ -465,9 +465,9 @@ function createPlaygroundServer() {
 
       // API: Version — return CLI package version
       if (req.method === 'GET' && req.url === '/api/version') {
-        const pkg = require('../../package.json');
+        const { getVersion } = require('../lib/banner');
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ version: pkg.version }));
+        res.end(JSON.stringify({ version: getVersion() }));
         return;
       }
 

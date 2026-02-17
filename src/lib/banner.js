@@ -7,8 +7,19 @@ const pc = require('picocolors');
  * @returns {string}
  */
 function getVersion() {
-  const pkg = require('../../package.json');
-  return pkg.version || '0.0.0';
+  const path = require('path');
+  // Walk up from this file to find package.json — works both in dev and packaged Electron
+  let dir = __dirname;
+  for (let i = 0; i < 5; i++) {
+    try {
+      const pkg = require(path.join(dir, 'package.json'));
+      if (pkg.version) return pkg.version;
+    } catch (_) { /* keep looking */ }
+    const parent = path.dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+  return '0.0.0';
 }
 
 /**

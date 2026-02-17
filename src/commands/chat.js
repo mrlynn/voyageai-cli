@@ -735,8 +735,7 @@ async function cleanup(mongo) {
 
 function getVersion() {
   try {
-    const pkg = require('../../package.json');
-    return pkg.version;
+    return require('../lib/banner').getVersion();
   } catch {
     return '0.0.0';
   }

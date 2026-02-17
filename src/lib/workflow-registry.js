@@ -149,7 +149,8 @@ function validatePackage(packagePath, pkg) {
 
     if (pkg.vai.minVaiVersion) {
       try {
-        const { version: currentVersion } = require('../../package.json');
+        const { getVersion } = require('./banner');
+        const currentVersion = getVersion();
         if (compareVersions(pkg.vai.minVaiVersion, currentVersion) > 0) {
           warnings.push(`Requires vai >= ${pkg.vai.minVaiVersion} (you have ${currentVersion})`);
         }

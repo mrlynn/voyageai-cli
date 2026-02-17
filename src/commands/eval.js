@@ -18,7 +18,7 @@ function saveResults(filePath, results) {
   const output = {
     ...results,
     savedAt: new Date().toISOString(),
-    vaiVersion: require('../../package.json').version,
+    vaiVersion: require('../lib/banner').getVersion(),
   };
   fs.writeFileSync(filePath, JSON.stringify(output, null, 2), 'utf8');
 }
@@ -945,7 +945,7 @@ function registerEvalCompare(evalCmd) {
             kValues,
             configs: results,
             comparedAt: new Date().toISOString(),
-            vaiVersion: require('../../package.json').version,
+            vaiVersion: require('../lib/banner').getVersion(),
           };
           fs.writeFileSync(opts.save, JSON.stringify(output, null, 2), 'utf8');
           if (verbose) {

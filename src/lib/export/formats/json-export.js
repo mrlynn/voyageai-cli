@@ -1,7 +1,7 @@
 'use strict';
 
-const path = require('path');
-const pkg = require(path.resolve(__dirname, '..', '..', '..', '..', 'package.json'));
+const { getVersion } = require('../../../lib/banner');
+const pkg = { version: getVersion() };
 
 /**
  * Render normalized data as JSON.

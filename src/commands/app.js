@@ -57,8 +57,8 @@ function registerApp(program) {
     .action(async (opts) => {
       // --version: print version and exit
       if (opts.version) {
-        const pkg = require(path.join(__dirname, '..', '..', 'package.json'));
-        console.log(`voyageai-cli v${pkg.version}`);
+        const { getVersion } = require('../lib/banner');
+        console.log(`voyageai-cli v${getVersion()}`);
         return;
       }
 

@@ -12,7 +12,8 @@ const { registerWorkspaceTools } = require('./tools/workspace');
 const { registerCodeSearchTools } = require('./tools/code-search');
 const { registerAuthoringTools } = require('./tools/authoring');
 
-const VERSION = require('../../package.json').version;
+const { getVersion } = require('../lib/banner');
+const VERSION = getVersion();
 
 /**
  * Create and configure the MCP server with all tools registered.
