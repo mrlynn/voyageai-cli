@@ -4517,23 +4517,38 @@ select:focus { outline: none; border-color: var(--accent); }
   cursor: help;
 }
 .wf-validation-bar {
-  position: fixed;
-  top: 44px;
-  left: 260px;
-  right: 0;
+  position: absolute;
+  top: 52px;
+  left: 12px;
+  right: 12px;
   height: 28px;
   background: var(--bg-surface);
-  border-bottom: 1px solid var(--border);
+  border: 1px solid var(--border);
+  border-radius: 6px;
   display: none;
   align-items: center;
-  padding: 0 16px;
+  padding: 0 12px;
   font-size: 12px;
-  z-index: 50;
+  z-index: 9;
   cursor: pointer;
   transition: background-color 0.15s;
 }
 .wf-validation-bar:hover {
   background: var(--bg-card);
+}
+.wf-validation-bar .wf-validation-close {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0 4px;
+  opacity: 0.6;
+  line-height: 1;
+}
+.wf-validation-bar .wf-validation-close:hover {
+  opacity: 1;
 }
 .wf-validation-bar.warning {
   color: #FFB74D;
@@ -6687,12 +6702,12 @@ Semantic search understands meaning beyond keyword matching</textarea>
 <div class="tab-panel" id="tab-multimodal" role="tabpanel" aria-labelledby="tab-btn-multimodal" tabindex="0">
   <div class="page-header">
     <h2 class="page-header-title">Multimodal</h2>
-    <p class="page-header-subtitle">Compare images and text in the same vector space</p>
-    <p class="page-header-hint">Voyage AI's multimodal models embed images and text into a unified vector space, so you can compare them directly with cosine similarity.</p>
+    <p class="page-header-subtitle">Compare images, video, and text in the same vector space</p>
+    <p class="page-header-hint">Voyage AI's multimodal models embed images, video, and text into a unified vector space, so you can compare them directly with cosine similarity.</p>
     <a class="page-header-docs" href="https://docs.vaicli.com/docs/commands/embeddings/embed" target="_blank" rel="noopener" title="Multimodal embedding documentation"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 1h7l3 3v11H3z"/><path d="M10 1v3h3"/></svg>Docs</a>
   </div>
 
-  <!-- Section A: Image ↔ Text Similarity -->
+  <!-- Section A: Image / Video ↔ Text Similarity -->
   <div class="mm-grid">
     <div class="card">
       <div class="card-title">Image</div>
@@ -6709,8 +6724,22 @@ Semantic search understands meaning beyond keyword matching</textarea>
       </div>
     </div>
     <div class="card">
+      <div class="card-title">Video</div>
+      <div class="mm-drop-zone" id="mmVideoDropZone">
+        <div class="mm-drop-icon">🎬</div>
+        <div class="mm-drop-text">Drop a video here or click to browse</div>
+        <div class="mm-drop-hint">MP4, WebM, MOV, max 20 MB</div>
+      </div>
+      <input type="file" id="mmVideoFileInput" accept="video/mp4,video/webm,video/quicktime,video/x-msvideo,video/x-matroska" style="display:none">
+      <div class="mm-preview" id="mmVideoPreview">
+        <video id="mmPreviewVideo" controls style="max-width:100%;max-height:240px;border-radius:8px;background:#000;"></video>
+        <div class="mm-file-info" id="mmVideoFileInfo"></div>
+        <button class="mm-clear-btn" onclick="clearMultimodalVideo()">✕ Clear</button>
+      </div>
+    </div>
+    <div class="card">
       <div class="card-title">Text</div>
-      <textarea id="mmText" rows="8" placeholder="Describe what you see, or enter any text to compare against the image..."></textarea>
+      <textarea id="mmText" rows="8" placeholder="Describe what you see, or enter any text to compare against the media..."></textarea>
     </div>
   </div>
 
@@ -7355,6 +7384,9 @@ Reranking models rescore initial search results to improve relevance ordering.</
         <button onclick="wfZoom(1)" title="Zoom in">+</button>
         <button onclick="wfZoom(-1)" title="Zoom out">&minus;</button>
         <button onclick="wfFitToView()" title="Fit to view">&#8862;</button>
+        <button onclick="wfRelayout()" title="Auto-layout (reorder nodes to minimize crossings)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><line x1="10" y1="6.5" x2="14" y2="6.5"/><line x1="10" y1="17.5" x2="14" y2="17.5"/></svg>
+        </button>
         <button onclick="wfResetExecution()" title="Reset">&#8635;</button>
         <span class="wf-toolbar-sep"></span>
         <button class="wf-plan-btn" onclick="wfDryRun()" id="wfDryRunBtn" disabled title="Dry run: show execution plan">&#9881; Plan</button>
@@ -7374,6 +7406,7 @@ Reranking models rescore initial search results to improve relevance ordering.</
       <!-- Draft validation status bar -->
       <div class="wf-validation-bar" id="wfValidationBar">
         <span id="wfValidationBarText"></span>
+        <button class="wf-validation-close" onclick="event.stopPropagation(); document.getElementById('wfValidationBar').style.display='none';" title="Dismiss">&times;</button>
       </div>
       <!-- Edge handles for collapsed panels -->
       <div class="wf-edge-handle wf-edge-handle--left" id="wfEdgeHandleLeft" onclick="wfToggleLibrary()" title="Expand library">&#x203A;</div>
@@ -12357,6 +12390,7 @@ function initOnboarding() {
 
 // ── Multimodal Tab ──
 let mmImageData = null; // base64 data URL of the uploaded image
+let mmVideoData = null; // base64 data URL of the uploaded video
 let mmGalleryImages = []; // array of { dataUrl, name, size }
 let mmSearchMode = 'text';
 let mmSearchImageIndex = -1;
@@ -12424,6 +12458,59 @@ function initMultimodal() {
         handleMultimodalImage(item.getAsFile());
         return;
       }
+    }
+  });
+
+  // Video drop zone — the hidden <input type="file"> lives inside the same
+  // card, so its programmatic .click() bubbles back up through the DOM and
+  // re-triggers the dropzone click handler, creating an infinite dialog loop.
+  // Fix: stopPropagation on the input so its click never reaches the dropzone,
+  // plus a re-trigger guard identical to the image dropzone.
+  const videoDropZone = document.getElementById('mmVideoDropZone');
+  const videoFileInput = document.getElementById('mmVideoFileInput');
+
+  videoFileInput.addEventListener('click', (e) => e.stopPropagation());
+
+  let videoDialogOpen = false;
+  videoDropZone.addEventListener('click', async () => {
+    if (videoDialogOpen) return;
+    videoDialogOpen = true;
+    try {
+      if (window.vai && window.vai.isElectron && window.vai.openVideoDialog) {
+        const result = await window.vai.openVideoDialog();
+        if (!result.canceled && result.dataUrl) {
+          handleMultimodalVideoFromData(result.dataUrl, result.name, result.size);
+        }
+      } else {
+        videoFileInput.click();
+      }
+    } finally {
+      setTimeout(() => { videoDialogOpen = false; }, 300);
+    }
+  });
+  videoFileInput.addEventListener('change', (e) => {
+    videoDialogOpen = false;
+    if (e.target.files && e.target.files[0]) handleMultimodalVideo(e.target.files[0]);
+    videoFileInput.value = '';
+  });
+
+  ['dragenter', 'dragover'].forEach(evt => {
+    videoDropZone.addEventListener(evt, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      videoDropZone.classList.add('drag-active');
+    });
+  });
+  ['dragleave', 'drop'].forEach(evt => {
+    videoDropZone.addEventListener(evt, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      videoDropZone.classList.remove('drag-active');
+    });
+  });
+  videoDropZone.addEventListener('drop', (e) => {
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleMultimodalVideo(e.dataTransfer.files[0]);
     }
   });
 
@@ -12497,22 +12584,155 @@ window.clearMultimodalImage = function() {
   document.getElementById('mmFileInput').value = '';
 };
 
+async function handleMultimodalVideoFromData(dataUrl, name, size) {
+  mmVideoData = dataUrl;
+  const video = document.getElementById('mmPreviewVideo');
+  video.src = mmVideoData;
+
+  const info = document.getElementById('mmVideoFileInfo');
+  const sizeStr = size > 1024 * 1024
+    ? (size / (1024 * 1024)).toFixed(1) + ' MB'
+    : (size / 1024).toFixed(0) + ' KB';
+
+  document.getElementById('mmVideoDropZone').style.display = 'none';
+  document.getElementById('mmVideoPreview').classList.add('visible');
+  hideError('mmError');
+
+  // Estimate tokens from video metadata
+  const meta = await estimateVideoTokens(video);
+  if (meta) {
+    const durStr = meta.duration.toFixed(1) + 's';
+    const resStr = meta.width + '×' + meta.height;
+    info.textContent = `${name} · ${sizeStr} · ${resStr} · ${durStr} · ~${meta.tokens.toLocaleString()} tokens`;
+    if (meta.tokens > 32000) {
+      showError('mmError',
+        'This video is estimated at ~' + meta.tokens.toLocaleString() + ' tokens, which exceeds the 32,000 token context window. ' +
+        'Try a shorter clip, lower resolution, or smaller dimensions. ' +
+        '(' + resStr + ', ' + durStr + ')'
+      );
+    }
+  } else {
+    info.textContent = `${name} · ${sizeStr}`;
+  }
+}
+
+// Estimate video tokens: total pixels across all frames / 1120 pixels per token
+// The playground server downsamples video to 1fps before sending to Voyage AI,
+// so we estimate based on 1fps which matches what will actually be sent.
+function estimateVideoTokens(videoEl) {
+  return new Promise((resolve) => {
+    const checkMeta = () => {
+      const w = videoEl.videoWidth;
+      const h = videoEl.videoHeight;
+      const dur = videoEl.duration;
+      if (w && h && dur && isFinite(dur)) {
+        // Server downsamples to 1fps before API call
+        const assumedFps = 1;
+        const frames = Math.ceil(dur * assumedFps);
+        const totalPixels = w * h * frames;
+        const tokens = Math.ceil(totalPixels / 1120);
+        resolve({ width: w, height: h, duration: dur, frames, totalPixels, tokens });
+      } else {
+        resolve(null);
+      }
+    };
+    if (videoEl.readyState >= 1) {
+      checkMeta();
+    } else {
+      videoEl.addEventListener('loadedmetadata', checkMeta, { once: true });
+      // Timeout fallback
+      setTimeout(() => resolve(null), 3000);
+    }
+  });
+}
+
+function handleMultimodalVideo(file) {
+  const VALID_TYPES = ['video/mp4', 'video/webm', 'video/quicktime', 'video/x-msvideo', 'video/x-matroska'];
+  if (!VALID_TYPES.includes(file.type) && !file.name.match(/\.(mp4|webm|mov|avi|mkv)$/i)) {
+    showError('mmError', 'Unsupported video type. Use MP4, WebM, MOV, AVI, or MKV.');
+    return;
+  }
+  if (file.size > 20 * 1024 * 1024) {
+    showError('mmError', 'Video too large. Maximum size is 20 MB.');
+    return;
+  }
+  hideError('mmError');
+
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    mmVideoData = e.target.result;
+    const video = document.getElementById('mmPreviewVideo');
+    video.src = mmVideoData;
+
+    const info = document.getElementById('mmVideoFileInfo');
+    const sizeStr = file.size > 1024 * 1024
+      ? (file.size / (1024 * 1024)).toFixed(1) + ' MB'
+      : (file.size / 1024).toFixed(0) + ' KB';
+
+    document.getElementById('mmVideoDropZone').style.display = 'none';
+    document.getElementById('mmVideoPreview').classList.add('visible');
+
+    // Estimate tokens from video metadata and warn if likely to exceed limit
+    const meta = await estimateVideoTokens(video);
+    if (meta) {
+      const durStr = meta.duration.toFixed(1) + 's';
+      const resStr = meta.width + '×' + meta.height;
+      info.textContent = `${file.name} · ${sizeStr} · ${resStr} · ${durStr} · ~${meta.tokens.toLocaleString()} tokens`;
+      if (meta.tokens > 32000) {
+        showError('mmError',
+          'This video is estimated at ~' + meta.tokens.toLocaleString() + ' tokens, which exceeds the 32,000 token context window. ' +
+          'Try a shorter clip, lower resolution, or smaller dimensions. ' +
+          '(' + resStr + ', ' + durStr + ')'
+        );
+      }
+    } else {
+      info.textContent = `${file.name} · ${sizeStr}`;
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+window.clearMultimodalVideo = function() {
+  mmVideoData = null;
+  const video = document.getElementById('mmPreviewVideo');
+  video.pause();
+  video.src = '';
+  document.getElementById('mmVideoFileInfo').textContent = '';
+  document.getElementById('mmVideoPreview').classList.remove('visible');
+  document.getElementById('mmVideoDropZone').style.display = '';
+  document.getElementById('mmVideoFileInput').value = '';
+};
+
 window.doMultimodalCompare = async function() {
   hideError('mmError');
   sendTelemetry('api_call', { endpoint: 'multimodal-compare', model: document.getElementById('mmModel').value });
   const text = document.getElementById('mmText').value.trim();
-  if (!mmImageData) { showError('mmError', 'Upload an image first'); return; }
-  if (!text) { showError('mmError', 'Enter text to compare against the image'); return; }
+  const hasMedia = mmImageData || mmVideoData;
+  if (!hasMedia && !text) { showError('mmError', 'Upload an image or video, and enter text to compare'); return; }
+
+  // Need at least 2 inputs to compare
+  const mediaInputs = [];
+  if (mmImageData) {
+    mediaInputs.push({ content: [{ type: 'image_base64', image_base64: mmImageData }], label: 'Image' });
+  }
+  if (mmVideoData) {
+    mediaInputs.push({ content: [{ type: 'video_base64', video_base64: mmVideoData }], label: 'Video' });
+  }
+  if (text) {
+    mediaInputs.push({ content: [{ type: 'text', text: text }], label: 'Text' });
+  }
+
+  if (mediaInputs.length < 2) {
+    showError('mmError', 'Provide at least 2 inputs to compare (e.g., image + text, video + text, or image + video)');
+    return;
+  }
 
   setLoading('mmCompareBtn', true);
   try {
     const model = document.getElementById('mmModel').value;
     const dimsVal = document.getElementById('mmDimensions').value;
     const body = {
-      inputs: [
-        { content: [{ type: 'image_base64', image_base64: mmImageData }] },
-        { content: [{ type: 'text', text: text }] }
-      ],
+      inputs: mediaInputs.map(m => m.content ? { content: m.content } : m),
       model: model,
       input_type: 'document'
     };
@@ -12520,6 +12740,7 @@ window.doMultimodalCompare = async function() {
 
     const data = await apiPost('/api/multimodal-embed', body);
 
+    // Compare first two inputs (primary comparison)
     const vecA = data.data[0].embedding;
     const vecB = data.data[1].embedding;
     const cosine = cosineSim(vecA, vecB);
@@ -12541,29 +12762,46 @@ window.doMultimodalCompare = async function() {
 
     // Stats
     const usage = data.usage || {};
-    const statsEl = document.getElementById('mmStats');
-    statsEl.innerHTML = `
+    const pairLabel = mediaInputs[0].label + ' vs ' + mediaInputs[1].label;
+    let statsHtml = `
       <span class="stat"><span class="stat-label">Model</span><span class="stat-value">${data.model || model}</span></span>
+      <span class="stat"><span class="stat-label">Comparing</span><span class="stat-value">${pairLabel}</span></span>
       <span class="stat"><span class="stat-label">Dimensions</span><span class="stat-value">${vecA.length}</span></span>
-      <span class="stat"><span class="stat-label">Text Tokens</span><span class="stat-value">${usage.text_tokens || '—'}</span></span>
-      <span class="stat"><span class="stat-label">Image Pixels</span><span class="stat-value">${usage.image_pixels ? usage.image_pixels.toLocaleString() : '—'}</span></span>
-      <span class="stat"><span class="stat-label">Total Tokens</span><span class="stat-value">${usage.total_tokens || '—'}</span></span>
     `;
+    if (usage.text_tokens) statsHtml += `<span class="stat"><span class="stat-label">Text Tokens</span><span class="stat-value">${usage.text_tokens}</span></span>`;
+    if (usage.image_pixels) statsHtml += `<span class="stat"><span class="stat-label">Image Pixels</span><span class="stat-value">${usage.image_pixels.toLocaleString()}</span></span>`;
+    statsHtml += `<span class="stat"><span class="stat-label">Total Tokens</span><span class="stat-value">${usage.total_tokens || '—'}</span></span>`;
+
+    // If 3 inputs, show all pairwise similarities
+    if (mediaInputs.length === 3) {
+      const vecC = data.data[2].embedding;
+      const simAC = cosineSim(vecA, vecC);
+      const simBC = cosineSim(vecB, vecC);
+      statsHtml += `<br><span class="stat"><span class="stat-label">${mediaInputs[0].label} vs ${mediaInputs[2].label}</span><span class="stat-value">${simAC.toFixed(4)}</span></span>`;
+      statsHtml += `<span class="stat"><span class="stat-label">${mediaInputs[1].label} vs ${mediaInputs[2].label}</span><span class="stat-value">${simBC.toFixed(4)}</span></span>`;
+    }
+
+    document.getElementById('mmStats').innerHTML = statsHtml;
 
     // Insight note
     const noteEl = document.getElementById('mmNote');
     if (cosine > 0.7) {
-      noteEl.innerHTML = '💡 <strong>High similarity!</strong> The image and text are closely related in Voyage AI\'s multimodal embedding space. This means the text is a good semantic description of the image.';
+      noteEl.innerHTML = '💡 <strong>High similarity!</strong> The inputs are closely related in Voyage AI\'s multimodal embedding space.';
     } else if (cosine > 0.4) {
-      noteEl.innerHTML = '💡 <strong>Moderate similarity.</strong> The image and text share some semantic overlap. They may be related but not a direct match.';
+      noteEl.innerHTML = '💡 <strong>Moderate similarity.</strong> The inputs share some semantic overlap but are not a direct match.';
     } else {
-      noteEl.innerHTML = '💡 <strong>Low similarity.</strong> The image and text are semantically distant. Try a description that matches the image content more closely.';
+      noteEl.innerHTML = '💡 <strong>Low similarity.</strong> The inputs are semantically distant. Try content that is more closely related.';
     }
 
     document.getElementById('mmResult').classList.add('visible');
     CostTracker.addOperation('multimodal-compare', data.model || model, usage.total_tokens || 0);
   } catch (err) {
-    showError('mmError', err.message);
+    let msg = err.message;
+    // Provide actionable guidance for context window errors
+    if (msg.includes('context window') || msg.includes('exceed')) {
+      msg += ' Try reducing video resolution, trimming to a shorter clip, or using a smaller image.';
+    }
+    showError('mmError', msg);
   } finally {
     setLoading('mmCompareBtn', false);
   }
@@ -12767,7 +13005,11 @@ window.doMultimodalSearch = async function() {
     document.getElementById('mmSearchResult').classList.add('visible');
     CostTracker.addOperation('multimodal-search', model, data.usage?.total_tokens || 0);
   } catch (err) {
-    showError('mmSearchError', err.message);
+    let msg = err.message;
+    if (msg.includes('context window') || msg.includes('exceed')) {
+      msg += ' Try using smaller images or fewer corpus items per batch.';
+    }
+    showError('mmSearchError', msg);
   } finally {
     setLoading(btnId, false);
   }
@@ -14761,6 +15003,158 @@ function wfHandleFileLoad(event) {
 }
 
 // ── DAG Layout + SVG Rendering ──
+/**
+ * Sugiyama-style DAG auto-layout: barycenter crossing minimization + neighbor-aware placement.
+ * Takes layers (from Kahn's topological sort) and graph (dependency map),
+ * reorders nodes within each layer to minimize edge crossings,
+ * then assigns Y coordinates so nodes sit near their connected neighbors.
+ *
+ * @param {string[][]} layers - layers[i] = [stepIds that can run in parallel]
+ * @param {Object} graph - { stepId: [depStepIds...] } (incoming edges)
+ * @returns {Object} positions - { stepId: { x, y } }
+ */
+function wfAutoLayout(layers, graph) {
+  if (!layers || layers.length === 0) return {};
+
+  // Build adjacency: forward (outgoing) and backward (incoming) neighbor lists
+  const incoming = {}; // stepId -> [ids in previous layers that connect to it]
+  const outgoing = {}; // stepId -> [ids in next layers it connects to]
+  const allIds = new Set(layers.flat());
+  for (const id of allIds) { incoming[id] = []; outgoing[id] = []; }
+
+  for (const [stepId, deps] of Object.entries(graph)) {
+    if (!deps || !Array.isArray(deps)) continue;
+    for (const rawDep of deps) {
+      const dep = rawDep.replace(/^!/, '');
+      if (allIds.has(dep) && allIds.has(stepId)) {
+        incoming[stepId].push(dep);
+        outgoing[dep].push(stepId);
+      }
+    }
+  }
+
+  // Index: which layer is each node in?
+  const layerOf = {};
+  layers.forEach((layer, li) => layer.forEach(id => { layerOf[id] = li; }));
+
+  // Work on mutable copies of each layer's ordering
+  const ordered = layers.map(l => [...l]);
+
+  // Barycenter crossing minimization (multi-pass, alternating direction)
+  // Barycenter = average position of a node's neighbors in the adjacent layer.
+  // Sorting by barycenter within each layer reduces crossings.
+  const NUM_PASSES = 4;
+
+  for (let pass = 0; pass < NUM_PASSES; pass++) {
+    if (pass % 2 === 0) {
+      // Forward pass: for each layer (left to right), sort by barycenter of incoming neighbors
+      for (let li = 1; li < ordered.length; li++) {
+        const prevOrder = {};
+        ordered[li - 1].forEach((id, idx) => { prevOrder[id] = idx; });
+
+        ordered[li].sort((a, b) => {
+          const baryA = wfBarycenter(a, incoming, prevOrder);
+          const baryB = wfBarycenter(b, incoming, prevOrder);
+          return baryA - baryB;
+        });
+      }
+    } else {
+      // Backward pass: for each layer (right to left), sort by barycenter of outgoing neighbors
+      for (let li = ordered.length - 2; li >= 0; li--) {
+        const nextOrder = {};
+        ordered[li + 1].forEach((id, idx) => { nextOrder[id] = idx; });
+
+        ordered[li].sort((a, b) => {
+          const baryA = wfBarycenter(a, outgoing, nextOrder);
+          const baryB = wfBarycenter(b, outgoing, nextOrder);
+          return baryA - baryB;
+        });
+      }
+    }
+  }
+
+  // Assign X coordinates (fixed per layer)
+  // Assign Y coordinates using neighbor-aware placement:
+  // First pass: assign evenly spaced Y (centered).
+  // Second pass: nudge each node toward the average Y of its neighbors.
+  const positions = {};
+  const maxLayerSize = Math.max(...ordered.map(l => l.length));
+  const totalH = maxLayerSize * (WF_NODE_H + WF_NODE_GAP);
+
+  // Initial even spacing (centered vertically)
+  ordered.forEach((layer, li) => {
+    const x = WF_PAD + li * WF_LAYER_GAP;
+    const layerH = layer.length * WF_NODE_H + (layer.length - 1) * WF_NODE_GAP;
+    const startY = WF_PAD + (totalH - layerH) / 2;
+    layer.forEach((stepId, ni) => {
+      positions[stepId] = { x, y: startY + ni * (WF_NODE_H + WF_NODE_GAP) };
+    });
+  });
+
+  // Neighbor-aware Y nudging (iterative relaxation)
+  // Pulls nodes toward the average Y of their connected neighbors while maintaining order and minimum gap.
+  const RELAX_PASSES = 3;
+  const RELAX_STRENGTH = 0.4; // How much to move toward neighbor average (0=none, 1=full)
+
+  for (let rp = 0; rp < RELAX_PASSES; rp++) {
+    for (let li = 0; li < ordered.length; li++) {
+      const layer = ordered[li];
+      if (layer.length <= 1) continue;
+
+      // Compute ideal Y for each node (average Y of all neighbors)
+      const idealY = {};
+      for (const id of layer) {
+        const neighbors = [...(incoming[id] || []), ...(outgoing[id] || [])];
+        if (neighbors.length === 0) { idealY[id] = positions[id].y; continue; }
+        const avgY = neighbors.reduce((sum, nid) => sum + (positions[nid]?.y || 0), 0) / neighbors.length;
+        idealY[id] = avgY;
+      }
+
+      // Nudge toward ideal, then enforce minimum gap and original order
+      for (const id of layer) {
+        const current = positions[id].y;
+        const target = idealY[id];
+        positions[id].y = current + (target - current) * RELAX_STRENGTH;
+      }
+
+      // Re-sort by Y to maintain the barycenter ordering, then enforce minimum gaps
+      const sortedLayer = [...layer].sort((a, b) => positions[a].y - positions[b].y);
+      const minGap = WF_NODE_H + WF_NODE_GAP;
+
+      // Push apart any overlaps (top-down)
+      for (let i = 1; i < sortedLayer.length; i++) {
+        const prev = positions[sortedLayer[i - 1]].y;
+        const curr = positions[sortedLayer[i]].y;
+        if (curr - prev < minGap) {
+          positions[sortedLayer[i]].y = prev + minGap;
+        }
+      }
+
+      // Re-center the layer vertically to keep it balanced
+      const layerTop = positions[sortedLayer[0]].y;
+      const layerBottom = positions[sortedLayer[sortedLayer.length - 1]].y + WF_NODE_H;
+      const layerMid = (layerTop + layerBottom) / 2;
+      const canvasMid = WF_PAD + totalH / 2;
+      const shift = canvasMid - layerMid;
+      for (const id of sortedLayer) {
+        positions[id].y += shift;
+      }
+    }
+  }
+
+  return positions;
+}
+
+/**
+ * Compute barycenter (average position) of a node's neighbors in an adjacent layer.
+ * If a node has no neighbors in the given orderMap, returns Infinity to push it to the end.
+ */
+function wfBarycenter(nodeId, neighborMap, orderMap) {
+  const neighbors = (neighborMap[nodeId] || []).filter(n => orderMap[n] !== undefined);
+  if (neighbors.length === 0) return Infinity;
+  return neighbors.reduce((sum, n) => sum + orderMap[n], 0) / neighbors.length;
+}
+
 async function wfRenderWorkflow(definition) {
   const svg = document.getElementById('wf-canvas');
   // Clear previous nodes and edges (keep defs)
@@ -14789,23 +15183,8 @@ async function wfRenderWorkflow(definition) {
   const stepMap = {};
   definition.steps.forEach(s => { stepMap[s.id] = s; });
 
-  // Calculate positions
-  const positions = {};
-  const maxLayerSize = Math.max(...layers.map(l => l.length));
-  const totalW = layers.length * WF_LAYER_GAP;
-  const totalH = maxLayerSize * (WF_NODE_H + WF_NODE_GAP);
-
-  layers.forEach((layer, li) => {
-    const x = WF_PAD + li * WF_LAYER_GAP;
-    const layerH = layer.length * WF_NODE_H + (layer.length - 1) * WF_NODE_GAP;
-    const startY = WF_PAD + (totalH - layerH) / 2;
-    layer.forEach((stepId, ni) => {
-      positions[stepId] = {
-        x,
-        y: startY + ni * (WF_NODE_H + WF_NODE_GAP),
-      };
-    });
-  });
+  // Auto-layout: crossing minimization + neighbor-aware placement
+  const positions = wfAutoLayout(layers, graph);
   wfState.nodePositions = positions;
 
   // Build port-visibility maps: which nodes have input deps, which have dependents
@@ -16247,7 +16626,128 @@ async function wfExecute() {
     return;
   }
 
+  // Check for empty required step inputs and prompt the user
+  const missing = wfFindMissingStepInputs(def);
+  if (missing.length > 0) {
+    wfShowStepInputModal(missing);
+    return;
+  }
+
   // No inputs needed, execute directly
+  wfExecuteWithInputs({});
+}
+
+/**
+ * Scan all steps for required inputs that are empty (and not filled by template refs).
+ * Returns array of { stepId, stepName, tool, key, placeholder, type } for each missing input.
+ */
+function wfFindMissingStepInputs(def) {
+  const missing = [];
+  for (const step of (def.steps || [])) {
+    const inputDefs = WF_INPUT_DEFS[step.tool] || [];
+    for (const d of inputDefs) {
+      if (!d.required) continue;
+      const val = step.inputs?.[d.key];
+      // Skip if already filled (non-empty string, or any non-string value)
+      if (val !== undefined && val !== null && val !== '') continue;
+      missing.push({
+        stepId: step.id,
+        stepName: step.name || step.id,
+        tool: step.tool,
+        key: d.key,
+        placeholder: d.placeholder || '',
+        type: d.type || 'text',
+      });
+    }
+  }
+  return missing;
+}
+
+/**
+ * Show a modal prompting the user for missing required step inputs before execution.
+ * Reuses the existing input modal UI.
+ */
+function wfShowStepInputModal(missing) {
+  document.getElementById('wfInputModalTitle').textContent = 'Required Inputs';
+  let html = '';
+  let lastStepId = '';
+
+  for (const m of missing) {
+    // Group header per step
+    if (m.stepId !== lastStepId) {
+      const meta = WF_NODE_META[m.tool] || {};
+      html += `<div style="margin-top:${lastStepId ? '16' : '0'}px;margin-bottom:8px;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);display:flex;align-items:center;gap:6px;">
+        <span style="color:${meta.color || 'var(--text-muted)'}">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="${meta.icon || WF_FALLBACK_ICON}"/></svg>
+        </span>
+        ${escapeHtml(m.stepName)}
+      </div>`;
+      lastStepId = m.stepId;
+    }
+
+    const inputId = 'wf-stepin-' + m.stepId + '-' + m.key;
+    html += `<div class="wf-input-modal-field">
+      <div class="wf-input-modal-label">${escapeHtml(m.key)} <span style="color:#e74c3c">*</span></div>
+      <input class="wf-input-modal-input" id="${inputId}" placeholder="${escapeHtml(m.placeholder)}" data-step-id="${escapeHtml(m.stepId)}" data-key="${escapeHtml(m.key)}" data-type="${m.type}">
+      <div class="wf-input-modal-error" id="${inputId}-err">This field is required</div>
+    </div>`;
+  }
+
+  document.getElementById('wfInputModalBody').innerHTML = html;
+
+  // Swap the footer button handler temporarily
+  const runBtn = document.querySelector('.wf-input-modal-run');
+  runBtn.textContent = 'Run Workflow';
+  runBtn.onclick = () => wfStepInputModalSubmit(missing);
+
+  document.getElementById('wfInputModalBackdrop').style.display = '';
+
+  // Focus first input
+  const firstId = 'wf-stepin-' + missing[0].stepId + '-' + missing[0].key;
+  const firstEl = document.getElementById(firstId);
+  if (firstEl) setTimeout(() => firstEl.focus(), 50);
+}
+
+function wfStepInputModalSubmit(missing) {
+  let hasError = false;
+
+  for (const m of missing) {
+    const inputId = 'wf-stepin-' + m.stepId + '-' + m.key;
+    const el = document.getElementById(inputId);
+    const errEl = document.getElementById(inputId + '-err');
+    if (!el) continue;
+
+    el.classList.remove('error');
+    if (errEl) errEl.style.display = 'none';
+
+    const val = el.value.trim();
+    if (!val) {
+      el.classList.add('error');
+      if (errEl) { errEl.textContent = 'This field is required'; errEl.style.display = ''; }
+      hasError = true;
+      continue;
+    }
+
+    // Write the value into the step definition
+    const def = wfState.activeWorkflow;
+    const step = def.steps.find(s => s.id === m.stepId);
+    if (step) {
+      if (!step.inputs) step.inputs = {};
+      step.inputs[m.key] = val;
+    }
+  }
+
+  if (hasError) return;
+
+  // Restore the default modal handler
+  const runBtn = document.querySelector('.wf-input-modal-run');
+  runBtn.onclick = () => wfInputModalSubmit();
+
+  wfCloseInputModal();
+
+  // Refresh inspector if a step is selected
+  if (wfState.selectedNodeId) wfUpdateInspector();
+
   wfExecuteWithInputs({});
 }
 
@@ -16322,6 +16822,16 @@ async function wfExecuteWithInputs(inputs) {
               timeMs: data.timeMs,
               summary: data.summary || '',
             };
+            // Update cost tracker with usage data from this step
+            if (data._usage && Array.isArray(data._usage)) {
+              data._usage.forEach(u => {
+                if (u.op === 'llm') {
+                  CostTracker.addLLMOperation('wf-' + u.op, u.model, u.inputTokens || 0, u.outputTokens || 0);
+                } else {
+                  CostTracker.addOperation('wf-' + u.op, u.model, u.tokens || 0);
+                }
+              });
+            }
             wfRefreshNodes();
             if (wfState.selectedNodeId === data.stepId) wfUpdateInspector();
           } else if (currentEvent === 'step_skip') {
@@ -16423,6 +16933,45 @@ function wfResetExecution() {
   wfHideExecStatus();
   wfRefreshNodes();
   wfUpdateInspector();
+}
+
+async function wfRelayout() {
+  const def = wfState.activeWorkflow;
+  if (!def) return;
+
+  // If layers/graph aren't populated yet (e.g. builder mode), fetch them
+  if (!wfState.layers || !wfState.graph || wfState.layers.length === 0) {
+    try {
+      const res = await fetch('/api/workflows/plan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ definition: def }),
+      });
+      const data = await res.json();
+      if (data.layers) wfState.layers = data.layers;
+      if (data.graph) wfState.graph = data.graph;
+    } catch (err) {
+      console.warn('Relayout: failed to fetch plan:', err.message);
+      return;
+    }
+  }
+
+  if (!wfState.layers || wfState.layers.length === 0) return;
+
+  const positions = wfAutoLayout(wfState.layers, wfState.graph || {});
+
+  // Preserve positions for orphan nodes not in any layer (builder mode)
+  if (def.steps) {
+    for (const step of def.steps) {
+      if (!positions[step.id] && wfState.nodePositions[step.id]) {
+        positions[step.id] = wfState.nodePositions[step.id];
+      }
+    }
+  }
+
+  wfState.nodePositions = positions;
+  wfRefreshNodes();
+  wfFitToView();
 }
 
 // ── Output Modal ──
@@ -17468,10 +18017,9 @@ function wfEdgeDropOnInput(toId) {
   if (connected) {
     wfState.dirtyFlag = true;
     wfBuildGraph();
-    wfRelayout();
     wfRefreshNodes();
     if (wfState.selectedNodeId === toId) wfUpdateInspector();
-    
+
     // Trigger draft validation immediately on edge connection
     wfTriggerDraftValidation(0);
   }
@@ -17482,42 +18030,9 @@ function wfEdgeDropOnInput(toId) {
   if (el) el.remove();
 }
 
-// ── Builder: Relayout via topological sort ──
-async function wfRelayout() {
-  const def = wfState.activeWorkflow;
-  if (!def || def.steps.length === 0) return;
-
-  try {
-    const res = await fetch('/api/workflows/plan', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(def),
-    });
-    const data = await res.json();
-    if (data.layers && data.layers.length > 0) {
-      wfState.layers = data.layers;
-      // Reposition nodes based on layers
-      const positions = {};
-      data.layers.forEach((layer, li) => {
-        layer.forEach((stepId, ni) => {
-          positions[stepId] = {
-            x: WF_PAD + li * WF_LAYER_GAP,
-            y: WF_PAD + ni * (WF_NODE_H + WF_NODE_GAP),
-          };
-        });
-      });
-      // Keep orphan nodes (not in any layer) at their current position
-      for (const step of def.steps) {
-        if (!positions[step.id] && wfState.nodePositions[step.id]) {
-          positions[step.id] = wfState.nodePositions[step.id];
-        }
-      }
-      wfState.nodePositions = positions;
-    }
-  } catch (err) {
-    console.warn('Relayout failed:', err.message);
-  }
-}
+/// ── Builder: Relayout via auto-layout algorithm ──
+// (delegates to wfRelayout defined earlier, which uses wfAutoLayout for
+// barycenter crossing minimization + neighbor-aware placement)
 
 // ── Docs shortcut (F1) ──
 const DOCS_URLS = {
@@ -17569,6 +18084,7 @@ document.addEventListener('keydown', (e) => {
   if (e.key === '+' || e.key === '=') { wfZoom(1); e.preventDefault(); }
   else if (e.key === '-') { wfZoom(-1); e.preventDefault(); }
   else if (e.key === '0') { wfFitToView(); e.preventDefault(); }
+  else if (e.key === 'l' || e.key === 'L') { wfRelayout(); e.preventDefault(); }
   else if (e.key === 'Escape') { wfDeselectNode(); e.preventDefault(); }
   else if (e.key === 'ArrowLeft')  { wfState.panX -= PAN_STEP / wfState.zoom; wfApplyViewBox(); e.preventDefault(); }
   else if (e.key === 'ArrowRight') { wfState.panX += PAN_STEP / wfState.zoom; wfApplyViewBox(); e.preventDefault(); }

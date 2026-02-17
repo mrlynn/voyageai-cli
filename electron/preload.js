@@ -51,6 +51,8 @@ contextBridge.exposeInMainWorld('vai', {
   },
   // Native file dialog for image uploads (more reliable than <input type="file">)
   openImageDialog: () => ipcRenderer.invoke('dialog:open-image'),
+  // Native file dialog for video uploads
+  openVideoDialog: () => ipcRenderer.invoke('dialog:open-video'),
   // Export — native save dialog + clipboard
   export: {
     saveFile: (opts) => ipcRenderer.invoke('export:save-file', opts),

@@ -177,6 +177,24 @@ function registerApiKeyHandlers() {
     return { canceled: false, dataUrl: base64, name, size };
   });
 
+  ipcMain.handle('dialog:open-video', async () => {
+    const result = await dialog.showOpenDialog(mainWindow, {
+      title: 'Select a video',
+      filters: [{ name: 'Videos', extensions: ['mp4', 'webm', 'mov', 'avi', 'mkv'] }],
+      properties: ['openFile'],
+    });
+    if (result.canceled || result.filePaths.length === 0) return { canceled: true };
+    const filePath = result.filePaths[0];
+    const data = fs.readFileSync(filePath);
+    const ext = path.extname(filePath).toLowerCase().replace('.', '');
+    const mimeMap = { mp4: 'video/mp4', webm: 'video/webm', mov: 'video/quicktime', avi: 'video/x-msvideo', mkv: 'video/x-matroska' };
+    const mime = mimeMap[ext] || 'video/mp4';
+    const base64 = `data:${mime};base64,${data.toString('base64')}`;
+    const name = path.basename(filePath);
+    const size = data.length;
+    return { canceled: false, dataUrl: base64, name, size };
+  });
+
   // ── Generate & Scaffold handlers ──
   
   // Import codegen and scaffold structure from the CLI package

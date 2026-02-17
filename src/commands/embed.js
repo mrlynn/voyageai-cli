@@ -1,10 +1,12 @@
 'use strict';
 
 const { getDefaultModel } = require('../lib/catalog');
-const { generateEmbeddings } = require('../lib/api');
-const { resolveTextInput } = require('../lib/input');
+const { generateEmbeddings, generateMultimodalEmbeddings } = require('../lib/api');
+const { resolveTextInput, readMediaAsBase64, isImageFile, isVideoFile } = require('../lib/input');
 const ui = require('../lib/ui');
 const { showCostSummary } = require('../lib/cost-display');
+
+const MULTIMODAL_MODEL = 'voyage-multimodal-3.5';
 
 /**
  * Register the embed command on a Commander program.
@@ -18,6 +20,8 @@ function registerEmbed(program) {
     .option('-t, --input-type <type>', 'Input type: query or document')
     .option('-d, --dimensions <n>', 'Output dimensions', (v) => parseInt(v, 10))
     .option('-f, --file <path>', 'Read text from file')
+    .option('--image <path>', 'Embed an image file (uses voyage-multimodal-3.5)')
+    .option('--video <path>', 'Embed a video file (uses voyage-multimodal-3.5)')
     .option('--truncation', 'Enable truncation for long inputs')
     .option('--no-truncation', 'Disable truncation')
     .option('--output-dtype <type>', 'Output data type: float, int8, uint8, binary, ubinary', 'float')
@@ -28,6 +32,121 @@ function registerEmbed(program) {
     .action(async (text, opts) => {
       try {
         const telemetry = require('../lib/telemetry');
+        const isMultimodal = !!(opts.image || opts.video);
+
+        // Validate: --image/--video are incompatible with --file
+        if (isMultimodal && opts.file) {
+          console.error(ui.error('Cannot combine --image or --video with --file. Use --image/--video for multimodal, or --file for text.'));
+          process.exit(1);
+        }
+
+        // Multimodal path: --image and/or --video
+        if (isMultimodal) {
+          const model = opts.model === getDefaultModel() ? MULTIMODAL_MODEL : opts.model;
+          const useColor = !opts.json;
+          const useSpinner = useColor && !opts.quiet;
+
+          // Build content array
+          const contentItems = [];
+          const mediaMeta = [];
+
+          // Add text if provided
+          if (text) {
+            contentItems.push({ type: 'text', text });
+          }
+
+          // Add image
+          if (opts.image) {
+            if (!isImageFile(opts.image)) {
+              console.error(ui.error(`Not a supported image format: ${opts.image}`));
+              process.exit(1);
+            }
+            const media = readMediaAsBase64(opts.image);
+            contentItems.push({ type: 'image_base64', image_base64: media.base64DataUrl });
+            mediaMeta.push({ type: 'image', path: opts.image, mime: media.mimeType, size: media.sizeBytes });
+          }
+
+          // Add video
+          if (opts.video) {
+            if (!isVideoFile(opts.video)) {
+              console.error(ui.error(`Not a supported video format: ${opts.video}`));
+              process.exit(1);
+            }
+            const media = readMediaAsBase64(opts.video);
+            contentItems.push({ type: 'video_base64', video_base64: media.base64DataUrl });
+            mediaMeta.push({ type: 'video', path: opts.video, mime: media.mimeType, size: media.sizeBytes });
+          }
+
+          if (contentItems.length === 0) {
+            console.error(ui.error('No content provided. Pass text, --image, or --video.'));
+            process.exit(1);
+          }
+
+          const done = telemetry.timer('cli_embed', {
+            model,
+            multimodal: true,
+            hasText: !!text,
+            hasImage: !!opts.image,
+            hasVideo: !!opts.video,
+          });
+
+          let spin;
+          if (useSpinner) {
+            spin = ui.spinner('Generating multimodal embeddings...');
+            spin.start();
+          }
+
+          const mmOpts = { model };
+          if (opts.inputType) mmOpts.inputType = opts.inputType;
+          if (opts.dimensions) mmOpts.outputDimension = opts.dimensions;
+
+          const result = await generateMultimodalEmbeddings([contentItems], mmOpts);
+
+          if (spin) spin.stop();
+
+          if (opts.outputFormat === 'array') {
+            console.log(JSON.stringify(result.data[0].embedding));
+            return;
+          }
+
+          if (opts.json) {
+            console.log(JSON.stringify(result, null, 2));
+            return;
+          }
+
+          // Friendly output
+          if (!opts.quiet) {
+            console.log(ui.label('Model', ui.cyan(model)));
+            console.log(ui.label('Mode', ui.cyan('multimodal')));
+            for (const m of mediaMeta) {
+              const sizeStr = m.size < 1024 * 1024
+                ? `${(m.size / 1024).toFixed(1)} KB`
+                : `${(m.size / (1024 * 1024)).toFixed(1)} MB`;
+              console.log(ui.label(m.type === 'image' ? 'Image' : 'Video', `${m.path} ${ui.dim(`(${m.mime}, ${sizeStr})`)}`));
+            }
+            if (text) {
+              console.log(ui.label('Text', ui.dim(text.slice(0, 80) + (text.length > 80 ? '...' : ''))));
+            }
+            if (result.usage) {
+              console.log(ui.label('Tokens', ui.dim(String(result.usage.total_tokens))));
+            }
+            const dims = result.data[0]?.embedding?.length || 'N/A';
+            console.log(ui.label('Dimensions', ui.bold(String(dims))));
+            console.log('');
+          }
+
+          const vector = result.data[0].embedding;
+          const preview = vector.slice(0, 5).map(v => v.toFixed(6)).join(', ');
+          console.log(`[${preview}, ...] (${vector.length} dims)`);
+
+          console.log('');
+          console.log(ui.success('Multimodal embedding generated'));
+
+          done({ dimensions: result.data[0]?.embedding?.length });
+          return;
+        }
+
+        // Standard text embedding path
         const texts = await resolveTextInput(text, opts.file);
 
         // --estimate: show cost comparison, optionally switch model
