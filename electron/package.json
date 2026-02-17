@@ -50,6 +50,10 @@
         "to": "cli-package.json"
       },
       {
+        "from": "../package.json",
+        "to": "package.json"
+      },
+      {
         "from": "../node_modules",
         "to": "node_modules",
         "filter": [
