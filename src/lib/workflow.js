@@ -1258,6 +1258,9 @@ async function executeQuery(inputs, defaults) {
       },
     ]).toArray();
 
+    // Track embed usage
+    const _usage = [{ op: 'embed', model: embRes.model, tokens: embRes.usage?.total_tokens || 0 }];
+
     // Rerank if requested and results exist
     if (doRerank && results.length > 0) {
       const documents = results.map(r => r.text || r.content || '');
@@ -1268,15 +1271,17 @@ async function executeQuery(inputs, defaults) {
         documents,
       });
 
+      _usage.push({ op: 'rerank', model: rerankRes.model || inputs.rerankModel || DEFAULT_RERANK_MODEL, tokens: rerankRes.usage?.total_tokens || 0 });
+
       const reranked = (rerankRes.data || []).map(r => ({
         ...results[r.index],
         score: r.relevance_score,
       }));
 
-      return { results: reranked, resultCount: reranked.length };
+      return { results: reranked, resultCount: reranked.length, _usage };
     }
 
-    return { results, resultCount: results.length };
+    return { results, resultCount: results.length, _usage };
   } finally {
     await client.close();
   }
@@ -1315,7 +1320,8 @@ async function executeRerank(inputs) {
     score: r.relevance_score,
   }));
 
-  return { results, resultCount: results.length };
+  const _usage = [{ op: 'rerank', model: res.model || model, tokens: res.usage?.total_tokens || 0 }];
+  return { results, resultCount: results.length, _usage };
 }
 
 /**
@@ -1339,6 +1345,7 @@ async function executeEmbed(inputs, defaults) {
     embedding: res.data[0].embedding,
     model: res.model,
     dimensions: res.data[0].embedding.length,
+    _usage: [{ op: 'embed', model: res.model, tokens: res.usage?.total_tokens || 0 }],
   };
 }
 
@@ -1360,7 +1367,11 @@ async function executeSimilarity(inputs, defaults) {
   const res = await generateEmbeddings([text1, text2], opts);
   const similarity = cosineSimilarity(res.data[0].embedding, res.data[1].embedding);
 
-  return { similarity, model: res.model };
+  return {
+    similarity,
+    model: res.model,
+    _usage: [{ op: 'similarity', model: res.model, tokens: res.usage?.total_tokens || 0 }],
+  };
 }
 
 /**
@@ -1441,6 +1452,7 @@ async function executeIngest(inputs, defaults) {
       source,
       model: embRes.model,
       indexCreated,
+      _usage: [{ op: 'ingest', model: embRes.model, tokens: embRes.usage?.total_tokens || 0 }],
     };
   } finally {
     await client.close();
@@ -1585,14 +1597,20 @@ async function executeGenerate(inputs) {
 
   // Collect streaming response
   let text = '';
+  let llmUsage = { inputTokens: 0, outputTokens: 0 };
   for await (const chunk of provider.chat(messages, { stream: true })) {
-    text += chunk;
+    if (chunk && typeof chunk === 'object' && chunk.__usage) {
+      llmUsage = chunk.__usage;
+    } else {
+      text += chunk;
+    }
   }
 
   return {
     text,
     model: provider.model,
     provider: provider.name,
+    _usage: [{ op: 'llm', model: provider.model, provider: provider.name, inputTokens: llmUsage.inputTokens, outputTokens: llmUsage.outputTokens }],
   };
 }
 
@@ -1906,14 +1924,22 @@ async function executeWorkflow(definition, opts = {}) {
         }
 
         const durationMs = Date.now() - stepStart;
-        context[stepId] = { output };
 
+        // Pass full output (with _usage) to onStepComplete for cost tracking
         if (opts.onStepComplete) opts.onStepComplete(stepId, output, durationMs);
+
+        // Strip _usage from context so downstream steps don't receive it
+        let cleanOutput = output;
+        if (output && output._usage) {
+          cleanOutput = { ...output };
+          delete cleanOutput._usage;
+        }
+        context[stepId] = { output: cleanOutput };
 
         stepResults.push({
           id: stepId,
           tool: step.tool,
-          output,
+          output: cleanOutput,
           durationMs,
         });
       } catch (err) {

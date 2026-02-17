@@ -1406,9 +1406,58 @@ function createPlaygroundServer() {
             res.end(JSON.stringify({ error: 'inputs must be a non-empty array' }));
             return;
           }
+
+          // Optimize video inputs: downsample to 1fps to fit within 32k token context
+          const os = require('os');
+          const path = require('path');
+          const fs = require('fs');
+          const { execFileSync } = require('child_process');
+          const optimizedInputs = [];
+          for (const input of inputs) {
+            const content = input.content;
+            if (content && Array.isArray(content)) {
+              const optimizedContent = [];
+              for (const item of content) {
+                if (item.type === 'video_base64' && item.video_base64) {
+                  // Downsample video to 1fps using ffmpeg to reduce token count
+                  try {
+                    const b64 = item.video_base64.replace(/^data:[^;]+;base64,/, '');
+                    const tmpIn = path.join(os.tmpdir(), `vai_vid_in_${Date.now()}.mp4`);
+                    const tmpOut = path.join(os.tmpdir(), `vai_vid_out_${Date.now()}.mp4`);
+                    fs.writeFileSync(tmpIn, Buffer.from(b64, 'base64'));
+                    try {
+                      execFileSync('ffmpeg', [
+                        '-y', '-i', tmpIn,
+                        '-vf', 'fps=1',
+                        '-c:v', 'libx264', '-preset', 'fast', '-crf', '23',
+                        '-an',  // strip audio
+                        tmpOut
+                      ], { timeout: 30000, stdio: 'pipe' });
+                      const optimizedBuf = fs.readFileSync(tmpOut);
+                      const optimizedB64 = `data:video/mp4;base64,${optimizedBuf.toString('base64')}`;
+                      optimizedContent.push({ type: 'video_base64', video_base64: optimizedB64 });
+                    } finally {
+                      try { fs.unlinkSync(tmpIn); } catch (_) {}
+                      try { fs.unlinkSync(tmpOut); } catch (_) {}
+                    }
+                  } catch (err) {
+                    // If optimization fails, send original and let API error naturally
+                    console.warn('[Playground] Video optimization failed:', err.message);
+                    optimizedContent.push(item);
+                  }
+                } else {
+                  optimizedContent.push(item);
+                }
+              }
+              optimizedInputs.push({ ...input, content: optimizedContent });
+            } else {
+              optimizedInputs.push(input);
+            }
+          }
+
           const { apiRequest } = require('../lib/api');
           const mmBody = {
-            inputs,
+            inputs: optimizedInputs,
             model: model || 'voyage-multimodal-3.5',
           };
           if (input_type) mmBody.input_type = input_type;
@@ -1590,9 +1639,13 @@ function createPlaygroundServer() {
                   else if (output.text) summary = output.text.slice(0, 100) + (output.text.length > 100 ? '...' : '');
                   else summary = JSON.stringify(output).slice(0, 200);
                 }
+                // Extract usage data for cost tracking (then strip from output payload)
+                const _usage = (output && output._usage) ? output._usage : undefined;
+                const cleanOutput = _usage ? { ...output } : output;
+                if (cleanOutput && cleanOutput._usage) delete cleanOutput._usage;
                 res.write(`event: step_complete\ndata: ${JSON.stringify({
-                  stepId, timeMs, summary,
-                  output: JSON.stringify(output).length < 5000 ? output : { _truncated: true, summary },
+                  stepId, timeMs, summary, _usage,
+                  output: JSON.stringify(cleanOutput).length < 5000 ? cleanOutput : { _truncated: true, summary },
                 })}\n\n`);
               },
               onStepSkip: (stepId, reason) => {

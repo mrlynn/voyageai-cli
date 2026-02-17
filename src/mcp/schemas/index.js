@@ -227,6 +227,17 @@ const generateWorkflowSchema = {
     .describe('Explicit list of tools to include (e.g., ["query", "rerank", "generate"]). If omitted, tools are inferred from the description.'),
 };
 
+/** vai_multimodal_embed input schema */
+const multimodalEmbedSchema = {
+  text: z.string().max(32000).optional().describe('Optional text content to embed alongside media'),
+  image_base64: z.string().optional().describe('Base64 data URL for an image (e.g., data:image/jpeg;base64,...)'),
+  video_base64: z.string().optional().describe('Base64 data URL for a video (e.g., data:video/mp4;base64,...)'),
+  model: z.string().default('voyage-multimodal-3.5').describe('Multimodal embedding model'),
+  inputType: z.enum(['document', 'query']).optional()
+    .describe('Whether this input is a document or a query (affects embedding)'),
+  outputDimension: z.number().int().optional().describe('Output dimensions (256, 512, 1024, or 2048)'),
+};
+
 /** vai_validate_workflow input schema */
 const validateWorkflowSchema = {
   workflow: z.object({
@@ -267,6 +278,7 @@ module.exports = {
   codeQuerySchema,
   codeFindSimilarSchema,
   codeStatusSchema,
+  multimodalEmbedSchema,
   generateWorkflowSchema,
   validateWorkflowSchema,
 };

@@ -44,7 +44,7 @@ describe('MCP server — exports', () => {
 });
 
 describe('MCP server — tool count', () => {
-  it('server registers all 11 tools', () => {
+  it('server registers all 12 tools', () => {
     // Create server and count tools by patching McpServer
     const schemas = require('../../src/mcp/schemas');
     const { registerRetrievalTools } = require('../../src/mcp/tools/retrieval');
@@ -64,10 +64,10 @@ describe('MCP server — tool count', () => {
     registerUtilityTools(fakeServer, schemas);
     registerIngestTool(fakeServer, schemas);
 
-    assert.equal(tools.length, 11);
+    assert.equal(tools.length, 12);
     assert.deepEqual(tools, [
       'vai_query', 'vai_search', 'vai_rerank',
-      'vai_embed', 'vai_similarity',
+      'vai_embed', 'vai_similarity', 'vai_multimodal_embed',
       'vai_collections', 'vai_models',
       'vai_topics', 'vai_explain', 'vai_estimate',
       'vai_ingest',

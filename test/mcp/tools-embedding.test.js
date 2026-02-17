@@ -7,22 +7,22 @@ describe('MCP embedding tools — registration', () => {
   const schemas = require('../../src/mcp/schemas');
   const { registerEmbeddingTools } = require('../../src/mcp/tools/embedding');
 
-  it('registers exactly 2 tools', () => {
+  it('registers exactly 3 tools', () => {
     const tools = [];
     const fakeServer = {
       tool: (name, desc, schema, handler) => { tools.push({ name, desc, schema, handler }); },
     };
     registerEmbeddingTools(fakeServer, schemas);
-    assert.equal(tools.length, 2);
+    assert.equal(tools.length, 3);
   });
 
-  it('registers vai_embed and vai_similarity', () => {
+  it('registers vai_embed, vai_similarity, and vai_multimodal_embed', () => {
     const tools = [];
     const fakeServer = {
       tool: (name) => { tools.push(name); },
     };
     registerEmbeddingTools(fakeServer, schemas);
-    assert.deepEqual(tools, ['vai_embed', 'vai_similarity']);
+    assert.deepEqual(tools, ['vai_embed', 'vai_similarity', 'vai_multimodal_embed']);
   });
 
   it('vai_embed uses embedSchema', () => {
