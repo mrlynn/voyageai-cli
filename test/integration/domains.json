@@ -1,0 +1,78 @@
+{
+  "domains": [
+    {
+      "slug": "devdocs",
+      "title": "Developer Documentation",
+      "dbName": "vai_integration_test",
+      "collectionName": "engineering_knowledge",
+      "voyageModel": "voyage-code-3",
+      "sampleDocsRelPath": "../../vai-site-samples/devdocs",
+      "exampleQueries": [
+        {
+          "query": "How do I get the development environment running on my laptop?",
+          "explanation": "Tests retrieval from local-dev-setup doc using natural language",
+          "sampleResults": [
+            { "source": "local-dev-setup.md", "relevance": 0.94 },
+            { "source": "onboarding-checklist.md", "relevance": 0.87 }
+          ]
+        },
+        {
+          "query": "What happens when an API request fails and how do we handle errors?",
+          "explanation": "Tests cross-document retrieval across error-handling and API docs",
+          "sampleResults": [
+            { "source": "error-handling.md", "relevance": 0.93 }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "healthcare",
+      "title": "Healthcare Knowledge Base",
+      "dbName": "vai_integration_test",
+      "collectionName": "clinical_knowledge",
+      "voyageModel": "voyage-3",
+      "sampleDocsRelPath": "../../vai-site-samples/healthcare",
+      "exampleQueries": [
+        {
+          "query": "What are the recommended treatments for Type 2 diabetes with renal complications?",
+          "explanation": "Tests retrieval across diabetes and renal docs",
+          "sampleResults": [
+            { "source": "diabetes-renal.md", "relevance": 0.9 }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "finance",
+      "title": "Financial Document Search",
+      "dbName": "vai_integration_test",
+      "collectionName": "financial_docs",
+      "voyageModel": "voyage-finance-2",
+      "sampleDocsRelPath": "../../vai-site-samples/finance",
+      "exampleQueries": [
+        {
+          "query": "What is our current credit risk policy and exposure limits?",
+          "explanation": "Tests retrieval from credit policy docs",
+          "sampleResults": [
+            { "source": "credit-policy.md", "relevance": 0.9 }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "legal",
+      "title": "Legal Document Search",
+      "dbName": "vai_integration_test",
+      "collectionName": "legal_docs",
+      "voyageModel": "voyage-3",
+      "sampleDocsRelPath": "../../vai-site-samples/legal",
+      "exampleQueries": [
+        {
+          "query": "What are the termination clauses in our standard contracts?",
+          "explanation": "Tests retrieval from contract templates",
+          "sampleResults": []
+        }
+      ]
+    }
+  ]
+}
