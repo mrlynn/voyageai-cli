@@ -91,10 +91,12 @@ class Optimizer {
         .aggregate([
           {
             $search: {
-              cosmosSearch: true,
-              vector: queryVector,
-              k,
-              returnScoresAs: 'similarityScore',
+              vectorSearch: {
+                vector: queryVector,
+                path: 'embedding',
+                k,
+                numCandidates: Math.min(200, k * 10),
+              },
             },
           },
           {
@@ -102,7 +104,7 @@ class Optimizer {
               _id: 1,
               path: 1,
               content: 1,
-              similarityScore: { $meta: 'searchScore' },
+              score: { $meta: 'searchScore' },
             },
           },
           {

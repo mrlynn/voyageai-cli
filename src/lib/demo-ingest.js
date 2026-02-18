@@ -97,22 +97,23 @@ async function ingestSampleData(sampleDataDir, options) {
       // Index may not exist yet
     }
 
-    // Create the index
+    // Create the index (MongoDB Atlas Vector Search syntax)
     await collection.createSearchIndex({
       name: indexName,
       definition: {
-        fields: [
-          {
-            type: 'vector',
-            path: 'embedding',
-            similarity: 'cosine',
-            dimensions: 1024,
+        mappings: {
+          dynamic: true,
+          fields: {
+            embedding: {
+              type: 'vector',
+              dimensions: 1024,
+              similarity: 'cosine',
+            },
+            path: {
+              type: 'string',
+            },
           },
-          {
-            type: 'filter',
-            path: 'path',
-          },
-        ],
+        },
       },
     });
 
