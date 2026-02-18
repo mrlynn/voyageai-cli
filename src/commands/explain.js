@@ -120,6 +120,7 @@ function findSuggestions(input) {
 function registerExplain(program) {
   program
     .command('explain [concept]')
+    .alias('explore')
     .description('Learn about embeddings, reranking, vector search, and more')
     .option('--json', 'Output in JSON format')
     .action((concept, opts) => {
