@@ -1,7 +1,7 @@
 'use strict';
 
-const { getConnection } = require('./mongo');
-const { embed, rerank } = require('./api');
+const { getMongoCollection } = require('./mongo');
+const { generateEmbeddings } = require('./api');
 const { MODEL_CATALOG } = require('./catalog');
 
 /**
@@ -40,31 +40,34 @@ class Optimizer {
    * @returns {Promise<string[]>}
    */
   async generateSampleQueries(count = 5) {
-    const client = await getConnection();
-    const collection = client.db(this.db).collection(this.collection);
+    const { client, collection } = await getMongoCollection(this.db, this.collection);
 
-    // Get random documents
-    const docs = await collection.find({}).limit(count * 2).toArray();
+    try {
+      // Get random documents
+      const docs = await collection.find({}).limit(count * 2).toArray();
 
-    if (docs.length === 0) {
-      throw new Error(`No documents found in ${this.db}.${this.collection}`);
-    }
-
-    const queries = [];
-    for (let i = 0; i < Math.min(count, docs.length); i++) {
-      const doc = docs[i];
-      const content = doc.content || '';
-
-      // Extract a sentence or phrase as a query
-      const sentences = content.split(/[.!?]+/).filter(s => s.trim().length > 10);
-      if (sentences.length > 0) {
-        // Pick a semi-random sentence
-        const idx = Math.floor((i * 17) % sentences.length); // deterministic pseudo-random
-        queries.push(sentences[idx].trim());
+      if (docs.length === 0) {
+        throw new Error(`No documents found in ${this.db}.${this.collection}`);
       }
-    }
 
-    return queries.slice(0, count);
+      const queries = [];
+      for (let i = 0; i < Math.min(count, docs.length); i++) {
+        const doc = docs[i];
+        const content = doc.content || '';
+
+        // Extract a sentence or phrase as a query
+        const sentences = content.split(/[.!?]+/).filter(s => s.trim().length > 10);
+        if (sentences.length > 0) {
+          // Pick a semi-random sentence
+          const idx = Math.floor((i * 17) % sentences.length); // deterministic pseudo-random
+          queries.push(sentences[idx].trim());
+        }
+      }
+
+      return queries.slice(0, count);
+    } finally {
+      await client.close();
+    }
   }
 
   /**
@@ -77,38 +80,41 @@ class Optimizer {
    */
   async searchWithModel(query, model, k = 5) {
     // Embed the query
-    const embeddingResult = await embed(query, model);
-    const queryVector = embeddingResult.embedding;
+    const embeddingResult = await generateEmbeddings([query], { model });
+    const queryVector = embeddingResult.data[0].embedding;
 
     // Search
-    const client = await getConnection();
-    const collection = client.db(this.db).collection(this.collection);
+    const { client, collection } = await getMongoCollection(this.db, this.collection);
 
-    const results = await collection
-      .aggregate([
-        {
-          $search: {
-            cosmosSearch: true,
-            vector: queryVector,
-            k,
-            returnScoresAs: 'similarityScore',
+    try {
+      const results = await collection
+        .aggregate([
+          {
+            $search: {
+              cosmosSearch: true,
+              vector: queryVector,
+              k,
+              returnScoresAs: 'similarityScore',
+            },
           },
-        },
-        {
-          $project: {
-            _id: 1,
-            path: 1,
-            content: 1,
-            similarityScore: { $meta: 'searchScore' },
+          {
+            $project: {
+              _id: 1,
+              path: 1,
+              content: 1,
+              similarityScore: { $meta: 'searchScore' },
+            },
           },
-        },
-        {
-          $limit: k,
-        },
-      ])
-      .toArray();
+          {
+            $limit: k,
+          },
+        ])
+        .toArray();
 
-    return results;
+      return results;
+    } finally {
+      await client.close();
+    }
   }
 
   /**
