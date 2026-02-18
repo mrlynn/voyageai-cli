@@ -92,9 +92,9 @@ class Optimizer {
           {
             $search: {
               vectorSearch: {
-                vector: queryVector,
+                queryVector,
                 path: 'embedding',
-                k,
+                limit: k,
                 numCandidates: Math.min(200, k * 10),
               },
             },
@@ -106,9 +106,6 @@ class Optimizer {
               content: 1,
               score: { $meta: 'searchScore' },
             },
-          },
-          {
-            $limit: k,
           },
         ])
         .toArray();

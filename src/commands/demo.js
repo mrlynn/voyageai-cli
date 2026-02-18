@@ -275,11 +275,14 @@ async function runCostOptimizerDemo(opts) {
     console.log(`    ${pc.dim('vai playground')}`);
     console.log('');
 
-    telemetry.track('demo_cost_optimizer_completed', {
-      duration: Date.now() - demoStart,
-      docCount,
-      queries: queries.length,
-    });
+    // Track completion
+    if (telemetry && telemetry.send) {
+      telemetry.send('demo_cost_optimizer_completed', {
+        duration: Date.now() - demoStart,
+        docCount,
+        queries: queries.length,
+      });
+    }
   } catch (err) {
     console.error('');
     console.error(pc.red('  Demo failed:'), err.message);
