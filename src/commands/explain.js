@@ -48,10 +48,6 @@ function showExplanation(key) {
   }
 
   console.log('');
-  console.log(`  ${pc.bold('Key points:')}`);
-
-  // Extract key points from content — use a curated approach
-  // Actually, the content itself is the explanation. Let's show tryIt and links.
 
   if (concept.tryIt && concept.tryIt.length > 0) {
     console.log('');
