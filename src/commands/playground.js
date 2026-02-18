@@ -265,6 +265,24 @@ function createPlaygroundServer() {
         return;
       }
 
+      // Serve playground JS modules
+      const jsMatch = req.url.match(/^\/js\/([a-zA-Z0-9_.-]+\.js)$/);
+      if (req.method === 'GET' && jsMatch) {
+        const jsPath = path.join(__dirname, '..', 'playground', 'js', jsMatch[1]);
+        if (fs.existsSync(jsPath)) {
+          const data = fs.readFileSync(jsPath);
+          res.writeHead(200, {
+            'Content-Type': 'application/javascript; charset=utf-8',
+            'Cache-Control': 'public, max-age=3600',
+          });
+          res.end(data);
+        } else {
+          res.writeHead(404);
+          res.end('JS file not found');
+        }
+        return;
+      }
+
       // API: Models
       if (req.method === 'GET' && req.url === '/api/models') {
         const models = MODEL_CATALOG.filter(m => !m.legacy && !m.local && !m.unreleased);
