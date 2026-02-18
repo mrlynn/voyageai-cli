@@ -90,13 +90,12 @@ class Optimizer {
       const results = await collection
         .aggregate([
           {
-            $search: {
-              vectorSearch: {
-                queryVector,
-                path: 'embedding',
-                limit: k,
-                numCandidates: Math.min(200, k * 10),
-              },
+            $vectorSearch: {
+              index: 'vector_search_index',
+              queryVector,
+              path: 'embedding',
+              limit: k,
+              numCandidates: Math.min(200, k * 10),
             },
           },
           {
@@ -104,7 +103,7 @@ class Optimizer {
               _id: 1,
               path: 1,
               content: 1,
-              score: { $meta: 'searchScore' },
+              score: { $meta: 'vectorSearchScore' },
             },
           },
         ])
@@ -121,20 +120,28 @@ class Optimizer {
    * Returns { overlap (0-k), overlapPercent, rankCorrelation }
    */
   calculateOverlap(results1, results2, k = 5) {
-    const set1 = new Set(results1.slice(0, k).map(r => r._id));
-    const set2 = new Set(results2.slice(0, k).map(r => r._id));
+    // Convert _id to string for reliable comparison (handles ObjectId instances)
+    const ids1 = results1.slice(0, k).map(r => String(r._id));
+    const ids2 = results2.slice(0, k).map(r => String(r._id));
+
+    const set2 = new Set(ids2);
 
     // Count common documents
     let overlap = 0;
-    for (const id of set1) {
+    for (const id of ids1) {
       if (set2.has(id)) overlap++;
     }
 
-    // Spearman rank correlation (simplified: just count position differences)
+    // Spearman rank correlation (simplified: count position differences)
+    const actualK = Math.min(k, ids1.length, ids2.length);
+    if (actualK === 0) {
+      return { overlap: 0, overlapPercent: 0, rankCorrelation: 0 };
+    }
+
     let rankDiff = 0;
-    for (let i = 0; i < k; i++) {
-      const id1 = results1[i]?._id;
-      const idx2 = results2.findIndex(r => r._id === id1);
+    for (let i = 0; i < actualK; i++) {
+      const id1 = ids1[i];
+      const idx2 = ids2.indexOf(id1);
       if (idx2 >= 0) {
         rankDiff += Math.abs(i - idx2);
       } else {
@@ -147,7 +154,7 @@ class Optimizer {
 
     return {
       overlap,
-      overlapPercent: (overlap / k) * 100,
+      overlapPercent: (overlap / actualK) * 100,
       rankCorrelation: Math.max(0, rankCorrelation),
     };
   }

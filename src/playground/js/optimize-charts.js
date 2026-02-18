@@ -8,6 +8,7 @@ class OptimizeTab {
     this.container = document.getElementById(containerId);
     this.charts = {};
     this.currentAnalysis = null;
+    this.statusChecked = false;
   }
 
   /**
@@ -21,11 +22,217 @@ class OptimizeTab {
 
     console.log('[OptimizeTab] Initializing');
 
-    // Load configuration from config form
     this.setupEventListeners();
     this.restoreState();
-    
+
+    // Check data readiness on first load
+    if (!this.statusChecked) {
+      await this.checkDataStatus();
+    }
+
     console.log('[OptimizeTab] Ready');
+  }
+
+  /**
+   * Check whether demo data is ready and update UI accordingly
+   */
+  async checkDataStatus() {
+    this.statusChecked = true;
+    const resultsPanel = this.container.querySelector('#optimize-results');
+    if (!resultsPanel) return;
+
+    try {
+      const resp = await fetch('/api/optimize/status');
+      const status = await resp.json();
+      console.log('[OptimizeTab] Data status:', status);
+
+      if (status.ready) {
+        // Data is ready — show normal idle state
+        this.showReadyState(resultsPanel, status);
+        this.setRunButtonEnabled(true);
+      } else if (status.docCount > 0 && !status.indexReady) {
+        // Data ingested but index still building
+        this.showIndexBuildingState(resultsPanel, status);
+        this.setRunButtonEnabled(false);
+        this.pollForIndexReady();
+      } else {
+        // No data — show preparation step
+        this.showNeedsDataState(resultsPanel);
+        this.setRunButtonEnabled(false);
+      }
+    } catch (err) {
+      console.error('[OptimizeTab] Status check failed:', err);
+      // Show preparation step as fallback
+      this.showNeedsDataState(resultsPanel);
+      this.setRunButtonEnabled(false);
+    }
+  }
+
+  /**
+   * Show the "data ready" idle state
+   */
+  showReadyState(panel, status) {
+    panel.innerHTML = `
+      <div class="card" style="border-left: 4px solid #00d4aa;">
+        <div style="display: flex; align-items: center; gap: 12px; padding: 16px 20px;">
+          <div style="font-size: 24px;">&#10003;</div>
+          <div>
+            <div style="font-weight: 600; margin-bottom: 4px;">Demo data ready</div>
+            <div style="font-size: 13px; color: var(--text-dim);">
+              ${status.docCount} documents in <code>${status.db}.${status.collection}</code>
+              &mdash; vector index active. Click <strong>Run Analysis</strong> to compare models.
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  /**
+   * Show the "index building" waiting state, with polling
+   */
+  showIndexBuildingState(panel, status) {
+    panel.innerHTML = `
+      <div class="card" style="border-left: 4px solid #ff9800;">
+        <div style="padding: 20px;">
+          <div style="font-weight: 600; margin-bottom: 8px;">Vector search index is building...</div>
+          <div style="font-size: 13px; color: var(--text-dim); margin-bottom: 16px;">
+            ${status.docCount} documents ingested. Atlas is building the vector search index.
+            This typically takes 1-2 minutes. The page will update automatically.
+          </div>
+          <div class="spinner" style="margin: 0 auto;"></div>
+        </div>
+      </div>
+    `;
+  }
+
+  /**
+   * Show the "needs data" state with a Prepare button
+   */
+  showNeedsDataState(panel) {
+    panel.innerHTML = `
+      <div class="card">
+        <div class="card-title">Step 1: Prepare Demo Data</div>
+        <p style="color: var(--text-dim); margin-bottom: 16px;">
+          The Cost Optimizer needs embedded documents to compare retrieval across models.
+          Click below to ingest bundled sample data (65 technical docs) into your MongoDB Atlas cluster
+          and create a vector search index.
+        </p>
+        <div style="background: rgba(0, 212, 170, 0.05); border: 1px solid var(--border-color); border-radius: 6px; padding: 16px; margin-bottom: 16px;">
+          <div style="font-size: 13px; color: var(--text-dim);">
+            <strong>What this does:</strong>
+            <ol style="margin: 8px 0 0 0; padding-left: 20px; line-height: 1.8;">
+              <li>Reads sample markdown documents from the bundled demo corpus</li>
+              <li>Embeds each document using <code>voyage-4-large</code> (Voyage AI API)</li>
+              <li>Stores documents + embeddings in <code>vai_demo.cost_optimizer_demo</code></li>
+              <li>Creates a vector search index on the collection</li>
+            </ol>
+          </div>
+        </div>
+        <button class="btn" id="optimize-prepare-btn" style="width: 100%;">
+          Prepare Demo Data
+        </button>
+        <div id="optimize-prepare-status" style="margin-top: 12px;"></div>
+      </div>
+    `;
+
+    const prepareBtn = panel.querySelector('#optimize-prepare-btn');
+    if (prepareBtn) {
+      prepareBtn.addEventListener('click', () => this.prepareDemoData());
+    }
+  }
+
+  /**
+   * Call the prepare endpoint to ingest sample data
+   */
+  async prepareDemoData() {
+    const prepareBtn = this.container.querySelector('#optimize-prepare-btn');
+    const statusEl = this.container.querySelector('#optimize-prepare-status');
+
+    if (prepareBtn) {
+      prepareBtn.disabled = true;
+      prepareBtn.textContent = 'Preparing...';
+    }
+
+    if (statusEl) {
+      statusEl.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 10px; color: var(--text-dim); font-size: 13px;">
+          <div class="spinner" style="width: 16px; height: 16px;"></div>
+          Embedding documents with voyage-4-large... this may take 30-60 seconds.
+        </div>
+      `;
+    }
+
+    try {
+      const resp = await fetch('/api/optimize/prepare', { method: 'POST' });
+      const result = await resp.json();
+
+      if (!resp.ok || !result.success) {
+        throw new Error(result.error || 'Preparation failed');
+      }
+
+      if (statusEl) {
+        statusEl.innerHTML = `
+          <div style="color: #00d4aa; font-size: 13px; font-weight: 500;">
+            &#10003; ${result.docCount} documents ingested. Waiting for vector search index...
+          </div>
+        `;
+      }
+
+      // Now poll for the index to become ready
+      this.setRunButtonEnabled(false);
+      this.pollForIndexReady();
+    } catch (err) {
+      console.error('[OptimizeTab] Prepare failed:', err);
+      if (statusEl) {
+        statusEl.innerHTML = `
+          <div style="color: #ff6b6b; font-size: 13px;">
+            Preparation failed: ${err.message}
+          </div>
+        `;
+      }
+      if (prepareBtn) {
+        prepareBtn.disabled = false;
+        prepareBtn.textContent = 'Prepare Demo Data';
+      }
+    }
+  }
+
+  /**
+   * Poll /api/optimize/status every 10s until the index is ready
+   */
+  pollForIndexReady() {
+    if (this._pollTimer) clearInterval(this._pollTimer);
+
+    this._pollTimer = setInterval(async () => {
+      try {
+        const resp = await fetch('/api/optimize/status');
+        const status = await resp.json();
+        console.log('[OptimizeTab] Poll status:', status);
+
+        if (status.ready) {
+          clearInterval(this._pollTimer);
+          this._pollTimer = null;
+
+          const resultsPanel = this.container.querySelector('#optimize-results');
+          if (resultsPanel) this.showReadyState(resultsPanel, status);
+          this.setRunButtonEnabled(true);
+        }
+      } catch (e) {
+        // Keep polling
+      }
+    }, 10_000);
+  }
+
+  /**
+   * Enable/disable the Run Analysis button
+   */
+  setRunButtonEnabled(enabled) {
+    const runBtn = this.container.querySelector('#optimize-run-btn');
+    if (runBtn) {
+      runBtn.disabled = !enabled;
+      runBtn.style.opacity = enabled ? '1' : '0.5';
+    }
   }
 
   /**
@@ -33,16 +240,12 @@ class OptimizeTab {
    */
   setupEventListeners() {
     const runBtn = this.container.querySelector('#optimize-run-btn');
-    console.log('[OptimizeTab] Run button:', runBtn);
-    
+
     if (runBtn) {
       runBtn.addEventListener('click', (e) => {
-        console.log('[OptimizeTab] Run button clicked');
         e.preventDefault();
         this.runAnalysis();
       });
-    } else {
-      console.error('[OptimizeTab] Run button not found');
     }
 
     const exportBtn = this.container.querySelector('#optimize-export-btn');
@@ -116,21 +319,16 @@ class OptimizeTab {
 
     // Show step-by-step process
     resultsPanel.innerHTML = `
-      <div class="optimize-steps">
-        <div class="step step-active">
-          <div class="step-number">1</div>
-          <div class="step-content">
-            <div class="step-title">Generating Sample Queries</div>
-            <div class="step-desc">Extracting representative questions from your documents...</div>
-            <div class="spinner"></div>
-          </div>
+      <div class="card" style="padding: 30px; text-align: center;">
+        <div style="font-weight: 600; margin-bottom: 12px;">Running Cost Analysis...</div>
+        <div style="font-size: 13px; color: var(--text-dim); margin-bottom: 16px;">
+          Embedding queries with both models and comparing retrieval results.
         </div>
+        <div class="spinner" style="margin: 0 auto;"></div>
       </div>
     `;
 
     try {
-      console.log('Calling /api/optimize/analyze with config:', config);
-      
       const response = await fetch('/api/optimize/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -143,8 +341,6 @@ class OptimizeTab {
         }),
       });
 
-      console.log('API response status:', response.status);
-
       if (!response.ok) {
         const errorText = await response.text();
         throw new Error(`API returned ${response.status}: ${errorText}`);
@@ -152,7 +348,10 @@ class OptimizeTab {
 
       this.currentAnalysis = await response.json();
       console.log('Analysis complete:', this.currentAnalysis);
-      
+
+      // Track costs in the session dashboard
+      this.trackCosts(0);
+
       // Now show full results with explanations
       resultsPanel.innerHTML = '';
       this.renderResults();
@@ -166,7 +365,7 @@ class OptimizeTab {
             Make sure:
             <ul style="margin: 8px 0 0 0; padding-left: 20px;">
               <li>Database and collection names are correct</li>
-              <li>The collection contains embedded documents</li>
+              <li>The collection contains embedded documents with a vector search index</li>
               <li>Your API key and MongoDB URI are configured</li>
             </ul>
           </div>
@@ -213,10 +412,10 @@ class OptimizeTab {
       queries.reduce((sum, q) => sum + q.rankCorrelation, 0) / queries.length;
 
     card.innerHTML = `
-      <div class="card-title">✓ Retrieval Quality: Proven Identical Results</div>
-      
+      <div class="card-title">&#10003; Retrieval Quality: Proven Identical Results</div>
+
       <p style="color: var(--text-dim); margin-bottom: 20px;">
-        Both models found the same relevant documents for each query. 
+        Both models found the same relevant documents for each query.
         <strong>voyage-4-lite delivers the same retrieval quality at a fraction of the cost.</strong>
       </p>
 
@@ -235,7 +434,7 @@ class OptimizeTab {
 
       <details style="margin-bottom: 16px;">
         <summary style="cursor: pointer; color: var(--text-link); font-weight: 500; margin-bottom: 12px;">
-          ▼ Per-query breakdown (${queries.length} test queries)
+          Per-query breakdown (${queries.length} test queries)
         </summary>
         <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-color);">
           ${queries.map((q, i) => `
@@ -251,7 +450,7 @@ class OptimizeTab {
       </details>
 
       <div style="background: rgba(51, 215, 170, 0.1); border-left: 4px solid #00d4aa; padding: 12px; border-radius: 4px; font-size: 13px; color: var(--text-dim);">
-        <strong style="color: #00d4aa;">Why this matters:</strong> voyage-4-lite is built to work with documents already embedded by voyage-4-large. 
+        <strong style="color: #00d4aa;">Why this matters:</strong> voyage-4-lite is built to work with documents already embedded by voyage-4-large.
         Same embedding space = identical search results at query time.
       </div>
     `;
@@ -270,17 +469,15 @@ class OptimizeTab {
     const { symmetric, asymmetric, savings } = costs;
     const savingsPercent = ((savings / symmetric) * 100).toFixed(1);
 
-    const chartContainer = document.createElement('canvas');
-    chartContainer.id = `cost-chart-${Date.now()}`;
-    chartContainer.width = 400;
-    chartContainer.height = 250;
+    const chartId = `cost-chart-${Date.now()}`;
 
+    // Build all HTML at once so innerHTML is only set once (avoids destroying the canvas)
     card.innerHTML = `
-      <div class="card-title">💰 Cost Projection: ${savingsPercent}% Savings</div>
-      
+      <div class="card-title">Cost Projection: ${savingsPercent}% Savings</div>
+
       <p style="color: var(--text-dim); margin-bottom: 20px;">
-        At your projected scale (<strong>${(scale.docs / 1e6).toFixed(1)}M documents</strong>, 
-        <strong>${(scale.queriesPerMonth / 1e6).toFixed(1)}M queries/month</strong>), 
+        At your projected scale (<strong>${(scale.docs / 1e6).toFixed(1)}M documents</strong>,
+        <strong>${(scale.queriesPerMonth / 1e6).toFixed(1)}M queries/month</strong>),
         switching from symmetric to asymmetric retrieval saves:
       </p>
 
@@ -292,11 +489,12 @@ class OptimizeTab {
           per year (${savingsPercent}% reduction in embedding costs)
         </div>
       </div>
-    `;
-    card.appendChild(chartContainer);
 
-    card.innerHTML += `
-      <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border-color);">
+      <div style="position: relative; height: 250px; margin-bottom: 20px;">
+        <canvas id="${chartId}" width="400" height="250"></canvas>
+      </div>
+
+      <div style="padding-top: 20px; border-top: 1px solid var(--border-color);">
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
           <div style="border-radius: 6px; padding: 14px; background: rgba(255, 107, 107, 0.05);">
             <div style="font-size: 12px; color: var(--text-dim); margin-bottom: 8px; font-weight: 500;">Symmetric Approach</div>
@@ -307,7 +505,7 @@ class OptimizeTab {
             </div>
           </div>
           <div style="border-radius: 6px; padding: 14px; background: rgba(81, 207, 102, 0.05);">
-            <div style="font-size: 12px; color: var(--text-dim); margin-bottom: 8px; font-weight: 500;">Asymmetric Approach ✓</div>
+            <div style="font-size: 12px; color: var(--text-dim); margin-bottom: 8px; font-weight: 500;">Asymmetric Approach &#10003;</div>
             <div style="font-size: 12px; margin-bottom: 2px;"><strong>Embed:</strong> large model (one-time)</div>
             <div style="font-size: 12px; margin-bottom: 2px;"><strong>Query:</strong> lite model (per query)</div>
             <div style="font-size: 14px; font-weight: bold; color: #51cf66; margin-top: 8px;">
@@ -317,20 +515,22 @@ class OptimizeTab {
         </div>
 
         <div style="background: rgba(0, 212, 170, 0.1); border-left: 4px solid #00d4aa; padding: 12px; border-radius: 4px; font-size: 13px; color: var(--text-dim);">
-          <strong style="color: #00d4aa;">How it works:</strong> Embedding is a one-time cost. Queries happen continuously. 
-          By embedding with voyage-4-large (best quality) and querying with voyage-4-lite (cheapest), 
+          <strong style="color: #00d4aa;">How it works:</strong> Embedding is a one-time cost. Queries happen continuously.
+          By embedding with voyage-4-large (best quality) and querying with voyage-4-lite (cheapest),
           you pay premium quality cost once and budget cost repeatedly.
         </div>
       </div>
     `;
 
-    // Render chart after appending to DOM
+    // Render chart after card is in the DOM
     setTimeout(() => {
-      const ctx = chartContainer.getContext('2d');
+      const canvas = document.getElementById(chartId);
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
       this.charts.costChart = new Chart(ctx, {
         type: 'bar',
         data: {
-          labels: ['Current:\nSymmetric\n(large for all)', 'Your Savings:\nAsymmetric\n(large→docs, lite→queries)'],
+          labels: ['Symmetric\n(large for all)', 'Asymmetric\n(large for docs, lite for queries)'],
           datasets: [
             {
               label: 'Annual Cost',
@@ -358,7 +558,7 @@ class OptimizeTab {
           },
         },
       });
-    }, 0);
+    }, 100);
 
     return card;
   }
@@ -371,8 +571,8 @@ class OptimizeTab {
     card.className = 'card';
 
     card.innerHTML = `
-      <div class="card-title">⚙ Optimization Tradeoffs: Storage vs Quality</div>
-      
+      <div class="card-title">Optimization Tradeoffs: Storage vs Quality</div>
+
       <p style="color: var(--text-dim); margin-bottom: 20px;">
         Beyond choosing models, you can further optimize by reducing vector dimensions or using quantization.
         <strong>For most use cases, these tweaks save 75% storage with negligible quality loss.</strong>
@@ -392,25 +592,25 @@ class OptimizeTab {
             <tr style="border-bottom: 1px solid var(--border-color);">
               <td style="padding: 10px;">float32 @ 1024 dims</td>
               <td style="text-align: center; color: var(--text-dim);">4,096 B</td>
-              <td style="text-align: center; color: var(--text-dim);">—</td>
+              <td style="text-align: center; color: var(--text-dim);">&mdash;</td>
               <td style="color: var(--text-dim);">Baseline quality</td>
             </tr>
             <tr style="border-bottom: 1px solid var(--border-color);">
               <td style="padding: 10px;">float32 @ 512 dims</td>
               <td style="text-align: center; color: var(--text-dim);">2,048 B</td>
-              <td style="text-align: center; color: #ff9800;">−0.73%</td>
+              <td style="text-align: center; color: #ff9800;">&minus;0.73%</td>
               <td style="color: var(--text-dim);">Storage-conscious</td>
             </tr>
             <tr style="background: rgba(0, 212, 170, 0.05); border-bottom: 1px solid var(--border-color);">
-              <td style="padding: 10px;"><strong>int8 @ 1024 dims ✓</strong></td>
+              <td style="padding: 10px;"><strong>int8 @ 1024 dims &#10003;</strong></td>
               <td style="text-align: center; color: #00d4aa;"><strong>1,024 B</strong></td>
-              <td style="text-align: center; color: #00d4aa;"><strong>−0.43%</strong></td>
+              <td style="text-align: center; color: #00d4aa;"><strong>&minus;0.43%</strong></td>
               <td style="color: #00d4aa;"><strong>Recommended default</strong></td>
             </tr>
             <tr>
               <td style="padding: 10px;">int8 @ 512 dims</td>
               <td style="text-align: center; color: var(--text-dim);">512 B</td>
-              <td style="text-align: center; color: #ff6b6b;">−1.16%</td>
+              <td style="text-align: center; color: #ff6b6b;">&minus;1.16%</td>
               <td style="color: var(--text-dim);">Extreme optimization</td>
             </tr>
           </tbody>
@@ -418,8 +618,8 @@ class OptimizeTab {
       </div>
 
       <div style="background: rgba(51, 215, 170, 0.1); border-left: 4px solid #00d4aa; padding: 12px; border-radius: 4px; font-size: 13px; color: var(--text-dim);">
-        <strong style="color: #00d4aa;">Storage matters because:</strong> Vector databases charge by storage size. 
-        Reducing from 4,096 to 1,024 bytes per vector cuts your database costs by 75%, 
+        <strong style="color: #00d4aa;">Storage matters because:</strong> Vector databases charge by storage size.
+        Reducing from 4,096 to 1,024 bytes per vector cuts your database costs by 75%,
         with search quality loss so small (0.43%) you won't notice it.
       </div>
     `;
@@ -515,12 +715,12 @@ Using voyage-4-large for documents, voyage-4-lite for queries:
 
 ## Recommendation
 
-✓ **Implement asymmetric retrieval immediately.**
+Implement asymmetric retrieval immediately.
 
-1. **No quality loss** — Retrieval quality is identical
-2. **Quick wins** — Savings appear in your first month of queries
-3. **Future-proof** — As query volume grows, savings scale linearly
-4. **Simple to implement** — Just embed once, query with lite model
+1. **No quality loss** - Retrieval quality is identical
+2. **Quick wins** - Savings appear in your first month of queries
+3. **Future-proof** - As query volume grows, savings scale linearly
+4. **Simple to implement** - Just embed once, query with lite model
 
 ### Next Steps
 
@@ -530,7 +730,7 @@ Using voyage-4-large for documents, voyage-4-lite for queries:
 
 ---
 
-*Generated by vai playground — Voyage AI cost optimization tool*
+*Generated by vai playground - Voyage AI cost optimization tool*
 
 *Learn more: https://docs.vaicli.com/guides/cost-optimization*
 `;
@@ -566,6 +766,43 @@ Using voyage-4-large for documents, voyage-4-lite for queries:
     const collField = this.container.querySelector('#optimize-collection');
     if (collField) collField.value = config.collection;
   }
+
+  /**
+   * Track costs in the session cost dashboard
+   * Estimates token usage based on queries and models used
+   */
+  trackCosts(analysisTime) {
+    if (!window.CostTracker) {
+      console.warn('[OptimizeTab] CostTracker not available');
+      return;
+    }
+
+    const { queries, models } = this.currentAnalysis;
+    
+    // Estimate tokens: average 30 tokens per query
+    const queryTokens = queries.length * 30;
+    
+    // Track embedding operations for each model (cost analysis compares models)
+    models.forEach(model => {
+      CostTracker.addOperation(
+        `optimize-query-${model.replace(/-/g, '')}`,
+        model,
+        queryTokens
+      );
+    });
+
+    // Track vector search operations (rough estimate: 100 tokens per search)
+    const searchTokens = queries.length * models.length * 100;
+    models.forEach(model => {
+      CostTracker.addOperation(
+        `optimize-search-${model.replace(/-/g, '')}`,
+        model,
+        searchTokens
+      );
+    });
+
+    console.log(`[OptimizeTab] Tracked ${models.length} models × ${queries.length} queries = ${queryTokens + searchTokens} total tokens`);
+  }
 }
 
 // Initialize when DOM is ready
@@ -581,11 +818,9 @@ function initOptimizeTab() {
 
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
-    console.log('[OptimizeTab] DOM ready, initializing');
     initOptimizeTab();
   });
 } else {
-  console.log('[OptimizeTab] DOM already ready, initializing');
   initOptimizeTab();
 }
 
@@ -593,7 +828,6 @@ if (document.readyState === 'loading') {
 document.addEventListener('click', (e) => {
   const tabBtn = e.target.closest('[data-tab="optimize"]');
   if (tabBtn) {
-    console.log('[OptimizeTab] Optimize tab clicked');
     initOptimizeTab();
   }
 });
