@@ -12,7 +12,8 @@ class OptimizeTab {
   }
 
   /**
-   * Initialize the Optimize tab UI
+   * Initialize the Optimize tab UI.
+   * No API calls are made until the user explicitly clicks "Get Started".
    */
   async init() {
     if (!this.container) {
@@ -20,17 +21,27 @@ class OptimizeTab {
       return;
     }
 
-    console.log('[OptimizeTab] Initializing');
+    // "Get Started" button — the only entry point into the demo flow
+    const getStartedBtn = this.container.querySelector('#optimize-get-started-btn');
+    if (getStartedBtn) {
+      getStartedBtn.addEventListener('click', () => this.onGetStarted());
+    }
 
     this.setupEventListeners();
     this.restoreState();
+  }
 
-    // Check data readiness on first load
-    if (!this.statusChecked) {
-      await this.checkDataStatus();
-    }
+  /**
+   * User clicked "Get Started" — now we check data status and proceed.
+   */
+  async onGetStarted() {
+    // Hide landing, show config panel
+    const landing = this.container.querySelector('#optimize-landing');
+    const configPanel = this.container.querySelector('#optimize-config-panel');
+    if (landing) landing.style.display = 'none';
+    if (configPanel) configPanel.style.display = '';
 
-    console.log('[OptimizeTab] Ready');
+    await this.checkDataStatus();
   }
 
   /**
@@ -50,6 +61,10 @@ class OptimizeTab {
         // Data is ready — show normal idle state
         this.showReadyState(resultsPanel, status);
         this.setRunButtonEnabled(true);
+      } else if (status.indexFailed) {
+        // Index exists but FAILED — needs re-creation
+        this.showIndexFailedState(resultsPanel, status);
+        this.setRunButtonEnabled(false);
       } else if (status.docCount > 0 && !status.indexReady) {
         // Data ingested but index still building
         this.showIndexBuildingState(resultsPanel, status);
@@ -62,9 +77,89 @@ class OptimizeTab {
       }
     } catch (err) {
       console.error('[OptimizeTab] Status check failed:', err);
-      // Show preparation step as fallback
       this.showNeedsDataState(resultsPanel);
       this.setRunButtonEnabled(false);
+    }
+  }
+
+  /**
+   * Show the "index failed" state — indexes need to be dropped and re-created
+   */
+  showIndexFailedState(panel, status) {
+    panel.innerHTML = `
+      <div class="card" style="border-left: 4px solid #ff6b6b;">
+        <div style="padding: 20px;">
+          <div style="font-weight: 600; margin-bottom: 8px; color: #ff6b6b;">Vector search index failed</div>
+          <div style="font-size: 13px; color: var(--text-dim); margin-bottom: 8px;">
+            ${status.docCount} documents are ingested, but the vector search index failed to build.
+            This usually means the index was created with the wrong configuration.
+          </div>
+          <div style="font-size: 12px; color: var(--text-dim); margin-bottom: 16px;">
+            ${status.failedCount || ''} failed index(es) found. Click below to drop the failed indexes,
+            re-create with the correct settings, and re-ingest the sample data.
+          </div>
+          <button class="btn" id="optimize-repair-btn" style="width: 100%;">
+            Repair: Drop &amp; Re-create Index
+          </button>
+          <div id="optimize-repair-status" style="margin-top: 12px;"></div>
+        </div>
+      </div>
+    `;
+
+    const repairBtn = panel.querySelector('#optimize-repair-btn');
+    if (repairBtn) {
+      repairBtn.addEventListener('click', () => this.repairDemoData());
+    }
+  }
+
+  /**
+   * Drop existing data and re-prepare with correct index
+   */
+  async repairDemoData() {
+    const repairBtn = this.container.querySelector('#optimize-repair-btn');
+    const statusEl = this.container.querySelector('#optimize-repair-status');
+
+    if (repairBtn) {
+      repairBtn.disabled = true;
+      repairBtn.textContent = 'Repairing...';
+    }
+    if (statusEl) {
+      statusEl.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 10px; color: var(--text-dim); font-size: 13px;">
+          <div class="spinner" style="width: 16px; height: 16px;"></div>
+          Dropping failed indexes and re-ingesting... this may take 30-60 seconds.
+        </div>
+      `;
+    }
+
+    try {
+      // Force re-ingest which drops the collection (and its failed indexes) then re-creates properly
+      const resp = await fetch('/api/optimize/prepare?force=true', { method: 'POST' });
+      const result = await resp.json();
+
+      if (!resp.ok || !result.success) {
+        throw new Error(result.error || 'Repair failed');
+      }
+
+      if (statusEl) {
+        statusEl.innerHTML = `
+          <div style="color: #00d4aa; font-size: 13px; font-weight: 500;">
+            &#10003; ${result.docCount} documents re-ingested. Waiting for new vector search index...
+          </div>
+        `;
+      }
+
+      this.setRunButtonEnabled(false);
+      this.pollForIndexReady();
+    } catch (err) {
+      console.error('[OptimizeTab] Repair failed:', err);
+      if (statusEl) {
+        statusEl.innerHTML = `<div style="color: #ff6b6b; font-size: 13px;">Repair failed: ${err.message}</div>`;
+      }
+      if (repairBtn) {
+        repairBtn.disabled = false;
+        repairBtn.textContent = 'Repair: Drop & Re-create Index';
+      }
     }
   }
 
@@ -92,18 +187,39 @@ class OptimizeTab {
    * Show the "index building" waiting state, with polling
    */
   showIndexBuildingState(panel, status) {
+    this._pollStartTime = Date.now();
     panel.innerHTML = `
       <div class="card" style="border-left: 4px solid #ff9800;">
         <div style="padding: 20px;">
           <div style="font-weight: 600; margin-bottom: 8px;">Vector search index is building...</div>
-          <div style="font-size: 13px; color: var(--text-dim); margin-bottom: 16px;">
+          <div style="font-size: 13px; color: var(--text-dim); margin-bottom: 8px;">
             ${status.docCount} documents ingested. Atlas is building the vector search index.
-            This typically takes 1-2 minutes. The page will update automatically.
           </div>
-          <div class="spinner" style="margin: 0 auto;"></div>
+          <div id="optimize-poll-status" style="font-size: 12px; color: var(--text-dim); margin-bottom: 16px;">
+            Checking every 10 seconds... <span id="optimize-poll-elapsed"></span>
+          </div>
+          <div class="spinner" style="margin: 0 auto; margin-bottom: 16px;"></div>
+          <div style="font-size: 12px; color: var(--text-dim); text-align: center;">
+            Index status: <code id="optimize-index-status">${status.indexStatus || 'pending'}</code>
+          </div>
+          <div style="text-align: center; margin-top: 12px;">
+            <button class="btn" id="optimize-skip-wait-btn" style="font-size: 12px; padding: 6px 16px; opacity: 0.7;">
+              Try Running Anyway
+            </button>
+          </div>
         </div>
       </div>
     `;
+
+    const skipBtn = panel.querySelector('#optimize-skip-wait-btn');
+    if (skipBtn) {
+      skipBtn.addEventListener('click', () => {
+        if (this._pollTimer) { clearInterval(this._pollTimer); this._pollTimer = null; }
+        if (this._elapsedTimer) { clearInterval(this._elapsedTimer); this._elapsedTimer = null; }
+        this.showReadyState(panel, status);
+        this.setRunButtonEnabled(true);
+      });
+    }
   }
 
   /**
@@ -112,25 +228,24 @@ class OptimizeTab {
   showNeedsDataState(panel) {
     panel.innerHTML = `
       <div class="card">
-        <div class="card-title">Step 1: Prepare Demo Data</div>
+        <div class="card-title">Prepare Demo Data</div>
         <p style="color: var(--text-dim); margin-bottom: 16px;">
-          The Cost Optimizer needs embedded documents to compare retrieval across models.
-          Click below to ingest bundled sample data (65 technical docs) into your MongoDB Atlas cluster
-          and create a vector search index.
+          No embedded documents found in <code>vai_demo.cost_optimizer_demo</code>.
+          The demo needs sample data to compare retrieval across models.
         </p>
-        <div style="background: rgba(0, 212, 170, 0.05); border: 1px solid var(--border-color); border-radius: 6px; padding: 16px; margin-bottom: 16px;">
+        <div style="background: rgba(0, 212, 170, 0.05); border: 1px solid var(--border); border-radius: 6px; padding: 16px; margin-bottom: 16px;">
           <div style="font-size: 13px; color: var(--text-dim);">
-            <strong>What this does:</strong>
+            <strong>What happens when you click Prepare:</strong>
             <ol style="margin: 8px 0 0 0; padding-left: 20px; line-height: 1.8;">
-              <li>Reads sample markdown documents from the bundled demo corpus</li>
-              <li>Embeds each document using <code>voyage-4-large</code> (Voyage AI API)</li>
-              <li>Stores documents + embeddings in <code>vai_demo.cost_optimizer_demo</code></li>
-              <li>Creates a vector search index on the collection</li>
+              <li>65 bundled sample markdown documents are read locally</li>
+              <li>Each document is embedded using <code>voyage-4-large</code> via the Voyage AI API (<strong>~50K tokens</strong>)</li>
+              <li>Documents + embeddings are stored in <code>vai_demo.cost_optimizer_demo</code></li>
+              <li>A vector search index is created (takes 1-2 min to build on Atlas)</li>
             </ol>
           </div>
         </div>
         <button class="btn" id="optimize-prepare-btn" style="width: 100%;">
-          Prepare Demo Data
+          Prepare Demo Data (~50K tokens)
         </button>
         <div id="optimize-prepare-status" style="margin-top: 12px;"></div>
       </div>
@@ -171,6 +286,19 @@ class OptimizeTab {
         throw new Error(result.error || 'Preparation failed');
       }
 
+      // If the server skipped because data already exists, go straight to status check
+      if (result.skipped) {
+        if (statusEl) {
+          statusEl.innerHTML = `
+            <div style="color: #00d4aa; font-size: 13px; font-weight: 500;">
+              &#10003; Data already exists (${result.docCount} documents). Checking index status...
+            </div>
+          `;
+        }
+        await this.checkDataStatus();
+        return;
+      }
+
       if (statusEl) {
         statusEl.innerHTML = `
           <div style="color: #00d4aa; font-size: 13px; font-weight: 500;">
@@ -199,27 +327,67 @@ class OptimizeTab {
   }
 
   /**
-   * Poll /api/optimize/status every 10s until the index is ready
+   * Poll /api/optimize/status every 10s until the index is ready.
+   * Shows elapsed time and index status. Times out after 5 minutes with an option to proceed anyway.
    */
   pollForIndexReady() {
     if (this._pollTimer) clearInterval(this._pollTimer);
+    if (this._elapsedTimer) clearInterval(this._elapsedTimer);
+
+    this._pollStartTime = this._pollStartTime || Date.now();
+    let pollCount = 0;
+
+    // Update elapsed time every second
+    this._elapsedTimer = setInterval(() => {
+      const elapsed = Math.floor((Date.now() - this._pollStartTime) / 1000);
+      const elapsedEl = document.getElementById('optimize-poll-elapsed');
+      if (elapsedEl) {
+        const mins = Math.floor(elapsed / 60);
+        const secs = elapsed % 60;
+        elapsedEl.textContent = mins > 0
+          ? `(${mins}m ${secs}s elapsed)`
+          : `(${secs}s elapsed)`;
+      }
+    }, 1000);
 
     this._pollTimer = setInterval(async () => {
+      pollCount++;
       try {
         const resp = await fetch('/api/optimize/status');
         const status = await resp.json();
-        console.log('[OptimizeTab] Poll status:', status);
+        console.log(`[OptimizeTab] Poll #${pollCount}:`, status);
+
+        // Update displayed status
+        const statusEl = document.getElementById('optimize-index-status');
+        if (statusEl) {
+          statusEl.textContent = status.indexStatus || (status.indexReady ? 'READY' : 'building...');
+        }
 
         if (status.ready) {
-          clearInterval(this._pollTimer);
-          this._pollTimer = null;
+          clearInterval(this._pollTimer); this._pollTimer = null;
+          clearInterval(this._elapsedTimer); this._elapsedTimer = null;
 
           const resultsPanel = this.container.querySelector('#optimize-results');
           if (resultsPanel) this.showReadyState(resultsPanel, status);
           this.setRunButtonEnabled(true);
+          return;
+        }
+
+        // After 5 minutes, stop polling and let the user decide
+        if (pollCount >= 30) {
+          clearInterval(this._pollTimer); this._pollTimer = null;
+          clearInterval(this._elapsedTimer); this._elapsedTimer = null;
+
+          const pollStatusEl = document.getElementById('optimize-poll-status');
+          if (pollStatusEl) {
+            pollStatusEl.innerHTML = `
+              <span style="color: #ff9800;">Index is still building after 5 minutes.
+              You can click "Try Running Anyway" or wait and refresh later.</span>
+            `;
+          }
         }
       } catch (e) {
-        // Keep polling
+        // Keep polling on network errors
       }
     }, 10_000);
   }
@@ -420,12 +588,12 @@ class OptimizeTab {
       </p>
 
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
-        <div style="border: 1px solid var(--border-color); border-radius: 6px; padding: 16px;">
+        <div style="border: 1px solid var(--border); border-radius: 6px; padding: 16px;">
           <div style="font-size: 12px; color: var(--text-dim); margin-bottom: 4px;">Average Result Overlap</div>
           <div style="font-size: 32px; font-weight: bold; color: #00d4aa;">${avgOverlap.toFixed(1)}%</div>
           <div style="font-size: 12px; color: var(--text-dim); margin-top: 8px;">of results match between models</div>
         </div>
-        <div style="border: 1px solid var(--border-color); border-radius: 6px; padding: 16px;">
+        <div style="border: 1px solid var(--border); border-radius: 6px; padding: 16px;">
           <div style="font-size: 12px; color: var(--text-dim); margin-bottom: 4px;">Rank Correlation</div>
           <div style="font-size: 32px; font-weight: bold; color: #00d4aa;">${avgCorrelation.toFixed(2)}</div>
           <div style="font-size: 12px; color: var(--text-dim); margin-top: 8px;">results ranked in same order</div>
@@ -433,10 +601,10 @@ class OptimizeTab {
       </div>
 
       <details style="margin-bottom: 16px;">
-        <summary style="cursor: pointer; color: var(--text-link); font-weight: 500; margin-bottom: 12px;">
+        <summary style="cursor: pointer; color: var(--blue); font-weight: 500; margin-bottom: 12px;">
           Per-query breakdown (${queries.length} test queries)
         </summary>
-        <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-color);">
+        <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border);">
           ${queries.map((q, i) => `
             <div style="margin-bottom: 12px;">
               <div style="font-size: 12px; font-weight: 500;">Query ${i + 1}:</div>
@@ -494,7 +662,7 @@ class OptimizeTab {
         <canvas id="${chartId}" width="400" height="250"></canvas>
       </div>
 
-      <div style="padding-top: 20px; border-top: 1px solid var(--border-color);">
+      <div style="padding-top: 20px; border-top: 1px solid var(--border);">
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
           <div style="border-radius: 6px; padding: 14px; background: rgba(255, 107, 107, 0.05);">
             <div style="font-size: 12px; color: var(--text-dim); margin-bottom: 8px; font-weight: 500;">Symmetric Approach</div>
@@ -581,7 +749,7 @@ class OptimizeTab {
       <div style="overflow-x: auto; margin-bottom: 20px;">
         <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
           <thead>
-            <tr style="border-bottom: 2px solid var(--border-color);">
+            <tr style="border-bottom: 2px solid var(--border);">
               <th style="text-align: left; padding: 10px; font-weight: 600; color: var(--text-dim);">Configuration</th>
               <th style="text-align: center; padding: 10px; font-weight: 600; color: var(--text-dim);">Storage/vec</th>
               <th style="text-align: center; padding: 10px; font-weight: 600; color: var(--text-dim);">Quality Loss</th>
@@ -589,19 +757,19 @@ class OptimizeTab {
             </tr>
           </thead>
           <tbody>
-            <tr style="border-bottom: 1px solid var(--border-color);">
+            <tr style="border-bottom: 1px solid var(--border);">
               <td style="padding: 10px;">float32 @ 1024 dims</td>
               <td style="text-align: center; color: var(--text-dim);">4,096 B</td>
               <td style="text-align: center; color: var(--text-dim);">&mdash;</td>
               <td style="color: var(--text-dim);">Baseline quality</td>
             </tr>
-            <tr style="border-bottom: 1px solid var(--border-color);">
+            <tr style="border-bottom: 1px solid var(--border);">
               <td style="padding: 10px;">float32 @ 512 dims</td>
               <td style="text-align: center; color: var(--text-dim);">2,048 B</td>
               <td style="text-align: center; color: #ff9800;">&minus;0.73%</td>
               <td style="color: var(--text-dim);">Storage-conscious</td>
             </tr>
-            <tr style="background: rgba(0, 212, 170, 0.05); border-bottom: 1px solid var(--border-color);">
+            <tr style="background: rgba(0, 212, 170, 0.05); border-bottom: 1px solid var(--border);">
               <td style="padding: 10px;"><strong>int8 @ 1024 dims &#10003;</strong></td>
               <td style="text-align: center; color: #00d4aa;"><strong>1,024 B</strong></td>
               <td style="text-align: center; color: #00d4aa;"><strong>&minus;0.43%</strong></td>

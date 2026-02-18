@@ -6,7 +6,7 @@ const { getMongoCollection } = require('./mongo');
 
 /**
  * Handle GET /api/optimize/status
- * Checks whether the demo collection exists, has documents, and has a vector search index.
+ * Checks whether the demo collection exists, has documents, and has a usable vector search index.
  */
 async function handleOptimizeStatus(req, res) {
   const db = 'vai_demo';
@@ -19,18 +19,71 @@ async function handleOptimizeStatus(req, res) {
       const docCount = await coll.countDocuments();
       let indexReady = false;
       let indexName = null;
+      let indexStatus = null;
+      let indexDetails = [];
+
+      let indexFailed = false;
+      let failedCount = 0;
 
       if (docCount > 0) {
-        // Check if a vector search index exists and is ready
+        // Check for vector search indexes
         try {
           const indexes = await coll.listSearchIndexes().toArray();
-          const vsIndex = indexes.find(i => i.type === 'vectorSearch');
+          indexDetails = indexes.map(i => ({
+            name: i.name,
+            type: i.type,
+            status: i.status,
+            queryable: i.queryable,
+          }));
+
+          console.log(`[OptimizeStatus] ${db}.${collection}: ${docCount} docs, indexes:`, JSON.stringify(indexDetails));
+
+          // Check for failed indexes
+          const failedIndexes = indexes.filter(i => i.status === 'FAILED');
+          failedCount = failedIndexes.length;
+          if (failedCount > 0 && failedCount === indexes.length) {
+            // ALL indexes are failed — nothing usable
+            indexFailed = true;
+          }
+
+          // Find a working vector search index
+          const vsIndex = indexes.find(i =>
+            (i.type === 'vectorSearch' || i.name === 'vector_search_index') &&
+            i.status !== 'FAILED'
+          );
+
           if (vsIndex) {
             indexName = vsIndex.name;
-            indexReady = vsIndex.status === 'READY';
+            indexStatus = vsIndex.status;
+            indexReady = vsIndex.status === 'READY' || vsIndex.queryable === true;
           }
         } catch (e) {
-          // listSearchIndexes may not be available on older drivers
+          console.log(`[OptimizeStatus] listSearchIndexes error: ${e.message}`);
+          // If listSearchIndexes fails, try a test vector search to see if the index works
+          try {
+            const sampleDoc = await coll.findOne({ embedding: { $exists: true } });
+            if (sampleDoc && sampleDoc.embedding) {
+              const testResults = await coll.aggregate([
+                {
+                  $vectorSearch: {
+                    index: 'vector_search_index',
+                    queryVector: sampleDoc.embedding,
+                    path: 'embedding',
+                    limit: 1,
+                    numCandidates: 10,
+                  },
+                },
+                { $project: { _id: 1 } },
+              ]).toArray();
+              if (testResults.length > 0) {
+                indexReady = true;
+                indexName = 'vector_search_index';
+                indexStatus = 'READY (verified by test query)';
+              }
+            }
+          } catch (testErr) {
+            console.log(`[OptimizeStatus] Test query failed: ${testErr.message}`);
+          }
         }
       }
 
@@ -39,7 +92,11 @@ async function handleOptimizeStatus(req, res) {
         ready: docCount > 0 && indexReady,
         docCount,
         indexReady,
+        indexFailed,
+        failedCount,
         indexName,
+        indexStatus,
+        indexDetails,
         db,
         collection,
       }));
@@ -56,10 +113,35 @@ async function handleOptimizeStatus(req, res) {
 /**
  * Handle POST /api/optimize/prepare
  * Ingests bundled sample data and creates vector search index.
- * This is the Playground equivalent of the "vai demo cost-optimizer" Step 1.
+ * Skips ingestion if the collection already has documents (use ?force=true to re-ingest).
  */
-async function handleOptimizePrepare(req, res) {
+async function handleOptimizePrepare(req, res, body) {
   try {
+    const parsedUrl = new URL(req.url, `http://${req.headers.host}`);
+    const force = parsedUrl.searchParams.get('force') === 'true';
+
+    // Check if data already exists
+    if (!force) {
+      const { client, collection: coll } = await getMongoCollection('vai_demo', 'cost_optimizer_demo');
+      try {
+        const docCount = await coll.countDocuments();
+        if (docCount > 0) {
+          console.log(`[OptimizePrepare] Collection already has ${docCount} docs, skipping ingestion`);
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({
+            success: true,
+            skipped: true,
+            docCount,
+            collection: 'vai_demo.cost_optimizer_demo',
+            message: `Collection already has ${docCount} documents. Use ?force=true to re-ingest.`,
+          }));
+          return;
+        }
+      } finally {
+        await client.close();
+      }
+    }
+
     const { ingestSampleData } = require('./demo-ingest');
     const sampleDataDir = path.join(__dirname, '..', 'demo', 'sample-data');
 
@@ -71,6 +153,7 @@ async function handleOptimizePrepare(req, res) {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({
       success: true,
+      skipped: false,
       docCount: result.docCount,
       collection: result.collectionName,
       message: `Ingested ${result.docCount} documents. Vector search index is being created — it may take 1-2 minutes to become ready.`,

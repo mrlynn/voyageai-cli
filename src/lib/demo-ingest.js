@@ -91,29 +91,39 @@ async function ingestSampleData(sampleDataDir, options) {
     process.stdout.write('creating index... ');
 
     const indexName = 'vector_search_index';
+
+    // Drop ALL existing search indexes (cleans up failed/duplicate indexes)
     try {
-      await collection.dropSearchIndex(indexName);
+      const existingIndexes = await collection.listSearchIndexes().toArray();
+      for (const idx of existingIndexes) {
+        try {
+          await collection.dropSearchIndex(idx.name);
+          console.log(`  Dropped existing index: ${idx.name} (status: ${idx.status})`);
+        } catch (dropErr) {
+          // May fail if index is in a transitional state
+        }
+      }
+      // Wait a moment for drops to propagate
+      if (existingIndexes.length > 0) {
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
     } catch (err) {
-      // Index may not exist yet
+      // listSearchIndexes may not be available
     }
 
-    // Create the index (MongoDB Atlas Vector Search syntax)
+    // Create the index — type: 'vectorSearch' is required for Atlas Vector Search
     await collection.createSearchIndex({
       name: indexName,
+      type: 'vectorSearch',
       definition: {
-        mappings: {
-          dynamic: true,
-          fields: {
-            embedding: {
-              type: 'vector',
-              dimensions: 1024,
-              similarity: 'cosine',
-            },
-            path: {
-              type: 'string',
-            },
+        fields: [
+          {
+            type: 'vector',
+            path: 'embedding',
+            numDimensions: 1024,
+            similarity: 'cosine',
           },
-        },
+        ],
       },
     });
 

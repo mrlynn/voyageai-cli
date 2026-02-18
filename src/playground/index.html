@@ -6291,8 +6291,8 @@ select:focus { outline: none; border-color: var(--accent); }
     <button class="sidebar-settings-btn" data-tab="settings" title="Settings"><svg width="16" height="16" viewBox="0 0 24 24"><use href="#lg-config"/></svg></button>
   </div>
   <nav class="sidebar-nav">
-    <div class="sidebar-nav-group" role="tablist" aria-label="Tools">
-      <div class="sidebar-nav-label" id="nav-tools-label">Tools</div>
+    <div class="sidebar-nav-group" role="tablist" aria-label="Build">
+      <div class="sidebar-nav-label" id="nav-build-label">Build</div>
       <button class="tab-btn active" data-tab="home" data-tooltip="Home" role="tab" aria-selected="true" aria-controls="tab-home" id="tab-btn-home"><span class="tab-btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span><span>Home</span></button>
       <button class="tab-btn" data-tab="embed" data-tooltip="Embed" role="tab" aria-selected="false" aria-controls="tab-embed" id="tab-btn-embed"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-lightning"/></svg></span><span>Embed</span></button>
       <button class="tab-btn" data-tab="compare" data-tooltip="Compare" role="tab" aria-selected="false" aria-controls="tab-compare" id="tab-btn-compare"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-arrows"/></svg></span><span>Compare</span></button>
@@ -6303,12 +6303,16 @@ select:focus { outline: none; border-color: var(--accent); }
       <button class="tab-btn" data-tab="workflows" data-tooltip="Workflows" role="tab" aria-selected="false" aria-controls="tab-workflows" id="tab-btn-workflows"><span class="tab-btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="3"/><circle cx="19" cy="6" r="3"/><circle cx="19" cy="18" r="3"/><line x1="7.7" y1="10.7" x2="16.3" y2="7.3"/><line x1="7.7" y1="13.3" x2="16.3" y2="16.7"/></svg></span><span>Workflows</span></button>
     </div>
     <div class="sidebar-nav-divider"></div>
-    <div class="sidebar-nav-group" role="tablist" aria-label="Learn">
-      <div class="sidebar-nav-label" id="nav-learn-label">Learn</div>
-      <button class="tab-btn" data-tab="models" data-tooltip="Models" role="tab" aria-selected="false" aria-controls="tab-models" id="tab-btn-models"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-bot"/></svg></span><span>Models</span></button>
+    <div class="sidebar-nav-group" role="tablist" aria-label="Analyze">
+      <div class="sidebar-nav-label" id="nav-analyze-label">Analyze</div>
       <button class="tab-btn" data-tab="benchmark" data-tooltip="Benchmark" role="tab" aria-selected="false" aria-controls="tab-benchmark" id="tab-btn-benchmark"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-gauge"/></svg></span><span>Benchmark</span></button>
       <button class="tab-btn" data-tab="optimize" data-tooltip="Optimize" role="tab" aria-selected="false" aria-controls="tab-optimize" id="tab-btn-optimize"><span class="tab-btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v8m4-4H8"/><circle cx="12" cy="12" r="10"/></svg></span><span>Optimize</span></button>
       <button class="tab-btn" data-tab="explore" data-tooltip="Explore" role="tab" aria-selected="false" aria-controls="tab-explore" id="tab-btn-explore"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-bulb"/></svg></span><span>Explore</span></button>
+    </div>
+    <div class="sidebar-nav-divider"></div>
+    <div class="sidebar-nav-group" role="tablist" aria-label="Reference">
+      <div class="sidebar-nav-label" id="nav-reference-label">Reference</div>
+      <button class="tab-btn" data-tab="models" data-tooltip="Models" role="tab" aria-selected="false" aria-controls="tab-models" id="tab-btn-models"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-bot"/></svg></span><span>Models</span></button>
       <button class="tab-btn" data-tab="about" data-tooltip="About" role="tab" aria-selected="false" aria-controls="tab-about" id="tab-btn-about"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-info"/></svg></span><span>About</span></button>
     </div>
   </nav>
@@ -7855,38 +7859,60 @@ Reranking models rescore initial search results to improve relevance ordering.</
 <!-- ========== OPTIMIZE TAB ========== -->
 <div class="tab-panel" id="tab-optimize" role="tabpanel" aria-labelledby="tab-btn-optimize" tabindex="0">
   <div class="page-header">
-    <h2 class="page-header-title">Optimize</h2>
-    <p class="page-header-subtitle">Analyze cost savings with asymmetric retrieval</p>
-    <p class="page-header-hint">Compare voyage-4-large vs voyage-4-lite retrieval quality, project annual cost savings, and explore dimension/quantization trade-offs.</p>
+    <h2 class="page-header-title">Cost Optimizer</h2>
+    <p class="page-header-subtitle">Prove that asymmetric retrieval saves money &mdash; on your data</p>
   </div>
 
-  <!-- Configuration Panel -->
-  <div class="card">
-    <div class="card-title">Configuration</div>
-    
-    <div style="margin-bottom: 16px;">
-      <label style="display: block; font-size: 13px; margin-bottom: 6px; font-weight: 500;">Database</label>
-      <input type="text" id="optimize-db" placeholder="vai_demo" value="vai_demo" style="width: 100%; padding: 8px; border: 1px solid var(--border-color); border-radius: 4px; font-size: 13px;">
+  <!-- Landing / Intro (shown by default, replaced by JS when user proceeds) -->
+  <div id="optimize-landing">
+    <div class="card">
+      <div class="card-title">How This Demo Works</div>
+      <p style="color: var(--text-dim); margin-bottom: 16px; line-height: 1.6;">
+        Voyage AI's <strong>shared embedding space</strong> means documents embedded with
+        <code>voyage-4-large</code> can be queried with <code>voyage-4-lite</code> at a fraction
+        of the cost &mdash; with nearly identical retrieval results. This demo proves it.
+      </p>
+      <div style="display: grid; grid-template-columns: auto 1fr; gap: 10px 16px; margin-bottom: 20px; font-size: 13px; color: var(--text-dim);">
+        <div style="font-weight: 600; color: var(--text);">Step 1</div>
+        <div><strong>Prepare data</strong> &mdash; Embed 65 sample documents with voyage-4-large and store in MongoDB Atlas</div>
+        <div style="font-weight: 600; color: var(--text);">Step 2</div>
+        <div><strong>Compare models</strong> &mdash; Run the same queries with voyage-4-large and voyage-4-lite, measure retrieval overlap</div>
+        <div style="font-weight: 600; color: var(--text);">Step 3</div>
+        <div><strong>See savings</strong> &mdash; Project annual cost savings at your scale</div>
+      </div>
+      <div style="background: rgba(255, 193, 7, 0.08); border: 1px solid rgba(255, 193, 7, 0.25); border-radius: 6px; padding: 12px; margin-bottom: 20px; font-size: 13px; color: var(--text-dim);">
+        <strong style="color: #ffc107;">Heads up:</strong> This demo uses your Voyage AI API key to embed documents and run queries.
+        The sample data requires approximately <strong>~50K tokens</strong> for embedding and
+        <strong>~1.5K tokens</strong> per analysis run. All data is stored in your MongoDB Atlas cluster
+        under <code>vai_demo.cost_optimizer_demo</code>.
+      </div>
+      <button class="btn" id="optimize-get-started-btn" style="width: 100%;">Get Started</button>
     </div>
+  </div>
 
-    <div style="margin-bottom: 16px;">
-      <label style="display: block; font-size: 13px; margin-bottom: 6px; font-weight: 500;">Collection</label>
-      <input type="text" id="optimize-collection" placeholder="cost_optimizer_demo" value="cost_optimizer_demo" style="width: 100%; padding: 8px; border: 1px solid var(--border-color); border-radius: 4px; font-size: 13px;">
-    </div>
+  <!-- Configuration Panel (hidden until user proceeds past landing) -->
+  <div id="optimize-config-panel" style="display: none;">
+    <div class="card">
+      <div class="card-title">Configuration</div>
 
-    <div style="margin-bottom: 16px;">
-      <button class="btn" id="optimize-run-btn" style="width: 100%;">Run Analysis</button>
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; font-size: 13px; margin-bottom: 6px; font-weight: 500;">Database</label>
+        <input type="text" id="optimize-db" placeholder="vai_demo" value="vai_demo" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px; font-size: 13px;">
+      </div>
+
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; font-size: 13px; margin-bottom: 6px; font-weight: 500;">Collection</label>
+        <input type="text" id="optimize-collection" placeholder="cost_optimizer_demo" value="cost_optimizer_demo" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px; font-size: 13px;">
+      </div>
+
+      <div style="margin-bottom: 16px;">
+        <button class="btn" id="optimize-run-btn" style="width: 100%;" disabled>Run Analysis</button>
+      </div>
     </div>
   </div>
 
   <!-- Results Panel -->
-  <div id="optimize-results" style="margin-top: 16px;">
-    <div class="card">
-      <p style="color: var(--text-dim); text-align: center; padding: 40px 20px;">
-        Configure your analysis and click "Run Analysis" to see results.
-      </p>
-    </div>
-  </div>
+  <div id="optimize-results" style="margin-top: 16px;"></div>
 </div>
 
 <!-- ========== EXPLORE TAB ========== -->
