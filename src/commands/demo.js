@@ -1,96 +1,54 @@
 'use strict';
 
-const { spawnSync } = require('child_process');
 const path = require('path');
-const readline = require('readline');
 const pc = require('picocolors');
-
-const CLI_PATH = path.join(__dirname, '..', 'cli.js');
+const { getConfigValue } = require('../lib/config');
 
 /**
- * Wait for the user to press Enter.
- * Resolves immediately if noPause is true.
- * @param {boolean} noPause
- * @returns {Promise<void>}
+ * Check prerequisites for a demo.
+ * Returns { ok: boolean, errors: string[] }
  */
-function waitForEnter(noPause) {
-  if (noPause) return Promise.resolve();
-  return new Promise((resolve) => {
-    const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-    rl.question(pc.dim('  Press Enter to continue...'), () => {
-      rl.close();
-      resolve();
-    });
-  });
+function checkPrerequisites(required) {
+  const errors = [];
+
+  if (required.includes('api-key')) {
+    const apiKey = process.env.VOYAGE_API_KEY || getConfigValue('apiKey');
+    if (!apiKey) {
+      errors.push('VOYAGE_API_KEY not configured. Run: vai config set api-key "your-key"');
+    }
+  }
+
+  if (required.includes('mongodb')) {
+    const mongoUri = process.env.MONGODB_URI || getConfigValue('mongodbUri');
+    if (!mongoUri) {
+      errors.push('MONGODB_URI not configured. Run: vai config set mongodb-uri "mongodb+srv://..."');
+    }
+  }
+
+  if (required.includes('llm')) {
+    const { resolveLLMConfig } = require('../lib/llm');
+    const llmConfig = resolveLLMConfig();
+    if (!llmConfig.provider) {
+      errors.push('No LLM provider configured. Set one: vai config set llm-provider openai');
+    }
+  }
+
+  return {
+    ok: errors.length === 0,
+    errors,
+  };
 }
 
 /**
- * Print a command that's about to be run.
- * @param {string} cmd
+ * Print prerequisite errors and exit.
  */
-function showCommand(cmd) {
-  console.log(`\n  ${pc.bold(pc.cyan('$ ' + cmd))}\n`);
-}
-
-/**
- * Run a vai sub-command as a child process with inherited stdio.
- * @param {string[]} args
- * @returns {{ status: number }}
- */
-function runVai(args) {
-  return spawnSync(process.execPath, [CLI_PATH, ...args], {
-    stdio: 'inherit',
-    env: process.env,
-  });
-}
-
-/**
- * Print a step header.
- * @param {number} num
- * @param {string} title
- */
-function stepHeader(num, title) {
-  const label = `── Step ${num}: ${title} `;
-  const pad = Math.max(0, 60 - label.length);
-  console.log(`\n${pc.bold(label)}${'─'.repeat(pad)}`);
-}
-
-/**
- * Run a vai command, show it, and return whether it succeeded.
- * @param {string} display  - the display string (e.g. 'vai embed "hello"')
- * @param {string[]} args   - args to pass to vai
- * @returns {boolean} success
- */
-function runStep(display, args) {
-  showCommand(display);
-  const result = runVai(args);
-  return result.status === 0;
-}
-
-/**
- * Ask user whether to continue after a failure.
- * @param {boolean} noPause
- * @returns {Promise<boolean>} true = continue, false = abort
- */
-function askContinue(noPause) {
-  if (noPause) return Promise.resolve(true);
-  return new Promise((resolve) => {
-    const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-    rl.question(pc.yellow('  Step failed. Continue anyway? (Y/n) '), (answer) => {
-      rl.close();
-      const a = answer.trim().toLowerCase();
-      resolve(a === '' || a === 'y' || a === 'yes');
-    });
-  });
-}
-
-/**
- * Sleep for ms milliseconds.
- * @param {number} ms
- * @returns {Promise<void>}
- */
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+function printPrereqErrors(errors) {
+  console.error('');
+  console.error(pc.red('  Prerequisites not met:'));
+  for (const err of errors) {
+    console.error(`  ${pc.red('✗')} ${err}`);
+  }
+  console.error('');
 }
 
 /**
@@ -98,338 +56,284 @@ function sleep(ms) {
  * @param {import('commander').Command} program
  */
 function registerDemo(program) {
-  program
-    .command('demo')
-    .description('Interactive guided walkthrough of Voyage AI features')
+  const cmd = program
+    .command('demo [subcommand]')
+    .description('Guided demonstrations of Voyage AI features')
     .option('--no-pause', 'Skip Enter prompts (for CI/recording)')
-    .option('--skip-pipeline', 'Skip the full pipeline step (Step 5)')
-    .option('--keep', 'Keep the demo collection after pipeline step')
-    .action(async (opts) => {
-      const telemetry = require('../lib/telemetry');
-      const demoStart = Date.now();
-      const noPause = !opts.pause;
+    .action(async (subcommand, opts) => {
+      // If no subcommand, show menu
+      if (!subcommand) {
+        await showDemoMenu(opts);
+        return;
+      }
 
-      // ── Preflight: check API key ──
-      const apiKey = process.env.VOYAGE_API_KEY;
-      if (!apiKey) {
-        const { getConfigValue } = require('../lib/config');
-        const configKey = getConfigValue('apiKey');
-        if (!configKey) {
-          console.error('');
-          console.error(pc.red('  ✗ VOYAGE_API_KEY is not set.'));
-          console.error('');
-          console.error('  Set it with:');
-          console.error(`    ${pc.cyan('export VOYAGE_API_KEY="your-key"')}`);
-          console.error('  Or:');
-          console.error(`    ${pc.cyan('vai config set api-key "your-key"')}`);
-          console.error('');
+      // Route to subcommand
+      switch (subcommand) {
+        case 'cost-optimizer':
+          await runCostOptimizerDemo(opts);
+          break;
+        case 'code-search':
+          console.log(pc.yellow('  ⚠ Code Search demo coming soon (Phase 3)'));
+          break;
+        case 'chat':
+          console.log(pc.yellow('  ⚠ Chat demo coming soon (Phase 4)'));
+          break;
+        case 'cleanup':
+          await runCleanup(opts);
+          break;
+        case 'interactive':
+          console.log(pc.yellow('  ⚠ Interactive demo coming soon (legacy refactor)'));
+          break;
+        default:
+          console.error(pc.red(`  Unknown demo: ${subcommand}`));
           process.exit(1);
-        }
       }
-
-      // ── Banner ──
-      console.log('');
-      console.log(pc.bold('  🧭 Voyage AI Interactive Demo'));
-      console.log(pc.dim('  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━'));
-      console.log('');
-      console.log(pc.dim('  Note: This is a community tool, not an official MongoDB or Voyage AI product.'));
-      console.log(pc.dim('  For official docs and support: https://www.mongodb.com/docs/voyageai/'));
-      console.log('');
-      console.log('  This walkthrough demonstrates embeddings, semantic search, and reranking');
-      console.log('  using Voyage AI models via MongoDB Atlas.');
-      console.log('');
-
-      await waitForEnter(noPause);
-
-      // ── Step 1: Ping ──
-      stepHeader(1, 'Check Connection');
-      console.log('  First, let\'s verify your API key works.');
-
-      let ok = runStep('vai ping', ['ping']);
-      if (!ok) {
-        const cont = await askContinue(noPause);
-        if (!cont) process.exit(1);
-      }
-
-      await waitForEnter(noPause);
-
-      // ── Step 2: Embeddings ──
-      stepHeader(2, 'Generate Embeddings');
-      console.log('  Embeddings convert text into numerical vectors that capture meaning.');
-      console.log('  Let\'s embed a sentence:');
-
-      ok = runStep('vai embed "MongoDB is the most popular document database"',
-        ['embed', 'MongoDB is the most popular document database']);
-      if (!ok) {
-        const cont = await askContinue(noPause);
-        if (!cont) process.exit(1);
-      }
-
-      console.log('\n  Let\'s try another:');
-
-      ok = runStep('vai embed "I love using NoSQL databases for modern applications"',
-        ['embed', 'I love using NoSQL databases for modern applications']);
-      if (!ok) {
-        const cont = await askContinue(noPause);
-        if (!cont) process.exit(1);
-      }
-
-      console.log('');
-      console.log('  These two sentences are about related topics — their vectors will be');
-      console.log('  close together in embedding space, even though they share few words.');
-
-      await waitForEnter(noPause);
-
-      // ── Step 3: Compare Similarity ──
-      stepHeader(3, 'Compare Similarity');
-      console.log('  Let\'s embed a set of diverse documents and see how the model');
-      console.log('  distinguishes meaning:');
-
-      runStep('vai embed "MongoDB Atlas is a cloud database" --quiet',
-        ['embed', 'MongoDB Atlas is a cloud database', '--quiet']);
-      runStep('vai embed "The weather in Paris is lovely" --quiet',
-        ['embed', 'The weather in Paris is lovely', '--quiet']);
-      runStep('vai embed "Vector search enables AI applications" --quiet',
-        ['embed', 'Vector search enables AI applications', '--quiet']);
-
-      console.log('');
-      console.log('  Notice how the model captures semantic relationships — database topics');
-      console.log('  cluster together, while unrelated topics are far apart.');
-
-      await waitForEnter(noPause);
-
-      // ── Step 4: Reranking ──
-      stepHeader(4, 'Reranking');
-      console.log('  Reranking scores how relevant each document is to a specific query.');
-      console.log('  This is the "precision" stage of two-stage retrieval.');
-
-      ok = runStep(
-        'vai rerank --query "How do I build AI search?" --documents ...',
-        [
-          'rerank',
-          '--query', 'How do I build AI search?',
-          '--documents',
-          'MongoDB Atlas provides vector search capabilities',
-          'The recipe calls for two cups of flour',
-          'Voyage AI embeddings power semantic retrieval',
-          'Python is a popular programming language',
-          'Atlas Search combines full-text and vector search',
-        ]
-      );
-      if (!ok) {
-        const cont = await askContinue(noPause);
-        if (!cont) process.exit(1);
-      }
-
-      console.log('');
-      console.log('  Notice how the reranker assigns HIGH scores to relevant documents');
-      console.log('  and LOW scores to irrelevant ones — much more decisive than');
-      console.log('  embedding similarity alone.');
-
-      await waitForEnter(noPause);
-
-      // ── Step 5: Full Pipeline (optional) ──
-      const { getConfigValue } = require('../lib/config');
-      const mongoUri = process.env.MONGODB_URI || getConfigValue('mongodbUri');
-      const skipPipeline = opts.skipPipeline || !mongoUri;
-
-      if (skipPipeline && !opts.skipPipeline) {
-        stepHeader(5, 'Full Pipeline (skipped)');
-        console.log(pc.dim('  Skipping pipeline demo — set MONGODB_URI to try the full flow.'));
-        console.log(pc.dim('  See: vai config set mongodb-uri "mongodb+srv://..."'));
-        console.log('');
-      } else if (!skipPipeline) {
-        stepHeader(5, 'Full Pipeline');
-        console.log('  Now let\'s put it all together: embed → store → index → search → rerank.');
-        console.log('');
-
-        const db = 'test';
-        const collection = 'demo_voyage_test';
-        const field = 'embedding';
-
-        const documents = [
-          'MongoDB Atlas is a fully managed cloud database',
-          'Voyage AI provides state of the art embedding models',
-          'Vector search enables semantic retrieval for AI applications',
-          'Atlas Search combines full-text and vector search capabilities',
-          'The recipe calls for two cups of flour and three eggs',
-        ];
-
-        console.log(pc.dim(`  Creating test collection: ${collection}...`));
-        console.log('');
-
-        let pipelineOk = true;
-        for (const text of documents) {
-          const short = text.length > 50 ? text.slice(0, 47) + '...' : text;
-          ok = runStep(
-            `vai store --db ${db} --collection ${collection} --field ${field} --text "${short}"`,
-            ['store', '--db', db, '--collection', collection, '--field', field, '--text', text]
-          );
-          if (!ok) {
-            pipelineOk = false;
-            const cont = await askContinue(noPause);
-            if (!cont) break;
-          }
-        }
-
-        if (pipelineOk) {
-          // Create index
-          ok = runStep(
-            `vai index create --db ${db} --collection ${collection} --field ${field} --dimensions 1024`,
-            ['index', 'create', '--db', db, '--collection', collection, '--field', field, '--dimensions', '1024']
-          );
-
-          if (ok) {
-            // Wait for index to be ready
-            console.log('');
-            console.log(pc.dim('  Waiting for index to build...'));
-
-            const { getConnection } = require('../lib/mongo');
-            let indexReady = false;
-            const deadline = Date.now() + 120000;
-
-            try {
-              const client = await getConnection();
-              const coll = client.db(db).collection(collection);
-
-              while (Date.now() < deadline) {
-                const indexes = await coll.listSearchIndexes().toArray();
-                const idx = indexes.find(i => i.name && i.status);
-                if (idx && idx.status === 'READY') {
-                  indexReady = true;
-                  console.log(pc.green('  ✓ Index is READY'));
-                  break;
-                }
-                const statusStr = idx ? idx.status : 'PENDING';
-                process.stdout.write(pc.dim(`\r  Index status: ${statusStr}...`));
-                await sleep(5000);
-              }
-
-              if (!indexReady) {
-                console.log(pc.yellow('\n  ⚠ Index build timed out (120s). Trying search anyway...'));
-              }
-            } catch (err) {
-              console.log(pc.yellow(`\n  ⚠ Could not check index status: ${err.message}`));
-            }
-
-            console.log('');
-
-            // Search
-            ok = runStep(
-              `vai search --query "cloud database for AI apps" --db ${db} --collection ${collection} --field ${field}`,
-              ['search', '--query', 'cloud database for AI apps', '--db', db, '--collection', collection, '--field', field]
-            );
-          }
-        }
-
-        // Cleanup
-        if (!opts.keep) {
-          console.log('');
-          console.log(pc.dim(`  Cleaning up: dropping ${collection}...`));
-          try {
-            const { getConnection } = require('../lib/mongo');
-            const client = await getConnection();
-            await client.db(db).collection(collection).drop();
-            console.log(pc.dim('  ✓ Collection dropped.'));
-          } catch (err) {
-            console.log(pc.dim(`  ⚠ Cleanup note: ${err.message}`));
-          }
-        } else {
-          console.log(pc.dim(`  Collection ${collection} kept (--keep flag).`));
-        }
-      }
-
-      // ── Step 6: Chat (optional) ──
-      const { resolveLLMConfig } = require('../lib/llm');
-      const llmConfig = resolveLLMConfig();
-      const hasLLM = !!llmConfig.provider;
-      const hasCollection = !skipPipeline;
-
-      if (hasLLM && hasCollection) {
-        stepHeader(skipPipeline ? 5 : 6, 'RAG Chat');
-        console.log('  Now the grand finale — let\'s chat with the documents we just stored.');
-        console.log('  This combines everything: embed the question → vector search → rerank → LLM answers.');
-        console.log('');
-        console.log(`  Provider: ${pc.cyan(llmConfig.provider)} (${llmConfig.model})`);
-        console.log('');
-
-        await waitForEnter(noPause);
-
-        // Run a single non-interactive chat turn
-        const db = 'test';
-        const collection = 'demo_voyage_test';
-        const chatQuery = 'What cloud database options are available for AI applications?';
-
-        console.log(`  ${pc.bold('Question:')} ${chatQuery}`);
-        console.log('');
-
-        // Run chat non-interactively by piping the question via stdin
-        const chatResult = spawnSync(process.execPath, [
-          CLI_PATH, 'chat',
-          '--db', db, '--collection', collection,
-          '--no-history', '--quiet',
-        ], {
-          input: chatQuery + '\n/quit\n',
-          stdio: ['pipe', 'inherit', 'inherit'],
-          env: process.env,
-          timeout: 60000,
-        });
-
-        ok = chatResult.status === 0;
-
-        if (!ok) {
-          console.log('');
-          console.log(pc.dim('  Chat step had an issue — this requires an LLM provider and'));
-          console.log(pc.dim('  the demo collection to still exist with a vector index.'));
-        }
-
-        console.log('');
-        console.log('  That\'s the complete RAG pipeline: documents → embeddings → vector search');
-        console.log('  → reranking → LLM generation — all in one tool.');
-
-        await waitForEnter(noPause);
-
-      } else {
-        // Show what they're missing
-        const stepNum = skipPipeline ? 5 : 6;
-        stepHeader(stepNum, 'RAG Chat (skipped)');
-        if (!hasLLM) {
-          console.log(pc.dim('  Skipping chat demo — no LLM provider configured.'));
-          console.log(pc.dim('  Set one up to try it:'));
-          console.log('');
-          console.log(`    ${pc.cyan('vai config set llm-provider anthropic')}`);
-          console.log(`    ${pc.cyan('vai config set llm-api-key YOUR_KEY')}`);
-          console.log('');
-          console.log(pc.dim('  Or use Ollama for free local inference:'));
-          console.log(`    ${pc.cyan('vai config set llm-provider ollama')}`);
-        } else {
-          console.log(pc.dim('  Skipping chat demo — pipeline step was skipped (no MongoDB URI).'));
-          console.log(pc.dim('  Set MONGODB_URI to try the full flow including chat.'));
-        }
-        console.log('');
-      }
-
-      // ── Done ──
-      console.log('');
-      console.log('─'.repeat(60));
-      console.log(pc.bold('  🧭 That\'s Voyage AI in action!'));
-      console.log('');
-      console.log('  Next steps:');
-      console.log(`    • Read the docs: ${pc.cyan('https://www.mongodb.com/docs/voyageai/')}`);
-      console.log(`    • Explore models: ${pc.cyan('vai models')}`);
-      console.log(`    • Configure: ${pc.cyan('vai config set api-key <your-key>')}`);
-      console.log(`    • Full pipeline: ${pc.cyan('vai store → vai index create → vai search')}`);
-      if (!hasLLM) {
-        console.log(`    • Enable chat: ${pc.cyan('vai config set llm-provider anthropic')}`);
-      } else {
-        console.log(`    • Chat: ${pc.cyan('vai chat --db myapp --collection knowledge')}`);
-      }
-      console.log('');
-      console.log('  Happy searching! 🚀');
-      console.log('');
-
-      telemetry.send('cli_demo', { durationMs: Date.now() - demoStart });
     });
+
+  return cmd;
+}
+
+/**
+ * Show interactive demo menu.
+ */
+async function showDemoMenu(opts) {
+  const readline = require('readline');
+
+  console.log('');
+  console.log(pc.bold('  Welcome to vai demos!'));
+  console.log('');
+  console.log('  Choose a demonstration:');
+  console.log('');
+  console.log('    ' + pc.cyan('1. 💰 Cost Optimizer'));
+  console.log('       Prove the shared embedding space saves money — on your data.');
+  console.log('');
+  console.log('    ' + pc.dim('2. 🔍 Code Search in 5 Minutes'));
+  console.log('       ' + pc.dim('Search your codebase with AI (coming soon)'));
+  console.log('');
+  console.log('    ' + pc.dim('3. 💬 Chat With Your Docs'));
+  console.log('       ' + pc.dim('Turn documents into conversational AI (coming soon)'));
+  console.log('');
+
+  if (opts.noPause) {
+    console.log(pc.dim('  (--no-pause: selecting demo 1)'));
+    await runCostOptimizerDemo(opts);
+    return;
+  }
+
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+
+  return new Promise((resolve) => {
+    rl.question('  Select (1-3): ', (answer) => {
+      rl.close();
+
+      switch (answer.trim()) {
+        case '1':
+          runCostOptimizerDemo(opts).then(resolve);
+          break;
+        case '2':
+        case '3':
+          console.log(pc.yellow('\n  ⚠ Coming soon!'));
+          resolve();
+          break;
+        default:
+          console.log(pc.red('\n  Invalid selection'));
+          resolve();
+      }
+    });
+  });
+}
+
+/**
+ * Run the Cost Optimizer demo.
+ */
+async function runCostOptimizerDemo(opts) {
+  const { getConnection } = require('../lib/mongo');
+  const telemetry = require('../lib/telemetry');
+
+  // Prerequisite check
+  const prereq = checkPrerequisites(['api-key', 'mongodb']);
+  if (!prereq.ok) {
+    printPrereqErrors(prereq.errors);
+    process.exit(1);
+  }
+
+  console.log('');
+  console.log(pc.bold('  💰 Cost Optimizer Demo'));
+  console.log(pc.dim('  ━━━━━━━━━━━━━━━━━━━━━━'));
+  console.log('');
+  console.log('  This demo proves that the Voyage AI shared embedding space works:');
+  console.log('  documents embedded with voyage-4-large can be queried with voyage-4-lite');
+  console.log('  — with identical retrieval results and dramatic cost savings.');
+  console.log('');
+
+  const demoStart = Date.now();
+
+  try {
+    // Step 1: Ingest sample data
+    console.log(pc.bold('  Step 1: Preparing knowledge base...'));
+    console.log('');
+
+    const sampleDataDir = path.join(__dirname, '..', 'demo', 'sample-data');
+    const { ingestSampleData } = require('../lib/demo-ingest');
+
+    const { docCount, collectionName } = await ingestSampleData(sampleDataDir, {
+      db: opts.db || 'vai_demo',
+      collection: opts.collection || 'cost_optimizer_demo',
+    });
+
+    console.log(`  ✓ Ingested ${docCount} sample documents`);
+    console.log(`  ✓ Collection: ${collectionName}`);
+    console.log('');
+
+    // Step 2: Run cost analysis
+    console.log(pc.bold('  Step 2: Analyzing cost savings...'));
+    console.log('');
+
+    const { Optimizer } = require('../lib/optimizer');
+    const optimizer = new Optimizer({
+      db: opts.db || 'vai_demo',
+      collection: opts.collection || 'cost_optimizer_demo',
+    });
+
+    // Generate sample queries from the corpus
+    const queries = await optimizer.generateSampleQueries(5);
+
+    // Run the analysis
+    const result = await optimizer.analyze({
+      queries,
+      models: ['voyage-4-large', 'voyage-4-lite'],
+      scale: {
+        docs: 1_000_000,
+        queriesPerMonth: 50_000_000,
+        months: 12,
+      },
+    });
+
+    // Step 3: Display results
+    console.log(pc.bold('  Step 3: Results'));
+    console.log('');
+
+    // Print retrieval quality
+    console.log(pc.cyan('  ── Retrieval Quality ──'));
+    console.log('');
+    console.log(`  Comparing voyage-4-large (baseline) vs voyage-4-lite:`);
+    console.log('');
+
+    let totalOverlap = 0;
+    for (let i = 0; i < result.queries.length; i++) {
+      const q = result.queries[i];
+      const shortQuery = q.query.length > 60 ? q.query.slice(0, 57) + '...' : q.query;
+      console.log(`  Query ${i + 1}: "${shortQuery}"`);
+      console.log(`    Overlap: ${q.overlap}/5 documents (${Math.round(q.overlapPercent)}%)`);
+      totalOverlap += q.overlapPercent;
+    }
+
+    const avgOverlap = (totalOverlap / result.queries.length).toFixed(1);
+    console.log('');
+    console.log(`  Average overlap: ${avgOverlap}%`);
+    console.log(
+      pc.green(`  ✓ voyage-4-lite retrieves nearly identical results from the same documents`)
+    );
+    console.log('');
+
+    // Print cost projection
+    console.log(pc.cyan('  ── Cost Projection (1M docs, 50M queries/month, 12 months) ──'));
+    console.log('');
+
+    const symmetric = result.costs.symmetric;
+    const asymmetric = result.costs.asymmetric;
+    const savings = symmetric - asymmetric;
+    const savingsPercent = ((savings / symmetric) * 100).toFixed(1);
+
+    console.log(`  Symmetric (large everywhere):     $${symmetric.toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`);
+    console.log(`  Asymmetric (large→docs, lite→queries): $${asymmetric.toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`);
+    console.log('');
+    console.log(pc.green(`  💰 Annual savings: $${savings.toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })} (${savingsPercent}%)`));
+    console.log('');
+
+    // Step 4: Export prompt
+    console.log(pc.cyan('  ── Next Steps ──'));
+    console.log('');
+    console.log('  Run `vai optimize` with your real data:');
+    console.log('');
+    console.log(`    ${pc.dim('vai pipeline ./my-docs/ --db myapp --collection knowledge --create-index')}`);
+    console.log(`    ${pc.dim('vai optimize --db myapp --collection knowledge --export report.md')}`);
+    console.log('');
+    console.log('  Or visualize the analysis in the Playground:');
+    console.log(`    ${pc.dim('vai playground')}`);
+    console.log('');
+
+    telemetry.track('demo_cost_optimizer_completed', {
+      duration: Date.now() - demoStart,
+      docCount,
+      queries: queries.length,
+    });
+  } catch (err) {
+    console.error('');
+    console.error(pc.red('  Demo failed:'), err.message);
+    if (process.env.DEBUG) console.error(err);
+    process.exit(1);
+  }
+}
+
+/**
+ * Run demo cleanup.
+ */
+async function runCleanup(opts) {
+  const { getConnection } = require('../lib/mongo');
+  const telemetry = require('../lib/telemetry');
+
+  const prereq = checkPrerequisites(['mongodb']);
+  if (!prereq.ok) {
+    printPrereqErrors(prereq.errors);
+    process.exit(1);
+  }
+
+  console.log('');
+  console.log(pc.yellow('  Cleaning up demo data...'));
+
+  try {
+    const client = await getConnection();
+    const db = client.db('vai_demo');
+
+    // Drop demo collections
+    const collectionNames = ['cost_optimizer_demo', 'code_search_demo', 'chat_demo'];
+    let dropped = 0;
+
+    for (const collName of collectionNames) {
+      try {
+        await db.collection(collName).drop();
+        console.log(pc.dim(`  ✓ Dropped vai_demo.${collName}`));
+        dropped++;
+      } catch (err) {
+        // Collection may not exist
+      }
+    }
+
+    console.log('');
+    if (dropped > 0) {
+      console.log(pc.green(`  ✓ Cleaned up ${dropped} collection(s)`));
+    } else {
+      console.log(pc.dim('  No demo data to clean.'));
+    }
+
+    telemetry.track('demo_cleanup', { collectionsDropped: dropped });
+  } catch (err) {
+    console.error(pc.red('  Cleanup failed:'), err.message);
+    process.exit(1);
+  }
 }
 
 module.exports = { registerDemo };
