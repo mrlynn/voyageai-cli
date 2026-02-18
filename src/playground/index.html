@@ -6175,6 +6175,361 @@ select:focus { outline: none; border-color: var(--accent); }
 .sidebar.collapsed .sidebar-search-btn { 
   display: none; 
 }
+
+/* ── KB Wizard Modal ── */
+.kb-wizard {
+  position: fixed;
+  inset: 0;
+  z-index: 5000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.kb-wizard.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.kb-wizard-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  backdrop-filter: blur(2px);
+}
+
+.kb-wizard-card {
+  position: relative;
+  z-index: 1;
+  background: var(--bg-card);
+  border: 1px solid var(--accent);
+  border-radius: 16px;
+  padding: 40px;
+  width: 500px;
+  max-width: 90vw;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.4), 0 0 80px rgba(0,212,170,0.08);
+  animation: slideUp 0.3s cubic-bezier(0.4,0,0.2,1);
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.kb-wizard-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: none;
+  font-size: 28px;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px 8px;
+  transition: color 0.15s;
+}
+
+.kb-wizard-close:hover {
+  color: var(--text);
+}
+
+.kb-wizard-step {
+  text-align: center;
+}
+
+.kb-wizard-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.kb-wizard-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--accent-text);
+  margin-bottom: 8px;
+}
+
+.kb-wizard-desc {
+  font-size: 14px;
+  color: var(--text-dim);
+  margin-bottom: 28px;
+  line-height: 1.6;
+}
+
+.kb-wizard-options {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.kb-wizard-option {
+  text-align: left;
+}
+
+.kb-wizard-select {
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 13px;
+  transition: border-color 0.15s;
+}
+
+.kb-wizard-select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.kb-wizard-divider {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.kb-wizard-dropzone {
+  border: 2px dashed var(--border);
+  border-radius: 12px;
+  padding: 28px 16px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.kb-wizard-dropzone:hover {
+  border-color: var(--accent);
+  background: var(--accent-glow);
+}
+
+/* ── KB Panel (Sidebar) ── */
+.kb-panel {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 240px;
+  background: var(--bg-surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  transition: all 0.3s ease;
+  z-index: 100;
+}
+
+.kb-panel.collapsed {
+  width: 0;
+  border-right: none;
+  overflow: hidden;
+}
+
+.kb-panel-header {
+  padding: 12px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.kb-panel-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.kb-panel-collapse-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px;
+  transition: transform 0.2s;
+}
+
+.kb-panel.collapsed .kb-panel-collapse-btn {
+  transform: rotate(180deg);
+}
+
+.kb-panel-content {
+  padding: 12px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.kb-panel-kb-info {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 16px;
+}
+
+.kb-panel-stat {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.kb-panel-stat:last-child {
+  border-bottom: none;
+}
+
+.kb-panel-stat-label {
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.kb-panel-stat-value {
+  color: var(--accent);
+  font-weight: 600;
+  font-family: var(--mono);
+}
+
+.kb-panel-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.kb-panel-btn {
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg-input);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: left;
+}
+
+.kb-panel-btn:hover {
+  background: var(--bg-card);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.kb-panel-btn-primary {
+  background: var(--accent);
+  color: var(--bg);
+  border-color: var(--accent);
+}
+
+.kb-panel-btn-primary:hover {
+  background: var(--accent-dim);
+  border-color: var(--accent-dim);
+  color: var(--bg);
+}
+
+.kb-panel-btn-secondary {
+  background: transparent;
+}
+
+.kb-panel-btn-danger {
+  color: var(--error);
+  border-color: var(--error);
+}
+
+.kb-panel-btn-danger:hover {
+  background: rgba(255,105,96,0.1);
+}
+
+.kb-panel-dropzone {
+  border: 2px dashed var(--border);
+  border-radius: 8px;
+  padding: 20px 12px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: 16px;
+}
+
+.kb-panel-dropzone:hover,
+.kb-panel-dropzone.drag-over {
+  border-color: var(--accent);
+  background: var(--accent-glow);
+}
+
+.kb-panel-dropzone svg {
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+
+.kb-panel-progress {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 12px;
+}
+
+.kb-panel-progress-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+  word-break: break-word;
+}
+
+.kb-panel-progress-bar {
+  width: 100%;
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.kb-panel-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent-dim));
+  border-radius: 2px;
+  transition: width 0.3s ease;
+  width: 0%;
+}
+
+/* Adjust chat container when panel is open */
+#tab-chat {
+  position: relative;
+  display: flex;
+  overflow: hidden;
+}
+
+.chat-container {
+  flex: 1;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
 </style>
 </head>
 <body>
@@ -7321,6 +7676,114 @@ Reranking models rescore initial search results to improve relevance ordering.</
 
 <!-- ========== CHAT TAB ========== -->
 <div class="tab-panel" id="tab-chat" role="tabpanel" aria-labelledby="tab-btn-chat" tabindex="0">
+  <!-- KB Setup Wizard Modal -->
+  <div id="kbWizard" class="kb-wizard">
+    <div class="kb-wizard-overlay"></div>
+    <div class="kb-wizard-card">
+      <button class="kb-wizard-close" id="kbWizardClose">&times;</button>
+      
+      <!-- Step 1: Select KB Source -->
+      <div id="kbWizardSelectStep" class="kb-wizard-step">
+        <div class="kb-wizard-icon">📚</div>
+        <h2 class="kb-wizard-title">Your Knowledge Base</h2>
+        <p class="kb-wizard-desc">Start with existing data or create fresh</p>
+        
+        <div class="kb-wizard-options">
+          <div class="kb-wizard-option">
+            <label for="kbWizardExistingSelect" style="display: block; margin-bottom: 10px; font-size: 13px; font-weight: 600; color: var(--text-dim);">Use Existing KB</label>
+            <select id="kbWizardExistingSelect" class="kb-wizard-select">
+              <option value="">— Loading knowledge bases —</option>
+            </select>
+            <button class="btn" id="kbWizardUseExisting" style="width: 100%; margin-top: 12px;">Use This KB</button>
+          </div>
+
+          <div class="kb-wizard-divider">or</div>
+
+          <div class="kb-wizard-option">
+            <p style="font-size: 13px; color: var(--text-dim); margin-bottom: 12px;">Start with a fresh knowledge base</p>
+            <button class="btn" id="kbWizardStartFresh" style="width: 100%;">Create New KB</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2: Add Documents -->
+      <div id="kbWizardDocsStep" class="kb-wizard-step" style="display: none;">
+        <div class="kb-wizard-icon">📤</div>
+        <h2 class="kb-wizard-title">Add Documents</h2>
+        <p class="kb-wizard-desc">Upload .txt or .md files (max 10MB each)</p>
+        
+        <div id="kbWizardDropZone" class="kb-wizard-dropzone">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+          <p style="margin: 12px 0 4px; font-weight: 600; color: var(--text);">Drag files here or click to browse</p>
+          <p style="font-size: 12px; color: var(--text-muted);">.txt, .md files up to 10MB</p>
+        </div>
+        
+        <div style="display: flex; gap: 8px; margin-top: 16px;">
+          <button class="btn" id="kbWizardSkipFiles" style="flex: 1; background: transparent; border: 1px solid var(--border); color: var(--text);">Skip for now</button>
+          <button class="btn" id="kbWizardStartChatting" style="flex: 1;">Start Chatting →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- KB Info Panel (Sidebar) -->
+  <div id="kbPanel" class="kb-panel">
+    <div class="kb-panel-header">
+      <h3 class="kb-panel-title">📚 Knowledge Base</h3>
+      <button class="kb-panel-collapse-btn" id="kbPanelCollapseBtn" title="Collapse panel">⌄</button>
+    </div>
+    <div class="kb-panel-content">
+      <div class="kb-panel-kb-info">
+        <div class="kb-panel-stat">
+          <span class="kb-panel-stat-label">KB:</span>
+          <span class="kb-panel-stat-value" id="kbPanelName">—</span>
+        </div>
+        <div class="kb-panel-stat">
+          <span class="kb-panel-stat-label">Docs:</span>
+          <span class="kb-panel-stat-value" id="kbPanelDocCount">0</span>
+        </div>
+        <div class="kb-panel-stat">
+          <span class="kb-panel-stat-label">Chunks:</span>
+          <span class="kb-panel-stat-value" id="kbPanelChunkCount">0</span>
+        </div>
+        <div class="kb-panel-stat">
+          <span class="kb-panel-stat-label">Size:</span>
+          <span class="kb-panel-stat-value" id="kbPanelSize">0 KB</span>
+        </div>
+      </div>
+
+      <div class="kb-panel-actions">
+        <button class="kb-panel-btn kb-panel-btn-primary" id="kbPanelAddBtn">+ Add Documents</button>
+        <button class="kb-panel-btn kb-panel-btn-secondary" id="kbPanelSwitchBtn">Switch KB</button>
+        <button class="kb-panel-btn kb-panel-btn-danger" id="kbPanelClearBtn">Clear KB</button>
+      </div>
+
+      <!-- File Drop Zone (hidden until clicked) -->
+      <div id="kbPanelDropZone" class="kb-panel-dropzone">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="17 8 12 3 7 8"/>
+          <line x1="12" y1="3" x2="12" y2="15"/>
+        </svg>
+        <p style="margin: 8px 0 0; font-weight: 600; font-size: 13px; color: var(--text);">Drag files here</p>
+        <p style="font-size: 11px; color: var(--text-muted); margin: 2px 0 0;">or click to browse</p>
+      </div>
+      <input type="file" id="kbPanelFileInput" multiple accept=".txt,.md" style="display: none;">
+
+      <!-- Ingestion Progress -->
+      <div id="kbPanelProgress" class="kb-panel-progress" style="display: none;">
+        <div class="kb-panel-progress-label" id="kbPanelProgressLabel">Ingesting...</div>
+        <div class="kb-panel-progress-bar">
+          <div class="kb-panel-progress-fill" id="kbPanelProgressBar"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="chat-container">
     <div class="chat-header">
       <div class="chat-header-status" id="chatHeaderStatus">
@@ -20886,6 +21349,10 @@ window.commandPalette = {
 
 <!-- Optimize Tab Module -->
 <script src="./js/optimize-charts.js"></script>
+
+<!-- Knowledge Base Manager -->
+<script src="./js/kb-manager.js"></script>
+<script src="./js/kb-ui.js"></script>
 
 </body>
 </html>
