@@ -280,6 +280,17 @@ function createPlaygroundServer() {
         return;
       }
 
+      // API: Optimize analysis
+      if (req.method === 'POST' && req.url === '/api/optimize/analyze') {
+        const { handleOptimizeAnalyze } = require('../lib/playground-optimize-api');
+        let body = '';
+        req.on('data', chunk => { body += chunk; });
+        req.on('end', async () => {
+          await handleOptimizeAnalyze(req, res, body);
+        });
+        return;
+      }
+
       // API: Generate code
       if (req.method === 'POST' && req.url === '/api/generate') {
         let body = '';

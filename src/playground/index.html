@@ -6307,6 +6307,7 @@ select:focus { outline: none; border-color: var(--accent); }
       <div class="sidebar-nav-label" id="nav-learn-label">Learn</div>
       <button class="tab-btn" data-tab="models" data-tooltip="Models" role="tab" aria-selected="false" aria-controls="tab-models" id="tab-btn-models"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-bot"/></svg></span><span>Models</span></button>
       <button class="tab-btn" data-tab="benchmark" data-tooltip="Benchmark" role="tab" aria-selected="false" aria-controls="tab-benchmark" id="tab-btn-benchmark"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-gauge"/></svg></span><span>Benchmark</span></button>
+      <button class="tab-btn" data-tab="optimize" data-tooltip="Optimize" role="tab" aria-selected="false" aria-controls="tab-optimize" id="tab-btn-optimize"><span class="tab-btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v8m4-4H8"/><circle cx="12" cy="12" r="10"/></svg></span><span>Optimize</span></button>
       <button class="tab-btn" data-tab="explore" data-tooltip="Explore" role="tab" aria-selected="false" aria-controls="tab-explore" id="tab-btn-explore"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-bulb"/></svg></span><span>Explore</span></button>
       <button class="tab-btn" data-tab="about" data-tooltip="About" role="tab" aria-selected="false" aria-controls="tab-about" id="tab-btn-about"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-info"/></svg></span><span>About</span></button>
     </div>
@@ -7848,6 +7849,43 @@ Reranking models rescore initial search results to improve relevance ordering.</
       Industry-standard benchmark for retrieval quality across 29 datasets. Higher is better.
     </p>
     <div id="modelsRtebChart"></div>
+  </div>
+</div>
+
+<!-- ========== OPTIMIZE TAB ========== -->
+<div class="tab-panel" id="tab-optimize" role="tabpanel" aria-labelledby="tab-btn-optimize" tabindex="0">
+  <div class="page-header">
+    <h2 class="page-header-title">Optimize</h2>
+    <p class="page-header-subtitle">Analyze cost savings with asymmetric retrieval</p>
+    <p class="page-header-hint">Compare voyage-4-large vs voyage-4-lite retrieval quality, project annual cost savings, and explore dimension/quantization trade-offs.</p>
+  </div>
+
+  <!-- Configuration Panel -->
+  <div class="card">
+    <div class="card-title">Configuration</div>
+    
+    <div style="margin-bottom: 16px;">
+      <label style="display: block; font-size: 13px; margin-bottom: 6px; font-weight: 500;">Database</label>
+      <input type="text" id="optimize-db" placeholder="vai_demo" value="vai_demo" style="width: 100%; padding: 8px; border: 1px solid var(--border-color); border-radius: 4px; font-size: 13px;">
+    </div>
+
+    <div style="margin-bottom: 16px;">
+      <label style="display: block; font-size: 13px; margin-bottom: 6px; font-weight: 500;">Collection</label>
+      <input type="text" id="optimize-collection" placeholder="cost_optimizer_demo" value="cost_optimizer_demo" style="width: 100%; padding: 8px; border: 1px solid var(--border-color); border-radius: 4px; font-size: 13px;">
+    </div>
+
+    <div style="margin-bottom: 16px;">
+      <button class="btn" id="optimize-run-btn" style="width: 100%;">Run Analysis</button>
+    </div>
+  </div>
+
+  <!-- Results Panel -->
+  <div id="optimize-results" style="margin-top: 16px;">
+    <div class="card">
+      <p style="color: var(--text-dim); text-align: center; padding: 40px 20px;">
+        Configure your analysis and click "Run Analysis" to see results.
+      </p>
+    </div>
   </div>
 </div>
 
@@ -20816,6 +20854,12 @@ window.commandPalette = {
   recentItems: recentItemsTracker
 };
 </script>
+
+<!-- Chart.js for Optimize tab -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+
+<!-- Optimize Tab Module -->
+<script src="./js/optimize-charts.js"></script>
 
 </body>
 </html>
