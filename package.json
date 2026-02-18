@@ -1,6 +1,6 @@
 {
   "name": "voyageai-cli",
-  "version": "1.30.8",
+  "version": "1.30.9",
   "description": "CLI for Voyage AI embeddings, reranking, and MongoDB Atlas Vector Search",
   "bin": {
     "vai": "./src/cli.js"
