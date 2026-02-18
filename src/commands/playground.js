@@ -137,6 +137,7 @@ function createPlaygroundServer() {
   const { MODEL_CATALOG, BENCHMARK_SCORES } = require('../lib/catalog');
   const { cosineSimilarity } = require('../lib/math');
   const { getConfigValue } = require('../lib/config');
+  const { registerRAGAPI } = require('../lib/playground-rag-api');
 
   const htmlPath = path.join(__dirname, '..', 'playground', 'index.html');
 
@@ -1845,6 +1846,9 @@ function createPlaygroundServer() {
       }
     }
   });
+
+  // Register RAG API endpoints (KB management, ingestion, etc.)
+  registerRAGAPI(server, { getApiBase, requireApiKey, generateEmbeddings, getMongoCollection });
 
   return server;
 }
