@@ -312,7 +312,8 @@ function createPlaygroundServer() {
       }
 
       // API: Optimize — prepare demo data (ingest + index)
-      if (req.method === 'POST' && req.url === '/api/optimize/prepare') {
+      // Use startsWith to handle query params like ?force=true
+      if (req.method === 'POST' && req.url.startsWith('/api/optimize/prepare')) {
         const { handleOptimizePrepare } = require('../lib/playground-optimize-api');
         await handleOptimizePrepare(req, res);
         return;
