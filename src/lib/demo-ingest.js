@@ -3,9 +3,8 @@
 const fs = require('fs');
 const path = require('path');
 const pc = require('picocolors');
-const { getConnection } = require('./mongo');
-const { embed } = require('./api');
-const { deleteConfigValue } = require('./config');
+const { getMongoCollection } = require('./mongo');
+const { generateEmbeddings } = require('./api');
 
 /**
  * Ingest sample data from a directory into MongoDB.
@@ -55,7 +54,7 @@ async function ingestSampleData(sampleDataDir, options) {
     const docId = relativePath.replace('.md', '').replace(/\//g, '__');
 
     // Embed the content
-    const embeddingResult = await embed(content, 'voyage-4-large');
+    const embeddingResult = await generateEmbeddings([content], { model: 'voyage-4-large' });
 
     documents.push({
       _id: docId,
@@ -64,7 +63,7 @@ async function ingestSampleData(sampleDataDir, options) {
       content,
       contentLength: content.length,
       wordCount: content.split(/\s+/).length,
-      embedding: embeddingResult.embedding,
+      embedding: embeddingResult.data[0].embedding,
       model: 'voyage-4-large',
       ingestedAt: new Date(),
     });
@@ -75,49 +74,52 @@ async function ingestSampleData(sampleDataDir, options) {
   // Store in MongoDB
   process.stdout.write('  Storing in MongoDB... ');
 
-  const client = await getConnection();
-  const collection = client.db(dbName).collection(collName);
+  const { client, collection } = await getMongoCollection(dbName, collName);
 
-  // Drop existing collection if it exists
   try {
-    await collection.drop();
-  } catch (err) {
-    // Collection doesn't exist yet, that's fine
+    // Drop existing collection if it exists
+    try {
+      await collection.drop();
+    } catch (err) {
+      // Collection doesn't exist yet, that's fine
+    }
+
+    // Insert documents
+    await collection.insertMany(documents);
+
+    // Create vector search index
+    process.stdout.write('creating index... ');
+
+    const indexName = 'vector_search_index';
+    try {
+      await collection.dropSearchIndex(indexName);
+    } catch (err) {
+      // Index may not exist yet
+    }
+
+    // Create the index
+    await collection.createSearchIndex({
+      name: indexName,
+      definition: {
+        fields: [
+          {
+            type: 'vector',
+            path: 'embedding',
+            similarity: 'cosine',
+            dimensions: 1024,
+          },
+          {
+            type: 'filter',
+            path: 'path',
+          },
+        ],
+      },
+    });
+
+    console.log(pc.green('done'));
+  } finally {
+    await client.close();
   }
-
-  // Insert documents
-  await collection.insertMany(documents);
-
-  // Create vector search index
-  process.stdout.write('creating index... ');
-
-  const indexName = 'vector_search_index';
-  try {
-    await collection.dropSearchIndex(indexName);
-  } catch (err) {
-    // Index may not exist yet
-  }
-
-  // Create the index
-  await collection.createSearchIndex({
-    name: indexName,
-    definition: {
-      fields: [
-        {
-          type: 'vector',
-          path: 'embedding',
-          similarity: 'cosine',
-          dimensions: 1024,
-        },
-        {
-          type: 'filter',
-          path: 'path',
-        },
-      ],
-    },
-  });
-
-  console.log(pc.green('done'));
 
   return {
     docCount: documents.length,
