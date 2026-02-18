@@ -165,7 +165,12 @@ function createPlaygroundServer() {
         const { getVersion } = require('../lib/banner');
         let html = fs.readFileSync(htmlPath, 'utf8');
         html = html.replace('</head>', `<script>window.__VAI_VERSION__="${getVersion()}";</script></head>`);
-        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.writeHead(200, { 
+          'Content-Type': 'text/html; charset=utf-8',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        });
         res.end(html);
         return;
       }
@@ -273,7 +278,8 @@ function createPlaygroundServer() {
           const data = fs.readFileSync(jsPath);
           res.writeHead(200, {
             'Content-Type': 'application/javascript; charset=utf-8',
-            'Cache-Control': 'public, max-age=3600',
+            'Cache-Control': 'no-cache, must-revalidate',
+            'Pragma': 'no-cache',
           });
           res.end(data);
         } else {
