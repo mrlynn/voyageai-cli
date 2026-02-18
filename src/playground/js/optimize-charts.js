@@ -15,13 +15,17 @@ class OptimizeTab {
    */
   async init() {
     if (!this.container) {
-      console.error('Optimize container not found');
+      console.error('[OptimizeTab] Container not found');
       return;
     }
+
+    console.log('[OptimizeTab] Initializing');
 
     // Load configuration from config form
     this.setupEventListeners();
     this.restoreState();
+    
+    console.log('[OptimizeTab] Ready');
   }
 
   /**
@@ -29,8 +33,16 @@ class OptimizeTab {
    */
   setupEventListeners() {
     const runBtn = this.container.querySelector('#optimize-run-btn');
+    console.log('[OptimizeTab] Run button:', runBtn);
+    
     if (runBtn) {
-      runBtn.addEventListener('click', () => this.runAnalysis());
+      runBtn.addEventListener('click', (e) => {
+        console.log('[OptimizeTab] Run button clicked');
+        e.preventDefault();
+        this.runAnalysis();
+      });
+    } else {
+      console.error('[OptimizeTab] Run button not found');
     }
 
     const exportBtn = this.container.querySelector('#optimize-export-btn');
@@ -97,11 +109,16 @@ class OptimizeTab {
     const config = this.getConfig();
     const resultsPanel = this.container.querySelector('#optimize-results');
 
-    if (!resultsPanel) return;
+    if (!resultsPanel) {
+      console.error('Results panel not found');
+      return;
+    }
 
     resultsPanel.innerHTML = '<div class="optimize-loading">Running analysis...</div>';
 
     try {
+      console.log('Calling /api/optimize/analyze with config:', config);
+      
       const response = await fetch('/api/optimize/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -114,11 +131,18 @@ class OptimizeTab {
         }),
       });
 
-      if (!response.ok) throw new Error('Analysis failed');
+      console.log('API response status:', response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`API returned ${response.status}: ${errorText}`);
+      }
 
       this.currentAnalysis = await response.json();
+      console.log('Analysis complete:', this.currentAnalysis);
       this.renderResults();
     } catch (err) {
+      console.error('Analysis error:', err);
       resultsPanel.innerHTML = `<div class="optimize-error">Error: ${err.message}</div>`;
     }
   }
@@ -406,12 +430,31 @@ Use asymmetric retrieval for maximum savings with negligible quality loss.
 }
 
 // Initialize when DOM is ready
+let optimizeTab = null;
+
+function initOptimizeTab() {
+  if (!optimizeTab) {
+    optimizeTab = new OptimizeTab('tab-optimize');
+    optimizeTab.init();
+  }
+  return optimizeTab;
+}
+
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
-    const tab = new OptimizeTab('tab-optimize');
-    tab.init();
+    console.log('[OptimizeTab] DOM ready, initializing');
+    initOptimizeTab();
   });
 } else {
-  const tab = new OptimizeTab('tab-optimize');
-  tab.init();
+  console.log('[OptimizeTab] DOM already ready, initializing');
+  initOptimizeTab();
 }
+
+// Also initialize on tab click
+document.addEventListener('click', (e) => {
+  const tabBtn = e.target.closest('[data-tab="optimize"]');
+  if (tabBtn) {
+    console.log('[OptimizeTab] Optimize tab clicked');
+    initOptimizeTab();
+  }
+});
