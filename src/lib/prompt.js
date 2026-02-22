@@ -10,6 +10,15 @@
 
 const DEFAULT_SYSTEM_PROMPT = `You are an assistant powered by a retrieval-augmented generation (RAG) pipeline built with Voyage AI embeddings and MongoDB Atlas Vector Search. Your answers are grounded in documents retrieved from the user's knowledge base.
 
+## Conversation memory
+
+You have access to the conversation history from this session. Use it to:
+- Understand follow-up questions that reference prior turns (e.g. "tell me more", "what did I just ask?", "compare that to...")
+- Maintain continuity across the conversation
+- Avoid repeating information you already provided
+
+When the user asks about something from a prior turn, answer from the conversation history. You do not need retrieved documents to recall what was already discussed.
+
 ## How to use the retrieved context
 
 - Each context document includes a source label and a relevance score (0 to 1). Higher scores indicate stronger semantic matches to the user's query.
@@ -18,11 +27,11 @@ const DEFAULT_SYSTEM_PROMPT = `You are an assistant powered by a retrieval-augme
 
 ## Answering rules
 
-1. Ground every claim in the provided context. Do not supplement with outside knowledge unless you explicitly flag it as such (e.g. "Outside the retrieved documents, ...").
+1. Ground factual claims in the provided context. Do not supplement with outside knowledge unless you explicitly flag it as such (e.g. "Outside the retrieved documents, ...").
 2. Cite sources inline using the format [Source: <label>]. Use the source labels from the context block.
 3. If the context is insufficient, say so directly. Suggest how the user might refine their query or expand their knowledge base.
 4. Be concise. Prefer short, direct answers. Use lists or structure when it aids clarity.
-5. For follow-up questions, rely on the newly retrieved context for that turn. Prior context may be stale.`;
+5. For follow-up questions about new topics, use the newly retrieved context. For follow-ups about prior discussion, use the conversation history.`;
 
 const AGENT_SYSTEM_PROMPT = `You are an AI assistant with access to a suite of Voyage AI and MongoDB Atlas tools. You can search knowledge bases, embed text, compare documents, explore collections, and more. Use your tools to answer the user's questions accurately.
 
@@ -93,6 +102,33 @@ ${customPrompt}`;
 }
 
 /**
+ * Format conversation history into a compact recap block.
+ * This is embedded directly in the user message so smaller models
+ * (with limited context windows) don't lose it to truncation.
+ * @param {Array<{role: string, content: string}>} history
+ * @returns {string}
+ */
+function formatHistoryRecap(history) {
+  if (!history || history.length === 0) return '';
+
+  const lines = ['--- Conversation History ---', ''];
+
+  for (const turn of history) {
+    const label = turn.role === 'user' ? 'User' : 'Assistant';
+    // Truncate long messages to keep history compact
+    let content = turn.content;
+    if (content.length > 500) {
+      content = content.substring(0, 500) + '...';
+    }
+    lines.push(`${label}: ${content}`);
+    lines.push('');
+  }
+
+  lines.push('--- End History ---');
+  return lines.join('\n');
+}
+
+/**
  * Build the message array for the LLM (pipeline mode).
  *
  * @param {object} params
@@ -111,16 +147,22 @@ function buildMessages({ query, contextDocs = [], history = [], systemPrompt }) 
     content: buildSystemPrompt(systemPrompt),
   });
 
-  // 2. Conversation history (previous turns)
+  // 2. Conversation history as separate messages (for models with large context)
   for (const turn of history) {
     messages.push({ role: turn.role, content: turn.content });
   }
 
-  // 3. Current user message with injected context
+  // 3. Current user message with injected context + history recap
   const contextBlock = formatContextBlock(contextDocs);
+  const historyRecap = formatHistoryRecap(history);
   let userContent = '';
-  if (contextBlock) {
+
+  if (historyRecap && contextBlock) {
+    userContent = `${historyRecap}\n\n${contextBlock}\n\nUser question: ${query}`;
+  } else if (contextBlock) {
     userContent = `${contextBlock}\n\nUser question: ${query}`;
+  } else if (historyRecap) {
+    userContent = `${historyRecap}\n\nUser question: ${query}`;
   } else {
     userContent = query;
   }
@@ -149,13 +191,19 @@ function buildAgentMessages({ query, history = [], systemPrompt }) {
     content: systemPrompt || AGENT_SYSTEM_PROMPT,
   });
 
-  // 2. Conversation history
+  // 2. Conversation history as separate messages
   for (const turn of history) {
     messages.push({ role: turn.role, content: turn.content });
   }
 
-  // 3. Current user message (no context injection, agent decides what to fetch)
-  messages.push({ role: 'user', content: query });
+  // 3. Current user message with history recap for smaller models
+  const historyRecap = formatHistoryRecap(history);
+  let userContent = query;
+  if (historyRecap) {
+    userContent = `${historyRecap}\n\nUser question: ${query}`;
+  }
+
+  messages.push({ role: 'user', content: userContent });
 
   return messages;
 }
@@ -165,6 +213,7 @@ module.exports = {
   AGENT_SYSTEM_PROMPT,
   buildSystemPrompt,
   formatContextBlock,
+  formatHistoryRecap,
   buildMessages,
   buildAgentMessages,
 };

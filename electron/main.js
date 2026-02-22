@@ -614,16 +614,147 @@ async function startPlaygroundServer() {
     ? path.join(process.resourcesPath, 'src')
     : path.join(__dirname, '..', 'src');
   const playgroundPath = path.join(srcBase, 'commands', 'playground.js');
-  const { createPlaygroundServer } = require(playgroundPath);
-
-  return new Promise((resolve, reject) => {
-    const server = createPlaygroundServer();
-    server.listen(port, '127.0.0.1', () => {
-      console.log(`Playground server running on port ${port}`);
-      resolve(server);
+  
+  console.log(`[Server] Starting playground server...`);
+  console.log(`[Server] App packaged: ${app.isPackaged}`);
+  console.log(`[Server] Source base: ${srcBase}`);
+  console.log(`[Server] Playground path: ${playgroundPath}`);
+  console.log(`[Server] Playground exists: ${fs.existsSync(playgroundPath)}`);
+  
+  // Check if required files exist
+  const htmlPath = path.join(srcBase, 'playground', 'index.html');
+  console.log(`[Server] HTML path: ${htmlPath}`);
+  console.log(`[Server] HTML exists: ${fs.existsSync(htmlPath)}`);
+  
+  try {
+    const { createPlaygroundServer } = require(playgroundPath);
+    console.log(`[Server] Successfully loaded playground module`);
+    
+    // Test the playground server creation before starting
+    let server;
+    try {
+      server = createPlaygroundServer();
+      console.log(`[Server] Successfully created playground server instance`);
+    } catch (createErr) {
+      console.error(`[Server] Failed to create playground server instance:`, createErr);
+      throw createErr;
+    }
+    
+    return new Promise((resolve, reject) => {
+      server.listen(port, '127.0.0.1', () => {
+        console.log(`[Server] Playground server running on http://127.0.0.1:${port}`);
+        resolve(server);
+      });
+      server.on('error', (err) => {
+        console.error(`[Server] Server error:`, err);
+        reject(err);
+      });
     });
-    server.on('error', reject);
-  });
+  } catch (err) {
+    console.error(`[Server] Failed to load playground module:`, err);
+    console.log(`[Server] Starting fallback server...`);
+    
+    // Try to serve the HTML file directly if it exists
+    if (fs.existsSync(htmlPath)) {
+      console.log(`[Server] HTML file found, starting simple file server...`);
+      return new Promise((resolve, reject) => {
+        const simpleServer = http.createServer((req, res) => {
+          if (req.url === '/' || req.url === '/index.html') {
+            try {
+              const htmlContent = fs.readFileSync(htmlPath, 'utf8');
+              res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+              res.end(htmlContent);
+            } catch (readErr) {
+              console.error(`[Server] Failed to read HTML file:`, readErr);
+              res.writeHead(500, { 'Content-Type': 'text/plain' });
+              res.end('Error reading HTML file: ' + readErr.message);
+            }
+          } else if (req.url.startsWith('/icons/')) {
+            // Try to serve icon files
+            const iconPath = path.join(srcBase, 'playground', req.url);
+            if (fs.existsSync(iconPath)) {
+              const iconData = fs.readFileSync(iconPath);
+              res.writeHead(200, { 
+                'Content-Type': req.url.endsWith('.png') ? 'image/png' : 'application/octet-stream',
+                'Cache-Control': 'public, max-age=86400'
+              });
+              res.end(iconData);
+            } else {
+              res.writeHead(404);
+              res.end('Icon not found');
+            }
+          } else {
+            res.writeHead(404, { 'Content-Type': 'text/plain' });
+            res.end('Not Found');
+          }
+        });
+        
+        simpleServer.listen(port, '127.0.0.1', () => {
+          console.log(`[Server] Simple file server running on http://127.0.0.1:${port}`);
+          resolve(simpleServer);
+        });
+        
+        simpleServer.on('error', reject);
+      });
+    }
+    
+    // Final fallback: error page
+    return new Promise((resolve, reject) => {
+      const fallbackServer = http.createServer((req, res) => {
+        if (req.url === '/' || req.url === '/index.html') {
+          const errorHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Voyage AI Playground - Error</title>
+  <style>
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; 
+      background: #001E2B; 
+      color: #E8EDEB; 
+      padding: 40px; 
+      text-align: center; 
+    }
+    .error { background: #FF6960; color: white; padding: 20px; border-radius: 8px; margin: 20px 0; }
+    .details { background: #112733; padding: 20px; border-radius: 8px; text-align: left; margin: 20px 0; }
+    pre { background: #1C2D38; padding: 10px; border-radius: 4px; overflow: auto; }
+  </style>
+</head>
+<body>
+  <h1>🚨 Playground Server Error</h1>
+  <div class="error">
+    <p><strong>Failed to start the Voyage AI Playground</strong></p>
+  </div>
+  <div class="details">
+    <h3>Debug Information:</h3>
+    <p><strong>App Packaged:</strong> ${app.isPackaged}</p>
+    <p><strong>Source Base:</strong> ${srcBase}</p>
+    <p><strong>Playground Path:</strong> ${playgroundPath}</p>
+    <p><strong>Playground Exists:</strong> ${fs.existsSync(playgroundPath)}</p>
+    <p><strong>HTML Path:</strong> ${htmlPath}</p>
+    <p><strong>HTML Exists:</strong> ${fs.existsSync(htmlPath)}</p>
+    <h3>Error Details:</h3>
+    <pre>${err.message}\n\n${err.stack}</pre>
+  </div>
+  <p>Please report this issue at: <a href="https://github.com/mrlynn/voyageai-cli/issues" style="color: #40E0FF;">GitHub Issues</a></p>
+</body>
+</html>`;
+          res.writeHead(200, { 'Content-Type': 'text/html' });
+          res.end(errorHtml);
+        } else {
+          res.writeHead(404, { 'Content-Type': 'text/plain' });
+          res.end('Not Found');
+        }
+      });
+      
+      fallbackServer.listen(port, '127.0.0.1', () => {
+        console.log(`[Server] Fallback server running on http://127.0.0.1:${port}`);
+        resolve(fallbackServer);
+      });
+      
+      fallbackServer.on('error', reject);
+    });
+  }
 }
 
 // ── Application Menu ──
@@ -836,10 +967,55 @@ function createWindow() {
     updateDockIcon();
   });
 
-  mainWindow.loadURL(`http://127.0.0.1:${serverPort}`);
+  console.log(`[Window] Loading URL: http://127.0.0.1:${serverPort}`);
+  
+  // Add a small delay to ensure server is fully ready
+  setTimeout(() => {
+    mainWindow.loadURL(`http://127.0.0.1:${serverPort}`)
+      .then(() => {
+        console.log(`[Window] ✅ Successfully loaded URL`);
+      })
+      .catch((err) => {
+        console.error(`[Window] ❌ Failed to load URL:`, err);
+        // Try to reload after a delay
+        setTimeout(() => {
+          console.log(`[Window] Retrying URL load...`);
+          mainWindow.loadURL(`http://127.0.0.1:${serverPort}`);
+        }, 2000);
+      });
+  }, 1000);
+
+  // Add debugging for page loads
+  mainWindow.webContents.on('did-start-loading', () => {
+    console.log(`[Window] Started loading page...`);
+  });
+  
+  mainWindow.webContents.on('did-finish-load', () => {
+    console.log(`[Window] Finished loading page`);
+    console.log(`[Window] Current URL: ${mainWindow.webContents.getURL()}`);
+  });
+  
+  mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL) => {
+    console.error(`[Window] Failed to load ${validatedURL}: ${errorCode} - ${errorDescription}`);
+  });
 
   mainWindow.once('ready-to-show', () => {
+    console.log(`[Window] Window ready to show`);
     mainWindow.show();
+    
+    // Debug: Check what's actually loaded
+    setTimeout(() => {
+      const currentURL = mainWindow.webContents.getURL();
+      console.log(`[Window] Current URL after show: ${currentURL}`);
+      
+      // Check if we're showing the default Electron page
+      if (currentURL === 'data:text/html,chromewebdata' || currentURL.startsWith('chrome://')) {
+        console.error(`[Window] ❌ Showing default Electron page! Expected: http://127.0.0.1:${serverPort}`);
+        console.log(`[Window] Attempting to reload correct URL...`);
+        mainWindow.loadURL(`http://127.0.0.1:${serverPort}`);
+      }
+    }, 1000);
+    
     // If no API key was found, switch to settings tab
     if (global.openSettingsOnLaunch) {
       mainWindow.webContents.executeJavaScript(`

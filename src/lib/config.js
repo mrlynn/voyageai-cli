@@ -102,6 +102,28 @@ function maskSecret(value) {
   return value.slice(0, 4) + '...' + value.slice(-4);
 }
 
+/**
+ * Check whether this is a first run (no config file exists).
+ * An empty config file still counts as "not first run."
+ * @param {string} [configPath] - Override config path (for testing)
+ * @returns {boolean}
+ */
+function isFirstRun(configPath) {
+  const p = configPath || CONFIG_PATH;
+  return !fs.existsSync(p);
+}
+
+/**
+ * Check whether the welcome flow is suppressed.
+ * @param {string} [configPath] - Override config path (for testing)
+ * @returns {boolean}
+ */
+function isWelcomeSuppressed(configPath) {
+  const noWelcome = process.env.VAI_NO_WELCOME;
+  if (noWelcome === '1' || noWelcome === 'true') return true;
+  return !isFirstRun(configPath);
+}
+
 module.exports = {
   CONFIG_DIR,
   CONFIG_PATH,
@@ -113,4 +135,6 @@ module.exports = {
   setConfigValue,
   deleteConfigValue,
   maskSecret,
+  isFirstRun,
+  isWelcomeSuppressed,
 };

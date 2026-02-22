@@ -14,6 +14,61 @@ const ui = require('../lib/ui');
 const pc = require('picocolors');
 const fs = require('fs');
 
+const SPINNER_FRAMES = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+
+/**
+ * Create a spinner with auto-updating elapsed time display.
+ * Writes directly to stderr to avoid conflicts with readline on stdout.
+ * @param {string} baseText - Base spinner message (e.g., "Searching knowledge base")
+ * @returns {{ stop: Function, succeed: Function, updateText: Function }}
+ */
+function createTimedSpinner(baseText) {
+  const isTTY = process.stderr.isTTY;
+  const startTime = Date.now();
+  let frameIndex = 0;
+  let stopped = false;
+
+  const render = () => {
+    if (stopped) return;
+    const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+    const frame = pc.cyan(SPINNER_FRAMES[frameIndex % SPINNER_FRAMES.length]);
+    const line = `${frame} ${baseText}... ${pc.dim(`${elapsed}s`)}`;
+    if (isTTY) {
+      process.stderr.write(`\r\x1b[K${line}`);
+    }
+    frameIndex++;
+  };
+
+  // Render first frame immediately, then animate
+  render();
+  const timer = setInterval(render, 80);
+
+  const clear = () => {
+    if (stopped) return;
+    stopped = true;
+    clearInterval(timer);
+    if (isTTY) {
+      process.stderr.write('\r\x1b[K');
+    }
+  };
+
+  return {
+    stop: clear,
+    succeed(msg) {
+      if (stopped) return;
+      const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+      clear();
+      if (isTTY) {
+        const text = msg || `${baseText} ${pc.dim(`(${elapsed}s)`)}`;
+        process.stderr.write(`${pc.green('✓')} ${text}\n`);
+      }
+    },
+    updateText(newBase) {
+      baseText = newBase;
+    },
+  };
+}
+
 /**
  * Register the chat command.
  * @param {import('commander').Command} program
@@ -52,6 +107,9 @@ function registerChat(program) {
 }
 
 async function runChat(opts) {
+  // Show startup spinner immediately so the user sees activity
+  const startupSpinner = (!opts.json && !opts.quiet) ? createTimedSpinner('Starting vai chat') : null;
+
   const { config: proj } = loadProject();
   const chatConf = proj.chat || {};
 
@@ -70,6 +128,7 @@ async function runChat(opts) {
 
   // Validate DB + collection (required for pipeline, recommended for agent)
   if (!isAgent && (!db || !collection)) {
+    if (startupSpinner) startupSpinner.stop();
     console.error(ui.error('Database and collection required for pipeline mode.'));
     console.error('');
     console.error('  Use --db and --collection, or configure .vai.json:');
@@ -83,6 +142,7 @@ async function runChat(opts) {
   // Resolve LLM config — run interactive setup if missing
   let llmConfig = resolveLLMConfig(opts);
   if (!llmConfig.provider) {
+    if (startupSpinner) startupSpinner.stop();
     if (opts.json) {
       // Non-interactive mode — can't run wizard
       console.error(JSON.stringify({ error: 'No LLM provider configured. Run vai chat interactively to set up.' }));
@@ -116,6 +176,7 @@ async function runChat(opts) {
 
   // --estimate: show per-turn cost breakdown and exit
   if (opts.estimate) {
+    if (startupSpinner) startupSpinner.stop();
     const { estimateChatCost, formatChatCostBreakdown } = require('../lib/cost');
     const breakdown = estimateChatCost({
       query: 'How does authentication work?', // sample question
@@ -150,12 +211,15 @@ async function runChat(opts) {
   // Preflight: verify the RAG pipeline is ready (pipeline mode only)
   if (!isAgent && !opts.json) {
     const { runPreflight, formatPreflight, waitForIndex } = require('../lib/preflight');
+
+    if (startupSpinner) startupSpinner.updateText('Checking pipeline');
     const { checks, ready } = await runPreflight({
       db, collection,
       field: proj.field || 'embedding',
       llmConfig,
       textField,
     });
+    if (startupSpinner) startupSpinner.stop();
 
     console.log('');
     console.log(formatPreflight(checks));
@@ -230,6 +294,9 @@ async function runChat(opts) {
 
   // Track tool calls from last agent response (for /tools and /export-workflow)
   let lastToolCalls = [];
+
+  // Stop startup spinner (covers agent mode and any remaining init)
+  if (startupSpinner) startupSpinner.stop();
 
   // Print header
   if (!opts.quiet && !opts.json) {
@@ -360,41 +427,73 @@ async function handlePipelineTurn(input, ctx) {
       metadata,
     }));
   } else {
-    // Interactive mode — stream output
+    // Interactive mode — stream output with spinners
+    const showSpinners = !opts.quiet;
     let retrievalShown = false;
+    let retrievalSpinner = null;
+    let generationSpinner = null;
 
-    for await (const event of chatTurn({
-      query: input, db, collection, llm, history,
-      opts: { maxDocs, rerank: doRerank, stream: doStream, systemPrompt, textField, filter: opts.filter },
-    })) {
-      if (event.type === 'retrieval' && !opts.quiet) {
-        const { docs, timeMs } = event.data;
-        if (!retrievalShown) {
-          console.log(pc.dim(`  [${docs.length} docs retrieved in ${timeMs}ms]`));
-          console.log('');
-          retrievalShown = true;
-        }
-      }
+    if (showSpinners) {
+      retrievalSpinner = createTimedSpinner('Searching knowledge base');
+    }
 
-      if (event.type === 'chunk') {
-        process.stdout.write(event.data);
-      }
-
-      if (event.type === 'done') {
-        console.log(''); // End the streamed response line
-
-        // Show sources
-        const { sources, metadata } = event.data;
-        if (sources.length > 0 && chatConf.showSources !== false) {
-          console.log('');
-          console.log(pc.dim('Sources:'));
-          for (let i = 0; i < sources.length; i++) {
-            const s = sources[i];
-            console.log(pc.dim(`  [${i + 1}] ${s.source} (relevance: ${s.score?.toFixed(2) || 'N/A'})`));
+    try {
+      for await (const event of chatTurn({
+        query: input, db, collection, llm, history,
+        opts: { maxDocs, rerank: doRerank, stream: doStream, systemPrompt, textField, filter: opts.filter },
+      })) {
+        if (event.type === 'history') {
+          const { turnCount } = event.data;
+          if (!opts.quiet && turnCount > 0) {
+            console.log(pc.dim(`  [${turnCount} prior turn${turnCount > 1 ? 's' : ''} in context]`));
           }
         }
-        console.log('');
+
+        if (event.type === 'retrieval') {
+          if (retrievalSpinner) {
+            retrievalSpinner.stop();
+            retrievalSpinner = null;
+          }
+
+          if (!opts.quiet && !retrievalShown) {
+            const { docs, timeMs } = event.data;
+            console.log(pc.dim(`  [${docs.length} docs retrieved in ${timeMs}ms]`));
+            console.log('');
+            retrievalShown = true;
+          }
+
+          if (showSpinners) {
+            generationSpinner = createTimedSpinner('Generating response');
+          }
+        }
+
+        if (event.type === 'chunk') {
+          if (generationSpinner) {
+            generationSpinner.stop();
+            generationSpinner = null;
+          }
+          process.stdout.write(event.data);
+        }
+
+        if (event.type === 'done') {
+          console.log(''); // End the streamed response line
+
+          // Show sources
+          const { sources } = event.data;
+          if (sources.length > 0 && chatConf.showSources !== false) {
+            console.log('');
+            console.log(pc.dim('Sources:'));
+            for (let i = 0; i < sources.length; i++) {
+              const s = sources[i];
+              console.log(pc.dim(`  [${i + 1}] ${s.source} (relevance: ${s.score?.toFixed(2) || 'N/A'})`));
+            }
+          }
+          console.log('');
+        }
       }
+    } finally {
+      if (retrievalSpinner) retrievalSpinner.stop();
+      if (generationSpinner) generationSpinner.stop();
     }
   }
 }
@@ -434,41 +533,77 @@ async function handleAgentTurn(input, ctx) {
       metadata,
     }));
   } else {
-    // Interactive mode
-    for await (const event of agentChatTurn({
-      query: input, llm, history,
-      opts: { systemPrompt, db, collection },
-    })) {
-      if (event.type === 'tool_call') {
-        toolCalls.push(event.data);
-        if (showToolCalls) {
-          const { name, timeMs, error } = event.data;
-          if (error) {
-            console.log(pc.dim(`  [tool] ${name} ${pc.red('failed')} (${timeMs}ms): ${error}`));
-          } else if (showToolCalls === 'verbose') {
-            console.log(pc.dim(`  [tool] ${name} (${timeMs}ms)`));
-            const result = event.data.result;
-            if (result) {
-              const preview = JSON.stringify(result).substring(0, 200);
-              console.log(pc.dim(`    ${preview}${JSON.stringify(result).length > 200 ? '...' : ''}`));
-            }
-          } else {
-            console.log(pc.dim(`  [tool] ${name} (${timeMs}ms)`));
+    // Interactive mode with spinners
+    const showSpinners = !opts.quiet;
+    let thinkingSpinner = null;
+    let hasShownToolCalls = false;
+
+    if (showSpinners) {
+      thinkingSpinner = createTimedSpinner('Thinking');
+    }
+
+    try {
+      for await (const event of agentChatTurn({
+        query: input, llm, history,
+        opts: { systemPrompt, db, collection },
+      })) {
+        if (event.type === 'history') {
+          const { turnCount } = event.data;
+          if (!opts.quiet && turnCount > 0) {
+            console.log(pc.dim(`  [${turnCount} prior turn${turnCount > 1 ? 's' : ''} in context]`));
           }
         }
-      }
 
-      if (event.type === 'chunk') {
-        if (toolCalls.length > 0 && !opts.quiet) {
-          console.log(''); // Visual separator after tool calls
+        if (event.type === 'tool_call') {
+          if (thinkingSpinner) {
+            thinkingSpinner.stop();
+            thinkingSpinner = null;
+          }
+
+          toolCalls.push(event.data);
+          hasShownToolCalls = true;
+
+          if (showToolCalls) {
+            const { name, timeMs, error } = event.data;
+            if (error) {
+              console.log(pc.dim(`  [tool] ${name} ${pc.red('failed')} (${timeMs}ms): ${error}`));
+            } else if (showToolCalls === 'verbose') {
+              console.log(pc.dim(`  [tool] ${name} (${timeMs}ms)`));
+              const result = event.data.result;
+              if (result) {
+                const preview = JSON.stringify(result).substring(0, 200);
+                console.log(pc.dim(`    ${preview}${JSON.stringify(result).length > 200 ? '...' : ''}`));
+              }
+            } else {
+              console.log(pc.dim(`  [tool] ${name} (${timeMs}ms)`));
+            }
+          }
+
+          // Start spinner for next LLM call (analyzing tool results)
+          if (showSpinners) {
+            thinkingSpinner = createTimedSpinner('Analyzing results');
+          }
         }
-        process.stdout.write(event.data);
-      }
 
-      if (event.type === 'done') {
-        console.log(''); // End the response line
-        console.log('');
+        if (event.type === 'chunk') {
+          if (thinkingSpinner) {
+            thinkingSpinner.stop();
+            thinkingSpinner = null;
+          }
+          if (hasShownToolCalls && !opts.quiet) {
+            console.log(''); // Visual separator after tool calls
+            hasShownToolCalls = false;
+          }
+          process.stdout.write(event.data);
+        }
+
+        if (event.type === 'done') {
+          console.log(''); // End the response line
+          console.log('');
+        }
       }
+    } finally {
+      if (thinkingSpinner) thinkingSpinner.stop();
     }
   }
 

@@ -6,7 +6,7 @@
 
 [![CI](https://github.com/mrlynn/voyageai-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/mrlynn/voyageai-cli/actions/workflows/ci.yml) [![npm version](https://img.shields.io/npm/v/voyageai-cli.svg)](https://www.npmjs.com/package/voyageai-cli) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT) [![Node.js](https://img.shields.io/node/v/voyageai-cli.svg)](https://nodejs.org) [![GitHub release](https://img.shields.io/github/v/release/mrlynn/voyageai-cli?label=Desktop%20App)](https://github.com/mrlynn/voyageai-cli/releases)
 
-The fastest path from documents to semantic search. Chunk files, generate [Voyage AI](https://www.mongodb.com/docs/voyageai/) embeddings, store in [MongoDB Atlas](https://www.mongodb.com/docs/atlas/atlas-vector-search/), and query with two-stage retrieval — from the terminal, your browser, or a desktop app.
+The fastest path from documents to semantic search. Chunk files, generate [Voyage AI](https://docs.vaicli.com/) embeddings, store in [MongoDB Atlas](https://www.mongodb.com/docs/atlas/atlas-vector-search/), and query with two-stage retrieval — from the terminal, your browser, or a desktop app.
 
 > **⚠️ Disclaimer:** This is an independent, community-built tool — **not** an official product of MongoDB, Inc. or Voyage AI. See [Disclaimer](#disclaimer) for details.
 
@@ -501,7 +501,7 @@ vai explain models            # How to choose the right model
 
 | Variable | Required For | Description |
 |----------|-------------|-------------|
-| `VOYAGE_API_KEY` | All embedding/reranking | [Model API key](https://www.mongodb.com/docs/voyageai/management/api-keys/) from MongoDB Atlas |
+| `VOYAGE_API_KEY` | All embedding/reranking | [Model API key](https://docs.vaicli.com/management/api-keys/) from MongoDB Atlas |
 | `MONGODB_URI` | store, search, query, pipeline, index | MongoDB Atlas connection string |
 
 Credentials resolve in order: environment variables → `.env` file → `~/.vai/config.json`.
@@ -766,7 +766,7 @@ npm run app:build          # Build for all platforms
 
 - Node.js 18+
 - [MongoDB Atlas](https://www.mongodb.com/atlas) account (free tier works)
-- [Voyage AI model API key](https://www.mongodb.com/docs/voyageai/management/api-keys/) (created in Atlas)
+- [Voyage AI model API key](https://docs.vaicli.com/management/api-keys/) (created in Atlas)
 
 ## Author
 
@@ -778,7 +778,7 @@ This is a community tool and is not affiliated with, endorsed by, or supported b
 
 For official documentation and support:
 - **MongoDB:** [mongodb.com](https://www.mongodb.com) | [Atlas](https://www.mongodb.com/atlas) | [Support](https://support.mongodb.com)
-- **Voyage AI:** [MongoDB Voyage AI Docs](https://www.mongodb.com/docs/voyageai/)
+- **Voyage AI:** [MongoDB Voyage AI Docs](https://docs.vaicli.com/)
 
 ## License
 

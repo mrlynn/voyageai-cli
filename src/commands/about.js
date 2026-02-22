@@ -26,7 +26,7 @@ function registerAbout(program) {
           links: {
             npm: 'https://www.npmjs.com/package/voyageai-cli',
             github: 'https://github.com/mrlynn/voyageai-cli',
-            docs: 'https://www.mongodb.com/docs/voyageai/',
+            docs: 'https://docs.vaicli.com/',
           },
           disclaimer: 'Community tool — not an official MongoDB or Voyage AI product.',
         }, null, 2));

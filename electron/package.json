@@ -69,7 +69,8 @@
           "zod/**",
           "@clack/**",
           "@modelcontextprotocol/**",
-          "update-notifier/**"
+          "update-notifier/**",
+          "express/**"
         ]
       }
     ],

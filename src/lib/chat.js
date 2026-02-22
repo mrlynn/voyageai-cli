@@ -192,12 +192,18 @@ async function* chatTurn({ query, db, collection, llm, history, opts = {} }) {
   yield { type: 'retrieval', data: { docs, timeMs: retrievalTimeMs, tokens } };
 
   // 2. Build messages
+  // Budget history conservatively to leave room for RAG context + generation
+  const historyBudget = opts.historyBudget || 4000;
+  const historyMessages = history.getMessagesWithBudget(historyBudget);
   const messages = buildMessages({
     query,
     contextDocs: docs,
-    history: history.getMessagesWithBudget(8000),
+    history: historyMessages,
     systemPrompt: opts.systemPrompt,
   });
+
+  // Yield history info so callers can display it
+  yield { type: 'history', data: { turnCount: Math.floor(historyMessages.length / 2), messageCount: messages.length } };
 
   // 3. Generate response (streaming)
   let fullResponse = '';
@@ -283,11 +289,15 @@ async function* agentChatTurn({ query, llm, history, opts = {} }) {
   const start = Date.now();
 
   // 1. Build initial messages
+  const historyMessages = history.getMessagesWithBudget(8000);
   const initialMessages = buildAgentMessages({
     query,
-    history: history.getMessagesWithBudget(8000),
+    history: historyMessages,
     systemPrompt: opts.systemPrompt,
   });
+
+  // Yield history info so callers can display it
+  yield { type: 'history', data: { turnCount: Math.floor(historyMessages.length / 2), messageCount: initialMessages.length } };
 
   // 2. Get tool definitions for this provider
   const format = llm.name === 'anthropic' ? 'anthropic' : 'openai';
