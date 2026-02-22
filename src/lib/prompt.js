@@ -182,13 +182,26 @@ function buildMessages({ query, contextDocs = [], history = [], systemPrompt }) 
  * @param {string} [params.systemPrompt] - Override the agent system prompt
  * @returns {Array<{role: string, content: string}>}
  */
-function buildAgentMessages({ query, history = [], systemPrompt }) {
+function buildAgentMessages({ query, history = [], systemPrompt, db, collection }) {
   const messages = [];
 
-  // 1. Agent system prompt
+  // 1. Agent system prompt — always include tool instructions;
+  //    append user's custom instructions if provided
+  let fullSystemPrompt = AGENT_SYSTEM_PROMPT;
+
+  // Inject KB context so the agent knows where to search
+  if (db && collection) {
+    fullSystemPrompt += `\n\n## Active knowledge base\n\nThe user has a knowledge base configured: database="${db}", collection="${collection}". When using vai_query or vai_search, use these as defaults unless the user specifies otherwise.`;
+  }
+
+  // Append custom instructions (user-provided system prompt) without replacing tool instructions
+  if (systemPrompt) {
+    fullSystemPrompt += `\n\n## Custom instructions\n\n${systemPrompt}`;
+  }
+
   messages.push({
     role: 'system',
-    content: systemPrompt || AGENT_SYSTEM_PROMPT,
+    content: fullSystemPrompt,
   });
 
   // 2. Conversation history as separate messages

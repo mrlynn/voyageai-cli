@@ -294,6 +294,8 @@ async function* agentChatTurn({ query, llm, history, opts = {} }) {
     query,
     history: historyMessages,
     systemPrompt: opts.systemPrompt,
+    db: opts.db,
+    collection: opts.collection,
   });
 
   // Yield history info so callers can display it

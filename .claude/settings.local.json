@@ -69,7 +69,8 @@
       "WebFetch(domain:blog.voyageai.com)",
       "Bash(npx eslint:*)",
       "Bash(npx jest:*)",
-      "Bash(git rebase:*)"
+      "Bash(git rebase:*)",
+      "Bash(git fetch:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

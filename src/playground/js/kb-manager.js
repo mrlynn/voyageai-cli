@@ -192,6 +192,54 @@ class KBManager {
   }
 
   /**
+   * Rename a KB (updates displayName; internal name/collection unchanged)
+   */
+  async renameKB(kbName, displayName) {
+    const res = await fetch(`/api/rag/kb/${encodeURIComponent(kbName)}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ newName: displayName })
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || 'Failed to rename KB');
+    }
+    return await res.json();
+  }
+
+  /**
+   * List documents in a KB (grouped by fileName)
+   */
+  async listDocs(kbName) {
+    try {
+      const res = await fetch(`/api/rag/kb/${encodeURIComponent(kbName)}/docs`);
+      if (!res.ok) throw new Error('Failed to list documents');
+      const data = await res.json();
+      return data.docs || [];
+    } catch (err) {
+      console.error('Error listing docs:', err);
+      return [];
+    }
+  }
+
+  /**
+   * Remove all chunks for a file by fileName
+   */
+  async removeDocByName(kbName, fileName) {
+    try {
+      const res = await fetch(
+        `/api/rag/docs/${encodeURIComponent(kbName)}/by-name/${encodeURIComponent(fileName)}`,
+        { method: 'DELETE' }
+      );
+      if (!res.ok) throw new Error('Failed to remove document');
+      return await res.json();
+    } catch (err) {
+      console.error('Error removing doc:', err);
+      throw err;
+    }
+  }
+
+  /**
    * Clear a KB (delete all docs)
    */
   async clearKB(kbName) {

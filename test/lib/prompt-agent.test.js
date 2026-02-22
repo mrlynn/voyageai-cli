@@ -57,10 +57,12 @@ describe('prompt agent support', () => {
       assert.equal(messages[0].content, AGENT_SYSTEM_PROMPT);
     });
 
-    it('allows overriding system prompt', () => {
+    it('appends custom instructions to agent system prompt', () => {
       const custom = 'You are a custom agent.';
       const messages = buildAgentMessages({ query: 'test', systemPrompt: custom });
-      assert.equal(messages[0].content, custom);
+      assert.ok(messages[0].content.startsWith(AGENT_SYSTEM_PROMPT));
+      assert.ok(messages[0].content.includes('## Custom instructions'));
+      assert.ok(messages[0].content.includes(custom));
     });
 
     it('includes history between system and user', () => {
