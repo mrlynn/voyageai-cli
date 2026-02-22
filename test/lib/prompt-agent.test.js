@@ -76,7 +76,10 @@ describe('prompt agent support', () => {
       assert.equal(messages[2].role, 'assistant');
       assert.equal(messages[2].content, 'Previous answer');
       assert.equal(messages[3].role, 'user');
-      assert.equal(messages[3].content, 'New question');
+      // User message includes history recap for smaller models
+      assert.ok(messages[3].content.includes('User question: New question'));
+      assert.ok(messages[3].content.includes('Conversation History'));
+      assert.ok(messages[3].content.includes('Previous question'));
     });
 
     it('does NOT inject context documents', () => {

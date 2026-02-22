@@ -66,6 +66,9 @@ describe('prompt', () => {
       assert.equal(msgs[1].content, 'Hello');
       assert.equal(msgs[2].role, 'assistant');
       assert.equal(msgs[2].content, 'Hi there!');
+      // User message includes history recap for smaller models
+      assert.ok(msgs[3].content.includes('Conversation History'));
+      assert.ok(msgs[3].content.includes('User question: Next?'));
     });
 
     it('appends custom instructions to base prompt', () => {

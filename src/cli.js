@@ -94,18 +94,39 @@ registerCodeSearch(program);
 // Append disclaimer to all help output
 program.addHelpText('after', `
 ${pc.dim('Community tool — not an official MongoDB or Voyage AI product.')}
-${pc.dim('Docs: https://www.mongodb.com/docs/voyageai/')}
+${pc.dim('Docs: https://docs.vaicli.com/')}
 `);
 
 // Anonymous telemetry (fire-and-forget, non-blocking)
 const telemetry = require('./lib/telemetry');
 
-// If no args (just `vai`), show banner + quick start + help
+// If no args (just `vai`), show welcome wizard (first run) or banner + help
 if (process.argv.length <= 2) {
-  showBanner();
-  showQuickStart();
-  program.outputHelp();
-  process.exit(0);
+  const { shouldShowWelcome, runWelcome } = require('./lib/welcome');
+
+  if (shouldShowWelcome()) {
+    runWelcome()
+      .then((completed) => {
+        if (!completed) {
+          // User cancelled: fall back to normal quick start
+          showQuickStart();
+          program.outputHelp();
+        }
+        process.exit(0);
+      })
+      .catch(() => {
+        // Wizard error: fall back gracefully
+        showBanner();
+        showQuickStart();
+        program.outputHelp();
+        process.exit(0);
+      });
+  } else {
+    showBanner();
+    showQuickStart();
+    program.outputHelp();
+    process.exit(0);
+  }
 }
 
 // Track command usage after parsing

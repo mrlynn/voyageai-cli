@@ -40,7 +40,7 @@ const concepts = {
       `same embedding space — you can embed queries with one model and documents with`,
       `another for cost optimization.`,
     ].join('\n'),
-    links: ['https://www.mongodb.com/docs/voyageai/models/text-embeddings/'],
+    links: ['https://docs.vaicli.com/models/text-embeddings/'],
     tryIt: [
       'vai embed "hello world" --model voyage-4-large',
       'vai embed --file document.txt --input-type document',
@@ -72,7 +72,7 @@ const concepts = {
       `results, or latency is critical and you can't afford the extra round-trip,`,
       `single-stage retrieval may be sufficient.`,
     ].join('\n'),
-    links: ['https://www.mongodb.com/docs/voyageai/models/rerankers/'],
+    links: ['https://docs.vaicli.com/models/rerankers/'],
     tryIt: [
       'vai rerank --query "database performance" --documents "MongoDB is fast" "Redis is cached"',
       'vai rerank --query "query" --documents-file candidates.json --top-k 5',
@@ -139,7 +139,7 @@ const concepts = {
       `RAG with Voyage AI embeddings and Atlas Vector Search is one of the most`,
       `effective ways to build grounded, up-to-date AI applications.`,
     ].join('\n'),
-    links: ['https://www.mongodb.com/docs/voyageai/tutorials/rag-voyageai-mongodb/'],
+    links: ['https://docs.vaicli.com/tutorials/rag-voyageai-mongodb/'],
     tryIt: [
       'vai store --db myapp --collection docs --field embedding --text "your document"',
       'vai search --query "your question" --db myapp --collection docs --field embedding',
@@ -206,7 +206,7 @@ const concepts = {
       `${pc.bold('When single-stage is fine:')} Simple use cases, low-stakes search, or when`,
       `latency budgets are extremely tight (<50ms total).`,
     ].join('\n'),
-    links: ['https://www.mongodb.com/docs/voyageai/models/rerankers/'],
+    links: ['https://docs.vaicli.com/models/rerankers/'],
     tryIt: [
       'vai search --query "your question" --db myapp --collection docs --field embedding',
       'vai rerank --query "your question" --documents "doc1" "doc2" "doc3" --top-k 3',
@@ -244,7 +244,7 @@ const concepts = {
       `${pc.bold('Tip:')} Always use ${pc.cyan('--input-type document')} when running ${pc.cyan('vai store')} or`,
       `${pc.cyan('vai ingest')}, and ${pc.cyan('--input-type query')} when running ${pc.cyan('vai search')}.`,
     ].join('\n'),
-    links: ['https://www.mongodb.com/docs/voyageai/models/text-embeddings/'],
+    links: ['https://docs.vaicli.com/models/text-embeddings/'],
     tryIt: [
       'vai embed "What is MongoDB?" --input-type query',
       'vai embed --file article.txt --input-type document',
@@ -280,7 +280,7 @@ const concepts = {
       `${pc.bold('How to choose:')} Start with ${pc.cyan('voyage-4')} for general use. Use domain models when`,
       `your data is specialized. Add reranking when precision matters.`,
     ].join('\n'),
-    links: ['https://www.mongodb.com/docs/voyageai/models/'],
+    links: ['https://docs.vaicli.com/models/'],
     tryIt: [
       'vai models',
       'vai models --type embedding',
@@ -316,7 +316,7 @@ const concepts = {
       `  ${pc.dim('•')} Use ${pc.cyan('echo "key" | vai config set api-key --stdin')} to avoid shell history`,
       `  ${pc.dim('•')} Rotate keys periodically in the Atlas dashboard`,
     ].join('\n'),
-    links: ['https://www.mongodb.com/docs/voyageai/management/api-keys/'],
+    links: ['https://docs.vaicli.com/management/api-keys/'],
     tryIt: [
       'vai config set api-key "your-key"',
       'vai ping',
@@ -370,7 +370,7 @@ const concepts = {
       `  ${pc.dim('$')} ${pc.cyan('vai config set base-url https://api.voyageai.com/v1/')}`,
     ].join('\n'),
     links: [
-      'https://www.mongodb.com/docs/voyageai/management/api-keys/',
+      'https://docs.vaicli.com/management/api-keys/',
       'https://docs.voyageai.com/docs/api-key-and-installation',
     ],
     tryIt: [
@@ -410,7 +410,7 @@ const concepts = {
       `${pc.bold('Tip:')} Start with a small test batch to validate your pipeline before`,
       `processing the full corpus.`,
     ].join('\n'),
-    links: ['https://www.mongodb.com/docs/voyageai/models/text-embeddings/'],
+    links: ['https://docs.vaicli.com/models/text-embeddings/'],
     tryIt: [
       'vai store --db myapp --collection docs --field embedding --file documents.jsonl',
       'vai embed --file document.txt --input-type document',
@@ -467,7 +467,7 @@ const concepts = {
     ].join('\n'),
     links: [
       'https://docs.voyageai.com/docs/flexible-dimensions-and-quantization',
-      'https://www.mongodb.com/docs/voyageai/models/text-embeddings/',
+      'https://docs.vaicli.com/models/text-embeddings/',
     ],
     tryIt: [
       'vai embed "hello world" --output-dtype int8',
@@ -516,7 +516,7 @@ const concepts = {
       `  5. If quality is similar, pick the cheaper/faster model + smallest viable dtype`,
       `  6. Use ${pc.cyan('--save')} to track results over time as your data evolves`,
     ].join('\n'),
-    links: ['https://www.mongodb.com/docs/voyageai/models/text-embeddings/'],
+    links: ['https://docs.vaicli.com/models/text-embeddings/'],
     tryIt: [
       'vai benchmark embed --rounds 3',
       'vai benchmark cost',
@@ -557,7 +557,7 @@ const concepts = {
     ].join('\n'),
     links: [
       'https://blog.voyageai.com/2026/01/15/voyage-4-model-family/',
-      'https://www.mongodb.com/docs/voyageai/models/text-embeddings/',
+      'https://docs.vaicli.com/models/text-embeddings/',
     ],
     tryIt: [
       'vai embed "test MoE quality" --model voyage-4-large',
@@ -1016,7 +1016,7 @@ const concepts = {
       `reranking) and ${pc.cyan('Claude for generation')}. Best of both worlds.`,
     ].join('\n'),
     links: [
-      'https://www.mongodb.com/docs/voyageai/models/',
+      'https://docs.vaicli.com/models/',
       'https://platform.openai.com/docs/guides/embeddings',
       'https://docs.anthropic.com/',
       'https://blog.voyageai.com/2026/01/15/voyage-4-model-family/',
@@ -1229,7 +1229,7 @@ const concepts = {
     ].join('\n'),
     links: [
       'https://www.mongodb.com/docs/atlas/atlas-vector-search/crud-embeddings/create-embeddings-automatic/',
-      'https://www.mongodb.com/docs/voyageai/management/api-keys/',
+      'https://docs.vaicli.com/management/api-keys/',
     ],
     tryIt: [
       'vai explain vai-vs-auto-embedding',
