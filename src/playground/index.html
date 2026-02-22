@@ -1703,6 +1703,62 @@ select:focus { outline: none; border-color: var(--accent); }
   padding: 0 28px 24px;
 }
 
+/* Agent mode info modal */
+.agent-info-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+.agent-info-overlay.open { opacity: 1; pointer-events: auto; }
+.agent-info-modal {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  max-width: 520px; width: 92%;
+  padding: 28px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  animation: exploreModalIn 0.2s ease-out;
+}
+.agent-info-modal h3 {
+  margin: 0 0 16px; font-size: 16px; color: var(--text);
+  display: flex; align-items: center; gap: 8px;
+}
+.agent-info-modal h3 .mode-icon { color: var(--accent); }
+.agent-info-modal .mode-compare {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 18px;
+}
+.agent-info-modal .mode-card {
+  background: var(--bg-input); border: 1px solid var(--border);
+  border-radius: 8px; padding: 14px; font-size: 12px;
+}
+.agent-info-modal .mode-card.active { border-color: var(--accent); }
+.agent-info-modal .mode-card h4 {
+  margin: 0 0 8px; font-size: 13px; color: var(--text);
+}
+.agent-info-modal .mode-card ul {
+  margin: 0; padding-left: 16px; color: var(--text-dim); line-height: 1.6;
+}
+.agent-info-modal .mode-note {
+  font-size: 12px; color: var(--text-dim); margin-bottom: 18px; line-height: 1.5;
+}
+.agent-info-modal .mode-actions {
+  display: flex; align-items: center; justify-content: space-between;
+}
+.agent-info-modal .mode-dismiss-label {
+  font-size: 11px; color: var(--text-dim); display: flex; align-items: center; gap: 6px; cursor: pointer;
+}
+.agent-info-modal .mode-dismiss-label input { accent-color: var(--accent); }
+.agent-info-modal .mode-ok-btn {
+  background: var(--accent); color: #000; border: none;
+  padding: 8px 24px; border-radius: 6px; font-size: 13px;
+  font-weight: 600; cursor: pointer; font-family: var(--font);
+}
+.agent-info-modal .mode-ok-btn:hover { opacity: 0.9; }
+
 /* Benchmark tab */
 .bench-panels { display: flex; gap: 8px; margin-bottom: 16px; }
 .bench-panel-btn {
@@ -2955,13 +3011,7 @@ select:focus { outline: none; border-color: var(--accent); }
 }
 
 /* ── Chat Tab ── */
-.chat-container {
-  display: flex;
-  flex-direction: column;
-  height: calc(100vh - 140px);
-  max-width: 900px;
-  margin: 0 auto;
-}
+/* (chat-container flex layout is defined in the KB Panel section below) */
 .chat-messages {
   flex: 1;
   overflow-y: auto;
@@ -3278,6 +3328,7 @@ select:focus { outline: none; border-color: var(--accent); }
   display: flex;
   gap: 8px;
   align-items: flex-end;
+  flex-shrink: 0;
 }
 .chat-input {
   flex: 1;
@@ -3313,6 +3364,7 @@ select:focus { outline: none; border-color: var(--accent); }
   border-bottom: 1px solid var(--border);
   font-size: 13px;
   color: var(--text-muted);
+  flex-shrink: 0;
 }
 .chat-header-status { display: flex; gap: 8px; align-items: center; }
 .chat-header-status span { opacity: 0.7; }
@@ -3325,6 +3377,15 @@ select:focus { outline: none; border-color: var(--accent); }
 [data-theme="light"] .chat-config-toggle:hover { background: rgba(0,0,0,0.04); }
 .chat-config-toggle.active { color: var(--accent); }
 /* chat-config-panel/bar removed — chat settings moved to Settings page */
+.chat-kb-toggle {
+  background: none; border: none; color: var(--text-muted);
+  cursor: pointer; padding: 4px 8px; border-radius: 4px; font-size: 13px;
+  display: flex; align-items: center; gap: 4px;
+  transition: color 0.15s, background 0.15s;
+}
+.chat-kb-toggle:hover { background: rgba(255,255,255,0.06); color: var(--text); }
+[data-theme="light"] .chat-kb-toggle:hover { background: rgba(0,0,0,0.04); }
+.chat-kb-toggle.active { color: var(--accent); }
 .chat-typing {
   align-self: flex-start;
   color: var(--text-muted);
@@ -6319,23 +6380,22 @@ select:focus { outline: none; border-color: var(--accent); }
 
 /* ── KB Panel (Sidebar) ── */
 .kb-panel {
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 240px;
+  width: 300px;
+  min-width: 300px;
   background: var(--bg-surface);
   border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
   overflow-y: auto;
-  transition: all 0.3s ease;
-  z-index: 100;
+  overflow-x: hidden;
+  transition: width 0.25s ease, min-width 0.25s ease, border-color 0.25s ease;
+  flex-shrink: 0;
 }
 
 .kb-panel.collapsed {
   width: 0;
-  border-right: none;
+  min-width: 0;
+  border-right-color: transparent;
   overflow: hidden;
 }
 
@@ -6514,20 +6574,210 @@ select:focus { outline: none; border-color: var(--accent); }
   width: 0%;
 }
 
-/* Adjust chat container when panel is open */
-#tab-chat {
-  position: relative;
+/* ── KB Panel Sections (collapsible) ── */
+.kb-section {
+  border-bottom: 1px solid var(--border);
+}
+.kb-section:last-child { border-bottom: none; }
+
+.kb-section-header {
   display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+  user-select: none;
+}
+.kb-section-header:hover {
+  color: var(--text);
+  background: rgba(255,255,255,0.03);
+}
+[data-theme="light"] .kb-section-header:hover { background: rgba(0,0,0,0.02); }
+
+.kb-section-header .kb-chevron {
+  font-size: 10px;
+  transition: transform 0.2s;
+  display: inline-block;
+}
+.kb-section-header.expanded .kb-chevron {
+  transform: rotate(90deg);
+}
+
+.kb-section-header .kb-section-badge {
+  margin-left: auto;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--accent);
+  font-family: var(--mono);
   overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 140px;
+  text-align: right;
+}
+.kb-name-editable { cursor: pointer; border-bottom: 1px dashed transparent; transition: border-color 0.2s; }
+.kb-name-editable:hover { border-bottom-color: var(--accent); }
+.kb-name-input {
+  background: var(--bg-secondary, #1a1d23);
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  font-size: 10px;
+  font-weight: 600;
+  font-family: var(--mono);
+  padding: 1px 4px;
+  border-radius: 3px;
+  max-width: 140px;
+  outline: none;
+}
+
+.kb-section-body {
+  overflow: hidden;
+  transition: max-height 0.2s ease-out;
+}
+.kb-section-body-inner { padding: 0 12px 12px; }
+
+/* ── KB Files List ── */
+.kb-file-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 200px;
+  overflow-y: auto;
+}
+.kb-file-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+}
+.kb-file-item:last-child { border-bottom: none; }
+.kb-file-icon { flex-shrink: 0; color: var(--accent); }
+.kb-file-info { flex: 1; min-width: 0; }
+.kb-file-name {
+  color: var(--text);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.kb-file-meta {
+  font-size: 10px;
+  color: var(--text-muted);
+  display: flex;
+  gap: 6px;
+}
+.kb-file-delete {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 4px;
+  transition: color 0.15s, background 0.15s;
+  opacity: 0;
+}
+.kb-file-item:hover .kb-file-delete { opacity: 1; }
+.kb-file-delete:hover { color: var(--error); background: rgba(255,105,96,0.1); }
+.kb-file-empty {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 12px;
+  padding: 12px 0;
+}
+
+/* ── KB Panel Config Fields (compact) ── */
+.kb-config-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+.kb-config-row:last-child { margin-bottom: 0; }
+.kb-config-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+.kb-config-row .settings-select,
+.kb-config-row .settings-input {
+  min-width: unset;
+  width: 100%;
+  font-size: 12px;
+  padding: 6px 8px;
+  text-align: left;
+}
+.kb-config-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Instructions textarea compact */
+.kb-instructions-textarea {
+  width: 100%;
+  min-height: 60px;
+  max-height: 120px;
+  resize: vertical;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: var(--radius);
+  padding: 8px;
+  font-size: 12px;
+  font-family: var(--font);
+  line-height: 1.4;
+  box-sizing: border-box;
+}
+.kb-instructions-textarea:focus { outline: none; border-color: var(--accent); }
+
+/* Compact drop zone */
+.kb-panel-dropzone-compact {
+  border: 2px dashed var(--border);
+  border-radius: 8px;
+  padding: 12px 8px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.kb-panel-dropzone-compact:hover,
+.kb-panel-dropzone-compact.drag-over {
+  border-color: var(--accent);
+  background: var(--accent-glow);
+}
+.kb-panel-dropzone-compact svg { color: var(--accent); }
+
+/* ── Chat tab layout ── */
+/* Expand .main when chat tab is active to fill viewport */
+.main:has(#tab-chat.active) {
+  max-width: none; padding: 0; overflow: hidden;
+}
+#tab-chat.tab-panel.active {
+  display: flex;
+  position: relative;
+  overflow: hidden;
+  height: 100%;
+  padding-bottom: 40px; /* Clear the fixed cost status bar */
 }
 
 .chat-container {
   flex: 1;
+  min-width: 0;
   position: relative;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  transition: all 0.3s ease;
 }
 
 </style>
@@ -7730,74 +7980,191 @@ Reranking models rescore initial search results to improve relevance ordering.</
     </div>
   </div>
 
-  <!-- KB Info Panel (Sidebar) -->
+  <!-- KB Panel (Sidebar) — Redesigned -->
   <div id="kbPanel" class="kb-panel">
     <div class="kb-panel-header">
-      <h3 class="kb-panel-title">📚 Knowledge Base</h3>
-      <button class="kb-panel-collapse-btn" id="kbPanelCollapseBtn" title="Collapse panel">⌄</button>
+      <h3 class="kb-panel-title">Knowledge Base</h3>
+      <div style="display:flex; align-items:center; gap:4px;">
+        <button class="kb-panel-btn kb-panel-btn-secondary" id="kbPanelSwitchBtn" title="Switch KB" style="padding:4px 8px; font-size:11px;">Switch</button>
+        <button class="kb-panel-collapse-btn" id="kbPanelCollapseBtn" title="Collapse panel">&#x2039;</button>
+      </div>
     </div>
     <div class="kb-panel-content">
-      <div class="kb-panel-kb-info">
-        <div class="kb-panel-stat">
-          <span class="kb-panel-stat-label">KB:</span>
-          <span class="kb-panel-stat-value" id="kbPanelName">—</span>
+
+      <!-- Section: KB Stats -->
+      <div class="kb-section" data-kb-section="stats">
+        <div class="kb-section-header expanded" onclick="kbToggleSection('stats')">
+          <span class="kb-chevron">&#x25B6;</span>
+          <span>KB Info</span>
+          <span class="kb-section-badge kb-name-editable" id="kbPanelName" title="Click to rename" onclick="event.stopPropagation(); window.kbUI && window.kbUI.startRename()">--</span>
         </div>
-        <div class="kb-panel-stat">
-          <span class="kb-panel-stat-label">Docs:</span>
-          <span class="kb-panel-stat-value" id="kbPanelDocCount">0</span>
-        </div>
-        <div class="kb-panel-stat">
-          <span class="kb-panel-stat-label">Chunks:</span>
-          <span class="kb-panel-stat-value" id="kbPanelChunkCount">0</span>
-        </div>
-        <div class="kb-panel-stat">
-          <span class="kb-panel-stat-label">Size:</span>
-          <span class="kb-panel-stat-value" id="kbPanelSize">0 KB</span>
+        <div class="kb-section-body" data-kb-section="stats" style="max-height:none;">
+          <div class="kb-section-body-inner">
+            <div class="kb-panel-kb-info">
+              <div class="kb-panel-stat">
+                <span class="kb-panel-stat-label">Documents</span>
+                <span class="kb-panel-stat-value" id="kbPanelDocCount">0</span>
+              </div>
+              <div class="kb-panel-stat">
+                <span class="kb-panel-stat-label">Chunks</span>
+                <span class="kb-panel-stat-value" id="kbPanelChunkCount">0</span>
+              </div>
+              <div class="kb-panel-stat">
+                <span class="kb-panel-stat-label">Size</span>
+                <span class="kb-panel-stat-value" id="kbPanelSize">0 KB</span>
+              </div>
+            </div>
+            <div id="kbIndexStatus" style="margin-top:6px; font-size:11px; text-align:center; transition: opacity 0.3s;"></div>
+            <button class="kb-panel-btn kb-panel-btn-danger" id="kbPanelClearBtn" style="width:100%; margin-top:8px; font-size:11px;">Clear All Documents</button>
+          </div>
         </div>
       </div>
 
-      <div class="kb-panel-actions">
-        <button class="kb-panel-btn kb-panel-btn-primary" id="kbPanelAddBtn">+ Add Documents</button>
-        <button class="kb-panel-btn kb-panel-btn-secondary" id="kbPanelSwitchBtn">Switch KB</button>
-        <button class="kb-panel-btn kb-panel-btn-danger" id="kbPanelClearBtn">Clear KB</button>
-      </div>
-
-      <!-- File Drop Zone (hidden until clicked) -->
-      <div id="kbPanelDropZone" class="kb-panel-dropzone">
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-          <polyline points="17 8 12 3 7 8"/>
-          <line x1="12" y1="3" x2="12" y2="15"/>
-        </svg>
-        <p style="margin: 8px 0 0; font-weight: 600; font-size: 13px; color: var(--text);">Drag files here</p>
-        <p style="font-size: 11px; color: var(--text-muted); margin: 2px 0 0;">or click to browse</p>
-      </div>
-      <input type="file" id="kbPanelFileInput" multiple accept=".txt,.md" style="display: none;">
-
-      <!-- Ingestion Progress -->
-      <div id="kbPanelProgress" class="kb-panel-progress" style="display: none;">
-        <div class="kb-panel-progress-label" id="kbPanelProgressLabel">Ingesting...</div>
-        <div class="kb-panel-progress-bar">
-          <div class="kb-panel-progress-fill" id="kbPanelProgressBar"></div>
+      <!-- Section: Files -->
+      <div class="kb-section" data-kb-section="files">
+        <div class="kb-section-header expanded" onclick="kbToggleSection('files')">
+          <span class="kb-chevron">&#x25B6;</span>
+          <span>Files</span>
+          <span class="kb-section-badge" id="kbFileCount">0</span>
+        </div>
+        <div class="kb-section-body" data-kb-section="files" style="max-height:none;">
+          <div class="kb-section-body-inner">
+            <ul class="kb-file-list" id="kbFileList">
+              <li class="kb-file-empty">No documents ingested</li>
+            </ul>
+          </div>
         </div>
       </div>
+
+      <!-- Section: Upload -->
+      <div class="kb-section" data-kb-section="upload">
+        <div class="kb-section-header expanded" onclick="kbToggleSection('upload')">
+          <span class="kb-chevron">&#x25B6;</span>
+          <span>Upload</span>
+        </div>
+        <div class="kb-section-body" data-kb-section="upload" style="max-height:none;">
+          <div class="kb-section-body-inner">
+            <div id="kbPanelDropZone" class="kb-panel-dropzone-compact">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
+              <p style="margin:4px 0 0; font-weight:600; font-size:12px; color:var(--text);">Drop files here</p>
+              <p style="font-size:10px; color:var(--text-muted); margin:2px 0 0;">.txt, .md &mdash; max 10MB</p>
+            </div>
+            <input type="file" id="kbPanelFileInput" multiple accept=".txt,.md" style="display:none;">
+            <div id="kbPanelProgress" class="kb-panel-progress" style="display:none;">
+              <div class="kb-panel-progress-label" id="kbPanelProgressLabel">Ingesting...</div>
+              <div class="kb-panel-progress-bar">
+                <div class="kb-panel-progress-fill" id="kbPanelProgressBar"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section: Instructions -->
+      <div class="kb-section" data-kb-section="instructions">
+        <div class="kb-section-header" onclick="kbToggleSection('instructions')">
+          <span class="kb-chevron">&#x25B6;</span>
+          <span>Instructions</span>
+        </div>
+        <div class="kb-section-body" data-kb-section="instructions" style="max-height:0px;">
+          <div class="kb-section-body-inner">
+            <p style="font-size:10px; color:var(--text-muted); margin:0 0 6px;">Custom instructions appended to the system prompt</p>
+            <textarea class="kb-instructions-textarea" id="kbSystemPrompt" rows="3" placeholder="e.g. You are a movie expert. Be enthusiastic about recommendations."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section: Configuration -->
+      <div class="kb-section" data-kb-section="config">
+        <div class="kb-section-header" onclick="kbToggleSection('config')">
+          <span class="kb-chevron">&#x25B6;</span>
+          <span>Configuration</span>
+        </div>
+        <div class="kb-section-body" data-kb-section="config" style="max-height:0px;">
+          <div class="kb-section-body-inner">
+            <div class="kb-config-row">
+              <label class="kb-config-label">LLM Provider</label>
+              <select class="settings-select" id="chatProvider" onchange="chatProviderChanged()">
+                <option value="">Not configured</option>
+                <option value="anthropic">Anthropic</option>
+                <option value="openai">OpenAI</option>
+                <option value="ollama">Ollama</option>
+              </select>
+            </div>
+            <div class="kb-config-row">
+              <label class="kb-config-label">Model</label>
+              <select class="settings-select" id="chatModel">
+                <option value="">Select provider first</option>
+              </select>
+            </div>
+            <div class="kb-config-row" id="chatApiKeyRow" style="display:none">
+              <label class="kb-config-label">API Key</label>
+              <div style="display:flex;gap:4px;align-items:center">
+                <input type="password" class="settings-input" id="chatApiKey" placeholder="API key" style="flex:1;font-size:12px;">
+                <button class="kb-panel-btn kb-panel-btn-secondary" id="chatApiKeyToggle" onclick="toggleChatApiKeyVisibility()" title="Show/hide" style="padding:4px 6px;min-width:auto;font-size:11px;">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
+                <button class="kb-panel-btn kb-panel-btn-primary" id="chatApiKeySave" onclick="saveChatApiKey()" title="Save" style="padding:4px 6px;min-width:auto;font-size:11px;">Save</button>
+              </div>
+            </div>
+            <div class="kb-config-row">
+              <label class="kb-config-label">Database</label>
+              <input type="text" class="settings-input" id="chatDb" placeholder="database">
+            </div>
+            <div class="kb-config-row">
+              <label class="kb-config-label">Collection</label>
+              <input type="text" class="settings-input" id="chatCollection" placeholder="collection">
+            </div>
+            <div class="kb-config-row">
+              <label class="kb-config-label">Max Context Docs</label>
+              <input type="number" class="settings-input" id="chatMaxDocs" value="5" min="1" max="20" style="width:70px;">
+            </div>
+            <div class="kb-config-row">
+              <div class="kb-config-toggle-row">
+                <label class="kb-config-label">Rerank Results</label>
+                <button class="settings-toggle active" id="chatRerank" type="button"></button>
+              </div>
+            </div>
+            <div class="kb-config-row">
+              <label class="kb-config-label">Chat Mode</label>
+              <select class="settings-select" id="chatMode">
+                <option value="pipeline">Pipeline (fixed RAG)</option>
+                <option value="agent">Agent (tool-calling)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 
   <div class="chat-container">
     <div class="chat-header">
-      <div class="chat-header-status" id="chatHeaderStatus">
-        <span id="chatStatusProvider">No provider</span>
-        <span>·</span>
-        <span id="chatStatusDb">No database</span>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <button class="chat-kb-toggle active" id="chatKbToggle" onclick="toggleKBPanel()" title="Toggle Knowledge Base panel">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          KB
+        </button>
+        <div class="chat-header-status" id="chatHeaderStatus">
+          <span id="chatStatusProvider">No provider</span>
+          <span>&middot;</span>
+          <span id="chatStatusDb">No database</span>
+        </div>
       </div>
-      <button class="export-toolbar-btn" id="chatExportBtn" onclick="openExportDialog('chat')" style="display:none;" title="Export chat session">
-        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h10M8 14V5M5 8l3-3 3 3"/></svg> Export
-      </button>
-      <button class="chat-config-toggle" id="chatOpenSettings" onclick="openChatSettings()" title="Configure in Settings">
-        <svg width="14" height="14" viewBox="0 0 24 24"><use href="#lg-config"/></svg>
-        Configure
-      </button>
+      <div style="display:flex; align-items:center; gap:4px;">
+        <button class="export-toolbar-btn" id="chatExportBtn" onclick="openExportDialog('chat')" style="display:none;" title="Export chat session">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h10M8 14V5M5 8l3-3 3 3"/></svg> Export
+        </button>
+        <button class="chat-config-toggle" id="chatOpenSettings" onclick="kbOpenConfigSection()" title="Configure">
+          <svg width="14" height="14" viewBox="0 0 24 24"><use href="#lg-config"/></svg>
+          Configure
+        </button>
+      </div>
     </div>
     <div class="chat-not-configured" id="chatNotConfigured" style="display:none;">
       <div class="chat-not-configured-icon">💬</div>
@@ -8393,6 +8760,42 @@ Reranking models rescore initial search results to improve relevance ordering.</
 </div>
 
 <!-- Explore Concept Modal -->
+<!-- Agent Mode Info Modal -->
+<div class="agent-info-overlay" id="agentInfoModal">
+  <div class="agent-info-modal">
+    <h3><span class="mode-icon">&#x2699;&#xFE0F;</span> Switching to Agent Mode</h3>
+    <div class="mode-compare">
+      <div class="mode-card">
+        <h4>Pipeline Mode</h4>
+        <ul>
+          <li>Fixed RAG: retrieve &rarr; generate</li>
+          <li>Always searches your KB first</li>
+          <li>Fast, predictable responses</li>
+          <li>Best for direct Q&amp;A from your docs</li>
+        </ul>
+      </div>
+      <div class="mode-card active">
+        <h4>Agent Mode</h4>
+        <ul>
+          <li>LLM decides which tools to call</li>
+          <li>Can search, compare, embed, explore</li>
+          <li>Uses <code>vai_query</code>, <code>vai_search</code>, etc.</li>
+          <li>Best for complex, multi-step questions</li>
+        </ul>
+      </div>
+    </div>
+    <div class="mode-note">
+      In Agent mode, the LLM chooses how to answer &mdash; it may call <strong>vai_query</strong> to search your KB, <strong>vai_collections</strong> to discover data, or answer from its own knowledge. You'll see a <em>Thinking</em> panel showing each tool call in real time. Responses may take longer but can be more thorough.
+    </div>
+    <div class="mode-actions">
+      <label class="mode-dismiss-label">
+        <input type="checkbox" id="agentInfoDismissCheck"> Don't show this again
+      </label>
+      <button class="mode-ok-btn" id="agentInfoOkBtn">Got it</button>
+    </div>
+  </div>
+</div>
+
 <div class="explore-modal-overlay" id="exploreModal" role="dialog" aria-modal="true" aria-labelledby="exploreModalTitle" aria-describedby="exploreModalSummary">
   <div class="explore-modal">
     <button class="explore-modal-close" id="exploreModalClose" aria-label="Close modal">&times;</button>
@@ -8664,129 +9067,11 @@ Reranking models rescore initial search results to improve relevance ordering.</
       <div class="settings-panel" id="settings-chat">
         <div class="settings-panel-header">
           <h3 class="settings-panel-title">Chat</h3>
-          <p class="settings-panel-subtitle">LLM provider and knowledge base configuration</p>
+          <p class="settings-panel-subtitle">Chat configuration has moved to the Knowledge Base panel in the Chat tab.</p>
         </div>
-        <div class="settings-section">
-          <div class="settings-section-title">LLM Provider</div>
-          <div class="settings-row">
-            <div class="settings-label">
-              <span class="settings-label-text">Provider <span class="settings-origin" data-origin-key="provider"></span></span>
-              <span class="settings-label-hint">Which LLM to use for chat responses</span>
-            </div>
-            <div class="settings-control">
-              <select class="settings-select" id="chatProvider" onchange="chatProviderChanged()">
-                <option value="">Not configured</option>
-                <option value="anthropic">Anthropic</option>
-                <option value="openai">OpenAI</option>
-                <option value="ollama">Ollama</option>
-              </select>
-            </div>
-          </div>
-          <div class="settings-row">
-            <div class="settings-label">
-              <span class="settings-label-text">Model <span class="settings-origin" data-origin-key="model"></span></span>
-              <span class="settings-label-hint">LLM model for generating responses</span>
-            </div>
-            <div class="settings-control">
-              <select class="settings-select" id="chatModel" style="min-width:220px">
-                <option value="">Select provider first</option>
-              </select>
-            </div>
-          </div>
-          <div class="settings-row" id="chatApiKeyRow" style="display:none">
-            <div class="settings-label">
-              <span class="settings-label-text">API Key</span>
-              <span class="settings-label-hint">Provider API key (stored securely in OS keychain)</span>
-            </div>
-            <div class="settings-control" style="display:flex;gap:8px;align-items:center">
-              <input
-                type="password"
-                class="settings-input"
-                id="chatApiKey"
-                placeholder="Enter your API key"
-                style="flex:1;font-family:monospace;font-size:13px"
-              >
-              <button
-                class="btn btn-secondary"
-                id="chatApiKeyToggle"
-                onclick="toggleChatApiKeyVisibility()"
-                title="Show/hide API key"
-                style="padding:8px 12px;min-width:auto"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>
-              </button>
-              <button
-                class="btn"
-                id="chatApiKeySave"
-                onclick="saveChatApiKey()"
-                title="Save API key"
-                style="padding:8px 12px;min-width:auto"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>
-              </button>
-            </div>
-          </div>
-        </div>
-        <div class="settings-section">
-          <div class="settings-section-title">Knowledge Base</div>
-          <div class="settings-row">
-            <div class="settings-label">
-              <span class="settings-label-text">Database <span class="settings-origin" data-origin-key="db"></span></span>
-              <span class="settings-label-hint">MongoDB database containing your documents</span>
-            </div>
-            <div class="settings-control">
-              <input type="text" class="settings-input" id="chatDb" placeholder="database">
-            </div>
-          </div>
-          <div class="settings-row">
-            <div class="settings-label">
-              <span class="settings-label-text">Collection <span class="settings-origin" data-origin-key="collection"></span></span>
-              <span class="settings-label-hint">Collection with vector-indexed documents</span>
-            </div>
-            <div class="settings-control">
-              <input type="text" class="settings-input" id="chatCollection" placeholder="collection">
-            </div>
-          </div>
-          <div class="settings-row">
-            <div class="settings-label">
-              <span class="settings-label-text">Max Context Documents</span>
-              <span class="settings-label-hint">How many documents to retrieve per query</span>
-            </div>
-            <div class="settings-control">
-              <input type="number" class="settings-input" id="chatMaxDocs" value="5" min="1" max="20" style="min-width:80px;width:80px;">
-            </div>
-          </div>
-          <div class="settings-row">
-            <div class="settings-label">
-              <span class="settings-label-text">Rerank Results</span>
-              <span class="settings-label-hint">Use Voyage reranker to improve retrieval quality</span>
-            </div>
-            <div class="settings-control">
-              <button class="settings-toggle active" id="chatRerank" type="button"></button>
-            </div>
-          </div>
-          <div class="settings-row">
-            <div class="settings-label">
-              <span class="settings-label-text">Chat Mode</span>
-              <span class="settings-label-hint">Pipeline: fixed RAG retrieval. Agent: LLM chooses which tools to call.</span>
-            </div>
-            <div class="settings-control">
-              <select class="settings-select" id="chatMode">
-                <option value="pipeline">Pipeline (fixed RAG)</option>
-                <option value="agent">Agent (tool-calling)</option>
-              </select>
-            </div>
-          </div>
-        </div>
-        <div class="settings-section">
-          <div class="settings-section-title">Custom Instructions</div>
-          <div class="settings-row" style="flex-direction:column;align-items:stretch;gap:8px;">
-            <div class="settings-label">
-              <span class="settings-label-text">System Prompt</span>
-              <span class="settings-label-hint">Additional instructions appended to the base system prompt</span>
-            </div>
-            <textarea class="settings-input" id="chatSystemPrompt" rows="3" placeholder="e.g. You are a movie expert. Be enthusiastic about recommendations." style="min-width:100%;resize:vertical;font-family:var(--font);text-align:left;"></textarea>
-          </div>
+        <div class="settings-section" style="text-align:center; padding:24px;">
+          <p style="color:var(--text-muted); font-size:13px; margin-bottom:16px;">All chat settings (LLM provider, model, database, instructions) are now accessible directly from the KB panel sidebar when using Chat.</p>
+          <button class="btn" onclick="switchTab('chat')">Go to Chat</button>
         </div>
       </div>
 
@@ -12388,7 +12673,10 @@ function initSettings() {
   const chatModel = document.getElementById('chatModel');
   if (chatModel) chatModel.addEventListener('change', saveChatSettings);
   const chatMode = document.getElementById('chatMode');
-  if (chatMode) chatMode.addEventListener('change', saveChatSettings);
+  if (chatMode) chatMode.addEventListener('change', () => {
+    saveChatSettings();
+    if (chatMode.value === 'agent') showAgentInfoModal();
+  });
   const chatMaxDocs = document.getElementById('chatMaxDocs');
   if (chatMaxDocs) chatMaxDocs.addEventListener('change', saveChatSettings);
 
@@ -12397,8 +12685,8 @@ function initSettings() {
   if (chatDb) chatDb.addEventListener('input', () => { updateChatStatus(); saveChatSettingsDebounced(); });
   const chatCollection = document.getElementById('chatCollection');
   if (chatCollection) chatCollection.addEventListener('input', () => { updateChatStatus(); saveChatSettingsDebounced(); });
-  const chatSystemPrompt = document.getElementById('chatSystemPrompt');
-  if (chatSystemPrompt) chatSystemPrompt.addEventListener('input', saveChatSettingsDebounced);
+  const kbSystemPrompt = document.getElementById('kbSystemPrompt');
+  if (kbSystemPrompt) kbSystemPrompt.addEventListener('input', saveChatSettingsDebounced);
 
   // API key input listeners
   const chatApiKey = document.getElementById('chatApiKey');
@@ -14132,9 +14420,29 @@ function switchSettingsSection(section) {
 }
 
 function openChatSettings() {
-  switchTab('settings');
-  switchSettingsSection('chat');
+  // Open the config section in the KB panel instead of navigating to Settings
+  kbOpenConfigSection();
 }
+
+// ── Agent Mode Info Modal ──
+function showAgentInfoModal() {
+  if (localStorage.getItem('__vai_agent_info_dismissed') === '1') return;
+  const overlay = document.getElementById('agentInfoModal');
+  if (!overlay) return;
+  overlay.classList.add('open');
+
+  const okBtn = document.getElementById('agentInfoOkBtn');
+  const dismiss = () => {
+    overlay.classList.remove('open');
+    const check = document.getElementById('agentInfoDismissCheck');
+    if (check && check.checked) {
+      localStorage.setItem('__vai_agent_info_dismissed', '1');
+    }
+  };
+  okBtn.onclick = dismiss;
+  overlay.onclick = (e) => { if (e.target === overlay) dismiss(); };
+}
+window.showAgentInfoModal = showAgentInfoModal;
 
 function setupSettingsNav() {
   document.querySelectorAll('.settings-nav-item').forEach(btn => {
@@ -14181,7 +14489,7 @@ function saveChatSettings() {
     collection: document.getElementById('chatCollection').value,
     maxDocs: parseInt(document.getElementById('chatMaxDocs').value) || 5,
     rerank: document.getElementById('chatRerank').classList.contains('active'),
-    systemPrompt: document.getElementById('chatSystemPrompt').value.trim(),
+    systemPrompt: (document.getElementById('kbSystemPrompt') || document.getElementById('chatSystemPrompt') || {}).value?.trim() || '',
     mode: document.getElementById('chatMode').value,
   };
   fetch('/api/chat/config', {
@@ -14230,7 +14538,10 @@ async function loadChatConfig() {
     if (data.collection) document.getElementById('chatCollection').value = data.collection;
     if (data.chat?.maxContextDocs) document.getElementById('chatMaxDocs').value = data.chat.maxContextDocs;
     if (data.chat?.rerank === false) document.getElementById('chatRerank').classList.remove('active');
-    if (data.chat?.systemPrompt) document.getElementById('chatSystemPrompt').value = data.chat.systemPrompt;
+    if (data.chat?.systemPrompt) {
+      const spEl = document.getElementById('kbSystemPrompt') || document.getElementById('chatSystemPrompt');
+      if (spEl) spEl.value = data.chat.systemPrompt;
+    }
     if (data.mode || data.chat?.mode) document.getElementById('chatMode').value = data.mode || data.chat?.mode || 'pipeline';
     updateChatStatus();
     // Show not-configured banner if incomplete
@@ -14775,7 +15086,7 @@ async function sendChatMessage() {
   const collection = document.getElementById('chatCollection').value;
   const maxDocs = parseInt(document.getElementById('chatMaxDocs').value) || 5;
   const rerank = document.getElementById('chatRerank').classList.contains('active');
-  const systemPrompt = document.getElementById('chatSystemPrompt').value.trim() || undefined;
+  const systemPrompt = (document.getElementById('kbSystemPrompt') || document.getElementById('chatSystemPrompt') || {}).value?.trim() || undefined;
   const mode = document.getElementById('chatMode')?.value || 'pipeline';
   const isAgent = mode === 'agent';
 
@@ -14808,7 +15119,7 @@ async function sendChatMessage() {
     const res = await fetch('/api/chat/message', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query, db, collection, provider, model, maxDocs, rerank, systemPrompt, mode }),
+      body: JSON.stringify({ query, db, collection, provider, model, maxDocs, rerank, systemPrompt, mode, textField: 'content' }),
     });
 
     if (!res.ok) {
@@ -14866,6 +15177,17 @@ async function sendChatMessage() {
             }
             thinkingPanel.addStep(data);
             document.getElementById('chatMessages').scrollTop = document.getElementById('chatMessages').scrollHeight;
+          }
+
+          if (currentEvent === 'fallback') {
+            // Agent mode fell back to pipeline mode (e.g. model doesn't support tools)
+            typing.textContent = data.message || 'Falling back to pipeline mode…';
+            // Close any open thinking panel since we're switching to pipeline mode
+            if (thinkingPanel) { thinkingPanel.finalize(); thinkingPanel = null; }
+            addChatMessage('system-msg', `ℹ️ ${data.message || 'Switched to pipeline mode.'}`);
+            // Auto-switch the chat mode dropdown to pipeline so subsequent messages don't re-trigger
+            const modeSelect = document.getElementById('chatMode');
+            if (modeSelect) { modeSelect.value = 'pipeline'; if (typeof saveChatSettings === 'function') saveChatSettings(); }
           }
 
           if (currentEvent === 'chunk') {
@@ -14984,6 +15306,30 @@ window.pickScaffoldDirectory = pickScaffoldDirectory;
 window.downloadScaffoldZip = downloadScaffoldZip;
 window.sendChatMessage = sendChatMessage;
 window.openChatSettings = openChatSettings;
+window.toggleKBPanel = function() {
+  if (window.kbUI) {
+    window.kbUI.togglePanelCollapse();
+    const btn = document.getElementById('chatKbToggle');
+    if (btn) btn.classList.toggle('active', window.kbUI.isPanelOpen);
+  }
+};
+window.kbToggleSection = function(key) {
+  if (window.kbUI) window.kbUI.toggleSection(key);
+};
+window.kbOpenConfigSection = function() {
+  // Ensure panel is open
+  const panel = document.getElementById('kbPanel');
+  if (panel && panel.classList.contains('collapsed')) {
+    window.toggleKBPanel();
+  }
+  // Expand config section if collapsed
+  if (window.kbUI && !window.kbUI.sectionStates.config) {
+    window.kbUI.toggleSection('config');
+  }
+  // Scroll to config section
+  const configSection = document.querySelector('.kb-section[data-kb-section="config"]');
+  if (configSection) configSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+};
 window.switchSettingsSection = switchSettingsSection;
 window.updateChatStatus = updateChatStatus;
 window.chatInputKeydown = chatInputKeydown;

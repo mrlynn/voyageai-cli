@@ -14,6 +14,32 @@ const { getConfigValue } = require('./config');
 const RAG_DB = 'vai_rag';
 const KBS_COLLECTION = 'knowledge_bases';
 
+// ── Friendly KB name generator ──
+const KB_ADJECTIVES = [
+  'swift', 'bright', 'calm', 'bold', 'keen',
+  'warm', 'deep', 'vast', 'pure', 'wise',
+  'quick', 'sharp', 'clear', 'vivid', 'prime',
+  'noble', 'agile', 'lucid', 'rapid', 'steady',
+  'cosmic', 'golden', 'silver', 'crystal', 'amber',
+  'azure', 'coral', 'lunar', 'solar', 'stellar',
+];
+const KB_NOUNS = [
+  'atlas', 'nexus', 'vault', 'forge', 'prism',
+  'beacon', 'cipher', 'orbit', 'pulse', 'spark',
+  'harbor', 'summit', 'bridge', 'garden', 'tower',
+  'ledger', 'matrix', 'quartz', 'vector', 'kernel',
+  'archive', 'cellar', 'trove', 'cache', 'index',
+  'codex', 'realm', 'scope', 'shelf', 'depot',
+];
+
+function generateKBName() {
+  const adj = KB_ADJECTIVES[Math.floor(Math.random() * KB_ADJECTIVES.length)];
+  const noun = KB_NOUNS[Math.floor(Math.random() * KB_NOUNS.length)];
+  // Short numeric suffix to avoid collisions (4 digits)
+  const suffix = String(Math.floor(Math.random() * 10000)).padStart(4, '0');
+  return `${adj}-${noun}-${suffix}`;
+}
+
 /**
  * Handle RAG API requests
  * Returns true if handled, false otherwise
@@ -35,6 +61,7 @@ async function handleRAGRequest(req, res, context) {
       res.end(JSON.stringify({
         kbs: kbs.map(kb => ({
           name: kb.name,
+          displayName: kb.displayName || kb.name,
           docCount: kb.docCount || 0,
           chunkCount: kb.chunkCount || 0,
           createdAt: kb.createdAt,
@@ -61,6 +88,7 @@ async function handleRAGRequest(req, res, context) {
         const { client, collection: kbsCollection } = await getMongoCollection(RAG_DB, KBS_COLLECTION);
 
         let selected = null;
+        let indexStatus = null;
         if (kbName) {
           // Select existing KB
           const kb = await kbsCollection.findOne({ name: kbName });
@@ -72,9 +100,42 @@ async function handleRAGRequest(req, res, context) {
             res.end(JSON.stringify({ error: `KB not found: ${kbName}` }));
             return;
           }
+
+          // Ensure vector search index exists on the selected KB's docs collection
+          try {
+            const { collection: docsCollection } = await getMongoCollection(RAG_DB, `kb_${kbName}_docs`);
+            const indexes = await docsCollection.listSearchIndexes().toArray();
+            const hasVectorIndex = indexes.some(idx => idx.name === 'vector_index');
+            if (!hasVectorIndex) {
+              // Check if collection has documents (only create index if there's data)
+              const docCount = await docsCollection.countDocuments();
+              if (docCount > 0) {
+                await docsCollection.createSearchIndex({
+                  name: 'vector_index',
+                  type: 'vectorSearch',
+                  definition: {
+                    fields: [
+                      { type: 'vector', path: 'embedding', numDimensions: 1024, similarity: 'cosine' }
+                    ]
+                  }
+                });
+                console.log(`[RAG] Created vector_index on kb_${kbName}_docs (${docCount} existing docs)`);
+                indexStatus = 'created';
+              }
+            } else {
+              indexStatus = 'exists';
+            }
+          } catch (indexErr) {
+            if (indexErr.message?.includes('already exists')) {
+              indexStatus = 'exists';
+            } else {
+              console.warn(`[RAG] Could not ensure vector index for ${kbName}: ${indexErr.message}`);
+              indexStatus = 'error';
+            }
+          }
         } else {
           // Create new KB with auto-generated name
-          const newKBName = `vai-kb-${Date.now()}`;
+          const newKBName = generateKBName();
           await kbsCollection.insertOne({
             name: newKBName,
             docCount: 0,
@@ -88,7 +149,7 @@ async function handleRAGRequest(req, res, context) {
 
         client.close();
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ selected }));
+        res.end(JSON.stringify({ selected, indexStatus }));
       } catch (err) {
         console.error('Error selecting KB:', err);
         res.writeHead(400, { 'Content-Type': 'application/json' });
@@ -156,7 +217,7 @@ async function handleRAGRequest(req, res, context) {
 
           // Create KB if needed
           if (!kbName) {
-            kbName = `vai-kb-${Date.now()}`;
+            kbName = generateKBName();
           }
 
           const { client: kbClient, collection: kbsCollection } = await getMongoCollection(RAG_DB, KBS_COLLECTION);
@@ -175,6 +236,31 @@ async function handleRAGRequest(req, res, context) {
             });
           }
 
+          // Ensure vector search index exists on docs collection
+          try {
+            const indexes = await docsCollection.listSearchIndexes().toArray();
+            const hasVectorIndex = indexes.some(idx => idx.name === 'vector_index');
+            if (!hasVectorIndex) {
+              await docsCollection.createSearchIndex({
+                name: 'vector_index',
+                type: 'vectorSearch',
+                definition: {
+                  fields: [
+                    { type: 'vector', path: 'embedding', numDimensions: 1024, similarity: 'cosine' }
+                  ]
+                }
+              });
+              console.log(`[RAG] Created vector_index on kb_${kbName}_docs`);
+            }
+          } catch (indexErr) {
+            if (indexErr.message?.includes('already exists')) {
+              // Index already exists, safe to continue
+            } else {
+              console.warn(`[RAG] Could not create vector index: ${indexErr.message}`);
+              // Continue with ingestion — index can be created manually later
+            }
+          }
+
           // Ingest files
           res.writeHead(200, {
             'Content-Type': 'application/x-ndjson',
@@ -184,6 +270,7 @@ async function handleRAGRequest(req, res, context) {
 
           let totalDocs = 0;
           let totalChunks = 0;
+          let totalSize = 0;
 
           for (let i = 0; i < files.length; i++) {
             const file = files[i];
@@ -196,6 +283,7 @@ async function handleRAGRequest(req, res, context) {
 
             // Read file
             const content = fs.readFileSync(file.path, 'utf8');
+            totalSize += Buffer.byteLength(content, 'utf8');
 
             // Simple chunking (split by paragraphs, max 1000 tokens per chunk)
             const paragraphs = content.split(/\n\n+/);
@@ -244,13 +332,16 @@ async function handleRAGRequest(req, res, context) {
             }
           }
 
-          // Update KB metadata
+          // Update KB metadata (use $inc so size accumulates across uploads)
           await kbsCollection.updateOne(
             { name: kbName },
             {
-              $set: {
+              $inc: {
                 docCount: totalDocs,
                 chunkCount: totalChunks,
+                size: totalSize
+              },
+              $set: {
                 updatedAt: new Date()
               }
             }
@@ -285,6 +376,42 @@ async function handleRAGRequest(req, res, context) {
     }
   }
 
+  // GET /api/rag/kb/:name/docs - List documents in KB (grouped by fileName)
+  const kbDocsMatch = req.url.match(/^\/api\/rag\/kb\/([^/]+)\/docs$/);
+  if (req.method === 'GET' && kbDocsMatch) {
+    try {
+      const kbName = decodeURIComponent(kbDocsMatch[1]);
+      const { client, collection: docsCollection } = await getMongoCollection(RAG_DB, `kb_${kbName}_docs`);
+
+      const docs = await docsCollection.aggregate([
+        { $group: {
+          _id: '$fileName',
+          chunkCount: { $sum: 1 },
+          createdAt: { $min: '$createdAt' },
+          totalSize: { $sum: { $strLenBytes: { $ifNull: ['$content', ''] } } }
+        }},
+        { $sort: { createdAt: -1 } },
+        { $project: {
+          fileName: '$_id',
+          chunkCount: 1,
+          createdAt: 1,
+          size: '$totalSize',
+          _id: 0
+        }}
+      ]).toArray();
+
+      client.close();
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ docs }));
+      return true;
+    } catch (err) {
+      console.error('Error listing KB docs:', err);
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: err.message }));
+      return true;
+    }
+  }
+
   // GET /api/rag/kb/:name - Get KB details
   const kbMatch = req.url.match(/^\/api\/rag\/kb\/([^/]+)$/);
   if (req.method === 'GET' && kbMatch) {
@@ -292,14 +419,31 @@ async function handleRAGRequest(req, res, context) {
       const kbName = decodeURIComponent(kbMatch[1]);
       const { client, collection: kbsCollection } = await getMongoCollection(RAG_DB, KBS_COLLECTION);
       const kb = await kbsCollection.findOne({ name: kbName });
-      client.close();
 
       if (!kb) {
+        client.close();
         res.writeHead(404, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: 'KB not found' }));
         return true;
       }
 
+      // Compute live stats from docs collection (more accurate than stored metadata)
+      const { collection: docsCollection } = await getMongoCollection(RAG_DB, `kb_${kbName}_docs`);
+      const stats = await docsCollection.aggregate([
+        { $group: {
+          _id: null,
+          totalSize: { $sum: { $strLenBytes: { $ifNull: ['$content', ''] } } },
+          chunkCount: { $sum: 1 },
+          files: { $addToSet: '$fileName' }
+        }}
+      ]).toArray();
+
+      const liveStats = stats[0] || { totalSize: 0, chunkCount: 0, files: [] };
+      kb.size = liveStats.totalSize;
+      kb.chunkCount = liveStats.chunkCount;
+      kb.docCount = liveStats.files.length;
+
+      client.close();
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify(kb));
       return true;
@@ -327,6 +471,80 @@ async function handleRAGRequest(req, res, context) {
       return true;
     } catch (err) {
       console.error('Error deleting KB:', err);
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: err.message }));
+      return true;
+    }
+  }
+
+  // PATCH /api/rag/kb/:name - Rename KB (display name only; collection stays the same)
+  if (req.method === 'PATCH' && kbMatch) {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', async () => {
+      try {
+        const kbName = decodeURIComponent(kbMatch[1]);
+        const { newName } = JSON.parse(body);
+
+        if (!newName || typeof newName !== 'string' || !newName.trim()) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'newName is required' }));
+          return;
+        }
+
+        const displayName = newName.trim().slice(0, 80);
+
+        const { client, collection: kbsCollection } = await getMongoCollection(RAG_DB, KBS_COLLECTION);
+
+        const result = await kbsCollection.updateOne(
+          { name: kbName },
+          { $set: { displayName, updatedAt: new Date() } }
+        );
+
+        client.close();
+
+        if (result.matchedCount === 0) {
+          res.writeHead(404, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'KB not found' }));
+          return;
+        }
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ name: kbName, displayName }));
+      } catch (err) {
+        console.error('Error renaming KB:', err);
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: err.message }));
+      }
+    });
+    return true;
+  }
+
+  // DELETE /api/rag/docs/:kb/by-name/:fileName - Delete all chunks for a file
+  const docByNameMatch = req.url.match(/^\/api\/rag\/docs\/([^/]+)\/by-name\/([^/]+)$/);
+  if (req.method === 'DELETE' && docByNameMatch) {
+    try {
+      const kbName = decodeURIComponent(docByNameMatch[1]);
+      const fileName = decodeURIComponent(docByNameMatch[2]);
+      const { client: kbClient, collection: kbsCollection } = await getMongoCollection(RAG_DB, KBS_COLLECTION);
+      const { collection: docsCollection } = await getMongoCollection(RAG_DB, `kb_${kbName}_docs`);
+
+      const result = await docsCollection.deleteMany({ fileName });
+
+      // Update KB counts
+      const chunkCount = await docsCollection.countDocuments();
+      const distinctFiles = await docsCollection.distinct('fileName');
+      await kbsCollection.updateOne(
+        { name: kbName },
+        { $set: { chunkCount, docCount: distinctFiles.length, updatedAt: new Date() } }
+      );
+
+      kbClient.close();
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ deleted: fileName, chunksRemoved: result.deletedCount }));
+      return true;
+    } catch (err) {
+      console.error('Error deleting doc by name:', err);
       res.writeHead(500, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: err.message }));
       return true;
