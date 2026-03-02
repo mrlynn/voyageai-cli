@@ -7,7 +7,7 @@
 
 ## Phases
 
-- [ ] **Phase 1: Foundation** - Project setup, Next.js scaffolding, OpenAI integration configured
+- [x] **Phase 1: Foundation** - Project setup, Next.js scaffolding, OpenAI integration configured
 - [ ] **Phase 2: Knowledge Base** - Import, index, and retrieve vai documentation and codebase context
 - [ ] **Phase 3: Content Generation Engine** - Generate blog posts, social posts, code examples, and video scripts via OpenAI
 - [ ] **Phase 4: Platform Formatting & Library** - Format generated content for LinkedIn, Dev.to/Hashnode, and Discord/Slack
@@ -30,7 +30,8 @@
 4. Project structure supports modular content generation, knowledge sources, and dashboard components
 
 **Plans:**
-1/2 plans executed
+2/2 plans executed
+- [x] 01-01: Next.js scaffold with TypeScript, Tailwind CSS v4, Jest, feature directories (Wave 1)
 - [x] 01-02: OpenAI client module + health API route + Vercel deployment (Wave 2)
 
 ---
@@ -111,7 +112,7 @@
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation | 1/2 | In Progress|  |
+| 1. Foundation | 2/2 | Complete (checkpoint pending) | 2026-03-02 |
 | 2. Knowledge Base | 0/? | Not started | — |
 | 3. Content Generation Engine | 0/? | Not started | — |
 | 4. Platform Formatting & Library | 0/? | Not started | — |
@@ -119,6 +120,6 @@
 
 ---
 
-**Roadmap Status:** Ready for planning phase 1
+**Roadmap Status:** Phase 1 complete. Ready to plan Phase 2.
 
-Next: `/gsd:plan-phase 1`
+Next: `/gsd:plan-phase 2`
