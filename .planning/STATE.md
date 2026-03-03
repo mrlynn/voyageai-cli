@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in-progress
-stopped_at: Completed 02-03-PLAN.md
-last_updated: "2026-03-03T01:02:13Z"
+stopped_at: 02-04 checkpoint:human-verify (Tasks 1+2 done, awaiting visual verification)
+last_updated: "2026-03-03T01:08:36Z"
 progress:
   total_phases: 2
   completed_phases: 1
@@ -31,9 +31,9 @@ progress:
 | Item | Value |
 |------|-------|
 | Phase | 2 - Knowledge Base |
-| Plan | 02-03 complete |
-| Status | In progress — 3/4 Phase 2 plans complete |
-| Progress | 5/6 plans complete |
+| Plan | 02-04 at checkpoint (Tasks 1+2 done, awaiting human verify) |
+| Status | In progress — 4/4 Phase 2 plans in execution, checkpoint pending |
+| Progress | 5/6 plans complete (02-04 at checkpoint) |
 
 ## Phases Overview
 
@@ -73,6 +73,9 @@ progress:
 | input_type 'query' for Voyage AI search embeddings | Asymmetric embedding (query vs document) is the correct RAG pattern for retrieval quality | Active |
 | Tag filtering post-search via knowledge_sources join | Atlas $vectorSearch pre-filter only supports simple equality on indexed fields; tag is on knowledge_sources | Active |
 | retrieveContext() returns string[] | Compatible with existing GenerationRequest.knowledgeContext — Phase 3 needs no type changes | Active |
+| KnowledgePageClient wrapper pattern | Thin 'use client' wrapper lifts refreshKey state while keeping page.tsx a server component | Active |
+| Optimistic delete in SourceList | Source removed from local state immediately on delete without re-verifying with server | Active |
+| TestRetrievalPanel collapsed by default | Minimizes visual noise; expanded on toggle to reveal full search UI | Active |
 
 ### Technical Constraints
 
@@ -88,11 +91,11 @@ progress:
 
 ## Session Continuity
 
-**Last Update:** 2026-03-03 - 02-03 complete: retrieval layer (vectorSearch, retrieveContext, inject.ts, /api/knowledge/search)
-**Stopped At:** Completed 02-03-PLAN.md
-**Next:** Execute 02-04 (knowledge base dashboard UI) with `/gsd:execute-phase 2`
+**Last Update:** 2026-03-03 - 02-04 Tasks 1+2 complete: /knowledge page, SourceCard/StalenessBadge/AddSourceForm/SourceList/TestRetrievalPanel all built, build passing
+**Stopped At:** 02-04 checkpoint:human-verify — visual verification of /knowledge page required
+**Next:** After verifying http://localhost:3000/knowledge, continue 02-04 (or proceed to Phase 3)
 
-To continue: `/gsd:execute-phase 2`
+To continue after verification: `/gsd:execute-phase 2`
 
 ---
 
