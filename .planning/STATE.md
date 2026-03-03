@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: completed
-stopped_at: Phase 2 context gathered
-last_updated: "2026-03-02T23:15:08.838Z"
+status: in-progress
+stopped_at: Completed 02-01-PLAN.md
+last_updated: "2026-03-03T00:50:01Z"
 progress:
   total_phases: 2
   completed_phases: 1
-  total_plans: 2
-  completed_plans: 2
+  total_plans: 6
+  completed_plans: 3
 ---
 
 # vai Social Awareness Dashboard - State
@@ -24,16 +24,16 @@ progress:
 
 **Thesis:** vai needs a systematic way to generate, format, and publish educational content across developer platforms. The dashboard is the hub for this outreach machine.
 
-**Current Focus:** Phase 1 (Foundation)
+**Current Focus:** Phase 2 (Knowledge Base)
 
 ## Current Position
 
 | Item | Value |
 |------|-------|
-| Phase | 1 - Foundation |
-| Plan | 01-02 complete — awaiting human verification checkpoint |
-| Status | Phase 1 all auto tasks complete; checkpoint gate open |
-| Progress | 2/2 plans complete |
+| Phase | 2 - Knowledge Base |
+| Plan | 02-01 complete |
+| Status | In progress — 1/4 Phase 2 plans complete |
+| Progress | 3/6 plans complete |
 
 ## Phases Overview
 
@@ -65,6 +65,9 @@ progress:
 | jest.config.ts uses correct option names | setupFilesAfterEnv and testMatch — plan had typos for both | Active |
 | @jest-environment node for OpenAI tests | jsdom triggers OpenAI SDK browser safety guard — node env required for openai.test.ts | Active |
 | Vercel deployment deferred | vercel login required before `vercel --yes` can succeed — auth gate | Active |
+| UUID id field for knowledge sources | Using custom uuid id (not MongoDB _id) for API-consistent lookups | Active |
+| Global MongoClient cache | global._mongoKnowledgeClient survives Next.js dev hot reloads | Active |
+| Tag inference in buildSourceDocument() | url→web, codebase→codebase, file→docs, text→pasted | Active |
 
 ### Technical Constraints
 
@@ -80,11 +83,11 @@ progress:
 
 ## Session Continuity
 
-**Last Update:** 2026-03-02 - Plan 01-02 executed: OpenAI client module, /api/health route, vercel.json at ~/code/vai-dashboard
-**Stopped At:** Phase 2 context gathered
-**Next:** After checkpoint approval, Phase 1 is complete. Proceed to Phase 2 (Knowledge Base)
+**Last Update:** 2026-03-03 - 02-01 complete: knowledge types, MongoDB DAL, CRUD REST API
+**Stopped At:** Completed 02-01-PLAN.md
+**Next:** Execute 02-02 (ingestion pipeline) with `/gsd:execute-phase 2`
 
-To continue: `/gsd:execute-phase 1`
+To continue: `/gsd:execute-phase 2`
 
 ---
 

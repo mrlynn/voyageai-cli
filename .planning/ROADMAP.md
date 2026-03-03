@@ -30,7 +30,7 @@
 4. Project structure supports modular content generation, knowledge sources, and dashboard components
 
 **Plans:**
-2/2 plans executed
+2/2 plans complete
 - [x] 01-01: Next.js scaffold with TypeScript, Tailwind CSS v4, Jest, feature directories (Wave 1)
 - [x] 01-02: OpenAI client module + health API route + Vercel deployment (Wave 2)
 
@@ -50,7 +50,12 @@
 3. Content generation prompts include relevant knowledge source excerpts automatically
 4. Knowledge sources are searchable and versioned for tracking context over time
 
-**Plans:** TBD
+**Plans:**
+1/4 plans complete
+- [x] 02-01: Knowledge source types + MongoDB data layer + CRUD REST API (Wave 1)
+- [ ] 02-02: Ingestion engine — file/URL/codebase chunking, embedding, fingerprinting (Wave 2)
+- [ ] 02-03: Retrieval API + RAG injection helper for Phase 3 (Wave 3)
+- [ ] 02-04: Knowledge Base dashboard UI — source list, add form, staleness, test retrieval panel (Wave 3)
 
 ---
 
@@ -112,14 +117,14 @@
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation | 2/2 | Complete (checkpoint pending) | 2026-03-02 |
-| 2. Knowledge Base | 0/? | Not started | — |
+| 1. Foundation | 2/2 | Complete    | 2026-03-02 |
+| 2. Knowledge Base | 1/4 | In Progress | — |
 | 3. Content Generation Engine | 0/? | Not started | — |
 | 4. Platform Formatting & Library | 0/? | Not started | — |
 | 5. Dashboard & Campaign Management | 0/? | Not started | — |
 
 ---
 
-**Roadmap Status:** Phase 1 complete. Ready to plan Phase 2.
+**Roadmap Status:** Phase 1 complete. Phase 2 in progress (1/4 plans complete).
 
-Next: `/gsd:plan-phase 2`
+Next: Execute 02-02 with `/gsd:execute-phase 2`
