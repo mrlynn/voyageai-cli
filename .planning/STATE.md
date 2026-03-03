@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in-progress
-stopped_at: Completed 02-01-PLAN.md
-last_updated: "2026-03-03T00:50:01Z"
+stopped_at: Completed 02-02-PLAN.md
+last_updated: "2026-03-03T00:57:03Z"
 progress:
   total_phases: 2
   completed_phases: 1
   total_plans: 6
-  completed_plans: 3
+  completed_plans: 4
 ---
 
 # vai Social Awareness Dashboard - State
@@ -31,9 +31,9 @@ progress:
 | Item | Value |
 |------|-------|
 | Phase | 2 - Knowledge Base |
-| Plan | 02-01 complete |
-| Status | In progress — 1/4 Phase 2 plans complete |
-| Progress | 3/6 plans complete |
+| Plan | 02-02 complete |
+| Status | In progress — 2/4 Phase 2 plans complete |
+| Progress | 4/6 plans complete |
 
 ## Phases Overview
 
@@ -68,6 +68,8 @@ progress:
 | UUID id field for knowledge sources | Using custom uuid id (not MongoDB _id) for API-consistent lookups | Active |
 | Global MongoClient cache | global._mongoKnowledgeClient survives Next.js dev hot reloads | Active |
 | Tag inference in buildSourceDocument() | url→web, codebase→codebase, file→docs, text→pasted | Active |
+| Synchronous ingestion in /index route | await ingestSource() instead of fire-and-forget — serverless background jobs risk truncation, reliability wins for solo dev tool | Active |
+| Chunk strategy by file extension | .md→markdown, .ts/.js→fixed(400), .json/.yaml→fixed(600), text/url→paragraph | Active |
 
 ### Technical Constraints
 
@@ -83,9 +85,9 @@ progress:
 
 ## Session Continuity
 
-**Last Update:** 2026-03-03 - 02-01 complete: knowledge types, MongoDB DAL, CRUD REST API
-**Stopped At:** Completed 02-01-PLAN.md
-**Next:** Execute 02-02 (ingestion pipeline) with `/gsd:execute-phase 2`
+**Last Update:** 2026-03-03 - 02-02 complete: ingestion engine (chunker/embed/crawl/codebase scanner), index/reindex API routes
+**Stopped At:** Completed 02-02-PLAN.md
+**Next:** Execute 02-03 (retrieval API) with `/gsd:execute-phase 2`
 
 To continue: `/gsd:execute-phase 2`
 
