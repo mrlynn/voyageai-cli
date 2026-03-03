@@ -51,9 +51,9 @@
 4. Knowledge sources are searchable and versioned for tracking context over time
 
 **Plans:**
-1/4 plans complete
+2/4 plans complete
 - [x] 02-01: Knowledge source types + MongoDB data layer + CRUD REST API (Wave 1)
-- [ ] 02-02: Ingestion engine — file/URL/codebase chunking, embedding, fingerprinting (Wave 2)
+- [x] 02-02: Ingestion engine — file/URL/codebase chunking, embedding, fingerprinting (Wave 2)
 - [ ] 02-03: Retrieval API + RAG injection helper for Phase 3 (Wave 3)
 - [ ] 02-04: Knowledge Base dashboard UI — source list, add form, staleness, test retrieval panel (Wave 3)
 
@@ -118,13 +118,13 @@
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation | 2/2 | Complete    | 2026-03-02 |
-| 2. Knowledge Base | 1/4 | In Progress | — |
+| 2. Knowledge Base | 2/4 | In Progress | — |
 | 3. Content Generation Engine | 0/? | Not started | — |
 | 4. Platform Formatting & Library | 0/? | Not started | — |
 | 5. Dashboard & Campaign Management | 0/? | Not started | — |
 
 ---
 
-**Roadmap Status:** Phase 1 complete. Phase 2 in progress (1/4 plans complete).
+**Roadmap Status:** Phase 1 complete. Phase 2 in progress (2/4 plans complete).
 
-Next: Execute 02-02 with `/gsd:execute-phase 2`
+Next: Execute 02-03 with `/gsd:execute-phase 2`
