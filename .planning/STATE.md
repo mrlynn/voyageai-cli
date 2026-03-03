@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in-progress
-stopped_at: Completed 02-02-PLAN.md
-last_updated: "2026-03-03T00:57:03Z"
+stopped_at: Completed 02-03-PLAN.md
+last_updated: "2026-03-03T01:02:13Z"
 progress:
   total_phases: 2
   completed_phases: 1
   total_plans: 6
-  completed_plans: 4
+  completed_plans: 5
 ---
 
 # vai Social Awareness Dashboard - State
@@ -31,9 +31,9 @@ progress:
 | Item | Value |
 |------|-------|
 | Phase | 2 - Knowledge Base |
-| Plan | 02-02 complete |
-| Status | In progress — 2/4 Phase 2 plans complete |
-| Progress | 4/6 plans complete |
+| Plan | 02-03 complete |
+| Status | In progress — 3/4 Phase 2 plans complete |
+| Progress | 5/6 plans complete |
 
 ## Phases Overview
 
@@ -70,6 +70,9 @@ progress:
 | Tag inference in buildSourceDocument() | url→web, codebase→codebase, file→docs, text→pasted | Active |
 | Synchronous ingestion in /index route | await ingestSource() instead of fire-and-forget — serverless background jobs risk truncation, reliability wins for solo dev tool | Active |
 | Chunk strategy by file extension | .md→markdown, .ts/.js→fixed(400), .json/.yaml→fixed(600), text/url→paragraph | Active |
+| input_type 'query' for Voyage AI search embeddings | Asymmetric embedding (query vs document) is the correct RAG pattern for retrieval quality | Active |
+| Tag filtering post-search via knowledge_sources join | Atlas $vectorSearch pre-filter only supports simple equality on indexed fields; tag is on knowledge_sources | Active |
+| retrieveContext() returns string[] | Compatible with existing GenerationRequest.knowledgeContext — Phase 3 needs no type changes | Active |
 
 ### Technical Constraints
 
@@ -85,9 +88,9 @@ progress:
 
 ## Session Continuity
 
-**Last Update:** 2026-03-03 - 02-02 complete: ingestion engine (chunker/embed/crawl/codebase scanner), index/reindex API routes
-**Stopped At:** Completed 02-02-PLAN.md
-**Next:** Execute 02-03 (retrieval API) with `/gsd:execute-phase 2`
+**Last Update:** 2026-03-03 - 02-03 complete: retrieval layer (vectorSearch, retrieveContext, inject.ts, /api/knowledge/search)
+**Stopped At:** Completed 02-03-PLAN.md
+**Next:** Execute 02-04 (knowledge base dashboard UI) with `/gsd:execute-phase 2`
 
 To continue: `/gsd:execute-phase 2`
 
