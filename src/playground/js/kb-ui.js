@@ -431,10 +431,12 @@ class KBUIManager {
   setupPanelEvents() {
     const switchBtn = document.getElementById('kbPanelSwitchBtn');
     const clearBtn = document.getElementById('kbPanelClearBtn');
+    const deleteBtn = document.getElementById('kbPanelDeleteBtn');
     const collapseBtn = document.getElementById('kbPanelCollapseBtn');
 
     if (switchBtn) switchBtn.addEventListener('click', () => this.openWizard());
     if (clearBtn) clearBtn.addEventListener('click', () => this.onClearKB());
+    if (deleteBtn) deleteBtn.addEventListener('click', () => this.onDeleteKB());
     if (collapseBtn) collapseBtn.addEventListener('click', () => this.togglePanelCollapse());
   }
 
@@ -554,16 +556,42 @@ class KBUIManager {
 
   async onClearKB() {
     if (!this.kbManager.currentKB) return;
-    const ok = window.confirm(`Clear knowledge base "${this.kbManager.currentKB}"? This cannot be undone.`);
+    const displayName = this._currentDisplayName || this.kbManager.currentKB;
+    const ok = window.confirm(`Clear all documents from "${displayName}"? This will remove the knowledge base and all its documents. This cannot be undone.`);
     if (!ok) return;
 
+    const kbToClear = this.kbManager.currentKB;
     try {
-      await this.kbManager.clearKB(this.kbManager.currentKB);
-      this.updatePanelUI();
+      await this.kbManager.clearKB(kbToClear);
+      this.clearSelectionAndOpenWizard();
     } catch (err) {
       console.error('Error clearing KB:', err);
       alert(`Error: ${err.message}`);
     }
+  }
+
+  async onDeleteKB() {
+    if (!this.kbManager.currentKB) return;
+    const displayName = this._currentDisplayName || this.kbManager.currentKB;
+    const ok = window.confirm(`Delete knowledge base "${displayName}"? This will remove it and all its documents permanently. This cannot be undone.`);
+    if (!ok) return;
+
+    const kbToDelete = this.kbManager.currentKB;
+    try {
+      await this.kbManager.clearKB(kbToDelete);
+      this.clearSelectionAndOpenWizard();
+    } catch (err) {
+      console.error('Error deleting KB:', err);
+      alert(`Error: ${err.message}`);
+    }
+  }
+
+  clearSelectionAndOpenWizard() {
+    this.kbManager.currentKB = null;
+    localStorage.removeItem('__vai_last_kb');
+    if (typeof saveChatSettings === 'function') saveChatSettings();
+    if (typeof updateChatStatus === 'function') updateChatStatus();
+    this.openWizard();
   }
 
   togglePanelCollapse() {

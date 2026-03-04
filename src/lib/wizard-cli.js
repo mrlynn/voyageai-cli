@@ -42,7 +42,7 @@ function createCLIRenderer(opts = {}) {
     async prompt(step, ctx) {
       const { options, defaultValue, stepNumber, totalSteps, isFirst } = ctx;
       const backHint = (!isFirst && showBackHint)
-        ? pc.dim('  (< to go back)')
+        ? pc.dim('  (type < or "back" + Enter to go back)')
         : '';
       const stepLabel = pc.dim(`[${stepNumber}/${totalSteps}]`);
       const label = `${stepLabel} ${step.label}${backHint}`;

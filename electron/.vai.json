@@ -1,13 +1,13 @@
 {
   "version": 1,
   "db": "vai_rag",
-  "collection": "kb_vai-kb-1771493540448_docs",
+  "collection": "kb_vai-kb-1771499247940_docs",
   "chat": {
     "provider": "ollama",
-    "model": "__custom__",
+    "model": "qwen3.5:latest",
     "maxContextDocs": 5,
     "rerank": true,
-    "systemPrompt": "",
-    "mode": "pipeline"
+    "systemPrompt": "you're an expert on voyage ai, and vai and you answer questions about the vai cli package",
+    "mode": "agent"
   }
 }

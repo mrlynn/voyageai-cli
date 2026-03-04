@@ -3,7 +3,7 @@
 const pc = require('picocolors');
 const readline = require('readline');
 const { getConfigValue } = require('../lib/config');
-const { embed } = require('../lib/api');
+const { generateEmbeddings } = require('../lib/api');
 
 /**
  * vai quickstart — Zero-to-search interactive tutorial
@@ -89,12 +89,11 @@ Running: ${pc.cyan('vai embed --model voyage-4-lite')}
   let embeddings;
   try {
     process.stdout.write('  Embedding documents... ');
-    const result = await embed({
-      texts: SAMPLE_DOCS,
+    const result = await generateEmbeddings(SAMPLE_DOCS, {
       model: 'voyage-4-lite',
       inputType: 'document',
     });
-    embeddings = result.embeddings;
+    embeddings = (result.data || []).map((d) => d.embedding);
     console.log(pc.green('✓'));
     console.log(`
   ${pc.green('✓')} Created ${embeddings.length} embeddings
@@ -121,12 +120,11 @@ Query: "${pc.cyan(query)}"
   
   try {
     process.stdout.write('  Embedding query... ');
-    const queryResult = await embed({
-      texts: [query],
+    const queryResult = await generateEmbeddings([query], {
       model: 'voyage-4-lite',
       inputType: 'query',
     });
-    const queryEmbedding = queryResult.embeddings[0];
+    const queryEmbedding = queryResult.data[0].embedding;
     console.log(pc.green('✓'));
     
     // Calculate similarities

@@ -122,28 +122,25 @@ function activeIndices(steps, answers, config) {
  */
 async function runWizard({ steps, config = {}, renderer, initial = {} }) {
   const answers = { ...initial };
-  const active = activeIndices(steps, answers, config);
-
-  if (active.length === 0) {
-    return { answers, cancelled: false };
-  }
+  const promptedStepIndices = new Set();
 
   if (renderer.intro) await renderer.intro(steps, config);
 
-  let pos = 0; // position within the active array
+  // Recompute active steps after each answer so conditional steps (e.g. mongodbUri when wantMongo)
+  // are included once their skip predicate becomes false. A step is "next" when it's active and
+  // we haven't prompted for it yet (so we still show steps that have initial/default values).
+  while (true) {
+    const currentActive = activeIndices(steps, answers, config);
+    if (currentActive.length === 0) break;
 
-  while (pos < active.length) {
-    const stepIdx = active[pos];
+    const nextPos = currentActive.findIndex((idx) => !promptedStepIndices.has(idx));
+    if (nextPos < 0) break;
+
+    const stepIdx = currentActive[nextPos];
     const step = steps[stepIdx];
 
-    // Recompute active list (answers may change skip predicates)
-    const currentActive = activeIndices(steps, answers, config);
-    if (!currentActive.includes(stepIdx)) {
-      pos++;
-      continue;
-    }
-
-    const options = resolveOptions(step, answers, config);
+    let options = resolveOptions(step, answers, config);
+    if (options && typeof options.then === 'function') options = await options;
     const defaultValue = answers[step.id] !== undefined
       ? answers[step.id]
       : resolveDefault(step, answers, config);
@@ -151,34 +148,36 @@ async function runWizard({ steps, config = {}, renderer, initial = {} }) {
     const result = await renderer.prompt(step, {
       options,
       defaultValue,
-      stepNumber: pos + 1,
+      stepNumber: nextPos + 1,
       totalSteps: currentActive.length,
-      isFirst: pos === 0,
-      isLast: pos === currentActive.length - 1,
+      isFirst: nextPos === 0,
+      isLast: nextPos === currentActive.length - 1,
       answers,
       config,
     });
 
-    // Handle navigation
     if (result === Symbol.for('cancel')) {
       if (renderer.cancel) await renderer.cancel();
       return { answers, cancelled: true };
     }
 
     if (result === Symbol.for('back')) {
-      if (pos > 0) pos--;
+      if (nextPos > 0) {
+        const prevStepIdx = currentActive[nextPos - 1];
+        delete answers[steps[prevStepIdx].id];
+        promptedStepIndices.delete(prevStepIdx);
+      }
       continue;
     }
 
-    // Validate
     const valid = validateStep(step, result, answers);
     if (valid !== true) {
       if (renderer.error) await renderer.error(valid);
-      continue; // re-prompt same step
+      continue;
     }
 
+    promptedStepIndices.add(stepIdx);
     answers[step.id] = result;
-    pos++;
   }
 
   if (renderer.outro) await renderer.outro(answers);

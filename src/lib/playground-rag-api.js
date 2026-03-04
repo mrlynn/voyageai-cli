@@ -455,17 +455,18 @@ async function handleRAGRequest(req, res, context) {
     }
   }
 
-  // DELETE /api/rag/kb/:name - Delete entire KB
+  // DELETE /api/rag/kb/:name - Delete entire KB (config + all documents)
   if (req.method === 'DELETE' && kbMatch) {
     try {
       const kbName = decodeURIComponent(kbMatch[1]);
-      const { client, collection: kbsCollection } = await getMongoCollection(RAG_DB, KBS_COLLECTION);
-      const { collection: docsCollection } = await getMongoCollection(RAG_DB, `kb_${kbName}_docs`);
+      const { client: kbClient, collection: kbsCollection } = await getMongoCollection(RAG_DB, KBS_COLLECTION);
+      const { client: docsClient, collection: docsCollection } = await getMongoCollection(RAG_DB, `kb_${kbName}_docs`);
 
       await kbsCollection.deleteOne({ name: kbName });
       await docsCollection.deleteMany({});
 
-      client.close();
+      kbClient.close();
+      docsClient.close();
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ deleted: kbName }));
       return true;
