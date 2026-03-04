@@ -14699,7 +14699,7 @@ async function chatProviderChanged() {
     const res = await fetch(`/api/chat/models?provider=${provider}`);
     const data = await res.json();
     const models = data.models || [];
-    const defaults = { anthropic: 'claude-sonnet-4-5-20250929', openai: 'gpt-4o', ollama: 'llama3.1' };
+    const defaults = { anthropic: 'claude-sonnet-4-5-20250929', openai: 'gpt-4o', ollama: 'llama3.3' };
     const defaultModel = defaults[provider];
 
     modelSelect.innerHTML = '';
@@ -14733,7 +14733,7 @@ async function chatProviderChanged() {
     modelSelect.appendChild(customOpt);
 
   } catch {
-    const defaults = { anthropic: 'claude-sonnet-4-5-20250929', openai: 'gpt-4o', ollama: 'llama3.1' };
+    const defaults = { anthropic: 'claude-sonnet-4-5-20250929', openai: 'gpt-4o', ollama: 'llama3.3' };
     modelSelect.innerHTML = `<option value="${defaults[provider] || ''}">${defaults[provider] || 'default'}</option>`;
   }
 

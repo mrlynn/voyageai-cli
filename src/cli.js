@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 'use strict';
 
+require('dotenv').config({ path: '.env.local', override: true, quiet: true });
 require('dotenv').config({ quiet: true });
 
 const { program } = require('commander');
