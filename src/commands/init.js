@@ -2,10 +2,14 @@
 
 const fs = require('fs');
 const path = require('path');
+const pc = require('picocolors');
 const { defaultProjectConfig, saveProject, findProjectFile, PROJECT_FILE } = require('../lib/project');
 const { runWizard } = require('../lib/wizard');
 const { createCLIRenderer } = require('../lib/wizard-cli');
 const { initSteps } = require('../lib/wizard-steps-init');
+const { globalSetupSteps } = require('../lib/wizard-steps-global');
+const { getConfigValue, loadConfig, saveConfig } = require('../lib/config');
+const { identifyKey } = require('../lib/api');
 const ui = require('../lib/ui');
 
 /**
@@ -45,7 +49,53 @@ function registerInit(program) {
         return;
       }
 
-      // Interactive mode — use wizard
+      // Interactive mode — ensure global config (API key, optional MongoDB/LLM) then project wizard
+      const hasApiKey = process.env.VOYAGE_API_KEY || getConfigValue('apiKey');
+      if (!hasApiKey && process.stdin.isTTY && process.stdout.isTTY) {
+        console.log(pc.dim('  First, configure your API key and optional connections.\n'));
+        const { answers: globalAnswers, cancelled: globalCancelled } = await runWizard({
+          steps: globalSetupSteps,
+          config: {},
+          renderer: createCLIRenderer({
+            title: 'API & connections',
+            doneMessage: 'Saved to ~/.vai/config.json',
+          }),
+        });
+        if (globalCancelled) {
+          process.exit(0);
+        }
+        const globalConfig = {};
+        const apiKey = (globalAnswers.apiKey || '').trim();
+        if (apiKey) {
+          globalConfig.apiKey = apiKey;
+          globalConfig.baseUrl = identifyKey(apiKey).expectedBase;
+          process.env.VOYAGE_API_KEY = apiKey;
+        }
+        if (globalAnswers.mongodbUri) {
+          const uri = globalAnswers.mongodbUri.trim();
+          if (uri) {
+            globalConfig.mongodbUri = uri;
+            process.env.MONGODB_URI = uri;
+          }
+        }
+        if (globalAnswers.wantLlm && globalAnswers.llmProvider) {
+          globalConfig.llmProvider = globalAnswers.llmProvider;
+          if (globalAnswers.llmApiKey) globalConfig.llmApiKey = globalAnswers.llmApiKey.trim();
+          if (globalAnswers.llmModel) globalConfig.llmModel = globalAnswers.llmModel;
+          if (globalAnswers.llmProvider === 'ollama' && globalAnswers.llmBaseUrl) {
+            globalConfig.llmBaseUrl = globalAnswers.llmBaseUrl.trim();
+          }
+        }
+        if (Object.keys(globalConfig).length) {
+          const existing = loadConfig();
+          saveConfig({ ...existing, ...globalConfig });
+        }
+        console.log('');
+      } else if (hasApiKey && process.stdout.isTTY) {
+        console.log(pc.dim('  Using existing API key from ~/.vai/config.json or env.\n'));
+      }
+
+      // Project wizard
       const { answers, cancelled } = await runWizard({
         steps: initSteps,
         config: {},

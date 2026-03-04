@@ -7986,6 +7986,7 @@ Reranking models rescore initial search results to improve relevance ordering.</
       <h3 class="kb-panel-title">Knowledge Base</h3>
       <div style="display:flex; align-items:center; gap:4px;">
         <button class="kb-panel-btn kb-panel-btn-secondary" id="kbPanelSwitchBtn" title="Switch KB" style="padding:4px 8px; font-size:11px;">Switch</button>
+        <button class="kb-panel-btn kb-panel-btn-danger" id="kbPanelDeleteBtn" title="Delete this knowledge base" style="padding:4px 8px; font-size:11px;">Delete</button>
         <button class="kb-panel-collapse-btn" id="kbPanelCollapseBtn" title="Collapse panel">&#x2039;</button>
       </div>
     </div>
@@ -14811,13 +14812,14 @@ function renderMarkdown(md) {
   text = text.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img alt="$1" src="$2" style="max-width:100%;border-radius:4px;">');
   text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
 
-  // Tables (pipe-delimited)
-  text = text.replace(/((?:^\|.+\|$\n?)+)/gm, (block) => {
+  // Tables (pipe-delimited, GFM-style: header, then |---|---| separator, then body rows)
+  text = text.replace(/((?:^\|.+\|?\s*$\n?)+)/gm, (block) => {
     const rows = block.trim().split('\n').filter(r => r.trim());
     if (rows.length < 2) return block;
-    // Check if second row is separator
-    const sep = rows[1];
-    if (!/^\|[\s:-]+\|$/.test(sep.trim().replace(/\|/g, '|'))) return block;
+    // Second row must be separator: only | - : and spaces, and at least 2 pipes
+    const sepTrimmed = rows[1].trim();
+    const separatorOk = /^[\s|\-:]+$/.test(sepTrimmed) && (sepTrimmed.match(/\|/g) || []).length >= 2;
+    if (!separatorOk) return block;
     const headerCells = rows[0].split('|').filter(c => c.trim() !== '').map(c => c.trim());
     let html = '<table><thead><tr>' + headerCells.map(c => '<th>' + c + '</th>').join('') + '</tr></thead><tbody>';
     for (let i = 2; i < rows.length; i++) {

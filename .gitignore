@@ -1,9 +1,12 @@
 node_modules/
+.vai.json
 .planning/
+.env.local
 .DS_Store
 *.tgz
 video
 *.tgz
+.vai_config
 
 # Electron
 electron/node_modules/
@@ -17,3 +20,13 @@ VaiSite-Marketing-Assessment.md
 /docs/*
 !/docs/linkedin-posts.md
 .env.local.planning/
+AGENTS.md
+BOOTSTRAP.md
+CHANGELOG.md
+CONTRIBUTING.md 
+HEARTBEAT.md
+IDENTITY.md
+SOUL.md
+TOOLS.md
+USER.md
+.vai.json
