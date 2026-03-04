@@ -77,7 +77,7 @@ async function getModelOptions(answers) {
   if (provider === 'ollama') {
     const models = await detectOllama();
     if (models.length === 0) {
-      return [{ value: 'llama3.1', label: 'llama3.1', hint: 'default (pull with: ollama pull llama3.1)' }];
+      return [{ value: 'llama3.3', label: 'llama3.3', hint: 'default (pull with: ollama pull llama3.3)' }];
     }
     return models.map(m => ({
       value: m.id,

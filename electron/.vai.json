@@ -1,10 +1,10 @@
 {
   "version": 1,
   "db": "vai_rag",
-  "collection": "kb_crystal-summit-8102_docs",
+  "collection": "kb_vai-kb-1771493540448_docs",
   "chat": {
     "provider": "ollama",
-    "model": "gemma3:27b",
+    "model": "__custom__",
     "maxContextDocs": 5,
     "rerank": true,
     "systemPrompt": "",

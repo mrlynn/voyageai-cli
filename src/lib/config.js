@@ -7,6 +7,21 @@ const os = require('os');
 const CONFIG_DIR = path.join(os.homedir(), '.vai');
 const CONFIG_PATH = path.join(CONFIG_DIR, 'config.json');
 
+/**
+ * Resolve the effective config path.
+ * - Explicit `configPath` argument wins (used heavily in tests).
+ * - Then `VAI_CONFIG_PATH` env var (for test isolation / power users).
+ * - Finally the user-global default in the home directory.
+ *
+ * @param {string} [configPath]
+ * @returns {string}
+ */
+function resolveConfigPath(configPath) {
+  if (configPath) return configPath;
+  if (process.env.VAI_CONFIG_PATH) return process.env.VAI_CONFIG_PATH;
+  return CONFIG_PATH;
+}
+
 // Key mapping: CLI key names → internal config keys
 const KEY_MAP = {
   'api-key': 'apiKey',
@@ -33,7 +48,7 @@ const SECRET_KEYS = new Set(['apiKey', 'mongodbUri', 'llmApiKey']);
  * @returns {object}
  */
 function loadConfig(configPath) {
-  const p = configPath || CONFIG_PATH;
+  const p = resolveConfigPath(configPath);
   try {
     const raw = fs.readFileSync(p, 'utf-8');
     return JSON.parse(raw);
@@ -49,7 +64,7 @@ function loadConfig(configPath) {
  * @param {string} [configPath] - Override config path (for testing)
  */
 function saveConfig(config, configPath) {
-  const p = configPath || CONFIG_PATH;
+  const p = resolveConfigPath(configPath);
   const dir = path.dirname(p);
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(p, JSON.stringify(config, null, 2) + '\n', 'utf-8');
@@ -109,7 +124,7 @@ function maskSecret(value) {
  * @returns {boolean}
  */
 function isFirstRun(configPath) {
-  const p = configPath || CONFIG_PATH;
+  const p = resolveConfigPath(configPath);
   return !fs.existsSync(p);
 }
 
@@ -127,6 +142,7 @@ function isWelcomeSuppressed(configPath) {
 module.exports = {
   CONFIG_DIR,
   CONFIG_PATH,
+  resolveConfigPath,
   KEY_MAP,
   SECRET_KEYS,
   loadConfig,
