@@ -16,8 +16,8 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Knowledge Sources
 
-- [ ] **KNOW-01**: System imports and indexes vai docs, README, and docs.vaicli.com as content context
-- [ ] **KNOW-02**: System analyzes vai codebase for technical accuracy in generated content
+- [x] **KNOW-01**: System imports and indexes vai docs, README, and docs.vaicli.com as content context
+- [x] **KNOW-02**: System analyzes vai codebase for technical accuracy in generated content
 
 ### Dashboard
 
@@ -69,8 +69,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CGEN-02 | Phase 3 | Pending |
 | CGEN-03 | Phase 3 | Pending |
 | CGEN-04 | Phase 3 | Pending |
-| KNOW-01 | Phase 2 | Pending |
-| KNOW-02 | Phase 2 | Pending |
+| KNOW-01 | Phase 2 | Complete |
+| KNOW-02 | Phase 2 | Complete |
 | DASH-01 | Phase 5 | Pending |
 | DASH-02 | Phase 5 | Pending |
 | DASH-03 | Phase 5 | Pending |

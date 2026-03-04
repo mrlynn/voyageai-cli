@@ -6,6 +6,7 @@ const path = require('path');
 const pc = require('picocolors');
 const { getConfigValue, setConfigValue, CONFIG_DIR, CONFIG_PATH } = require('../lib/config');
 const { getApiBase } = require('../lib/api');
+const { resolveLLMConfig, createLLMProvider } = require('../lib/llm');
 
 /**
  * vai doctor — Health check command
@@ -17,6 +18,8 @@ const CHECKS = {
   node: { name: 'Node.js Version', required: true },
   apiKey: { name: 'Voyage AI API Key', required: true },
   apiConnection: { name: 'Voyage AI API Connection', required: true },
+  llmKey: { name: 'LLM API Key', required: false },
+  llmConnection: { name: 'LLM API Connection', required: false },
   mongodb: { name: 'MongoDB Connection', required: false },
   pdfParse: { name: 'PDF Support (pdf-parse)', required: false },
   config: { name: 'Configuration Files', required: false },
@@ -137,6 +140,103 @@ async function checkApiConnection() {
       ok: false,
       message: `Connection failed: ${err.message}`,
       hint: 'Check your network connection or firewall settings',
+    };
+  }
+}
+
+const LLM_KEY_HINTS = {
+  anthropic: 'Get a key at: https://console.anthropic.com/settings/keys\n         Set via: vai config set llm-api-key YOUR_KEY',
+  openai: 'Get a key at: https://platform.openai.com/api-keys\n         Set via: vai config set llm-api-key YOUR_KEY',
+  ollama: null,
+};
+
+async function checkLLMKey() {
+  const config = resolveLLMConfig();
+
+  if (!config.provider) {
+    return {
+      ok: null,
+      message: 'Not configured (optional)',
+      hint: 'Set via: vai config set llm-provider anthropic\n         Required for vai chat, workflows with LLM steps',
+    };
+  }
+
+  // Ollama doesn't need a key
+  if (config.provider === 'ollama') {
+    return {
+      ok: true,
+      message: `${config.provider} (no key required)`,
+      hint: null,
+    };
+  }
+
+  if (!config.apiKey) {
+    return {
+      ok: false,
+      message: `${config.provider} — no API key set`,
+      hint: LLM_KEY_HINTS[config.provider] || 'Set via: vai config set llm-api-key YOUR_KEY',
+    };
+  }
+
+  const masked = `${config.apiKey.slice(0, 10)}...${config.apiKey.slice(-4)}`;
+  return {
+    ok: true,
+    message: `${config.provider} (${masked})`,
+    hint: null,
+  };
+}
+
+async function checkLLMConnection() {
+  const config = resolveLLMConfig();
+
+  if (!config.provider) {
+    return {
+      ok: null,
+      message: 'Skipped (no LLM provider configured)',
+      hint: null,
+    };
+  }
+
+  if (config.provider !== 'ollama' && !config.apiKey) {
+    return {
+      ok: false,
+      message: 'Skipped (no API key)',
+      hint: null,
+    };
+  }
+
+  try {
+    const provider = createLLMProvider();
+    const result = await provider.ping();
+
+    if (result.ok) {
+      return {
+        ok: true,
+        message: `Connected (${config.provider}, model: ${result.model || config.model || 'default'})`,
+        hint: null,
+      };
+    }
+
+    let errorMsg = result.error || 'Unknown error';
+    // Try to extract a clean message from JSON error bodies
+    try {
+      const parsed = JSON.parse(errorMsg.replace(/^HTTP \d+:\s*/, ''));
+      if (parsed.error?.message) errorMsg = parsed.error.message;
+    } catch { /* use raw message */ }
+    const isAuthError = errorMsg.includes('401') || errorMsg.includes('authentication') || errorMsg.includes('invalid');
+
+    return {
+      ok: false,
+      message: `${config.provider} — ${errorMsg}`,
+      hint: isAuthError
+        ? (LLM_KEY_HINTS[config.provider] || 'Check your API key')
+        : 'Check your network connection and LLM base URL',
+    };
+  } catch (err) {
+    return {
+      ok: false,
+      message: `${config.provider} — ${err.message}`,
+      hint: LLM_KEY_HINTS[config.provider] || 'Check your API key and provider settings',
     };
   }
 }
@@ -272,6 +372,39 @@ async function fixApiKey() {
   });
 }
 
+async function fixLLMKey() {
+  const readline = require('readline');
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+  const config = resolveLLMConfig();
+
+  return new Promise((resolve) => {
+    console.log(pc.cyan('\n  Fixing: LLM API Key'));
+    if (config.provider) {
+      const urls = { anthropic: 'https://console.anthropic.com/settings/keys', openai: 'https://platform.openai.com/api-keys' };
+      if (urls[config.provider]) console.log(pc.dim(`  Get a key at: ${urls[config.provider]}\n`));
+    }
+
+    rl.question('  Enter your LLM API key: ', (key) => {
+      rl.close();
+      const trimmed = (key || '').trim();
+      if (!trimmed) {
+        console.log(pc.yellow('  Skipped (no key entered)'));
+        resolve(false);
+        return;
+      }
+      try {
+        setConfigValue('llmApiKey', trimmed);
+        process.env.VAI_LLM_API_KEY = trimmed;
+        console.log(pc.green('  ✓ LLM API key saved to ~/.vai/config.json'));
+        resolve(true);
+      } catch (err) {
+        console.log(pc.red(`  ✗ Failed to save: ${err.message}`));
+        resolve(false);
+      }
+    });
+  });
+}
+
 function fixConfigPermissions() {
   try {
     fs.chmodSync(CONFIG_PATH, 0o600);
@@ -322,6 +455,8 @@ async function runDoctor(options = {}) {
     { key: 'node', fn: checkNodeVersion },
     { key: 'apiKey', fn: checkApiKey },
     { key: 'apiConnection', fn: checkApiConnection },
+    { key: 'llmKey', fn: checkLLMKey },
+    { key: 'llmConnection', fn: checkLLMConnection },
     { key: 'mongodb', fn: checkMongoDB },
     { key: 'pdfParse', fn: checkPdfParse },
     { key: 'config', fn: checkConfig },
@@ -355,6 +490,7 @@ async function runDoctor(options = {}) {
     // Track fixable issues
     if (result.ok !== true) {
       if (key === 'apiKey' && result.ok === false) fixable.push('apiKey');
+      if (key === 'llmKey' && result.ok === false) fixable.push('llmKey');
       if (key === 'pdfParse' && result.ok === null) fixable.push('pdfParse');
       if (key === 'config' && result.message && result.message.includes('permissions')) fixable.push('configPerms');
       if (key === 'config' && result.ok === null) fixable.push('configDir');
@@ -382,6 +518,9 @@ async function runDoctor(options = {}) {
       }
       if (item === 'apiKey') {
         if (await fixApiKey()) fixed++;
+      }
+      if (item === 'llmKey') {
+        if (await fixLLMKey()) fixed++;
       }
       if (item === 'configPerms') {
         if (fixConfigPermissions()) fixed++;
@@ -444,6 +583,8 @@ async function runChecks() {
     { key: 'node', fn: checkNodeVersion },
     { key: 'apiKey', fn: checkApiKey },
     { key: 'apiConnection', fn: checkApiConnection },
+    { key: 'llmKey', fn: checkLLMKey },
+    { key: 'llmConnection', fn: checkLLMConnection },
     { key: 'mongodb', fn: checkMongoDB },
     { key: 'pdfParse', fn: checkPdfParse },
     { key: 'config', fn: checkConfig },

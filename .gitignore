@@ -1,4 +1,5 @@
 node_modules/
+.planning/
 .DS_Store
 *.tgz
 video
@@ -15,3 +16,4 @@ VaiSite-Marketing-Assessment.md
 .mcp.json
 /docs/*
 !/docs/linkedin-posts.md
+.env.local.planning/

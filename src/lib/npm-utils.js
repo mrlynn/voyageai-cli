@@ -117,6 +117,7 @@ function installPackage(packageName, options = {}) {
       encoding: 'utf8',
       timeout: 60000,
       cwd: useGlobal ? undefined : process.cwd(),
+      env: { ...process.env },
     });
 
     // Find installed version from node_modules
@@ -150,7 +151,7 @@ function uninstallPackage(packageName, options = {}) {
   const cmd = `npm uninstall ${packageName} ${globalFlag} 2>&1`;
 
   try {
-    execSync(cmd, { encoding: 'utf8', timeout: 30000 });
+    execSync(cmd, { encoding: 'utf8', timeout: 30000, env: { ...process.env } });
     return { success: true };
   } catch (err) {
     throw new Error(`npm uninstall failed: ${err.message}`);
@@ -213,7 +214,7 @@ function resolvePackagePath(packageName, global) {
 
   // Try global
   try {
-    const globalRoot = execSync('npm root -g', { encoding: 'utf8' }).trim();
+    const globalRoot = execSync('npm root -g', { encoding: 'utf8', env: { ...process.env } }).trim();
     const candidate = path.join(globalRoot, packageName);
     if (fs.existsSync(candidate)) return candidate;
   } catch { /* ignore */ }
@@ -243,7 +244,7 @@ function findLocalNodeModules() {
  */
 function findGlobalNodeModules() {
   try {
-    return execSync('npm root -g', { encoding: 'utf8' }).trim();
+    return execSync('npm root -g', { encoding: 'utf8', env: { ...process.env } }).trim();
   } catch {
     return null;
   }

@@ -1,11 +1,61 @@
 'use strict';
 
-const { describe, it } = require('node:test');
+const { describe, it, beforeEach, afterEach } = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('fs');
+const path = require('path');
+const os = require('os');
 const { resolveLLMConfig, PROVIDER_DEFAULTS, PROVIDER_BASE_URLS, PROVIDER_MODELS, listModels } = require('../../src/lib/llm');
 const { resolveConcept, getConcept } = require('../../src/lib/explanations');
 
 describe('llm', () => {
+  let tmpDir;
+  let originalConfigPathEnv;
+  let savedEnv;
+
+  beforeEach(() => {
+    originalConfigPathEnv = process.env.VAI_CONFIG_PATH;
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'vai-llm-test-'));
+    // Point config reads at an isolated per-test file so user-global
+    // config (e.g. llm-model overrides) never affect test outcomes.
+    process.env.VAI_CONFIG_PATH = path.join(tmpDir, 'config.json');
+
+    // Snapshot and clear LLM-related env vars so tests are hermetic
+    // and not affected by the developer's shell environment.
+    savedEnv = {
+      VAI_LLM_PROVIDER: process.env.VAI_LLM_PROVIDER,
+      VAI_LLM_API_KEY: process.env.VAI_LLM_API_KEY,
+      VAI_LLM_MODEL: process.env.VAI_LLM_MODEL,
+      VAI_LLM_BASE_URL: process.env.VAI_LLM_BASE_URL,
+    };
+    delete process.env.VAI_LLM_PROVIDER;
+    delete process.env.VAI_LLM_API_KEY;
+    delete process.env.VAI_LLM_MODEL;
+    delete process.env.VAI_LLM_BASE_URL;
+  });
+
+  afterEach(() => {
+    if (originalConfigPathEnv === undefined) {
+      delete process.env.VAI_CONFIG_PATH;
+    } else {
+      process.env.VAI_CONFIG_PATH = originalConfigPathEnv;
+    }
+    if (savedEnv) {
+      for (const [k, v] of Object.entries(savedEnv)) {
+        if (v === undefined) {
+          delete process.env[k];
+        } else {
+          process.env[k] = v;
+        }
+      }
+      savedEnv = null;
+    }
+    if (tmpDir) {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+      tmpDir = null;
+    }
+  });
+
   describe('resolveLLMConfig', () => {
     it('returns nulls when nothing configured', () => {
       // Clear env vars for this test
