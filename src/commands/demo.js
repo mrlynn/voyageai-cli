@@ -865,6 +865,7 @@ async function runChatDemo(opts) {
     /** Run a single chat turn with retry and rendering */
     async function executeChatTurn(query) {
       let sources = [];
+      let genSpinner = null;
       const streamRenderer = chatUI.createStreamRenderer();
       const spinner = chatUI.createTimedSpinner('Searching');
 
@@ -897,9 +898,14 @@ async function runChatDemo(opts) {
                     console.log(`  ${pc.dim(`    • ${d.source} (score: ${(d.score || 0).toFixed(3)})`)}`);
                   }
                 }
-                process.stdout.write(`\n  ${pc.green('vai:')} `);
+                genSpinner = chatUI.createTimedSpinner('Generating response');
                 break;
               case 'chunk':
+                if (genSpinner) {
+                  genSpinner.stop();
+                  genSpinner = null;
+                  process.stdout.write(`\n  ${pc.green('vai:')} `);
+                }
                 streamRenderer.write(event.data);
                 break;
               case 'done':
@@ -911,6 +917,7 @@ async function runChatDemo(opts) {
         }, { maxRetries: 2, delayMs: 5000 });
       } catch (err) {
         spinner.stop();
+        if (genSpinner) genSpinner.stop();
         throw err;
       }
 
