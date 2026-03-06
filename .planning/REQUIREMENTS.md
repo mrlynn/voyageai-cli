@@ -34,9 +34,9 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Release Engineering
 
-- [ ] **REL-01**: Python source files (nano-bridge.py, requirements.txt) are included in npm tarball
-- [ ] **REL-02**: Python bytecode (.pyc, __pycache__) is excluded via .npmignore
-- [ ] **REL-03**: scripts/sync-nano-version.js auto-updates BRIDGE_VERSION on `npm version`
+- [x] **REL-01**: Python source files (nano-bridge.py, requirements.txt) are included in npm tarball
+- [x] **REL-02**: Python bytecode (.pyc, __pycache__) is excluded via .npmignore
+- [x] **REL-03**: scripts/sync-nano-version.js auto-updates BRIDGE_VERSION on `npm version`
 
 ### Testing
 
@@ -98,9 +98,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CMD-04 | Phase 3 | Pending |
 | CMD-05 | Phase 3 | Pending |
 | CMD-06 | Phase 3 | Pending |
-| REL-01 | Phase 2 | Pending |
-| REL-02 | Phase 2 | Pending |
-| REL-03 | Phase 2 | Pending |
+| REL-01 | Phase 2 | Complete |
+| REL-02 | Phase 2 | Complete |
+| REL-03 | Phase 2 | Complete |
 | TEST-01 | Phase 1 | Pending |
 | TEST-02 | Phase 1 | Pending |
 | TEST-03 | Phase 2 | Pending |
