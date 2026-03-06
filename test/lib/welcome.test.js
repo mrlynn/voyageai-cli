@@ -1,6 +1,6 @@
 'use strict';
 
-const { describe, it, beforeEach, afterEach } = require('node:test');
+const { describe, it, beforeEach, afterEach, mock } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
@@ -21,6 +21,7 @@ describe('welcome first-run detection', () => {
 
   afterEach(() => {
     fs.rmSync(tmpDir, { recursive: true, force: true });
+    mock.restoreAll();
     if (origNoWelcome !== undefined) {
       process.env.VAI_NO_WELCOME = origNoWelcome;
     } else {
@@ -81,6 +82,41 @@ describe('welcome first-run detection', () => {
       const { shouldShowWelcome } = require('../../src/lib/welcome');
       fs.writeFileSync(tmpConfigPath, '{}');
       assert.equal(shouldShowWelcome(tmpConfigPath), false);
+    });
+  });
+
+  describe('runWelcome', () => {
+    it('preserves internal telemetry notice state when saving config', async () => {
+      fs.writeFileSync(tmpConfigPath, JSON.stringify({
+        telemetryNoticeShown: true,
+        telemetryNoticeShownAt: '2026-03-06',
+      }));
+
+      const wizard = require('../../src/lib/wizard');
+      const wizardCli = require('../../src/lib/wizard-cli');
+      const banner = require('../../src/lib/banner');
+      const telemetry = require('../../src/lib/telemetry');
+
+      mock.method(wizard, 'runWizard', async () => ({
+        answers: {
+          apiKey: 'pa-test1234567890',
+          mongodbUri: '',
+        },
+        cancelled: false,
+      }));
+      mock.method(wizardCli, 'createCLIRenderer', () => ({}));
+      mock.method(banner, 'showBanner', () => {});
+      mock.method(telemetry, 'send', () => {});
+      mock.method(console, 'log', () => {});
+
+      delete require.cache[require.resolve('../../src/lib/welcome')];
+      const { runWelcome } = require('../../src/lib/welcome');
+      await runWelcome({ configPath: tmpConfigPath });
+
+      const saved = JSON.parse(fs.readFileSync(tmpConfigPath, 'utf8'));
+      assert.equal(saved.telemetryNoticeShown, true);
+      assert.equal(saved.telemetryNoticeShownAt, '2026-03-06');
+      assert.equal(saved.apiKey, 'pa-test1234567890');
     });
   });
 });
