@@ -9,11 +9,11 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Setup & Environment
 
-- [ ] **SETUP-01**: User can run `vai nano setup` to create Python venv, install deps, and download voyage-4-nano model
+- [x] **SETUP-01**: User can run `vai nano setup` to create Python venv, install deps, and download voyage-4-nano model
 - [ ] **SETUP-02**: User can run `vai nano status` to see component-level health (Python, venv, deps, model, device)
 - [ ] **SETUP-03**: User can run `vai nano test` to smoke-test inference with a sample sentence
 - [ ] **SETUP-04**: User can run `vai nano info` to see model details, cache location, and detected device
-- [ ] **SETUP-05**: User can run `vai nano clear-cache` to remove cached model files with confirmation
+- [x] **SETUP-05**: User can run `vai nano clear-cache` to remove cached model files with confirmation
 
 ### Bridge Infrastructure
 
@@ -82,11 +82,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SETUP-01 | Phase 2 | Pending |
+| SETUP-01 | Phase 2 | Complete |
 | SETUP-02 | Phase 2 | Pending |
 | SETUP-03 | Phase 2 | Pending |
 | SETUP-04 | Phase 2 | Pending |
-| SETUP-05 | Phase 2 | Pending |
+| SETUP-05 | Phase 2 | Complete |
 | BRDG-01 | Phase 1 | Complete |
 | BRDG-02 | Phase 1 | Pending |
 | BRDG-03 | Phase 1 | Pending |
