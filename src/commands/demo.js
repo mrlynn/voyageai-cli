@@ -977,6 +977,29 @@ async function runChatDemo(opts) {
     console.log(`  ${pc.dim(`Canned queries completed in ${elapsed}s`)}`);
     console.log('');
 
+    // Show knowledge base topics
+    const topicDirs = fs.readdirSync(SAMPLE_DATA_DIR, { withFileTypes: true })
+      .filter(d => d.isDirectory())
+      .map(d => {
+        const dirPath = path.join(SAMPLE_DATA_DIR, d.name);
+        const mdFiles = fs.readdirSync(dirPath).filter(f => f.endsWith('.md'));
+        const titles = mdFiles.map(f => {
+          const first = fs.readFileSync(path.join(dirPath, f), 'utf8').split('\n')[0];
+          return first.replace(/^#\s+/, '').trim();
+        });
+        return { category: d.name, count: mdFiles.length, titles };
+      });
+
+    console.log(pc.cyan('  ── Knowledge Base ──'));
+    console.log('');
+    for (const topic of topicDirs) {
+      console.log(`  ${pc.bold(topic.category)}  ${pc.dim(`(${topic.count} docs)`)}`);
+      for (const title of topic.titles) {
+        console.log(`    ${pc.dim('•')} ${title}`);
+      }
+    }
+    console.log('');
+
     // Interactive REPL
     if (interactive) {
       console.log(pc.cyan('  ── Try it yourself ──'));
