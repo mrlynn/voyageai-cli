@@ -40,12 +40,15 @@ async function handleVaiIngest(input) {
   // Step 3: Store in MongoDB
   const { client, collection: coll } = await getMongoCollection(db, collName);
   try {
+    const sourceLabel = input.source || 'mcp-ingest';
     const docs = chunks.map((text, i) => ({
       text,
       embedding: embedResult.data[i].embedding,
-      source: input.source || 'mcp-ingest',
+      source: sourceLabel,
       metadata: {
         ...(input.metadata || {}),
+        source: sourceLabel,
+        filename: sourceLabel,
         ingestedAt: new Date().toISOString(),
         chunkIndex: i,
         totalChunks: chunks.length,

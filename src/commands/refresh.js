@@ -67,7 +67,7 @@ async function refresh(options = {}) {
   const batchSize = options.batchSize || 25;
 
   if (!quiet) {
-    p.intro(ui.title('vai refresh'));
+    p.intro(ui.bold('vai refresh'));
   }
 
   let client;

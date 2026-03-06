@@ -5590,6 +5590,128 @@ select:focus { outline: none; border-color: var(--accent); }
   text-align: center;
 }
 
+/* Newsletter CTA — professional marketing block */
+.home-newsletter-cta {
+  text-align: center;
+  padding: 48px 40px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: linear-gradient(145deg, var(--bg-card) 0%, var(--bg-surface) 100%);
+  max-width: 600px;
+  margin: 0 auto;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
+}
+
+.home-newsletter-cta::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #00D4AA, #40E0FF);
+  opacity: 0.9;
+}
+
+[data-theme="light"] .home-newsletter-cta {
+  box-shadow: 0 4px 24px rgba(0, 30, 43, 0.06);
+}
+
+.home-newsletter-cta-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 16px;
+  padding: 6px 12px;
+  background: var(--accent-glow);
+  border-radius: 20px;
+}
+
+.home-newsletter-cta-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--accent-text);
+  margin: 0 0 12px 0;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+.home-newsletter-cta-desc {
+  font-size: 15px;
+  color: var(--text-dim);
+  line-height: 1.6;
+  margin: 0 0 20px 0;
+  max-width: 480px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.home-newsletter-cta-benefits {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px 24px;
+  margin-bottom: 28px;
+  list-style: none;
+}
+
+.home-newsletter-cta-benefits li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.home-newsletter-cta-benefits li svg {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  color: var(--accent);
+}
+
+.home-newsletter-cta-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: linear-gradient(135deg, #00D4AA, #40E0FF);
+  color: white;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 15px;
+  padding: 14px 28px;
+  border-radius: 10px;
+  transition: all 0.2s;
+  box-shadow: 0 4px 16px rgba(0, 212, 170, 0.25);
+}
+
+.home-newsletter-cta-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 212, 170, 0.4);
+}
+
+.home-newsletter-cta-button .arrow {
+  width: 16px;
+  height: 16px;
+  transition: transform 0.2s;
+}
+
+.home-newsletter-cta-button:hover .arrow {
+  transform: translateX(3px);
+}
+
+.home-newsletter-cta-note {
+  margin-top: 16px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
 /* Footer */
 .home-footer {
   margin-top: 64px;
@@ -7115,6 +7237,22 @@ select:focus { outline: none; border-color: var(--accent); }
           </svg>
           <span>Publish Workflow</span>
         </button>
+      </div>
+    </div>
+
+    <!-- Newsletter CTA -->
+    <div class="home-section">
+      <div class="home-newsletter-cta">
+        <span class="home-newsletter-cta-badge">Newsletter</span>
+        <h3 class="home-newsletter-cta-title">Ship smarter. Get the field notes.</h3>
+        <p class="home-newsletter-cta-desc">Practical updates on the VAI CLI, embedding workflows, and real-world AI engineering—written by a forward-deployed engineer. No fluff, no spam.</p>
+        <ul class="home-newsletter-cta-benefits" aria-hidden="true">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg> New features and release notes</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg> Guides and best practices</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg> Field notes from production</li>
+        </ul>
+        <a href="https://vaicli.com/newsletter/subscribe" target="_blank" rel="noopener" class="home-newsletter-cta-button">Subscribe free<svg class="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+        <p class="home-newsletter-cta-note">One email when it matters. Unsubscribe anytime.</p>
       </div>
     </div>
 

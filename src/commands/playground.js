@@ -4,6 +4,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const { exec } = require('child_process');
+const crypto = require('crypto');
 
 /**
  * Load announcements from the markdown file.
@@ -140,6 +141,78 @@ function createPlaygroundServer() {
   const { handleRAGRequest } = require('../lib/playground-rag-api');
 
   const htmlPath = path.join(__dirname, '..', 'playground', 'index.html');
+  const loginHtmlPath = path.join(__dirname, '..', 'playground', 'login.html');
+
+  // Optional access control for hosted/shared environments.
+  // If VAI_PLAYGROUND_PASSWORD is set, the UI and API require a login cookie.
+  const playgroundPassword = process.env.VAI_PLAYGROUND_PASSWORD || '';
+  const authEnabled = !!playgroundPassword;
+  const sessions = new Map(); // sessionId -> { createdAt }
+  const SESSION_COOKIE = 'vai_playground_session';
+
+  function parseCookies(req) {
+    const header = req.headers.cookie || '';
+    if (!header) return {};
+    const out = {};
+    const parts = header.split(';');
+    for (const p of parts) {
+      const i = p.indexOf('=');
+      if (i === -1) continue;
+      const key = p.slice(0, i).trim();
+      const val = p.slice(i + 1).trim();
+      if (!key) continue;
+      try {
+        out[key] = decodeURIComponent(val);
+      } catch {
+        out[key] = val;
+      }
+    }
+    return out;
+  }
+
+  function isApiRequest(reqUrl) {
+    return typeof reqUrl === 'string' && reqUrl.startsWith('/api/');
+  }
+
+  function isAuthenticated(req) {
+    if (!authEnabled) return true;
+    const cookies = parseCookies(req);
+    const sessionId = cookies[SESSION_COOKIE];
+    if (!sessionId) return false;
+    return sessions.has(sessionId);
+  }
+
+  function setSessionCookie(res, sessionId) {
+    const cookie = [
+      `${SESSION_COOKIE}=${encodeURIComponent(sessionId)}`,
+      'Path=/',
+      'HttpOnly',
+      'SameSite=Lax',
+      'Max-Age=86400',
+    ].join('; ');
+    res.setHeader('Set-Cookie', cookie);
+  }
+
+  function clearSessionCookie(res) {
+    const cookie = [
+      `${SESSION_COOKIE}=`,
+      'Path=/',
+      'HttpOnly',
+      'SameSite=Lax',
+      'Max-Age=0',
+    ].join('; ');
+    res.setHeader('Set-Cookie', cookie);
+  }
+
+  async function readJsonBody(req) {
+    const body = await readBody(req);
+    if (!body) return {};
+    try {
+      return JSON.parse(body);
+    } catch {
+      throw new Error('Invalid JSON body');
+    }
+  }
 
   // Chat history — scoped to the server lifetime (in-memory, no persistence)
   let _chatHistory = null;
@@ -152,7 +225,7 @@ function createPlaygroundServer() {
     // CORS headers for local dev
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
     if (req.method === 'OPTIONS') {
       res.writeHead(204);
@@ -161,6 +234,85 @@ function createPlaygroundServer() {
     }
 
     try {
+      // ── Playground auth (optional) ───────────────────────────────────────
+      // Public endpoints: /login + auth endpoints; everything else requires a session cookie.
+      if (authEnabled) {
+        // Serve login page
+        if (req.method === 'GET' && (req.url === '/login' || req.url?.startsWith('/login?'))) {
+          const loginHtml = fs.existsSync(loginHtmlPath)
+            ? fs.readFileSync(loginHtmlPath, 'utf8')
+            : '<h1>Missing login.html</h1>';
+          res.writeHead(200, {
+            'Content-Type': 'text/html; charset=utf-8',
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0',
+          });
+          res.end(loginHtml);
+          return;
+        }
+
+        // Auth status (used by clients / health checks)
+        if (req.method === 'GET' && req.url === '/api/auth/status') {
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ authenticated: isAuthenticated(req) }));
+          return;
+        }
+
+        // Login
+        if (req.method === 'POST' && req.url === '/api/auth/login') {
+          let payload;
+          try {
+            payload = await readJsonBody(req);
+          } catch (err) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: err.message }));
+            return;
+          }
+
+          const pwd = String(payload.password || '');
+          if (!pwd || pwd !== playgroundPassword) {
+            // Add a tiny delay to discourage brute force.
+            await new Promise(r => setTimeout(r, 250));
+            res.writeHead(401, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Invalid password' }));
+            return;
+          }
+
+          const sessionId = crypto.randomBytes(24).toString('hex');
+          sessions.set(sessionId, { createdAt: Date.now() });
+          setSessionCookie(res, sessionId);
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ ok: true }));
+          return;
+        }
+
+        // Logout
+        if (req.method === 'POST' && req.url === '/api/auth/logout') {
+          const cookies = parseCookies(req);
+          const sessionId = cookies[SESSION_COOKIE];
+          if (sessionId) sessions.delete(sessionId);
+          clearSessionCookie(res);
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ ok: true }));
+          return;
+        }
+
+        // Enforce auth for everything else (except OPTIONS handled above)
+        if (!isAuthenticated(req)) {
+          if (isApiRequest(req.url)) {
+            res.writeHead(401, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Authentication required' }));
+            return;
+          }
+
+          const next = encodeURIComponent(req.url || '/');
+          res.writeHead(302, { Location: `/login?next=${next}` });
+          res.end();
+          return;
+        }
+      }
+
       // Handle RAG API requests
       if (req.url.startsWith('/api/rag/')) {
         const handled = await handleRAGRequest(req, res, { generateEmbeddings });

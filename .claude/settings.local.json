@@ -70,7 +70,10 @@
       "Bash(npx eslint:*)",
       "Bash(npx jest:*)",
       "Bash(git rebase:*)",
-      "Bash(git fetch:*)"
+      "Bash(git fetch:*)",
+      "Bash(ls -lh /Users/michael.lynn/code/voyageai-cli/src/playground/*.html)",
+      "Bash(ls -la /Users/michael.lynn/code/voyageai-cli/demo* /Users/michael.lynn/code/voyageai-cli/examples/)",
+      "WebFetch(domain:code.visualstudio.com)"
     ]
   },
   "enableAllProjectMcpServers": true,
