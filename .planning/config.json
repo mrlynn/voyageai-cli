@@ -5,7 +5,7 @@
   "commit_docs": false,
   "model_profile": "budget",
   "workflow": {
-    "research": false,
+    "research": true,
     "plan_check": false,
     "verifier": false
   }

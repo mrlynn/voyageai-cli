@@ -105,7 +105,7 @@ async function purge(options = {}) {
   const collectionName = options.collection || project.collection || process.env.VAI_COLLECTION || 'embeddings';
 
   if (!quiet) {
-    p.intro(ui.title('vai purge'));
+    p.intro(ui.bold('vai purge'));
   }
 
   // Validate that at least one filter is provided

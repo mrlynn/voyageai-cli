@@ -85,33 +85,41 @@ const ui = {
   spinner: (text) => {
     let realSpinner = null;
     let pendingText = text;
+    let pendingEnd = null; // queued succeed/fail/stop call
+
+    function applyPending() {
+      if (realSpinner && pendingEnd) {
+        const { method, msg } = pendingEnd;
+        pendingEnd = null;
+        realSpinner[method](msg);
+      }
+    }
 
     const proxy = {
       start() {
         const ora = getOra();
         if (typeof ora === 'function') {
-          // ora loaded synchronously, start immediately
           realSpinner = ora({ text: pendingText, color: 'cyan', stream: process.stderr });
           realSpinner.start();
         } else {
-          // First-time async load: wait for ora
           ora.then(oraFn => {
             realSpinner = oraFn({ text: pendingText, color: 'cyan', stream: process.stderr });
             realSpinner.start();
+            applyPending();
           });
         }
         return proxy;
       },
       stop() {
-        if (realSpinner) realSpinner.stop();
+        if (realSpinner) { realSpinner.stop(); } else { pendingEnd = { method: 'stop' }; }
         return proxy;
       },
       succeed(msg) {
-        if (realSpinner) realSpinner.succeed(msg);
+        if (realSpinner) { realSpinner.succeed(msg); } else { pendingEnd = { method: 'succeed', msg }; }
         return proxy;
       },
       fail(msg) {
-        if (realSpinner) realSpinner.fail(msg);
+        if (realSpinner) { realSpinner.fail(msg); } else { pendingEnd = { method: 'fail', msg }; }
         return proxy;
       },
       set text(val) {
@@ -124,6 +132,9 @@ const ui = {
     };
     return proxy;
   },
+
+  /** Ensure ora is loaded. Call before using spinners in async flows. */
+  ensureSpinnerReady: () => _oraPromise,
 };
 
 module.exports = ui;

@@ -260,6 +260,10 @@ function formatBytes(bytes) {
 async function runSetup(options = {}) {
   const startTime = Date.now();
 
+  // Ensure ora spinner is loaded before we start (prevents race condition
+  // where spinner.succeed() fires before realSpinner is set)
+  await ui.ensureSpinnerReady();
+
   console.log('');
   console.log(ui.info('Setting up local inference environment...'));
   console.log('');

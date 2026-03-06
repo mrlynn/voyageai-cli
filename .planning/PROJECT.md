@@ -23,7 +23,10 @@ A developer can go from `npm install` to a working vector search pipeline with z
 
 ### Active
 
-(None yet -- define with next milestone)
+- [ ] `vai demo nano` zero-dependency guided demo (no API key, no MongoDB)
+- [ ] README "Local Inference" section with nano workflow
+- [ ] `vai explain nano` content refresh with full workflow documentation
+- [ ] `vai demo chat --local` variant using local embeddings (needs MongoDB + LLM, not API key)
 
 ### Out of Scope
 
@@ -68,4 +71,15 @@ A developer can go from `npm install` to a working vector search pipeline with z
 | Minor/major version bump requires venv rebuild | Patch releases are safe; minor/major may change requirements.txt | Validated |
 
 ---
-*Last updated: 2026-03-06 after v1.0 milestone*
+## Current Milestone: v1.1 Nano Documentation & Demos
+
+**Goal:** Make local inference discoverable and demonstrable -- zero-config demos, README documentation, and explain content so developers can experience nano in 30 seconds.
+
+**Target features:**
+- `vai demo nano` -- self-contained demo requiring nothing but Python and Node.js
+- README "Local Inference" section -- the nano workflow front and center
+- `vai explain nano` refresh -- full workflow documentation
+- `vai demo chat --local` -- chat demo without Voyage API key
+
+---
+*Last updated: 2026-03-06 after v1.1 milestone start*

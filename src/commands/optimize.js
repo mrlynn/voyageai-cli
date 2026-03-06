@@ -227,7 +227,7 @@ function registerOptimize(program) {
           }
         }
 
-        telemetry.track('optimize_completed', {
+        telemetry.send('optimize_completed', {
           queryCount: result.queries.length,
           docsScale: scale.docs,
           queriesPerMonth: scale.queriesPerMonth,

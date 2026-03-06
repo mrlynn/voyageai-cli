@@ -3,7 +3,7 @@
 ## Milestones
 
 - v1.0 **voyage-4-nano Local Inference** -- Phases 1-5 (shipped 2026-03-06)
-- v1.1 **Nano Documentation & Demos** -- Phases 6-9 (in progress)
+- v1.1 **Nano Documentation & Demos** -- Phases 6-9 (complete)
 
 ## Phases
 
@@ -99,7 +99,7 @@ Phases execute in numeric order: 6 -> 7 -> 8
 | 3. Command Integration | v1.0 | 3/3 | Complete | 2026-03-06 |
 | 4. Error Remediation Display | v1.0 | 1/1 | Complete | 2026-03-06 |
 | 5. Documentation & Verification Cleanup | v1.0 | 1/1 | Complete | 2026-03-06 |
-| 6. Demo Nano | v1.1 | 0/2 | Planning complete | - |
+| 6. Demo Nano | v1.1 | 2/2 | Complete | 2026-03-06 |
 | 7. Documentation | v1.1 | 1/1 | Complete | 2026-03-06 |
-| 8. Chat Local Embeddings | v1.1 | 0/2 | Planning complete | - |
-| 9. Phase 6 Verification | v1.1 | 0/1 | Planning complete | - |
+| 8. Chat Local Embeddings | v1.1 | 2/2 | Complete | 2026-03-06 |
+| 9. Phase 6 Verification | v1.1 | 1/1 | Complete | 2026-03-06 |
