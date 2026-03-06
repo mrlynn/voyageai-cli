@@ -1,170 +1,146 @@
 # Project Research Summary
 
-**Project:** voyage-4-nano Local Inference (voyageai-cli milestone)
-**Domain:** Python subprocess bridge for local ML embedding inference in a Node.js CLI
+**Project:** voyageai-cli v1.1 -- Nano Documentation & Demos
+**Domain:** CLI demo experiences and documentation for local ML embedding inference
 **Researched:** 2026-03-06
 **Confidence:** HIGH
 
 ## Executive Summary
 
-This milestone adds local inference of the voyage-4-nano open-weight embedding model to the existing voyageai-cli Node.js CLI via a Python subprocess bridge. The core product story is zero-API-key onboarding: users install, run `vai nano setup`, and immediately embed text locally -- no accounts, no cost. The recommended approach is a JSON-over-stdio bridge using `child_process.spawn` to communicate with a long-running Python process that loads the model via sentence-transformers. This pattern avoids the complexity of HTTP servers, the fragility of per-request spawning, and the ESM incompatibility of libraries like execa. No new npm dependencies are required beyond optionally `cross-spawn` for future Windows support.
+The v1.1 milestone for voyageai-cli is a documentation and demo layer on top of fully-shipped nano infrastructure. All core local inference capabilities (setup, embed, ingest, pipeline) were completed in v1.0. This milestone makes them discoverable through a zero-dependency demo (`vai demo nano`), a local-embeddings chat variant (`vai demo chat --local`), refreshed explain content, and a README section. The key architectural insight is that **zero new npm dependencies are needed** -- every feature builds on existing modules with well-defined integration points.
 
-The architecture introduces four new Node.js modules (bridge manager, setup orchestrator, health checker, nano commands) and one Python script (nano-bridge.py) that sit alongside the existing `api.js` module. The key architectural principle is that `nano.js` is a drop-in replacement for `api.js` -- commands like `embed`, `ingest`, and `pipeline` route to local or API based on a `--local` flag without changing their result-handling logic. The unique differentiator versus tools like Ollama or llm-cli is that voyage-4-nano embeddings share a vector space with Voyage API models, enabling a "start local, scale to cloud without re-indexing" story that no competitor offers.
+The recommended approach is to build the standalone nano demo first (it touches no shared code), then layer in content updates (explain, README), and finally wire `--local` through the chat pipeline (the only feature that modifies shared libraries). This ordering minimizes risk: the highest-value, lowest-risk feature ships first, shared library changes come last with backward-compatibility requirements. The nano demo itself must be ruthlessly zero-dependency -- no MongoDB, no API calls, no network access -- using in-memory cosine similarity over hardcoded sample texts.
 
-The primary risks are well-understood subprocess pitfalls: Python stdout buffering silently hanging the bridge, zombie processes from unclean shutdowns, and chunked JSON parsing on pipe reads. All three have proven mitigations (PYTHONUNBUFFERED=1, PID files with signal handlers, NDJSON line buffering). The secondary risk is setup UX -- a ~700MB model download plus ~2GB PyTorch installation can fail silently or hang without progress feedback. The mitigation is explicit progress relay from the Python subprocess and resumable downloads via huggingface_hub. These are solved problems; the engineering challenge is implementing them correctly from the start rather than patching them later.
+The primary risks are poor first-run experience (model loading latency perceived as a hang, missing prerequisite checks producing cryptic Python errors) and documentation drift (README documenting commands before they exist, explain content diverging from README). Both are preventable with discipline: prerequisite validation must be the first code written, and documentation must be the last task completed.
 
 ## Key Findings
 
 ### Recommended Stack
 
-The entire integration runs on Node.js built-ins plus Python's ML ecosystem. No new npm dependencies are needed for core functionality. The Python side uses sentence-transformers (~=5.2.0) as the model interface and torch (~=2.10.0) as the compute backend, installed into an isolated venv at `~/.vai/nano-env/`. Python 3.10 is the true minimum (not 3.9 as PROJECT.md states) because sentence-transformers 5.x requires it.
+No new dependencies. The entire v1.1 milestone builds on the existing stack: Node.js >=20.0.0, commander, picocolors, readline, and the nano infrastructure (nano-local.js, nano-manager.js, nano-setup.js). Cosine similarity is a 10-line inline function -- do not add vector math libraries. The zero-dependency ethos is the feature itself; every added package undermines the message.
 
-**Core technologies:**
-- **child_process.spawn (Node.js built-in):** Subprocess management -- streams stdio, avoids buffer limits, CJS-compatible
-- **sentence-transformers ~=5.2.0:** Model loading and inference -- provides encode_query/encode_document with MRL and quantization natively
-- **torch ~=2.10.0:** Tensor computation -- auto-detects CUDA/MPS/CPU, do NOT pin to CPU-only (breaks Apple Silicon MPS)
-- **python -m venv (stdlib):** Isolated Python environment -- no extra install needed, standard library since Python 3.3
-- **NDJSON over stdio:** Bridge protocol -- simple, debuggable, avoids HTTP server complexity entirely
+**Core technologies (all existing):**
+- **nano-local.js**: API-compatible local embedding adapter -- returns identical shape to API, enabling seamless swaps
+- **nano-setup.js**: Setup validation (checkVenvExists, checkDepsInstalled, checkModelExists) -- prerequisite checks for demo
+- **demo.js helpers**: theory()/step() pattern, checkPrerequisites(), --no-pause/--verbose flags -- established demo UX
+- **explanations.js**: Concept registry with title/summary/content/links/tryIt schema -- content-only update needed
 
 ### Expected Features
 
 **Must have (table stakes):**
-- `vai nano setup` -- one-command environment provisioning (venv, deps, model)
-- `vai nano status` -- component-level health check (Python, venv, deps, model, device)
-- `vai embed --local "text"` -- local embedding via bridge, same output shape as API
-- `vai nano test` -- smoke test with vector preview and latency
-- `vai nano info` -- model details, paths, detected device
-- `vai nano clear-cache` -- remove model files (~700MB) with confirmation
-- `vai ingest --local` -- batch ingestion through local bridge
-- `vai pipeline --local` -- zero-credential RAG pipeline (the headline demo)
-- Clear error messages with remediation hints for every failure mode
-- Catalog integration -- voyage-4-nano visible in `vai models`
+- `vai demo nano` with zero-config execution, prerequisite check with guided recovery, visible model loading progress, real embedding output, similarity comparison, --no-pause and --verbose support, and next-steps guidance
+- `vai explain nano` refresh with CLI workflow documentation (currently stale HuggingFace-focused content)
+- README "Local Inference" section positioned prominently (not buried at bottom)
 
 **Should have (differentiators):**
-- Warm process management -- keep Python process alive between calls (2-5s cold start to ~100ms warm)
-- MRL dimension selection (`--dimensions 256/512/1024/2048`) -- unique to Voyage-4 family
-- Quantization support (`--precision int8/uint8/binary`) -- up to 128x compression with MRL
-- Device auto-detection with clear reporting (CUDA/MPS/CPU)
-- Shared embedding space messaging in all output
-- Version sync enforcement between Node.js and Python bridge
+- In-memory vector search (no MongoDB) -- the "zero to vector search in one command" moment
+- Dimension comparison table showing MRL tradeoffs across 256/512/1024/2048 dims
+- `vai demo chat --local` -- local embeddings powering a real RAG conversation (still needs MongoDB + LLM)
+- Timing display with performance context
 
 **Defer (v2+):**
-- Cross-bridge validation (embed local + API, compare similarity)
-- Benchmark subcommands (dimension sweep, quantization comparison)
-- Windows support
-- Playground local inference tab
-- Multiple local models (stay focused on Voyage ecosystem)
+- Shared embedding space proof (requires API key, contradicts zero-dep story -- make optional auto-detected bonus at most)
+- Quantization comparison (educational but not essential; include only in --verbose)
+- Fully local chat (Ollama LLM + nano embeddings + local storage -- no MongoDB)
+- Benchmark subcommands, playground tab, GPU docs, Windows support
 
 ### Architecture Approach
 
-The system follows a provider abstraction pattern: commands call a routing layer that dispatches to either `api.js` (HTTP to Voyage API) or `nano.js` (stdio to Python subprocess) based on the `--local` flag. The Python bridge runs as a long-lived subprocess communicating via newline-delimited JSON on stdin/stdout. A two-phase startup protocol (loading/ready messages) separates model load time from request timeouts.
+The architecture is clean: `vai demo nano` is the only genuinely new component (a self-contained function in demo.js plus a cosine similarity helper). Everything else is modification of existing files with established patterns. The critical architectural decision for `chat --local` is embedding function injection -- `ingestChunkedData()` and `retrieve()` accept an optional `embedFn` parameter, defaulting to the API path for backward compatibility. This mirrors the pattern already established in `embed.js` for `--local` flag handling.
 
 **Major components:**
-1. **Bridge Manager (nano.js)** -- spawns/manages Python subprocess, sends requests via JSON stdin, parses JSON stdout, handles warm process lifecycle
-2. **Python Bridge (nano-bridge.py)** -- loads voyage-4-nano via sentence-transformers, reads JSON requests from stdin, returns embeddings on stdout
-3. **Setup Orchestrator (nano-setup.js)** -- creates venv, installs pip requirements, downloads model, validates Python version
-4. **Health Checker (nano-health.js)** -- reports readiness of Python, venv, deps, model, device
-5. **Nano Commands (commands/nano.js)** -- Commander subcommands: setup, status, test, info, clear-cache
-6. **Existing Commands (embed.js, ingest.js, pipeline.js)** -- gain `--local` flag, route to nano.js instead of api.js
+1. **runNanoDemo()** in demo.js -- self-contained zero-dep demo; depends only on nano-local.js and nano-setup.js
+2. **checkPrerequisites('nano')** -- new prerequisite type validating Python/venv/deps/model state
+3. **demo-ingest.js embedFn injection** -- backward-compatible parameter for local embedding in chat demo
+4. **chat.js retrieve() opts.local** -- conditional embedding function swap at the retrieval call site
+5. **explanations.js content update** -- pure content refresh, no structural changes
 
 ### Critical Pitfalls
 
-1. **Python stdout buffering hangs the bridge** -- Python buffers stdout when writing to a pipe. Use `PYTHONUNBUFFERED=1` env var AND `flush=True` on every print. This must be in place from day one or the entire bridge appears broken.
-2. **Zombie/orphan Python processes** -- CLI crashes leave Python holding ~700MB in memory. Use PID files, register cleanup on all exit signals (SIGINT, SIGTERM, uncaughtException), and add stale process detection to `vai nano status`.
-3. **Chunked JSON on pipe reads** -- Pipe data events do not respect message boundaries. Never call `JSON.parse(chunk)` directly. Use NDJSON line buffering (accumulate chunks, split on `\n`, parse complete lines only).
-4. **Model load time mistaken for failure** -- First request takes 3-15s for model loading. Use a two-phase startup protocol: bridge sends "loading" then "ready" messages. Separate startup timeout (60s) from request timeout (30s).
-5. **Model download hangs without feedback** -- 700MB download with no progress indicator causes users to Ctrl+C. Relay stderr progress from HuggingFace, use resumable downloads, and separate model download failures from venv setup failures.
+1. **Demo runs without checking setup state** -- Bridge throws cryptic NANO_VENV_MISSING errors instead of helpful guidance. Prevention: Build prerequisite validation first, before any demo logic. Show actionable setup instructions with exact commands.
+
+2. **First-run model loading feels like a hang** -- 5-15 seconds of silence while the bridge loads the model. Prevention: Show explicit spinner with "Loading voyage-4-nano model..." message, pre-warm bridge before demo content, display elapsed time after load.
+
+3. **Demo menu lacks prerequisite indicators** -- Users select nano demo without knowing it needs Python setup, or skip it without knowing it does NOT need an API key. Prevention: Show requirement tags and readiness status per menu item.
+
+4. **README documents unimplemented commands** -- Copy-paste fails and wrong output formats damage trust. Prevention: Write README LAST after all commands are implemented and tested. Use actual captured terminal output.
+
+5. **Zero-dep demo accidentally imports network modules** -- Any api.js or mongo.js import in the nano demo path violates the core promise. Prevention: Design constraint from day one; grep demo file for forbidden imports during code review.
 
 ## Implications for Roadmap
 
 Based on research, suggested phase structure:
 
-### Phase 1: Python Bridge Protocol and Core Bridge
-**Rationale:** Everything depends on reliable Node.js-to-Python communication. The bridge protocol is the foundation; if it has buffering bugs or JSON parsing issues, nothing above it works. Research shows these are the most common failure modes.
-**Delivers:** nano-bridge.py (Python script), NDJSON protocol with request IDs, line-buffered JSON parser in Node.js, stdout unbuffering, stderr separation, two-phase startup handshake (loading/ready), version handshake
-**Addresses:** Bridge manager (nano.js) core spawn/communicate/parse cycle
-**Avoids:** Pitfalls #1 (stdout buffering), #3 (chunked JSON), #5 (model load timeout), #12 (rogue stdout), #14 (version drift)
+### Phase 1: Nano Demo Foundation
+**Rationale:** Highest value, lowest risk. Self-contained -- no shared library modifications. Delivers the hero feature immediately. All dependencies (nano infrastructure) already shipped in v1.0.
+**Delivers:** `vai demo nano` with prerequisite validation, model warm-up with spinner, sample text embedding, in-memory similarity comparison, dimension comparison table, timing display, and next-steps guidance. Also includes demo menu update with prerequisite indicators and `completions.js` update.
+**Addresses:** All table-stakes features for the demo experience; in-memory vector search differentiator; dimension comparison differentiator.
+**Avoids:** Pitfalls 1 (setup check), 2 (model loading latency), 3 (menu indicators), 5 (zero-dep boundary), 6 (pacing), 8 (stateless design), 11 (similarity display).
 
-### Phase 2: Setup Orchestrator and Environment Management
-**Rationale:** Users cannot use the bridge until setup is complete. Setup is the most failure-prone step (Python detection, venv creation, pip install, model download) and the first thing users experience. Research identifies 5 distinct failure modes in setup alone.
-**Delivers:** nano-setup.js, Python version detection (probe multiple binaries), venv creation, pip install with progress, model download with resumability, disk space checks, nano-health.js for status reporting
-**Addresses:** `vai nano setup`, `vai nano status`, `vai nano info`, `vai nano clear-cache`
-**Avoids:** Pitfalls #4 (download hangs), #6 (Python detection), #7 (venv paths), #8 (pip failures), #13 (cache duplication), #15 (macOS __PYVENV_LAUNCHER__)
+### Phase 2: Content and Documentation
+**Rationale:** Pure content work with zero code risk. Can reference the demo commands implemented in Phase 1. Must come after Phase 1 so documentation references real, tested commands. Content boundaries between README and explain must be defined before writing either.
+**Delivers:** Refreshed `vai explain nano` content with CLI workflow docs and updated tryIt commands. README "Local Inference" section with prominent placement (callout near top, dedicated section before command reference).
+**Addresses:** explain content refresh, README section -- both P1 features.
+**Avoids:** Pitfalls 4 (documenting unimplemented commands), 7 (content staleness), 13 (README burial), 14 (README/explain duplication).
 
-### Phase 3: Core Local Embedding Command
-**Rationale:** With the bridge working and setup complete, wire up the first user-facing embedding command. This is the simplest integration point (single text in, embedding out) and validates the entire stack end-to-end.
-**Delivers:** `vai embed --local`, embedding provider abstraction (routing layer), response shape parity with API, `vai nano test` smoke test, catalog.js update, error taxonomy with remediation hints
-**Addresses:** Table stakes features: embed --local, nano test, catalog integration, error messages
-**Avoids:** Anti-pattern of duplicating command logic for local vs API
+### Phase 3: Chat Local Embeddings
+**Rationale:** Requires modifying shared libraries (demo-ingest.js, chat.js). Must be backward-compatible -- existing API-based demos and chat must work identically. Higher complexity due to threading --local through the chat pipeline. Depends on prerequisite system from Phase 1.
+**Delivers:** `vai demo chat --local` variant using nano embeddings for retrieval. `--local` flag on demo command. Modified `ingestChunkedData()` with embedFn injection. Modified `retrieve()` with opts.local support. Reranking skipped in local mode.
+**Addresses:** chat --local differentiator feature.
+**Avoids:** Pitfalls 9 (clarify what "local" means -- still needs MongoDB + LLM), 5 (backward-compatible changes only), 10 (CI/non-TTY output).
 
-### Phase 4: Batch Operations and Pipeline Integration
-**Rationale:** Once single-text embedding works, extend to batch operations. ingest and pipeline depend on embed --local being stable. Warm process management becomes important here because batch operations make hundreds of calls.
-**Delivers:** `vai ingest --local`, `vai pipeline --local`, warm process with idle timeout, batch size handling, stdin backpressure management
-**Addresses:** ingest --local, pipeline --local (the "zero-credential RAG" headline), warm process management
-**Avoids:** Pitfalls #2 (zombie processes during long runs), #9 (stdin backpressure), #11 (concurrent invocations)
-
-### Phase 5: Enhancement Features
-**Rationale:** MRL dimensions and quantization are low-complexity additions that unlock the unique Voyage-4 story (up to 128x compression). They build on the stable bridge but are not gating.
-**Delivers:** `--dimensions` flag (MRL 256/512/1024/2048), `--precision` flag (float32/int8/uint8/binary/ubinary), device reporting in output, shared embedding space messaging, version sync enforcement
-**Addresses:** Differentiator features, polish, production hardening
+### Phase 4: Polish and Packaging
+**Rationale:** Verification, edge cases, and release readiness. Cannot be done until all features are implemented.
+**Delivers:** npm pack verification (sample data in tarball), CI smoke tests for demo, non-TTY output handling, final README review against actual command output.
+**Avoids:** Pitfalls 4 (final doc verification), 10 (CI output), 12 (sample data packaging).
 
 ### Phase Ordering Rationale
 
-- **Bridge before setup:** The bridge protocol design informs what setup needs to install and validate. Getting the protocol right first prevents rework.
-- **Setup before commands:** Commands cannot be tested without a working environment. Setup is the user's first experience and sets expectations.
-- **Single embed before batch:** Single-text embedding is the simplest end-to-end validation. Batch adds complexity (backpressure, progress, warm process) that should be layered on proven foundations.
-- **Pipeline last in core features:** Pipeline depends on both embed and ingest working. It is the integration test for the entire local inference stack.
-- **Enhancements after core:** MRL and quantization are pass-through parameters to sentence-transformers. They require zero new architecture -- just flag wiring. Ship them after the core is stable.
+- Phase 1 first because it has zero shared-code modifications and delivers the highest-impact feature. The nano demo is the "Ollama moment" for embeddings -- the single command that proves local inference works.
+- Phase 2 after Phase 1 because documentation must reference implemented, tested commands. Writing docs speculatively causes Pitfall 4.
+- Phase 3 after Phase 1 because it needs the prerequisite system and because shared library changes carry more risk. Backward compatibility must be verified.
+- Phase 4 last because it is verification and packaging work that requires all features to be complete.
 
 ### Research Flags
 
 Phases likely needing deeper research during planning:
-- **Phase 1 (Bridge Protocol):** The two-phase startup handshake and NDJSON framing need careful protocol design. Research provides patterns but implementation details matter.
-- **Phase 2 (Setup):** Python detection across macOS/Linux variants (Homebrew, pyenv, system Python, Xcode shim) has edge cases. Test matrix needed.
-- **Phase 4 (Batch/Pipeline):** Warm process lifecycle (idle timeout, crash recovery, memory management) is the hardest engineering problem in the milestone per FEATURES.md research.
+- **Phase 3 (Chat Local Embeddings):** The embedding function injection through demo-ingest.js and chat.js retrieve() modifies shared code paths. Needs careful analysis of all callers to ensure backward compatibility. The reranking skip decision (skip vs. require API key for rerank only) needs validation.
 
 Phases with standard patterns (skip research-phase):
-- **Phase 3 (Embed Command):** Straightforward flag routing and response shape matching. Well-documented Commander patterns already in the codebase.
-- **Phase 5 (Enhancements):** MRL and quantization are one-line parameter additions to sentence-transformers calls. No architectural decisions needed.
+- **Phase 1 (Nano Demo):** Well-documented patterns in existing demo.js. Three other demos provide exact templates. The cosine similarity math is trivial.
+- **Phase 2 (Content):** Pure content work following established explanations.js schema and README conventions.
+- **Phase 4 (Polish):** Standard packaging and CI verification tasks.
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | All versions verified on PyPI. sentence-transformers 5.2.3 and torch 2.10.0 confirmed. Model card validates sentence-transformers as blessed interface. |
-| Features | HIGH | Competitor analysis covers Ollama, llm CLI, HF TEI. Feature priorities validated against existing codebase patterns. MVP definition is clear. |
-| Architecture | HIGH | Pattern validated against existing api.js module. child_process.spawn is well-documented. NDJSON is a proven IPC pattern. |
-| Pitfalls | HIGH | 15 pitfalls identified with specific prevention strategies. Sources include official Node.js docs, community issue trackers, and established blog posts. |
+| Stack | HIGH | Direct codebase analysis; zero new deps is a verified conclusion |
+| Features | HIGH | Based on analysis of comparable CLIs (Ollama, Docker Model Runner) and existing demo patterns |
+| Architecture | HIGH | All integration points identified from direct source reading; API-compatible adapter pattern already proven |
+| Pitfalls | HIGH | Based on direct analysis of nano-bridge.py lazy loading, demo.js prerequisite flow, and package.json files field |
 
 **Overall confidence:** HIGH
 
 ### Gaps to Address
 
-- **Python 3.10 vs 3.9 minimum:** PROJECT.md says 3.9+ but sentence-transformers 5.x requires 3.10+. This needs to be updated in PROJECT.md before implementation.
-- **PyTorch download size on non-GPU machines:** torch default install is ~2GB. Using CPU-only index URL reduces to ~200MB but the STACK.md research warns against pinning to CPU-only (breaks MPS on Apple Silicon). Need a platform-aware install strategy: CPU-only on Linux without NVIDIA GPU, default on macOS (for MPS), CUDA on Linux with GPU.
-- **trust_remote_code security:** voyage-4-nano requires `trust_remote_code=True`. Research recommends pinning the exact model revision hash. The specific revision to pin needs to be determined during Phase 2 implementation.
-- **Warm process between CLI invocations:** The research recommends starting with one-bridge-per-invocation and deferring shared warm processes. The idle timeout strategy (how long, PID file locking, shared vs. per-process) needs design during Phase 4 planning.
-- **Windows support timeline:** Explicitly deferred but cross-spawn is cheap insurance. The gap is testing -- no Windows test matrix exists yet.
+- **Reranking behavior in chat --local:** Research recommends skipping reranking when --local, but this changes retrieval quality. Validate during Phase 3 planning whether this is acceptable or if a warning should be shown.
+- **Demo menu UX for prerequisite indicators:** The exact format (tags vs. green/red status probing) needs design decision during Phase 1 implementation. Probing all prerequisites at menu display time may add noticeable latency.
+- **Sample text selection for nano demo:** Research says hardcode 5-8 texts but does not specify them. Need semantically meaningful pairs (similar + dissimilar) to make similarity scores intuitive. Choose during Phase 1 implementation.
+- **Non-TTY output strategy:** Pitfall 10 identifies the problem but the exact approach (structured log lines vs. plain text) needs decision during implementation.
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- [sentence-transformers on PyPI](https://pypi.org/project/sentence-transformers/) -- version 5.2.3, Python >=3.10
-- [PyTorch on PyPI](https://pypi.org/project/torch/) -- version 2.10.0
-- [voyage-4-nano model card](https://huggingface.co/voyageai/voyage-4-nano) -- loading, encoding, MRL, quantization
-- [Node.js child_process docs](https://nodejs.org/api/child_process.html) -- spawn API, stdio configuration
-- [Python venv documentation](https://docs.python.org/3/library/venv.html) -- stdlib venv creation
-- Existing voyageai-cli source code (api.js, embed.js, catalog.js) -- integration patterns
+- Direct codebase analysis: `src/commands/demo.js`, `src/nano/nano-local.js`, `src/nano/nano-setup.js`, `src/nano/nano-manager.js`, `src/nano/nano-bridge.py`, `src/lib/chat.js`, `src/lib/demo-ingest.js`, `src/lib/explanations.js`, `src/commands/embed.js`, `src/commands/completions.js`
+- `package.json` -- dependency list and files field
+- `.planning/PROJECT.md` -- milestone scope and constraints
 
 ### Secondary (MEDIUM confidence)
-- [Voyage 4 blog post](https://blog.voyageai.com/2026/01/15/voyage-4/) -- model family details
-- [cross-spawn on npm](https://www.npmjs.com/package/cross-spawn) -- Windows spawn compatibility
-- [sentence-transformers cache/download issues](https://github.com/huggingface/sentence-transformers/issues/1828) -- HuggingFace cache pitfalls
-- [trust_remote_code security discussion](https://news.ycombinator.com/item?id=36612627) -- security implications
-- [macOS __PYVENV_LAUNCHER__ issue](https://github.com/pypa/virtualenv/issues/1704) -- venv path resolution
-
-### Tertiary (LOW confidence)
-- [Hybrid Python/Node.js architectures](https://servicesground.com/blog/hybrid-architecture-python-nodejs-dev-tools/) -- general pattern reference, needs validation against specific use case
+- [Command Line Interface Guidelines](https://clig.dev/) -- CLI UX best practices
+- [Docker Model Runner Semantic Search](https://www.docker.com/blog/run-embedding-models-for-semantic-search/) -- zero-dep embedding demo patterns
+- [Ollama CLI Reference](https://docs.ollama.com/cli) -- zero-friction local inference UX
+- [Atlassian CLI Design Principles](https://www.atlassian.com/blog/it-teams/10-design-principles-for-delightful-clis) -- progressive disclosure patterns
 
 ---
 *Research completed: 2026-03-06*
