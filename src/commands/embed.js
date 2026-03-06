@@ -5,6 +5,7 @@ const { generateEmbeddings, generateMultimodalEmbeddings } = require('../lib/api
 const { resolveTextInput, readMediaAsBase64, isImageFile, isVideoFile } = require('../lib/input');
 const ui = require('../lib/ui');
 const { showCostSummary } = require('../lib/cost-display');
+const { formatNanoError } = require('../nano/nano-errors.js');
 
 const MULTIMODAL_MODEL = 'voyage-multimodal-3.5';
 
@@ -275,7 +276,11 @@ function registerEmbed(program) {
         done({ dimensions: result.data[0]?.embedding?.length });
       } catch (err) {
         telemetry.send('cli_error', { command: 'embed', errorType: err.constructor.name });
-        console.error(ui.error(err.message));
+        if (err.code && err.fix) {
+          console.error(formatNanoError(err));
+        } else {
+          console.error(ui.error(err.message));
+        }
         process.exit(1);
       }
     });
