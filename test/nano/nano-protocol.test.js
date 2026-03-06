@@ -6,7 +6,6 @@ const {
   createRequest,
   serializeRequest,
   parseLine,
-  validateResponse,
   ENVELOPE_TYPES,
 } = require('../../src/nano/nano-protocol.js');
 const {
@@ -93,34 +92,6 @@ describe('nano-protocol', () => {
       assert.equal(parsed.type, req.type);
       assert.deepEqual(parsed.texts, req.texts);
       assert.equal(parsed.truncate_dim, 512);
-    });
-  });
-
-  describe('validateResponse', () => {
-    it('returns true for matching id', () => {
-      const result = validateResponse({ id: 'abc', type: 'result' }, 'abc');
-      assert.equal(result, true);
-    });
-
-    it('throws for mismatched id', () => {
-      assert.throws(
-        () => validateResponse({ id: 'abc', type: 'result' }, 'xyz'),
-        /mismatch/,
-      );
-    });
-
-    it('throws for missing type', () => {
-      assert.throws(
-        () => validateResponse({ id: 'abc' }, 'abc'),
-        /missing type/,
-      );
-    });
-
-    it('throws for non-object response', () => {
-      assert.throws(
-        () => validateResponse(null, 'abc'),
-        /not an object/,
-      );
     });
   });
 

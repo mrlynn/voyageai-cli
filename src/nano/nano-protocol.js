@@ -53,34 +53,9 @@ function parseLine(line) {
   }
 }
 
-/**
- * Validate that a response envelope matches the expected request id and
- * contains a type field.
- *
- * @param {object} response   Parsed response envelope.
- * @param {string} requestId  The id from the original request.
- * @returns {boolean}         true when valid.
- * @throws {Error}            When validation fails.
- */
-function validateResponse(response, requestId) {
-  if (!response || typeof response !== 'object') {
-    throw new Error('Response is not an object');
-  }
-  if (!response.type) {
-    throw new Error('Response missing type field');
-  }
-  if (response.id !== requestId) {
-    throw new Error(
-      `Response id mismatch: expected ${requestId}, got ${response.id}`,
-    );
-  }
-  return true;
-}
-
 module.exports = {
   ENVELOPE_TYPES,
   createRequest,
   serializeRequest,
   parseLine,
-  validateResponse,
 };
