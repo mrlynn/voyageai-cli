@@ -27,3 +27,8 @@ voyageai-cli-playground.png
 
 # Build artifacts
 dist-electron/
+
+# Python bytecode (REL-02)
+*.pyc
+__pycache__/
+*.pyo

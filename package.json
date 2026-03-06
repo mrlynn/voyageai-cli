@@ -37,6 +37,7 @@
   "scripts": {
     "test": "node --test test/**/*.test.js",
     "reset": "node scripts/reset.js",
+    "version": "node scripts/sync-nano-version.js && git add src/nano/nano-bridge.py",
     "release": "./scripts/release.sh",
     "app:install": "cd electron && npm install",
     "app:start": "cd electron && npm start",
