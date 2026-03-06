@@ -47,11 +47,17 @@ Plans:
   3. User can run `vai nano test` and see a successful embedding result with latency timing
   4. User can run `vai nano info` to see model details and cache path, and `vai nano clear-cache` to remove model files with confirmation
   5. Python source files are included in the npm tarball, bytecode is excluded, and version sync script updates BRIDGE_VERSION on `npm version`
-**Plans**: TBD
+**Plans**: 8 plans
 
 Plans:
-- [ ] 02-01: TBD
-- [ ] 02-02: TBD
+- [ ] 02-01-PLAN.md -- Knowledge base types and CRUD API (vai-dashboard)
+- [ ] 02-02-PLAN.md -- Ingestion engine with chunking, embedding, fingerprinting (vai-dashboard)
+- [ ] 02-03-PLAN.md -- Vector search retrieval and context injection (vai-dashboard)
+- [ ] 02-04-PLAN.md -- Knowledge base dashboard UI (vai-dashboard)
+- [ ] 02-05-PLAN.md -- Setup orchestrator and CLI command registration (SETUP-01, SETUP-05)
+- [ ] 02-06-PLAN.md -- Health checks, status, test, and info commands (SETUP-02, SETUP-03, SETUP-04)
+- [ ] 02-07-PLAN.md -- Release packaging: .npmignore and version hook (REL-01, REL-02, REL-03)
+- [ ] 02-08-PLAN.md -- Unit tests for setup and health check logic (TEST-03)
 
 ### Phase 3: Command Integration
 **Goal**: Users can embed, ingest, and run pipelines locally with zero API keys using --local flag, with full MRL and quantization support
@@ -77,5 +83,5 @@ Phases execute in numeric order: 1 -> 2 -> 3
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Bridge Protocol | 3/5 | In progress | - |
-| 2. Setup and Environment | 0/0 | Not started | - |
+| 2. Setup and Environment | 0/8 | Not started | - |
 | 3. Command Integration | 0/0 | Not started | - |
