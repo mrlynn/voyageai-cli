@@ -1,6 +1,6 @@
 'use strict';
 
-const { spawn } = require('node:child_process');
+const childProcess = require('node:child_process');
 const path = require('node:path');
 const fs = require('node:fs');
 const os = require('node:os');
@@ -108,7 +108,7 @@ class NanoBridgeManager {
       this.#readyReject = reject;
     });
 
-    this.#process = spawn(pythonPath, [BRIDGE_SCRIPT], {
+    this.#process = childProcess.spawn(pythonPath, [BRIDGE_SCRIPT], {
       stdio: ['pipe', 'pipe', 'pipe'],
       env: {
         ...process.env,
@@ -167,7 +167,12 @@ class NanoBridgeManager {
       if (msg.type === ENVELOPE_TYPES.READY) {
         this.#bridgeVersion = msg.bridge_version;
         this.#device = msg.device;
-        if (this.#readyResolve) this.#readyResolve();
+        if (this.#readyResolve) {
+          const resolve = this.#readyResolve;
+          this.#readyResolve = null;
+          this.#readyReject = null;
+          resolve();
+        }
         continue;
       }
 
@@ -198,8 +203,11 @@ class NanoBridgeManager {
   #handleClose(code, _signal) {
     this.#process = null;
 
-    if (this.#readyResolve) {
-      this.#readyReject(createNanoError('NANO_SPAWN_FAILED'));
+    if (this.#readyReject) {
+      const reject = this.#readyReject;
+      this.#readyResolve = null;
+      this.#readyReject = null;
+      reject(createNanoError('NANO_SPAWN_FAILED'));
     }
 
     if (code !== 0 && this.#pending.size > 0) {
