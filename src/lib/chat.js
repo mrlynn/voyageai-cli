@@ -29,8 +29,59 @@ function resolveSourceLabel(doc) {
     }
   }
 
-  // Fall back to source path / _id
-  return doc.source || meta.source || doc._id?.toString() || 'unknown';
+  // Try top-level source field, then metadata.source
+  const rawSource = doc.source || meta.source;
+  if (rawSource && typeof rawSource === 'string') return rawSource;
+
+  // Fall back to _id — but flag it so callers know this is a raw ID
+  return doc._id?.toString() || 'unknown';
+}
+
+/**
+ * Deduplicate sources by parent document.
+ *
+ * When a document is chunked, multiple chunks may be retrieved for the same
+ * source. This groups them by source label and returns one entry per unique
+ * source with the best score, chunk count, and optional chunk indices.
+ *
+ * @param {Array<{source: string, score?: number, text?: string, metadata?: object}>} sources
+ * @returns {Array<{source: string, score: number, chunks: number, chunkIndices?: number[], text?: string}>}
+ */
+function deduplicateSources(sources) {
+  if (!sources || sources.length === 0) return [];
+
+  const groups = new Map();
+  for (const s of sources) {
+    const key = s.source || 'unknown';
+    if (!groups.has(key)) {
+      groups.set(key, {
+        source: key,
+        score: s.score ?? 0,
+        chunks: 1,
+        chunkIndices: [],
+        text: s.text || '',
+      });
+    } else {
+      const g = groups.get(key);
+      g.score = Math.max(g.score, s.score ?? 0);
+      g.chunks++;
+      if (!g.text && s.text) g.text = s.text;
+    }
+    // Track chunk index if present
+    const idx = s.metadata?.chunkIndex;
+    if (idx != null) {
+      groups.get(key).chunkIndices.push(idx);
+    }
+  }
+
+  // Sort by best score descending
+  return Array.from(groups.values())
+    .sort((a, b) => b.score - a.score)
+    .map(g => {
+      // Clean up: remove chunkIndices if empty
+      if (g.chunkIndices.length === 0) delete g.chunkIndices;
+      return g;
+    });
 }
 const { getMongoCollection } = require('./mongo');
 const { buildMessages, buildAgentMessages } = require('./prompt');
@@ -69,9 +120,10 @@ async function retrieve({ query, db, collection, opts = {} }) {
   const start = Date.now();
 
   // Step 1: Embed query
+  const embedFn = opts.embedFn || generateEmbeddings;
   const embedOpts = { model, inputType: 'query' };
   if (dimensions) embedOpts.dimensions = dimensions;
-  const embedResult = await generateEmbeddings([query], embedOpts);
+  const embedResult = await embedFn([query], embedOpts);
   const queryVector = embedResult.data[0].embedding;
   const embedTokens = embedResult.usage?.total_tokens || 0;
 
@@ -186,6 +238,9 @@ async function* chatTurn({ query, db, collection, llm, history, opts = {} }) {
       rerank: opts.rerank,
       textField: opts.textField,
       filter: opts.filter,
+      embedFn: opts.embedFn,
+      model: opts.model,
+      dimensions: opts.dimensions,
     },
   });
 
@@ -248,7 +303,7 @@ async function* chatTurn({ query, db, collection, llm, history, opts = {} }) {
     type: 'done',
     data: {
       fullResponse,
-      sources: docs.map(d => ({ source: d.source, score: d.score })),
+      sources: deduplicateSources(docs),
       metadata: {
         retrievalTimeMs,
         generationTimeMs,
@@ -458,4 +513,6 @@ module.exports = {
   retrieve,
   chatTurn,
   agentChatTurn,
+  resolveSourceLabel,
+  deduplicateSources,
 };
