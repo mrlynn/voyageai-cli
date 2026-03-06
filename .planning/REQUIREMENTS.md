@@ -18,10 +18,10 @@ Requirements for this milestone. Each maps to roadmap phases.
 ### Bridge Infrastructure
 
 - [x] **BRDG-01**: Python bridge (nano-bridge.py) loads voyage-4-nano and returns embeddings via JSON-over-stdin/stdout
-- [ ] **BRDG-02**: Node.js bridge manager (nano.js) spawns, communicates with, and manages the Python subprocess
-- [ ] **BRDG-03**: Bridge manager keeps Python process warm between calls with configurable idle timeout
-- [x] **BRDG-04**: Every failure mode has a clear error message with an actionable remediation command
-- [ ] **BRDG-05**: BRIDGE_VERSION in Python matches package.json, with automated sync script and CI check
+- [x] **BRDG-02**: Node.js bridge manager (nano.js) spawns, communicates with, and manages the Python subprocess
+- [x] **BRDG-03**: Bridge manager keeps Python process warm between calls with configurable idle timeout
+- [ ] **BRDG-04**: Every failure mode has a clear error message with an actionable remediation command
+- [x] **BRDG-05**: BRIDGE_VERSION in Python matches package.json, with automated sync script and CI check
 
 ### Command Integration
 
@@ -40,8 +40,8 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Testing
 
-- [ ] **TEST-01**: Unit tests for bridge protocol (mock subprocess, verify JSON in/out)
-- [ ] **TEST-02**: Unit tests for bridge manager lifecycle (spawn, warm, shutdown, timeout)
+- [x] **TEST-01**: Unit tests for bridge protocol (mock subprocess, verify JSON in/out)
+- [x] **TEST-02**: Unit tests for bridge manager lifecycle (spawn, warm, shutdown, timeout)
 - [x] **TEST-03**: Unit tests for setup logic (Python detection, step resumption)
 - [x] **TEST-04**: Unit tests for error taxonomy (every error has remediation string)
 
@@ -88,10 +88,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SETUP-04 | Phase 2 | Complete |
 | SETUP-05 | Phase 2 | Complete |
 | BRDG-01 | Phase 1 | Complete |
-| BRDG-02 | Phase 1 | Pending |
-| BRDG-03 | Phase 1 | Pending |
-| BRDG-04 | Phase 1 | Complete |
-| BRDG-05 | Phase 1 | Pending |
+| BRDG-02 | Phase 1 | Complete |
+| BRDG-03 | Phase 1 | Complete |
+| BRDG-04 | Phase 4 | Pending |
+| BRDG-05 | Phase 1 | Complete |
 | CMD-01 | Phase 3 | Complete |
 | CMD-02 | Phase 3 | Complete |
 | CMD-03 | Phase 3 | Complete |
@@ -101,8 +101,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | REL-01 | Phase 2 | Complete |
 | REL-02 | Phase 2 | Complete |
 | REL-03 | Phase 2 | Complete |
-| TEST-01 | Phase 1 | Pending |
-| TEST-02 | Phase 1 | Pending |
+| TEST-01 | Phase 1 | Complete |
+| TEST-02 | Phase 1 | Complete |
 | TEST-03 | Phase 2 | Complete |
 | TEST-04 | Phase 3 | Complete |
 
@@ -113,4 +113,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-03-06*
-*Last updated: 2026-03-06 after roadmap creation*
+*Last updated: 2026-03-06 after gap closure phase creation*
