@@ -57,9 +57,11 @@ function registerPipeline(program) {
     .option('-c, --chunk-size <n>', 'Target chunk size in characters', (v) => parseInt(v, 10))
     .option('--overlap <n>', 'Overlap between chunks', (v) => parseInt(v, 10))
     .option('--batch-size <n>', 'Texts per embedding API call', (v) => parseInt(v, 10), 25)
+    .option('--store-batch-size <n>', 'Documents per MongoDB insert (avoid EPIPE on large runs)', (v) => parseInt(v, 10), 100)
     .option('--text-field <name>', 'Text field for JSON/JSONL input', 'text')
     .option('--extensions <exts>', 'File extensions to include')
     .option('--ignore <dirs>', 'Directory names to skip', 'node_modules,.git,__pycache__')
+    .option('--local', 'Use local voyage-4-nano model (no API key required)')
     .option('--create-index', 'Auto-create vector search index if it doesn\'t exist')
     .option('--dry-run', 'Show what would happen without executing')
     .option('--estimate', 'Show estimated tokens and cost without executing')
@@ -78,11 +80,15 @@ function registerPipeline(program) {
         const field = opts.field || proj.field || 'embedding';
         const index = opts.index || proj.index || 'vector_index';
         let model = opts.model || proj.model || getDefaultModel();
+        if (opts.local) {
+          model = 'voyage-4-nano';
+        }
         const dimensions = opts.dimensions || proj.dimensions;
         const strategy = opts.strategy || projChunk.strategy || 'recursive';
         const chunkSize = opts.chunkSize || projChunk.size || 512;
         const overlap = opts.overlap != null ? opts.overlap : (projChunk.overlap != null ? projChunk.overlap : 50);
         const batchSize = opts.batchSize || 25;
+        const storeBatchSize = opts.storeBatchSize ?? 100;
         const textField = opts.textField || 'text';
 
         if (!db || !collection) {
@@ -206,7 +212,7 @@ function registerPipeline(program) {
         }
 
         // Estimate — show comparison table, let user confirm or switch model, then continue
-        if (opts.estimate) {
+        if (opts.estimate && !opts.local) {
           const { confirmOrSwitchModel } = require('../lib/cost');
           const chosenModel = await confirmOrSwitchModel(totalTokens, model, { json: opts.json });
           if (!chosenModel) return; // cancelled
@@ -234,10 +240,18 @@ function registerPipeline(program) {
             process.stderr.write(`\r  Batch ${bi + 1}/${batches.length} (${pct}%)...`);
           }
 
-          const embedOpts = { model, inputType: 'document' };
-          if (dimensions) embedOpts.dimensions = dimensions;
-
-          const result = await generateEmbeddings(texts, embedOpts);
+          let result;
+          if (opts.local) {
+            const { generateLocalEmbeddings } = require('../nano/nano-local.js');
+            result = await generateLocalEmbeddings(texts, {
+              inputType: 'document',
+              dimensions,
+            });
+          } else {
+            const embedOpts = { model, inputType: 'document' };
+            if (dimensions) embedOpts.dimensions = dimensions;
+            result = await generateEmbeddings(texts, embedOpts);
+          }
           totalApiTokens += result.usage?.total_tokens || 0;
 
           for (let j = 0; j < result.data.length; j++) {
@@ -252,7 +266,7 @@ function registerPipeline(program) {
           console.log('');
         }
 
-        // Step 4: Store in MongoDB
+        // Step 4: Store in MongoDB (batched to avoid EPIPE / 16MB limits)
         if (verbose) console.log(ui.bold('Step 3/3 — Storing in MongoDB'));
 
         const { client: c, collection: coll } = await getMongoCollection(db, collection);
@@ -266,7 +280,19 @@ function registerPipeline(program) {
           _embeddedAt: new Date(),
         }));
 
-        const insertResult = await coll.insertMany(documents);
+        let totalInserted = 0;
+        for (let i = 0; i < documents.length; i += storeBatchSize) {
+          const batch = documents.slice(i, i + storeBatchSize);
+          const result = await coll.insertMany(batch);
+          totalInserted += result.insertedCount;
+          if (verbose && documents.length > storeBatchSize) {
+            const pct = Math.min(100, Math.round(((i + batch.length) / documents.length) * 100));
+            process.stderr.write(`\r  Inserted ${fmtNum(totalInserted)} / ${fmtNum(documents.length)} (${pct}%)...`);
+          }
+        }
+        if (verbose && documents.length > storeBatchSize) process.stderr.write('\r');
+
+        const insertResult = { insertedCount: totalInserted };
 
         if (verbose) {
           console.log(`  ${ui.green('✓')} Inserted ${fmtNum(insertResult.insertedCount)} documents`);
@@ -329,7 +355,13 @@ function registerPipeline(program) {
         });
       } catch (err) {
         telemetry.send('cli_error', { command: 'pipeline', errorType: err.constructor.name });
-        console.error(ui.error(err.message));
+        const isEpipe = err.code === 'EPIPE' || err.message?.includes('EPIPE');
+        if (isEpipe) {
+          console.error(ui.error('Connection closed while writing to MongoDB (EPIPE).'));
+          console.error(ui.dim('  Try: --store-batch-size 50  or check network/Atlas connectivity.'));
+        } else {
+          console.error(ui.error(err.message));
+        }
         process.exit(1);
       } finally {
         if (client) await client.close();
