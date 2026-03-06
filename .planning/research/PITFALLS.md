@@ -1,326 +1,340 @@
 # Domain Pitfalls
 
-**Domain:** Node.js/Python subprocess bridge for local ML inference
+**Domain:** Adding zero-dependency demos and documentation to a CLI with local ML inference
 **Researched:** 2026-03-06
-**Confidence:** HIGH (well-documented problem domain with extensive community experience)
+**Confidence:** HIGH (based on codebase analysis of existing demo patterns, setup flow, and bridge behavior)
 
 ## Critical Pitfalls
 
-Mistakes that cause rewrites or major issues.
+Mistakes that cause rewrites or major user experience failures.
 
-### Pitfall 1: Python stdout Buffering Silently Swallows Output
+### Pitfall 1: Demo Runs Without Checking Setup State, Producing Cryptic Bridge Errors
 
-**What goes wrong:** Python buffers stdout when writing to a pipe (not a TTY). The Node.js parent spawns the Python bridge, writes JSON to stdin, and waits for a response on stdout. Python processes the request and calls `print(json_response)` -- but the output sits in Python's internal buffer and never reaches Node.js. The parent hangs indefinitely waiting for data that is sitting in a 4-8KB buffer inside the child process.
+**What goes wrong:** `vai demo nano` launches, starts embedding sample texts, and the bridge manager throws `NANO_VENV_MISSING` or `NANO_DEPS_MISSING` with a stack trace. The user sees a wall of error output about missing Python packages instead of a helpful "run `vai nano setup` first" message. The demo feels broken rather than guiding the user.
 
-**Why it happens:** Python uses full buffering (not line buffering) when stdout is a pipe. This is a POSIX behavior. When the Python process is a long-running subprocess (as the warm bridge will be), output only flushes when the buffer fills (~8KB) or the process exits. A single JSON embedding response is typically 1-4KB -- below the flush threshold.
+**Why it happens:** The existing demos (cost-optimizer, code-search, chat) use `checkPrerequisites(['api-key', 'mongodb'])` which validates config values -- simple string checks. The nano demo needs to validate _system state_: Python installed, venv exists, deps installed, model downloaded. These are four separate checks with four separate failure modes (see `nano-setup.js` lines 162-205: `checkVenvExists()`, `checkDepsInstalled()`, `checkModelExists()`). If the demo just calls the bridge manager directly, the error comes from deep inside `NanoBridgeManager.#ensureProcess()` without demo-appropriate messaging.
 
-**Consequences:** `vai embed --local` hangs forever on the first request. Users think the model failed to load. Ctrl+C leaves zombie processes. Entire bridge architecture appears broken.
-
-**Prevention:**
-1. Launch Python with `-u` flag: `spawn('python3', ['-u', 'nano-bridge.py'])` -- forces unbuffered stdout/stderr
-2. Set `PYTHONUNBUFFERED=1` in the spawn environment as a belt-and-suspenders measure
-3. In nano-bridge.py, use `sys.stdout.flush()` after every `print()`, or use `print(..., flush=True)`
-4. Use `sys.stdout = io.TextIOWrapper(sys.stdout.buffer, write_through=True)` at script start for write-through mode
-5. **Test with pipe, not terminal.** Running `python3 nano-bridge.py` interactively works fine because TTY is line-buffered. The bug only manifests when spawned from Node.js.
-
-**Detection:** Bridge works in manual testing (`echo '{"text":"hello"}' | python3 nano-bridge.py`) but hangs when called from Node.js. This is the #1 sign of a buffering issue.
-
-**Phase:** Must be addressed in Phase 1 (bridge protocol). The `-u` flag and `flush=True` must be baked into the spawn call and bridge script from day one.
-
----
-
-### Pitfall 2: Zombie and Orphan Python Processes
-
-**What goes wrong:** The Node.js CLI spawns a Python subprocess for inference. If the CLI crashes, is killed with SIGKILL, or the user hits Ctrl+C without graceful shutdown, the Python process keeps running. Over time, users accumulate orphaned Python processes consuming memory (especially with a loaded ML model holding ~700MB+ in memory). On next `vai embed --local`, a second Python process starts, doubling memory usage.
-
-**Why it happens:** `child.kill()` sends SIGTERM to the child but does not guarantee process termination. Node.js does not automatically clean up child processes on crash. If the parent exits without calling `child.kill()`, the child becomes orphaned (reparented to init/launchd). There is no built-in mechanism in Node.js child_process to wait/waitpid for zombie reaping.
-
-**Consequences:** Memory leak (700MB per orphaned model), port/resource conflicts if using warm process with PID files, user confusion ("why is Python eating 2GB of RAM?"), potential data corruption if two bridge processes respond to stdin simultaneously.
+**Consequences:** First impression of local inference is a crash. Users who installed via `npm install -g` and ran `vai demo` (the menu) will see nano as an option, try it, and get a confusing failure. They may not know `vai nano setup` exists. Trust in the entire nano feature is damaged.
 
 **Prevention:**
-1. Write a PID file to `~/.vai/nano-bridge.pid` when the bridge starts. Before spawning, check if PID is alive and kill stale processes.
-2. Register cleanup on ALL exit signals in the bridge manager (nano.js):
-   ```javascript
-   ['exit', 'SIGINT', 'SIGTERM', 'SIGHUP', 'uncaughtException', 'unhandledRejection'].forEach(event => {
-     process.on(event, () => { if (child) child.kill('SIGTERM'); });
-   });
+1. Create a `checkNanoPrerequisites()` function that runs all four checks in order and returns specific, actionable errors for each failure state.
+2. Before any demo logic, run the prerequisite check and display a guided setup flow:
    ```
-3. Set a kill timeout: send SIGTERM, wait 3 seconds, then SIGKILL if still alive.
-4. In the Python bridge, handle SIGTERM gracefully to unload the model and exit cleanly.
-5. Add a `vai nano cleanup` or integrate cleanup into `vai nano status` that detects and kills orphaned bridge processes.
-6. Use `child.unref()` cautiously -- only if the bridge is meant to outlive the CLI process (warm mode). Otherwise, keep the reference so Node.js waits for the child.
+   Local inference requires setup (one-time, ~2 minutes):
+     vai nano setup
 
-**Detection:** `ps aux | grep nano-bridge` shows multiple Python processes. `vai nano status` should check for orphaned processes as part of its health report.
-
-**Phase:** Must be addressed in Phase 1 (bridge manager lifecycle). The PID file and signal cleanup are table stakes for the bridge manager.
-
----
-
-### Pitfall 3: Chunked/Split JSON on stdout Data Events
-
-**What goes wrong:** Node.js `child.stdout.on('data', chunk => ...)` does NOT deliver one complete message per event. A single JSON response may arrive split across multiple `data` events, or multiple JSON responses may arrive concatenated in a single `data` event. Parsing `JSON.parse(chunk.toString())` directly fails intermittently -- it works for small payloads but breaks with larger embedding vectors or when the system is under load.
-
-**Why it happens:** Pipes are byte streams, not message streams. The OS kernel delivers data in chunks up to the pipe buffer size (64KB on Linux, 16KB on macOS). A 4KB JSON response usually arrives in one chunk during testing, but under real load or with larger dimension vectors (2048-dim float32 = ~24KB of JSON), it fragments.
-
-**Consequences:** Intermittent `SyntaxError: Unexpected end of JSON input` errors. Works during development, fails in production with larger batches. Extremely hard to reproduce because it depends on timing and payload size.
-
-**Prevention:**
-1. Use newline-delimited JSON (NDJSON/JSON Lines). Each message is one JSON object followed by `\n`. The bridge writes `json.dumps(response) + '\n'` and the Node.js side buffers until it sees `\n`.
-2. Implement a proper line buffer in the bridge manager:
-   ```javascript
-   let buffer = '';
-   child.stdout.on('data', chunk => {
-     buffer += chunk.toString();
-     let lines = buffer.split('\n');
-     buffer = lines.pop(); // keep incomplete last line
-     for (const line of lines) {
-       if (line.trim()) handleResponse(JSON.parse(line));
-     }
-   });
+   This will:
+     - Create a Python virtual environment
+     - Install PyTorch + sentence-transformers (~500MB)
+     - Download voyage-4-nano model (~700MB)
    ```
-3. Never use `JSON.parse(chunk)` directly on raw data events.
-4. Test with large payloads (2048-dim embeddings, batches of 50+ texts) to trigger fragmentation.
+3. Offer to run setup inline: "Run setup now? [Y/n]" -- so the user never leaves the demo flow.
+4. If setup is partially complete (venv exists but model missing), only run the missing steps.
 
-**Detection:** `SyntaxError: Unexpected end of JSON input` or `Unexpected token` errors that appear intermittently, especially with larger inputs. If it works with short strings but fails with real documents, this is the cause.
+**Detection:** Any `NANO_*` error code appearing during a demo run instead of a prerequisite message.
 
-**Phase:** Must be addressed in Phase 1 (bridge protocol). The line-buffered JSON parser is a foundational protocol decision.
-
----
-
-### Pitfall 4: Model Download Hangs During Setup Without Progress Feedback
-
-**What goes wrong:** `vai nano setup` triggers a ~700MB model download via sentence-transformers/huggingface_hub. The download runs inside a Python subprocess. The user sees no progress for 30-120 seconds (DNS resolution, connection setup, slow networks). They assume it is frozen and Ctrl+C, leaving a partially downloaded model. On retry, depending on the download method, it may restart from scratch.
-
-**Why it happens:** The HuggingFace download progress bars write to stderr using `tqdm`, which uses carriage returns and ANSI escape codes. When captured by Node.js through a pipe, the output is garbled or buffered. The parent process has no way to display meaningful progress. Additionally, HuggingFace downloads can stall on corporate networks, VPNs, or in regions with poor CDN coverage.
-
-**Consequences:** Users abandon setup. Partially downloaded files may or may not be resumable. `vai nano status` reports "model not found" after a failed download with no explanation. Support burden increases.
-
-**Prevention:**
-1. Use `huggingface_hub.snapshot_download()` instead of relying on sentence-transformers' auto-download. It supports resumable downloads and provides a Python API for progress callbacks.
-2. Pipe stderr from the setup subprocess and parse/relay progress to the Node.js CLI (even a simple "Downloading... X MB / 700 MB" is enough).
-3. Set a generous timeout (10 minutes minimum) but show activity indicators so the user knows it is working.
-4. Verify the download with a checksum or file size check after completion.
-5. If download fails, print the manual download URL and instructions for placing files in `~/.vai/nano-model/`.
-6. Separate model download from venv setup -- if the venv is ready but the model download failed, do not force a full re-setup.
-
-**Detection:** Users reporting "setup hangs" or "setup takes forever" in issues. `~/.vai/nano-model/` directory exists but is incomplete (missing files, small file sizes).
-
-**Phase:** Phase 2 (setup orchestrator). The download mechanism needs explicit handling separate from pip install.
+**Phase:** Must be the very first thing built in the demo implementation. Gate all demo logic behind prerequisite validation.
 
 ---
 
-### Pitfall 5: Model Load Time Mistaken for Bridge Failure
+### Pitfall 2: First-Run Model Loading Latency Feels Like a Hang
 
-**What goes wrong:** The first call to the Python bridge after process start takes 3-15 seconds as PyTorch loads the model weights into memory. The Node.js bridge manager has a response timeout of (say) 5 seconds. The first request times out and the manager reports "bridge failed" even though the model was still loading.
+**What goes wrong:** The user runs `vai demo nano` for the first time. Prerequisites pass, the demo starts, and then... silence for 5-15 seconds while the bridge loads the model into memory. No spinner, no progress. The user thinks the demo crashed. They hit Ctrl+C. On second try, the same thing happens. They give up.
 
-**Why it happens:** ML model loading is slow by nature: reading ~700MB from disk, deserializing tensors, moving to device memory. This is a one-time cost per process start, but the bridge manager does not distinguish between "still loading" and "crashed."
+**Why it happens:** The nano bridge uses lazy model loading -- the `ready` signal fires immediately (before model load), and the model loads on the first `embed` request. The bridge manager waits up to 60 seconds for a response, but the demo provides no UI feedback during this wait. The existing demos don't have this problem because API calls return in 200-500ms. The local model load is 10-50x slower on first call.
 
-**Consequences:** Cold-start requests fail. Users see errors on first use even though everything is correctly configured. If the manager kills and respawns on timeout, it creates an infinite loop of load-timeout-kill-respawn.
+**Consequences:** The "30-second demo" promise is broken. Even if the actual demo content takes 10 seconds, the perceived time is 25+ seconds with a dead period in the middle. Users comparing to the API demos (which show progress immediately) will perceive nano as slow and broken.
 
 **Prevention:**
-1. Implement a two-phase startup protocol:
-   - Bridge sends a `{"status": "loading"}` message on stdout immediately after starting
-   - Bridge sends `{"status": "ready"}` after model loading completes
-   - Manager waits for "ready" with a long timeout (60 seconds) before routing requests
-2. Separate "startup timeout" (60s, generous) from "request timeout" (30s, per-request).
-3. Implement warm/cold mode: keep the bridge process alive between CLI invocations to avoid repeated cold starts.
-4. Show a spinner or progress message during cold start: "Loading voyage-4-nano model (first request may take 10-20 seconds)..."
-5. Pre-load the model during `vai nano setup` or `vai nano test` so the user sees the load time in an expected context.
+1. Show an explicit "Loading voyage-4-nano model (first time takes 10-20s)..." spinner before the first embedding call.
+2. Consider pre-warming the bridge at demo start: send a single-word embedding request before the demo content begins, with a spinner covering the wait.
+3. Time the model load and display it: "Model loaded in 8.2s" -- this normalizes the wait as expected behavior.
+4. After the first load, note that subsequent calls are fast: "Model cached -- embeddings now take ~50ms each."
+5. Structure the demo so explanatory text appears _during_ model loading, not after. Use the wait time to teach.
 
-**Detection:** First `vai embed --local` call after machine reboot fails; subsequent calls work fine. Timeout errors in logs followed immediately by successful requests.
+**Detection:** Any demo step that takes >3 seconds without a visible spinner or progress indicator.
 
-**Phase:** Phase 1 (bridge protocol) for the startup handshake; Phase 3 (bridge manager) for warm process lifecycle.
+**Phase:** Critical for demo implementation. Must be addressed in the demo pacing design, not bolted on after.
+
+---
+
+### Pitfall 3: Demo Menu Offers Nano Without Indicating Different Prerequisites
+
+**What goes wrong:** The user runs `vai demo` and sees the menu:
+```
+1. Cost Optimizer
+2. Code Search
+3. Chat With Your Docs
+4. Local Inference (nano)
+```
+They pick 4, expecting the same flow as the other demos. Instead they get "Python 3.10+ not found" or "Run vai nano setup first." The other demos clearly state they need an API key and MongoDB. The nano demo should clearly state it needs Python and a ~1.2GB download but does NOT need API keys or MongoDB.
+
+**Why it happens:** The existing menu (demo.js lines 136-185) shows demos with one-line descriptions but no prerequisite summary. The nano demo has fundamentally different prerequisites (system dependencies vs. config values), and the menu design doesn't communicate this.
+
+**Consequences:** Users with no Python installation waste time selecting a demo that can't run. Users with API keys configured but no Python skip the one demo they could run without an API key. The value proposition ("zero dependencies!") is invisible in the menu.
+
+**Prevention:**
+1. Add prerequisite tags to each menu item:
+   ```
+   1. Cost Optimizer      [requires: API key, MongoDB]
+   2. Code Search         [requires: API key, MongoDB]
+   3. Chat With Your Docs [requires: API key, MongoDB, LLM]
+   4. Local Inference      [requires: Python 3.10+ only -- no API key needed!]
+   ```
+2. Run a quick prerequisite probe for each demo and show green/red indicators:
+   ```
+   1. Cost Optimizer      [ready]
+   4. Local Inference      [needs: vai nano setup]
+   ```
+3. Position the nano demo prominently -- it's the only demo that works with zero external services. Consider making it option 1 or adding a "Try without an API key" call-to-action.
+
+**Detection:** Users selecting the nano demo and immediately hitting a prerequisite wall.
+
+**Phase:** Demo menu update should be part of the nano demo implementation, not a separate task.
+
+---
+
+### Pitfall 4: README Documents Commands That Don't Exist Yet or Have Changed
+
+**What goes wrong:** The README says "Run `vai demo nano` to try local inference" but the command isn't implemented yet (or is in a feature branch). The README shows `vai embed --local "hello"` with output format X but the actual output is format Y. The README mentions `vai nano setup` downloading "~500MB" but it's actually ~1.2GB (venv + model). Users try the documented commands and get errors or unexpected results, damaging trust in the documentation.
+
+**Why it happens:** Documentation is written before or during implementation. Features change during development. Version numbers, file sizes, output formats, and command flags drift. The README is not tested -- there's no CI step that runs the documented commands.
+
+**Consequences:** Every wrong command in the README is a support ticket. Users copy-paste from the README and get errors. "The docs are wrong" undermines confidence in the entire tool. Particularly bad for a "Quick Start" section where users are evaluating the tool.
+
+**Prevention:**
+1. Write README documentation AFTER the commands are implemented and manually tested -- never speculatively.
+2. Include actual terminal output in the README, captured from a real run (not hand-typed).
+3. Add a CI smoke test that extracts code blocks from the README and runs them (at least the `vai demo nano --no-pause` and `vai nano status` commands).
+4. Use exact sizes from real measurements: run `vai nano setup` on a clean machine, note the actual download sizes, and use those numbers.
+5. Version-gate the README section: if `vai demo nano` ships in v1.32.0, the README section should reference that version.
+6. Review the README diff before every release -- specifically check that all documented commands match the actual CLI help output.
+
+**Detection:** Any `vai` command in the README that returns "Unknown command" or has different flags than documented.
+
+**Phase:** README updates must be the LAST task in the milestone, after all commands are implemented and tested.
+
+---
+
+### Pitfall 5: Demo Sample Data Requires Network Access or External Service
+
+**What goes wrong:** The nano demo is supposed to be "zero-dependency" but the sample data it embeds is fetched from a URL, or the demo tries to store results in MongoDB, or it calls the Voyage API to compare local vs. API embeddings. Any network dependency violates the zero-dependency promise and causes failures on airplanes, corporate firewalls, or machines without MongoDB.
+
+**Why it happens:** Developer instinct is to make the demo "interesting" by showing comparisons, storing in a database, or fetching real-world data. The existing demos (cost-optimizer, code-search, chat) all require MongoDB + API key. It's natural to reuse the `demo-ingest.js` patterns, which call `generateEmbeddings()` (API) and `getMongoCollection()` (MongoDB).
+
+**Consequences:** The demo that's marketed as "zero-dependency" fails when the user doesn't have MongoDB configured. The entire value proposition ("try Voyage AI with nothing but Python and Node") collapses. Users who specifically chose the nano demo because they don't have an API key are exactly the users who will hit this failure.
+
+**Prevention:**
+1. The nano demo must use ONLY: local filesystem (for sample data bundled in the npm package), the nano bridge (for embeddings), and stdout (for results).
+2. Bundle 5-10 small sample text files in `src/demo/sample-data/` (already exists with markdown files -- reuse these).
+3. Compute similarity in-process using cosine similarity on the returned vectors -- no MongoDB vector search needed.
+4. Show results as formatted terminal output, not as database queries.
+5. If comparing local vs. API embeddings, make it opt-in: "Run with --compare to also call the Voyage API (requires API key)."
+6. Code review checklist: grep the nano demo file for `require('../lib/api')`, `require('../lib/mongo')`, `fetch(`, `http`, `https` -- none should appear in the default path.
+
+**Detection:** Any `require()` of api.js, mongo.js, or network-dependent modules in the nano demo's main execution path.
+
+**Phase:** Must be a design constraint from the start. Define the "zero-dependency boundary" before writing any demo code.
 
 ## Moderate Pitfalls
 
-### Pitfall 6: Python Version Detection and venv Creation Failures
+### Pitfall 6: Demo Pacing Assumes Fast Machine -- No Adaptation for Slow Hardware
 
-**What goes wrong:** The setup script calls `python3` but the user has Python 3.8 (below the 3.9 minimum), or they have only `python` (not `python3`), or their `python3` points to a Homebrew installation that lacks `venv` module, or `ensurepip` is not available. The venv creation fails with a confusing error.
+**What goes wrong:** The demo is designed on a developer's M2 MacBook where model load takes 5s and embedding takes 50ms. On a 2019 Intel Mac or a budget Linux laptop, model load takes 30s and embedding takes 500ms. The demo's progress messages ("Step 2 of 4...") feel wrong because each step takes 5x longer than expected. Fixed-duration messages like "this takes about 5 seconds" are wrong on slow hardware.
+
+**Why it happens:** Developers test on fast hardware. Demo timing messages are hardcoded. No adaptation to actual performance.
 
 **Prevention:**
-1. Probe multiple Python executables in order: `python3.12`, `python3.11`, `python3.10`, `python3.9`, `python3`, `python`.
-2. For each candidate, run `python3 -c "import sys; print(sys.version_info[:2])"` and check `>= (3, 9)`.
-3. Verify `python3 -m venv --help` works before attempting venv creation.
-4. On macOS, detect if `python3` is the Xcode shim (which prompts for install) by checking the path.
-5. Cache the discovered Python path in `~/.vai/python-path` so subsequent commands do not re-probe.
-6. Provide clear error messages: "Python 3.9+ required. Found Python 3.8.10 at /usr/bin/python3. Install Python 3.9+ from python.org or via Homebrew."
+1. Never hard-code timing expectations in user-facing messages. Use "this may take a moment" instead of "this takes about 5 seconds."
+2. Show actual elapsed time after each step: "Model loaded in 12.3s" -- this is informative without setting incorrect expectations.
+3. Use spinners (the existing `ui.spinner()` pattern) for any step that takes >1 second.
+4. If the demo includes multiple embedding calls, time the first one and use that as a baseline for estimating remaining time.
 
-**Phase:** Phase 2 (setup orchestrator). Python detection is the very first step of setup.
+**Detection:** Any hardcoded time estimate in demo output strings.
+
+**Phase:** Demo implementation. Use the existing `ui.spinner()` pattern consistently.
 
 ---
 
-### Pitfall 7: venv Path Differences Between macOS and Linux
+### Pitfall 7: `vai explain nano` Content Gets Stale When Features Change
 
-**What goes wrong:** The venv Python binary is at `~/.vai/nano-env/bin/python3` on macOS/Linux, but if Windows support is ever added, it is at `~/.vai/nano-env/Scripts/python.exe`. Even on macOS/Linux, the actual binary name may be `python`, `python3`, or `python3.X` depending on how the venv was created. Code that hardcodes `bin/python3` breaks.
+**What goes wrong:** The `vai explain nano` topic describes the setup flow, supported dimensions, and demo commands. A later update changes the setup steps or adds new demo modes. The explain content is not updated. Users read `vai explain nano` and follow instructions that no longer match reality.
+
+**Why it happens:** Explain content lives in `src/lib/explanations.js` (or a similar content file), separate from the implementation code. There's no automated link between feature code and explain content. Developers updating command behavior don't think to update the explain content because it's in a different file.
 
 **Prevention:**
-1. Resolve the venv Python path dynamically: check for `bin/python3`, then `bin/python`, within the venv directory.
-2. Store the resolved path after successful setup in a config file (`~/.vai/nano-config.json`) rather than re-resolving each time.
-3. For now, explicitly document macOS/Linux only and skip Windows path logic (per project scope).
-4. Use `path.join()` not string concatenation for all path construction.
+1. Add a checklist item to the PR template: "If this PR changes nano behavior, update `vai explain nano` content."
+2. Keep explain content factual and reference-style ("run `vai nano setup`") rather than procedural ("Step 1: run X, Step 2: run Y") -- factual content is less fragile.
+3. Include a "last updated" version reference in the explain content so staleness is visible.
+4. In CI, add a lint rule that flags changes to `src/nano/` without corresponding changes to explain content (a warning, not a blocker).
 
-**Phase:** Phase 2 (setup orchestrator).
+**Detection:** Any discrepancy between `vai explain nano` output and actual `vai nano --help` output.
+
+**Phase:** Explain content should be written after implementation is stable, reviewed alongside the README update.
 
 ---
 
-### Pitfall 8: pip Install Fails Silently or With Confusing Errors
+### Pitfall 8: Demo Cleanup State Leak Between Runs
 
-**What goes wrong:** `pip install -r requirements.txt` inside the venv fails because: PyTorch has no wheel for the user's platform/Python version combination, the user is behind a corporate proxy, disk space is insufficient for PyTorch (~2GB), or pip itself is outdated. The error output from pip is verbose and hard to parse programmatically.
+**What goes wrong:** The user runs `vai demo nano`, it creates temporary files or bridge processes. The demo crashes mid-way. On re-run, the demo finds stale state (partially embedded data, a warm bridge with old state, temporary files in /tmp) and produces confusing results or errors.
+
+**Why it happens:** The existing demos use MongoDB collections that can be cleanly dropped (`vai demo cleanup`). The nano demo uses the bridge process (shared warm process) and possibly local temp files. If the demo crashes between "start bridge" and "demo complete," the bridge may be in an inconsistent state.
 
 **Prevention:**
-1. Upgrade pip first: `python -m pip install --upgrade pip` inside the venv.
-2. Install requirements with `--no-cache-dir` on first attempt to avoid stale cache issues.
-3. Parse pip's exit code (not its output) for success/failure detection.
-4. For PyTorch specifically, use the CPU-only variant URL (`--index-url https://download.pytorch.org/whl/cpu`) unless CUDA is detected. This dramatically reduces download size (from ~2GB to ~200MB).
-5. Check available disk space before starting (need ~3GB free for venv + model).
-6. On failure, display the last 20 lines of pip output and suggest `vai nano setup --verbose` for full output.
+1. The nano demo should be stateless: compute embeddings, display results, exit. No persistent state between runs.
+2. Don't store demo results anywhere -- compute and display inline.
+3. If the demo creates any temporary files, use a try/finally block to clean them up.
+4. Don't rely on the bridge's warm process state -- each demo run should work identically whether the bridge is cold or warm.
+5. Add the nano demo to `vai demo cleanup` so users have a single cleanup command.
 
-**Phase:** Phase 2 (setup orchestrator). pip installation is the most failure-prone step of setup.
+**Detection:** Running `vai demo nano` twice in a row produces different results or errors on the second run.
+
+**Phase:** Demo design constraint. Statelessness should be a design goal from the start.
 
 ---
 
-### Pitfall 9: stdin Backpressure When Sending Large Batches
+### Pitfall 9: `vai demo chat --local` Conflates "No API Key" With "No MongoDB"
 
-**What goes wrong:** The Node.js side writes a large JSON payload (e.g., 50 documents, each 1000 tokens) to the child's stdin using `child.stdin.write(payload)`. The write returns `false` (backpressure signal) but the code ignores it and continues. Or worse, `child.stdin.write()` throws `ERR_STREAM_DESTROYED` because the Python process crashed during model loading and the pipe is broken.
+**What goes wrong:** The `vai demo chat --local` variant is marketed as "local embeddings" but still requires MongoDB for vector storage and an LLM provider for generation. Users who have no API key assume `--local` means "everything runs locally" and are confused when they still need MongoDB and an LLM API key.
+
+**Why it happens:** `--local` in the codebase means "use nano instead of the Voyage API for embeddings." But "local" to users means "everything runs on my machine." The flag name creates a false expectation. The existing chat demo requires three services (Voyage API, MongoDB, LLM) -- `--local` removes only one.
+
+**Consequences:** Users who want a fully-local experience are disappointed. The prerequisite error ("MongoDB URI not configured") after they thought they were going local undermines trust. The documentation must carefully explain what `--local` does and doesn't mean.
 
 **Prevention:**
-1. Always check the return value of `child.stdin.write()`. If `false`, wait for the `drain` event before writing more.
-2. Wrap stdin writes in a promise-based helper that handles backpressure:
-   ```javascript
-   function writeToStdin(child, data) {
-     return new Promise((resolve, reject) => {
-       const ok = child.stdin.write(data + '\n');
-       if (ok) resolve();
-       else child.stdin.once('drain', resolve);
-       child.stdin.once('error', reject);
-     });
-   }
+1. In the demo menu entry for `chat --local`, explicitly state: "Uses local embeddings (no Voyage API key), but still requires MongoDB and an LLM provider."
+2. Consider naming it `vai demo chat --nano-embeddings` instead of `--local` to avoid ambiguity.
+3. In the prerequisite check for `vai demo chat --local`, list exactly what's needed and what's not:
    ```
-3. Handle `child.stdin.on('error')` to detect broken pipes instead of crashing with an unhandled exception.
-4. Set reasonable batch size limits on the Node.js side (e.g., max 100 texts per request to the bridge).
+   Required: MongoDB URI, LLM provider (OpenAI/Anthropic/Ollama)
+   NOT required: Voyage AI API key (using local nano embeddings)
+   ```
+4. In `vai demo nano` (the pure zero-dep demo), explicitly contrast: "Unlike `vai demo chat --local`, this demo requires nothing but Python."
+5. Long-term, consider a fully local chat demo using Ollama for LLM + nano for embeddings + local file storage instead of MongoDB. But that's a future milestone.
 
-**Phase:** Phase 1 (bridge protocol). Backpressure handling must be part of the bridge communication layer.
+**Detection:** Users reporting "I thought --local meant no external services."
 
----
-
-### Pitfall 10: `trust_remote_code=True` Security Implications
-
-**What goes wrong:** The voyage-4-nano model from HuggingFace requires `trust_remote_code=True` in the sentence-transformers loading call. This flag allows the model repository to execute arbitrary Python code during loading. If the model repository is compromised (supply chain attack), the user's machine executes malicious code.
-
-**Prevention:**
-1. Pin the exact model revision/commit hash in the download step, not just the model name. Use `snapshot_download(revision="abc123")`.
-2. Verify the model source is the official `voyageai/voyage-4-nano` repository.
-3. Document the security implications clearly in `vai nano setup` output and `vai explain nano` content.
-4. Consider downloading model files directly (weights, config, tokenizer) without `trust_remote_code` if the model architecture is supported natively by transformers (check if this is possible for voyage-4-nano specifically).
-5. After first download, load from local cache path only -- never re-download without explicit user action.
-
-**Phase:** Phase 2 (setup orchestrator) for download pinning; Phase 1 (bridge) for loading behavior.
+**Phase:** Must be clarified in demo menu text and README documentation. Address during demo implementation.
 
 ---
 
-### Pitfall 11: Concurrent CLI Invocations Corrupt Bridge State
+### Pitfall 10: Demo Output Not Suitable for CI/Recording (--no-pause Gaps)
 
-**What goes wrong:** User runs `vai ingest --local file1.txt` in one terminal and `vai embed --local "query"` in another. Both CLI processes try to communicate with the same warm bridge process via the same PID file. Responses get interleaved -- process A receives the embedding meant for process B.
+**What goes wrong:** The demo uses `--no-pause` for CI runs (existing pattern from the other demos). But the nano demo has variable-length waits (model loading, embedding batches) that don't work well with `--no-pause`. In CI, the demo output includes spinner characters and carriage returns that produce garbled logs. For demo recordings (e.g., asciinema for README GIFs), the timing is wrong because model loading creates dead air.
+
+**Why it happens:** The existing demos' `--no-pause` only skips the "Press Enter to continue" prompts. It doesn't address spinner output in non-TTY environments or variable-length waits.
 
 **Prevention:**
-1. Use request IDs in the JSON protocol: `{"id": "uuid", "text": "..."}` and `{"id": "uuid", "embedding": [...]}`. Each CLI process matches responses by ID.
-2. Alternatively, do not share bridge processes between CLI invocations -- each CLI spawns its own bridge. Simpler but uses more memory.
-3. If sharing a warm bridge, use a mutex/lock file (`~/.vai/nano-bridge.lock`) to serialize access.
-4. For the MVP, use one-bridge-per-CLI-invocation (cold start each time) and add warm shared bridge in a later phase.
+1. Detect non-TTY environments (`!process.stdout.isTTY`) and disable spinners, use plain text progress instead.
+2. For CI runs, emit structured log lines: `[nano-demo] Step 1/4: Loading model... [OK 8.2s]`
+3. For recording, add a `--recording` flag that uses fixed-pace output with artificial delays between steps to create a watchable flow.
+4. Test the demo in CI (pipe stdout to a file, verify the output is clean and parseable).
 
-**Phase:** Phase 3 (bridge manager lifecycle). Concurrency is a later concern after the basic bridge works.
+**Detection:** Demo CI output containing ANSI escape codes or garbled spinner output.
+
+**Phase:** Should be addressed during demo implementation, reusing the existing `--no-pause` pattern but extending it for non-TTY detection.
 
 ## Minor Pitfalls
 
-### Pitfall 12: Python Prints Debug Output to stdout, Breaking JSON Protocol
+### Pitfall 11: Cosine Similarity Display Precision Confuses Users
 
-**What goes wrong:** A Python dependency (PyTorch, transformers, sentence-transformers) prints a warning, deprecation notice, or progress bar to stdout. The Node.js JSON parser receives `"WARNING: ..." + '{"embedding": [...]}'` and fails to parse.
+**What goes wrong:** The nano demo shows cosine similarity scores like `0.9234567890123456`. Users don't know if 0.92 is "good" or "bad." Without context, the raw numbers are meaningless. Or worse, the demo shows similarities between unrelated texts at 0.75 and the user thinks that's "pretty similar" when it's actually low for this model.
 
 **Prevention:**
-1. Redirect all Python warnings and logging to stderr, not stdout: `import warnings; warnings.filterwarnings('default'); import logging; logging.basicConfig(stream=sys.stderr)`
-2. Set `TRANSFORMERS_VERBOSITY=error` and `TOKENIZERS_PARALLELISM=false` environment variables when spawning the bridge.
-3. In the bridge script, reassign stdout early: capture the real stdout for JSON output and redirect `sys.stdout` to stderr for any print statements from dependencies.
-4. Test with `PYTHONWARNINGS=all` to catch any rogue stdout writes during CI.
+1. Display similarity with 3-4 decimal places max: `0.923` not `0.9234567890123456`.
+2. Add qualitative labels: `0.923 (very similar)`, `0.412 (somewhat related)`, `0.089 (unrelated)`.
+3. Show a comparison that makes the scale intuitive: embed "cat" vs "kitten" (high) and "cat" vs "database" (low) so users calibrate their expectations.
+4. If showing a similarity matrix, use color-coding (green for high, red for low) in terminal output.
 
-**Phase:** Phase 1 (bridge protocol). Must be set up before any model loading code runs.
+**Phase:** Demo implementation detail. Easy to get right if planned for.
 
 ---
 
-### Pitfall 13: HuggingFace Cache vs. Custom Cache Directory Confusion
+### Pitfall 12: Sample Data Files Missing From npm Package
 
-**What goes wrong:** The project stores the model at `~/.vai/nano-model/` but sentence-transformers defaults to `~/.cache/huggingface/hub/`. The model gets downloaded twice -- once by the setup script to the custom location, and once by sentence-transformers to its default cache. Users end up with 1.4GB of duplicate model files.
+**What goes wrong:** The nano demo references sample data files in `src/demo/sample-data/`. The npm package's `files` field in `package.json` doesn't include this directory. Users install via `npm install -g voyageai-cli` and the demo fails with "Sample data directory not found."
+
+**Why it happens:** The `files` field in `package.json` is a whitelist. New directories must be explicitly added. This is easy to forget because `npm pack` during local development includes everything (or the developer tests with `node src/index.js` which resolves paths relative to the source tree, not the installed package).
 
 **Prevention:**
-1. Set `HF_HOME` or `TRANSFORMERS_CACHE` environment variable to `~/.vai/nano-model/` when spawning the bridge and during setup.
-2. Use `cache_folder` parameter in `SentenceTransformer(model_name, cache_folder="~/.vai/nano-model/")`.
-3. Verify in integration tests that only `~/.vai/nano-model/` contains model files after setup.
-4. In `vai nano clear-cache`, only delete from the custom path. Warn about the HuggingFace default cache if it also contains the model.
+1. After adding the nano demo, run `npm pack` and inspect the tarball to verify sample data is included.
+2. Add a CI test that installs the package from the tarball and runs `vai demo nano --no-pause`.
+3. Add `src/demo/sample-data/` to the `files` array in `package.json` explicitly.
+4. Keep sample data small (<100KB total) to avoid bloating the npm package.
 
-**Phase:** Phase 2 (setup orchestrator) and Phase 1 (bridge model loading).
+**Detection:** `vai demo nano` works in development but fails after `npm install -g`.
+
+**Phase:** Must be verified before the npm release that includes the nano demo.
 
 ---
 
-### Pitfall 14: Version Sync Drift Between Node.js and Python Bridge
+### Pitfall 13: README Local Inference Section Buried Below the Fold
 
-**What goes wrong:** The CLI is updated via `npm update` but the venv and Python bridge files are not rebuilt. The Node.js bridge manager expects protocol v2 but the cached Python bridge still speaks protocol v1. Errors are cryptic ("unexpected response format").
+**What goes wrong:** The README's "Local Inference" section is added at the bottom, after 500+ lines of existing content about API workflows, MCP server, Workflow Store, etc. Users scanning the README never see it. The "Quick Start" section still leads with "Set credentials: export VOYAGE_API_KEY=..." which implies an API key is always required.
 
-**Prevention:**
-1. Embed `BRIDGE_VERSION` as a constant in both `package.json` and `nano-bridge.py`.
-2. On bridge startup, the Python script sends `{"version": "1.2.0"}` as its first message. The Node.js manager checks compatibility.
-3. On version mismatch, print a clear message: "Bridge version mismatch. Run `vai nano setup --upgrade` to update."
-4. The version sync script (`scripts/sync-nano-version.js`) should be part of the release CI pipeline.
-5. Minor version bumps require venv rebuild; patch versions should be backward compatible.
-
-**Phase:** Phase 1 (bridge protocol) for the version handshake; ongoing CI concern.
-
----
-
-### Pitfall 15: macOS `__PYVENV_LAUNCHER__` Environment Variable Interference
-
-**What goes wrong:** On macOS, when Python is invoked through certain paths (especially Homebrew or pyenv shims), the `__PYVENV_LAUNCHER__` environment variable is set. This can cause the venv Python to resolve to the wrong interpreter, leading to import errors where packages installed in the venv are not found.
+**Why it happens:** Adding new content to an existing README defaults to appending at the bottom. The existing README structure (814 lines) is API-first because that was the original product. Local inference is a paradigm shift that needs structural changes to the README, not just a new section.
 
 **Prevention:**
-1. When spawning the bridge process, explicitly delete `__PYVENV_LAUNCHER__` from the environment:
-   ```javascript
-   const env = { ...process.env };
-   delete env.__PYVENV_LAUNCHER__;
-   spawn(pythonPath, args, { env });
+1. Add a "Zero-Setup Local Inference" callout near the top of the README, before or alongside the "Quick Start" section:
+   ```markdown
+   > **No API key?** Try local inference:
+   > ```bash
+   > vai nano setup && vai demo nano
+   > ```
    ```
-2. Use the full absolute path to the venv Python binary, never a shim or symlink.
-3. Test on macOS with both Homebrew Python and python.org installer.
+2. Update the "Three Ways to Use It" table to mention local inference as a capability.
+3. Add "Local Inference" to the Table of Contents.
+4. Keep the dedicated section concise (50-80 lines) -- link to `vai explain nano` for deep details rather than duplicating content.
 
-**Phase:** Phase 2 (setup orchestrator) and Phase 1 (bridge spawn).
+**Detection:** If a new user reading the README top-to-bottom doesn't encounter local inference within the first 100 lines, it's buried too deep.
+
+**Phase:** README restructuring should be planned alongside content creation, not treated as "just add a section."
+
+---
+
+### Pitfall 14: Explain Content Duplicates README Content, Creating Two Sources of Truth
+
+**What goes wrong:** `vai explain nano` and the README "Local Inference" section both describe the setup flow, model details, and usage patterns. When one is updated, the other is not. Users get conflicting information depending on whether they read the README or run `vai explain nano`.
+
+**Why it happens:** The README targets users reading GitHub/npm, while `vai explain` targets users in the terminal. Both need to explain the same feature but in different formats. Without a deliberate content strategy, they drift.
+
+**Prevention:**
+1. Define clear content boundaries: README = "what it is and how to start" (5-10 lines); `vai explain nano` = "how it works in depth" (full explanation).
+2. The README should reference `vai explain nano` for details: "For architecture details, run `vai explain nano`."
+3. `vai explain nano` should NOT duplicate the installation steps from the README. Instead: "See the README for installation, or run `vai nano setup`."
+4. Both should share the same "fact sheet" (model size, supported dimensions, Python version) from a single source file if possible.
+
+**Detection:** Any sentence that appears verbatim in both the README and explain content.
+
+**Phase:** Content planning before writing either document. Define the content boundary first.
 
 ## Phase-Specific Warnings
 
 | Phase Topic | Likely Pitfall | Mitigation |
 |-------------|---------------|------------|
-| Bridge protocol (Phase 1) | stdout buffering (#1), chunked JSON (#3), rogue stdout (#12) | Use `-u` flag, NDJSON protocol, stderr redirection from day one |
-| Bridge protocol (Phase 1) | Model load timeout (#5) | Two-phase startup handshake with "loading"/"ready" messages |
-| Bridge protocol (Phase 1) | Version handshake (#14) | Send version as first message, validate compatibility |
-| Setup orchestrator (Phase 2) | Python detection (#6), venv paths (#7) | Probe multiple binaries, resolve paths dynamically |
-| Setup orchestrator (Phase 2) | pip failures (#8), download hangs (#4) | CPU-only PyTorch, resumable downloads, progress relay |
-| Setup orchestrator (Phase 2) | Cache duplication (#13) | Set `HF_HOME`/`cache_folder` consistently |
-| Bridge manager (Phase 3) | Zombie processes (#2), concurrency (#11) | PID files, signal cleanup, request IDs |
-| Bridge manager (Phase 3) | stdin backpressure (#9) | Drain handling, batch size limits |
-| Security review | `trust_remote_code` (#10) | Pin model revision, document implications |
-| Cross-platform | macOS `__PYVENV_LAUNCHER__` (#15) | Delete from env on spawn |
+| `vai demo nano` implementation | No setup check before demo (#1) | Build prerequisite validation first, before any demo logic |
+| `vai demo nano` implementation | Model load latency perceived as hang (#2) | Pre-warm bridge with spinner, use wait time for explanatory text |
+| `vai demo nano` implementation | Network dependencies in "zero-dep" demo (#5) | Grep for api.js/mongo.js imports in demo path; use only local compute |
+| Demo menu update | Missing prerequisite indicators (#3) | Show requirements and readiness status per demo |
+| Demo pacing | Hardcoded timing assumptions (#6) | Use spinners and actual elapsed time, never "about X seconds" |
+| `vai demo chat --local` | "Local" means different things (#9) | Explicitly list what's local and what still needs services |
+| README update | Documents unimplemented commands (#4) | Write README LAST, after commands are tested; add CI smoke test |
+| README update | Local inference buried at bottom (#13) | Add callout near top, update Quick Start section |
+| `vai explain nano` | Content staleness (#7) | Write after implementation stabilizes; keep factual not procedural |
+| Content strategy | README vs explain duplication (#14) | Define content boundaries before writing either |
+| npm packaging | Sample data missing from tarball (#12) | Verify with `npm pack` inspection; add CI test |
+| CI/recording | Garbled output in non-TTY (#10) | Detect non-TTY, use plain text progress |
+| Demo cleanup | State leak between runs (#8) | Design demo as stateless: compute, display, exit |
 
 ## Sources
 
-- [Node.js child_process documentation](https://nodejs.org/api/child_process.html) - HIGH confidence
-- [Node.js spawn 200KB buffer limit issue](https://github.com/nodejs/node/issues/4236) - HIGH confidence
-- [Node.js stdout truncation at 8192 bytes](https://github.com/nodejs/node/issues/12921) - HIGH confidence
-- [Python subprocess buffering explained](https://lucadrf.dev/blog/python-subprocess-buffers/) - MEDIUM confidence
-- [Python PYTHONUNBUFFERED documentation](https://docs.python.org/3/library/subprocess.html) - HIGH confidence
-- [Killing process families with Node.js](https://medium.com/@almenon214/killing-processes-with-node-772ffdd19aad) - MEDIUM confidence
-- [Node.js zombie process issues](https://github.com/nodejs/node/issues/46569) - HIGH confidence
-- [Graceful shutdown in Node.js](https://oneuptime.com/blog/post/2026-01-06-nodejs-graceful-shutdown-handler/view) - MEDIUM confidence
-- [sentence-transformers cache issues](https://github.com/huggingface/sentence-transformers/issues/1828) - HIGH confidence
-- [sentence-transformers download stuck](https://github.com/huggingface/sentence-transformers/issues/1869) - HIGH confidence
-- [trust_remote_code security discussion](https://news.ycombinator.com/item?id=36612627) - MEDIUM confidence
-- [trust_remote_code in sentence-transformers](https://github.com/UKPLab/sentence-transformers/issues/2272) - HIGH confidence
-- [HuggingFace model download timeout](https://discuss.huggingface.co/t/timeout-error-when-downloading-sentence-transformers-all-minilm-l6-v2/58878) - MEDIUM confidence
-- [JS-Python IPC patterns](https://starbeamrainbowlabs.com/blog/article.php?article=posts/549-js-python-ipc.html) - MEDIUM confidence
-- [Python venv documentation](https://docs.python.org/3/library/venv.html) - HIGH confidence
-- [macOS __PYVENV_LAUNCHER__ issue](https://github.com/pypa/virtualenv/issues/1704) - HIGH confidence
+- Codebase analysis: `src/commands/demo.js` (existing demo patterns, prerequisite checks, menu structure) - HIGH confidence
+- Codebase analysis: `src/nano/nano-setup.js` (setup flow, check functions, resumability) - HIGH confidence
+- Codebase analysis: `src/nano/nano-bridge.py` (lazy model loading, ready signal timing) - HIGH confidence
+- Codebase analysis: `src/nano/nano-manager.js` (bridge lifecycle, timeouts, warm process) - HIGH confidence
+- Codebase analysis: `src/nano/nano-errors.js` (error taxonomy, user-facing messages) - HIGH confidence
+- Codebase analysis: `src/lib/demo-ingest.js` (MongoDB/API dependencies in existing demos) - HIGH confidence
+- Codebase analysis: `README.md` (existing structure, 814 lines, API-first organization) - HIGH confidence
+- Codebase analysis: `package.json` files field behavior with `npm pack` - HIGH confidence
+- [Node.js process.stdout.isTTY](https://nodejs.org/api/process.html#processstdoutisatty) - HIGH confidence
+- Community patterns for CLI demo design and first-run experience - MEDIUM confidence

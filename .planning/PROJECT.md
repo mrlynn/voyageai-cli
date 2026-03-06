@@ -12,31 +12,18 @@ A developer can go from `npm install` to a working vector search pipeline with z
 
 ### Validated
 
-(None yet -- ship to validate)
+- Python subprocess bridge (nano-bridge.py) with NDJSON-over-stdio -- v1.0
+- Setup orchestrator with step-based resumability -- v1.0
+- Health diagnostics (status/test/info/clear-cache) -- v1.0
+- `--local` flag on embed/ingest/pipeline commands -- v1.0
+- MRL dimensions (256-2048) and quantization (float32/int8/uint8/binary) -- v1.0
+- Bridge manager with warm process lifecycle and version sync -- v1.0
+- Release packaging with Python source inclusion and bytecode exclusion -- v1.0
+- Unit test coverage across all subsystems -- v1.0
 
 ### Active
 
-- [x] Python subprocess bridge (nano-bridge.py) that loads voyage-4-nano and returns embeddings via JSON-over-stdin/stdout
-- [x] Setup orchestrator (nano-setup.js) that creates venv, installs deps, downloads model to ~/.vai/
-- [x] Health checker (nano-health.js) that reports Python, venv, deps, model, and device status
-- [x] `vai nano setup` command for one-time environment setup
-- [x] `vai nano status` command showing readiness of local inference
-- [x] `vai nano test` command for smoke-testing inference
-- [x] `vai nano info` command showing model details, cache location, device
-- [x] `vai nano clear-cache` command to remove cached model files
-- [x] `--local` flag on `vai embed` routing through nano.js bridge manager
-- [x] `--local` flag on `vai ingest` using local embeddings during ingestion
-- [x] `--local` flag on `vai pipeline` for zero-credential RAG pipeline
-- [x] Bridge manager (nano.js) handling process lifecycle, warm/cold, version checks
-- [x] MRL dimensions support (256, 512, 1024, 2048) via --dimensions flag
-- [x] Quantization support (float32, int8, uint8, binary) via --precision flag
-- [x] Device auto-detection (CUDA/MPS/CPU)
-- [x] catalog.js update with voyage-4-nano entry (local: true, requiresApiKey: false)
-- [x] Version sync between BRIDGE_VERSION in Python and package.json
-- [x] Automated version sync script (scripts/sync-nano-version.js)
-- [x] .npmignore updates for Python bytecode exclusion
-- [x] Unit tests (bridge protocol, manager lifecycle, setup logic, error taxonomy)
-- [x] `vai explain nano` content update
+(None yet -- define with next milestone)
 
 ### Out of Scope
 
@@ -57,6 +44,8 @@ A developer can go from `npm install` to a working vector search pipeline with z
 - Python is required (3.10+) but is an opt-in dependency only for local inference users
 - The venv lives at ~/.vai/nano-env/, model cache at ~/.vai/nano-model/
 - sentence-transformers library handles model loading with trust_remote_code=True
+
+**v1.0 shipped 2026-03-06:** 5 phases, 18 plans, 52 files changed (+5,396 lines). Full local inference pipeline operational with zero-API-key path from install to vector search.
 
 ## Constraints
 
@@ -79,4 +68,4 @@ A developer can go from `npm install` to a working vector search pipeline with z
 | Minor/major version bump requires venv rebuild | Patch releases are safe; minor/major may change requirements.txt | Validated |
 
 ---
-*Last updated: 2026-03-06 after Phase 5 documentation cleanup*
+*Last updated: 2026-03-06 after v1.0 milestone*
