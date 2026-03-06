@@ -866,8 +866,7 @@ async function runChatDemo(opts) {
     async function executeChatTurn(query) {
       let sources = [];
       const streamRenderer = chatUI.createStreamRenderer();
-
-      process.stdout.write(`  ${pc.green('vai:')} `);
+      const spinner = chatUI.createTimedSpinner('Searching');
 
       const chatOpts = { maxDocs: 3, stream: true, textField: 'text' };
       if (isLocal) {
@@ -877,38 +876,43 @@ async function runChatDemo(opts) {
         chatOpts.rerank = false;
       }
 
-      await retryQuery(async () => {
-        for await (const event of chatTurn({
-          query,
-          db: dbName,
-          collection: collName,
-          llm,
-          history,
-          opts: chatOpts,
-        })) {
-          switch (event.type) {
-            case 'retrieval':
-              if (verbose) {
-                const docs = event.data.docs || [];
-                const rerankedNote = isLocal ? ', reranking skipped' : '';
-                console.log('');
-                console.log(`  ${pc.dim(`  Retrieved ${docs.length} chunks in ${event.data.timeMs}ms${rerankedNote}`)}`);
-                for (const d of docs.slice(0, 3)) {
-                  console.log(`  ${pc.dim(`    • ${d.source} (score: ${(d.score || 0).toFixed(3)})`)}`);
+      try {
+        await retryQuery(async () => {
+          for await (const event of chatTurn({
+            query,
+            db: dbName,
+            collection: collName,
+            llm,
+            history,
+            opts: chatOpts,
+          })) {
+            switch (event.type) {
+              case 'retrieval':
+                spinner.stop();
+                if (verbose) {
+                  const docs = event.data.docs || [];
+                  const rerankedNote = isLocal ? ', reranking skipped' : '';
+                  console.log(`  ${pc.dim(`  Retrieved ${docs.length} chunks in ${event.data.timeMs}ms${rerankedNote}`)}`);
+                  for (const d of docs.slice(0, 3)) {
+                    console.log(`  ${pc.dim(`    • ${d.source} (score: ${(d.score || 0).toFixed(3)})`)}`);
+                  }
                 }
-                process.stdout.write(`  ${pc.green('vai:')} `);
-              }
-              break;
-            case 'chunk':
-              streamRenderer.write(event.data);
-              break;
-            case 'done':
-              streamRenderer.end();
-              sources = event.data.sources || [];
-              break;
+                process.stdout.write(`\n  ${pc.green('vai:')} `);
+                break;
+              case 'chunk':
+                streamRenderer.write(event.data);
+                break;
+              case 'done':
+                streamRenderer.flush();
+                sources = event.data.sources || [];
+                break;
+            }
           }
-        }
-      }, { maxRetries: 2, delayMs: 5000 });
+        }, { maxRetries: 2, delayMs: 5000 });
+      } catch (err) {
+        spinner.stop();
+        throw err;
+      }
 
       console.log('');
 
