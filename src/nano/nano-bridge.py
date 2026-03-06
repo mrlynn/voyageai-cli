@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
-"""nano-bridge.py - voyage-4-nano NDJSON bridge for voyageai-cli
+"""
+Michael Lynn - 2026-03-06
+
+nano-bridge.py - voyage-4-nano NDJSON bridge for voyageai-cli
 
 Reads NDJSON requests from stdin, processes embeddings using the
 voyage-4-nano model via sentence-transformers, and writes NDJSON
 responses to stdout. Stderr is reserved for fatal errors only.
+
+Really wrestled with this... if you have better ideas, please let me know.
 """
 
 import json
@@ -76,7 +81,7 @@ def handle_embed(model, request):
 
     # Select encode method based on input_type
     if input_type == "query":
-        embeddings = model.encode_queries(
+        embeddings = model.encode_query(
             texts,
             truncate_dim=truncate_dim,
             precision=precision,
