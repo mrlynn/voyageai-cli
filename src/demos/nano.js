@@ -1,6 +1,9 @@
 'use strict';
 
+const readline = require('readline');
 const pc = require('picocolors');
+const { getConfigValue } = require('../lib/config');
+const { getBridgeManager } = require('../nano/nano-manager');
 
 // ── Verbose helpers (duplicated from demo.js -- not exported there) ──
 
@@ -199,7 +202,10 @@ function displayDimensionTable(results) {
 async function runNanoDemo(opts) {
   const ui = require('../lib/ui');
   const { generateLocalEmbeddings } = require('../nano/nano-local');
+  const telemetry = require('../lib/telemetry');
   const verbose = opts.verbose || false;
+  const interactive = opts.pause !== false;
+  const demoStart = Date.now();
 
   // 1. Check prerequisites
   const prereq = checkNanoPrerequisites();
@@ -217,85 +223,239 @@ async function runNanoDemo(opts) {
     return;
   }
 
-  // 2. Header
-  console.log('');
-  console.log(pc.bold('  Local Embeddings Demo'));
-  console.log(pc.dim('  \u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501'));
-  console.log('');
-  console.log('  Experience local embedding inference with voyage-4-nano.');
-  console.log('  No API key, no network, no external dependencies.');
-  console.log('');
-
-  // 3. Theory about nano embeddings
-  theory(verbose,
-    'voyage-4-nano runs entirely on your machine using a Python bridge.',
-    'The model uses Matryoshka Representation Learning (MRL) to produce',
-    'embeddings at different dimensions (256/512/1024/2048), allowing you',
-    'to trade quality for memory depending on your use case.',
-  );
-
-  // 4. Step 1: Similarity Matrix
-  console.log(pc.bold('  Step 1: Embedding sample texts...'));
-  console.log('');
-
-  step(verbose, 'Embedding 9 developer-focused texts across 3 semantic clusters');
-  step(verbose, 'Database (indexing, sharding, aggregation), Auth (JWT, bcrypt, OAuth), Caching (Redis, TTL, invalidation)');
-
-  // Wrap first embedding call in spinner
-  await ui.ensureSpinnerReady();
-  const spinner = ui.spinner('Loading voyage-4-nano model and embedding 9 texts...').start();
-
-  let result;
   try {
-    result = await generateLocalEmbeddings(sampleTexts, { dimensions: 1024 });
-    spinner.succeed('Model loaded \u2014 embeddings generated');
-  } catch (err) {
-    spinner.fail('Failed to generate embeddings');
-    throw err;
+    // 2. Header
+    console.log('');
+    console.log(pc.bold('  Local Embeddings Demo'));
+    console.log(pc.dim('  \u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501'));
+    console.log('');
+    console.log('  Experience local embedding inference with voyage-4-nano.');
+    console.log('  No API key, no network, no external dependencies.');
+    console.log('');
+
+    // 3. Theory about nano embeddings
+    theory(verbose,
+      'voyage-4-nano runs entirely on your machine using a Python bridge.',
+      'The model uses Matryoshka Representation Learning (MRL) to produce',
+      'embeddings at different dimensions (256/512/1024/2048), allowing you',
+      'to trade quality for memory depending on your use case.',
+    );
+
+    // 4. Step 1: Similarity Matrix
+    console.log(pc.bold('  Step 1: Embedding sample texts...'));
+    console.log('');
+
+    step(verbose, 'Embedding 9 developer-focused texts across 3 semantic clusters');
+    step(verbose, 'Database (indexing, sharding, aggregation), Auth (JWT, bcrypt, OAuth), Caching (Redis, TTL, invalidation)');
+
+    // Wrap first embedding call in spinner
+    await ui.ensureSpinnerReady();
+    const spinner = ui.spinner('Loading voyage-4-nano model and embedding 9 texts...').start();
+
+    let result;
+    try {
+      result = await generateLocalEmbeddings(sampleTexts, { dimensions: 1024 });
+      spinner.succeed('Model loaded \u2014 embeddings generated');
+    } catch (err) {
+      spinner.fail('Failed to generate embeddings');
+      throw err;
+    }
+
+    const embeddings = result.data.map(d => d.embedding);
+
+    console.log('');
+    displaySimilarityMatrix(embeddings, labels);
+    console.log('');
+
+    theory(verbose,
+      'Cosine similarity measures the angle between two vectors (0 = unrelated, 1 = identical).',
+      'Green cells (>= 0.7) show high similarity within semantic clusters.',
+      'Dim cells (< 0.4) show low similarity across different topics.',
+      'Notice how the 3x3 blocks along the diagonal light up \u2014 that is the model',
+      'recognizing that database, auth, and caching texts form distinct clusters.',
+    );
+
+    // 5. Step 2: Dimension Comparison
+    console.log(pc.bold('  Step 2: Comparing MRL dimensions...'));
+    console.log('');
+
+    step(verbose, 'Re-embedding all 9 texts at 256, 1024, and 2048 dimensions');
+    step(verbose, 'Measuring how cluster separation changes with dimensionality');
+
+    console.log(pc.dim('  Comparing dimensions...'));
+
+    const dimResults = await compareDimensions(sampleTexts, clusterAssignment, [256, 1024, 2048]);
+
+    console.log('');
+    displayDimensionTable(dimResults);
+    console.log('');
+
+    theory(verbose,
+      'Matryoshka Representation Learning (MRL) trains the model so that',
+      'the first N dimensions of any embedding are a valid embedding on their own.',
+      'Like a matryoshka doll, smaller representations nest inside larger ones.',
+      '',
+      'This means you can choose your dimension at query time:',
+      '  \u2022 256 dims: Fast, small \u2014 great for filtering or approximate matching',
+      '  \u2022 1024 dims: Balanced \u2014 good default for most applications',
+      '  \u2022 2048 dims: Maximum quality \u2014 when precision matters most',
+    );
+
+    // 6. Step 3: Interactive REPL (DEMO-05)
+    if (interactive) {
+      console.log(pc.cyan('  -- Try it yourself --'));
+      console.log('');
+      console.log('  Type any text to see how similar it is to the sample texts.');
+      console.log(`  ${pc.dim('Type /quit to exit.')}`);
+      console.log('');
+
+      await new Promise((resolve) => {
+        const rl = readline.createInterface({
+          input: process.stdin,
+          output: process.stdout,
+          prompt: pc.cyan('  nano> '),
+        });
+
+        rl.prompt();
+
+        rl.on('line', async (line) => {
+          const input = line.trim();
+          if (!input) { rl.prompt(); return; }
+          if (input === '/quit' || input === '/exit' || input === '/q') {
+            rl.close();
+            return;
+          }
+
+          try {
+            const userResult = await generateLocalEmbeddings([input], { dimensions: 1024 });
+            const userEmb = userResult.data[0].embedding;
+
+            // Compare against cached sample embeddings
+            const ranked = sampleTexts.map((text, idx) => ({
+              text,
+              label: labels[idx],
+              score: cosineSimilarity(userEmb, embeddings[idx]),
+            }));
+
+            ranked.sort((a, b) => b.score - a.score);
+
+            console.log('');
+            for (let i = 0; i < Math.min(5, ranked.length); i++) {
+              const r = ranked[i];
+              const rank = pc.bold(`#${i + 1}`);
+              const score = pc.dim(r.score.toFixed(4));
+              const shortText = r.text.length > 60 ? r.text.slice(0, 57) + '...' : r.text;
+              console.log(`  ${rank}  ${score}  "${shortText}"`);
+            }
+            console.log('');
+          } catch (err) {
+            console.log(`  ${pc.yellow('Warning:')} ${err.message}`);
+            console.log('');
+          }
+
+          rl.prompt();
+        });
+
+        rl.on('close', resolve);
+        rl.on('SIGINT', () => { console.log(''); rl.close(); });
+      });
+    }
+
+    // 7. Step 4: Shared Embedding Space Proof (DEMO-06)
+    const apiKey = process.env.VOYAGE_API_KEY || getConfigValue('apiKey');
+
+    if (apiKey) {
+      try {
+        // Lazy require -- avoid loading api.js if no API key
+        const { generateEmbeddings } = require('../lib/api');
+
+        console.log('');
+        console.log(pc.cyan('  -- Bonus: Shared Embedding Space --'));
+        console.log('');
+        console.log('  API key detected -- comparing nano vs API rankings.');
+        console.log('');
+
+        theory(verbose,
+          'voyage-4-nano and voyage-4-large share the same embedding space.',
+          'Vectors from either model can be compared with cosine similarity.',
+          'This means you can use nano for local development and the API for',
+          'production -- the similarity rankings should be nearly identical.',
+        );
+
+        // Pick 3 query texts (one per cluster): indices 0, 3, 6
+        const queryIndices = [0, 3, 6];
+
+        // Cache API document embeddings (reused across all 3 queries)
+        let apiDocEmbeddings = null;
+
+        for (const qi of queryIndices) {
+          const queryText = sampleTexts[qi];
+          const queryLabel = labels[qi];
+
+          // Nano rankings: use cached embeddings
+          const nanoRanked = sampleTexts.map((text, idx) => ({
+            label: labels[idx],
+            score: cosineSimilarity(embeddings[qi], embeddings[idx]),
+          }));
+          nanoRanked.sort((a, b) => b.score - a.score);
+
+          // API rankings
+          const apiQueryResult = await generateEmbeddings([queryText], {
+            model: 'voyage-4-large',
+            inputType: 'query',
+          });
+          const apiQueryEmb = apiQueryResult.data[0].embedding;
+
+          if (!apiDocEmbeddings) {
+            const apiDocResult = await generateEmbeddings(sampleTexts, {
+              model: 'voyage-4-large',
+              inputType: 'document',
+            });
+            apiDocEmbeddings = apiDocResult.data.map(d => d.embedding);
+          }
+
+          const apiRanked = sampleTexts.map((text, idx) => ({
+            label: labels[idx],
+            score: cosineSimilarity(apiQueryEmb, apiDocEmbeddings[idx]),
+          }));
+          apiRanked.sort((a, b) => b.score - a.score);
+
+          // Display side-by-side
+          console.log(`  Query: "${queryText}" ${pc.dim(`[${queryLabel}]`)}`);
+          console.log('');
+          console.log(`  ${'Rank'.padEnd(6)} ${'Nano'.padEnd(20)} ${'API (voyage-4-large)'.padEnd(20)} ${'Match'}`);
+          console.log(`  ${'----'.padEnd(6)} ${'----'.padEnd(20)} ${'--------------------'.padEnd(20)} ${'-----'}`);
+
+          for (let i = 0; i < 5; i++) {
+            const nanoLabel = nanoRanked[i].label;
+            const apiLabel = apiRanked[i].label;
+            const match = nanoLabel === apiLabel ? pc.green('=') : pc.dim('-');
+            console.log(`  ${String(i + 1).padEnd(6)} ${nanoLabel.padEnd(20)} ${apiLabel.padEnd(20)} ${match}`);
+          }
+          console.log('');
+        }
+      } catch (err) {
+        console.log(pc.dim('  API comparison unavailable: ' + err.message));
+        console.log('');
+      }
+    }
+
+    // 8. Step 5: Next Steps + Telemetry
+    console.log(pc.cyan('  -- Next Steps --'));
+    console.log('');
+    console.log('  Try nano in your workflow:');
+    console.log(`    ${pc.dim('vai nano status')}          Check your nano setup`);
+    console.log(`    ${pc.dim('vai nano test')}            Run a quick embedding test`);
+    console.log(`    ${pc.dim('vai demo code-search')}     Try code search with the API`);
+    console.log(`    ${pc.dim('vai demo chat')}            Try RAG chat with the API`);
+    console.log('');
+
+    if (telemetry && telemetry.send) {
+      telemetry.send('demo_nano_completed', { duration: Date.now() - demoStart });
+    }
+  } finally {
+    await getBridgeManager().shutdown();
   }
-
-  const embeddings = result.data.map(d => d.embedding);
-
-  console.log('');
-  displaySimilarityMatrix(embeddings, labels);
-  console.log('');
-
-  theory(verbose,
-    'Cosine similarity measures the angle between two vectors (0 = unrelated, 1 = identical).',
-    'Green cells (>= 0.7) show high similarity within semantic clusters.',
-    'Dim cells (< 0.4) show low similarity across different topics.',
-    'Notice how the 3x3 blocks along the diagonal light up \u2014 that is the model',
-    'recognizing that database, auth, and caching texts form distinct clusters.',
-  );
-
-  // 5. Step 2: Dimension Comparison
-  console.log(pc.bold('  Step 2: Comparing MRL dimensions...'));
-  console.log('');
-
-  step(verbose, 'Re-embedding all 9 texts at 256, 1024, and 2048 dimensions');
-  step(verbose, 'Measuring how cluster separation changes with dimensionality');
-
-  console.log(pc.dim('  Comparing dimensions...'));
-
-  const dimResults = await compareDimensions(sampleTexts, clusterAssignment, [256, 1024, 2048]);
-
-  console.log('');
-  displayDimensionTable(dimResults);
-  console.log('');
-
-  theory(verbose,
-    'Matryoshka Representation Learning (MRL) trains the model so that',
-    'the first N dimensions of any embedding are a valid embedding on their own.',
-    'Like a matryoshka doll, smaller representations nest inside larger ones.',
-    '',
-    'This means you can choose your dimension at query time:',
-    '  \u2022 256 dims: Fast, small \u2014 great for filtering or approximate matching',
-    '  \u2022 1024 dims: Balanced \u2014 good default for most applications',
-    '  \u2022 2048 dims: Maximum quality \u2014 when precision matters most',
-  );
-
-  // 6. Return cached data for downstream REPL (Plan 02)
-  return { embeddings, labels, sampleTexts };
 }
 
 module.exports = { runNanoDemo };
