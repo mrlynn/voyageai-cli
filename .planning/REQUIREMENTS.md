@@ -26,8 +26,8 @@ Requirements for this milestone. Each maps to roadmap phases.
 ### Command Integration
 
 - [x] **CMD-01**: User can run `vai embed "text" --local` to generate embeddings through the local bridge
-- [ ] **CMD-02**: User can run `vai ingest --local` to ingest documents using local embeddings
-- [ ] **CMD-03**: User can run `vai pipeline --local` to run a complete RAG pipeline with zero API keys
+- [x] **CMD-02**: User can run `vai ingest --local` to ingest documents using local embeddings
+- [x] **CMD-03**: User can run `vai pipeline --local` to run a complete RAG pipeline with zero API keys
 - [x] **CMD-04**: User can specify `--dimensions 256/512/1024/2048` for MRL dimension selection
 - [x] **CMD-05**: User can specify `--precision float32/int8/uint8/binary` for quantization
 - [x] **CMD-06**: voyage-4-nano appears in `vai models` catalog with local/free indicators
@@ -93,8 +93,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BRDG-04 | Phase 1 | Complete |
 | BRDG-05 | Phase 1 | Pending |
 | CMD-01 | Phase 3 | Complete |
-| CMD-02 | Phase 3 | Pending |
-| CMD-03 | Phase 3 | Pending |
+| CMD-02 | Phase 3 | Complete |
+| CMD-03 | Phase 3 | Complete |
 | CMD-04 | Phase 3 | Complete |
 | CMD-05 | Phase 3 | Complete |
 | CMD-06 | Phase 3 | Complete |
