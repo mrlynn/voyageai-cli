@@ -19,8 +19,8 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Documentation
 
-- [ ] **DOCS-01**: README contains "Local Inference" section with nano setup/usage workflow
-- [ ] **DOCS-02**: `vai explain nano` content refreshed with full CLI workflow, try-it commands, and architecture overview
+- [x] **DOCS-01**: README contains "Local Inference" section with nano setup/usage workflow
+- [x] **DOCS-02**: `vai explain nano` content refreshed with full CLI workflow, try-it commands, and architecture overview
 
 ### Chat Local
 
@@ -67,8 +67,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DEMO-05 | Phase 6 (verify: Phase 9) | Satisfied |
 | DEMO-06 | Phase 6 (verify: Phase 9) | Satisfied |
 | DEMO-07 | Phase 6 (verify: Phase 9) | Satisfied |
-| DOCS-01 | Phase 7 | Pending |
-| DOCS-02 | Phase 7 | Pending |
+| DOCS-01 | Phase 7 | Complete |
+| DOCS-02 | Phase 7 | Complete |
 | CHAT-01 | Phase 8 | Pending |
 | CHAT-02 | Phase 8 | Pending |
 | CHAT-03 | Phase 8 | Pending |
