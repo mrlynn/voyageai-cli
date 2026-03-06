@@ -10,9 +10,9 @@ Requirements for this milestone. Each maps to roadmap phases.
 ### Setup & Environment
 
 - [x] **SETUP-01**: User can run `vai nano setup` to create Python venv, install deps, and download voyage-4-nano model
-- [ ] **SETUP-02**: User can run `vai nano status` to see component-level health (Python, venv, deps, model, device)
-- [ ] **SETUP-03**: User can run `vai nano test` to smoke-test inference with a sample sentence
-- [ ] **SETUP-04**: User can run `vai nano info` to see model details, cache location, and detected device
+- [x] **SETUP-02**: User can run `vai nano status` to see component-level health (Python, venv, deps, model, device)
+- [x] **SETUP-03**: User can run `vai nano test` to smoke-test inference with a sample sentence
+- [x] **SETUP-04**: User can run `vai nano info` to see model details, cache location, and detected device
 - [x] **SETUP-05**: User can run `vai nano clear-cache` to remove cached model files with confirmation
 
 ### Bridge Infrastructure
@@ -42,7 +42,7 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 - [ ] **TEST-01**: Unit tests for bridge protocol (mock subprocess, verify JSON in/out)
 - [ ] **TEST-02**: Unit tests for bridge manager lifecycle (spawn, warm, shutdown, timeout)
-- [ ] **TEST-03**: Unit tests for setup logic (Python detection, step resumption)
+- [x] **TEST-03**: Unit tests for setup logic (Python detection, step resumption)
 - [ ] **TEST-04**: Unit tests for error taxonomy (every error has remediation string)
 
 ## Future Requirements
@@ -83,9 +83,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | SETUP-01 | Phase 2 | Complete |
-| SETUP-02 | Phase 2 | Pending |
-| SETUP-03 | Phase 2 | Pending |
-| SETUP-04 | Phase 2 | Pending |
+| SETUP-02 | Phase 2 | Complete |
+| SETUP-03 | Phase 2 | Complete |
+| SETUP-04 | Phase 2 | Complete |
 | SETUP-05 | Phase 2 | Complete |
 | BRDG-01 | Phase 1 | Complete |
 | BRDG-02 | Phase 1 | Pending |
@@ -103,7 +103,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | REL-03 | Phase 2 | Complete |
 | TEST-01 | Phase 1 | Pending |
 | TEST-02 | Phase 1 | Pending |
-| TEST-03 | Phase 2 | Pending |
+| TEST-03 | Phase 2 | Complete |
 | TEST-04 | Phase 3 | Pending |
 
 **Coverage:**
