@@ -4,9 +4,61 @@ const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
 
 // We test the formatting and structure — actual MongoDB checks require integration tests
-const { formatPreflight } = require('../../src/lib/preflight');
+const { formatPreflight, runPreflight } = require('../../src/lib/preflight');
 
 describe('preflight', () => {
+  describe('runPreflight local mode', () => {
+    it('adds embeddings-mode and reranking checks when local=true', async () => {
+      // runPreflight with local=true should add the two local-mode checks
+      // before attempting MongoDB connection (which will fail in test)
+      let result;
+      try {
+        result = await runPreflight({
+          db: 'test_db',
+          collection: 'test_col',
+          field: 'embedding',
+          llmConfig: { provider: 'anthropic', model: 'claude-sonnet-4-5-20250929' },
+          textField: 'text',
+          local: true,
+        });
+      } catch {
+        // If it throws, that's unexpected for this test
+        assert.fail('runPreflight should not throw');
+      }
+
+      const embeddingsMode = result.checks.find(c => c.id === 'embeddings-mode');
+      assert.ok(embeddingsMode, 'Should have embeddings-mode check');
+      assert.equal(embeddingsMode.ok, true);
+      assert.equal(embeddingsMode.detail, 'local (voyage-4-nano)');
+
+      const reranking = result.checks.find(c => c.id === 'reranking');
+      assert.ok(reranking, 'Should have reranking check');
+      assert.equal(reranking.ok, true);
+      assert.equal(reranking.detail, 'skipped (local mode)');
+    });
+
+    it('does not add local checks when local is falsy', async () => {
+      let result;
+      try {
+        result = await runPreflight({
+          db: 'test_db',
+          collection: 'test_col',
+          field: 'embedding',
+          llmConfig: { provider: 'anthropic', model: 'claude-sonnet-4-5-20250929' },
+          textField: 'text',
+        });
+      } catch {
+        assert.fail('runPreflight should not throw');
+      }
+
+      const embeddingsMode = result.checks.find(c => c.id === 'embeddings-mode');
+      assert.equal(embeddingsMode, undefined, 'Should NOT have embeddings-mode check');
+
+      const reranking = result.checks.find(c => c.id === 'reranking');
+      assert.equal(reranking, undefined, 'Should NOT have reranking check');
+    });
+  });
+
   describe('formatPreflight', () => {
     it('shows green checks for passing items', () => {
       const checks = [
