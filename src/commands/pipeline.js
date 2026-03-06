@@ -9,6 +9,7 @@ const { getDefaultModel } = require('../lib/catalog');
 const { generateEmbeddings } = require('../lib/api');
 const { getMongoCollection } = require('../lib/mongo');
 const ui = require('../lib/ui');
+const { formatNanoError } = require('../nano/nano-errors.js');
 
 /**
  * Format number with commas.
@@ -359,6 +360,8 @@ function registerPipeline(program) {
         if (isEpipe) {
           console.error(ui.error('Connection closed while writing to MongoDB (EPIPE).'));
           console.error(ui.dim('  Try: --store-batch-size 50  or check network/Atlas connectivity.'));
+        } else if (err.code && err.fix) {
+          console.error(formatNanoError(err));
         } else {
           console.error(ui.error(err.message));
         }

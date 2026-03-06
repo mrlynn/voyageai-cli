@@ -6,6 +6,7 @@ const { getDefaultModel } = require('../lib/catalog');
 const { generateEmbeddings } = require('../lib/api');
 const { getMongoCollection } = require('../lib/mongo');
 const ui = require('../lib/ui');
+const { formatNanoError } = require('../nano/nano-errors.js');
 
 /**
  * Detect file format from extension and content.
@@ -427,7 +428,11 @@ function registerIngest(program) {
         done({ format, docCount: succeeded });
       } catch (err) {
         telemetry.send('cli_error', { command: 'ingest', errorType: err.constructor.name });
-        console.error(ui.error(err.message));
+        if (err.code && err.fix) {
+          console.error(formatNanoError(err));
+        } else {
+          console.error(ui.error(err.message));
+        }
         process.exit(1);
       } finally {
         if (client) await client.close();
