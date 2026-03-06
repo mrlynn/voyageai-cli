@@ -13,8 +13,8 @@ Requirements for this milestone. Each maps to roadmap phases.
 - [x] **DEMO-02**: Demo checks nano prerequisites and offers setup guidance if not ready
 - [x] **DEMO-03**: Demo embeds sample texts locally and displays pairwise cosine similarity scores
 - [x] **DEMO-04**: Demo shows MRL dimension comparison (e.g., 256 vs 1024 vs 2048) with quality tradeoffs
-- [ ] **DEMO-05**: Demo includes interactive REPL for user-provided text similarity queries
-- [ ] **DEMO-06**: Demo auto-detects API key and shows shared embedding space proof when available
+- [x] **DEMO-05**: Demo includes interactive REPL for user-provided text similarity queries
+- [x] **DEMO-06**: Demo auto-detects API key and shows shared embedding space proof when available
 - [x] **DEMO-07**: First embedding call shows spinner with explanatory text for model loading latency
 
 ### Documentation
@@ -64,8 +64,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DEMO-02 | Phase 6 | Complete |
 | DEMO-03 | Phase 6 | Complete |
 | DEMO-04 | Phase 6 | Complete |
-| DEMO-05 | Phase 6 | Pending |
-| DEMO-06 | Phase 6 | Pending |
+| DEMO-05 | Phase 6 | Complete |
+| DEMO-06 | Phase 6 | Complete |
 | DEMO-07 | Phase 6 | Complete |
 | DOCS-01 | Phase 7 | Pending |
 | DOCS-02 | Phase 7 | Pending |
