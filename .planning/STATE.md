@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Nano Documentation & Demos
 status: in-progress
-last_updated: "2026-03-06T19:43:00.000Z"
+last_updated: "2026-03-06T21:00:00.000Z"
 progress:
   total_phases: 4
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 6
-  completed_plans: 5
+  completed_plans: 6
 ---
 
 # Project State
@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-06)
 
 **Core value:** Zero-API-key path from install to working vector search, with seamless upgrade to Voyage API.
-**Current focus:** Phase 8 - Chat Local Embeddings
+**Current focus:** v1.1 milestone complete — all phases done
 
 ## Current Position
 
-Phase: 8 of 9 (Chat Local Embeddings)
-Plan: 1 of 2 complete
-Status: Executing phase 8
-Last activity: 2026-03-06 -- Completed 08-01 (core library embedFn injection + --local flag)
+Phase: 8 of 9 (Chat Local Embeddings) -- COMPLETE
+Plan: 2 of 2 complete
+Status: All v1.1 phases complete (6, 7, 8, 9)
+Last activity: 2026-03-06 -- Completed 08-02 (demo chat --local, UX improvements, MongoDB docs)
 
-Progress: [████████████████████████████░░] 90% (v1.0 complete, v1.1 phases 6+7+9+08-01 complete)
+Progress: [██████████████████████████████] 100% (v1.0 complete, v1.1 all phases complete)
 
 ## Performance Metrics
 
@@ -44,6 +44,7 @@ Progress: [███████████████████████
 | 09    | 01   | 2min     | 2     | 2     |
 | 07    | 01   | 2min     | 2     | 2     |
 | 08    | 01   | 12min    | 2     | 7     |
+| 08    | 02   | 45min    | 2     | 19    |
 
 ## Accumulated Context
 
@@ -75,5 +76,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-06
-Stopped at: Completed 08-01-PLAN.md
+Stopped at: Phase 8 complete, v1.1 milestone fully executed
 Resume file: None
