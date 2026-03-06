@@ -10,27 +10,27 @@ See: .planning/PROJECT.md (updated 2026-03-06)
 ## Current Position
 
 Phase: 1 of 3 (Bridge Protocol)
-Plan: 3 of 5 in current phase
+Plan: 4 of 5 in current phase
 Status: Executing
-Last activity: 2026-03-06 -- Completed 01-03 (error taxonomy, protocol helpers, Python bridge)
+Last activity: 2026-03-06 -- Completed 01-04 (bridge manager, version sync)
 
-Progress: [██████░░░░] 60%
+Progress: [████████░░] 80%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 3
+- Total plans completed: 4
 - Average duration: ~2 min
-- Total execution time: ~6 min
+- Total execution time: ~9 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 1 - Bridge Protocol | 3/5 | ~6 min | ~2 min |
+| 1 - Bridge Protocol | 4/5 | ~9 min | ~2 min |
 
 **Recent Trend:**
-- Last 3 plans: 01-01, 01-02, 01-03
+- Last 3 plans: 01-02, 01-03, 01-04
 - Trend: Steady
 
 *Updated after each plan completion*
@@ -48,6 +48,9 @@ Recent decisions affecting current work:
 - [01-03]: Lazy model loading on first embed request (not at startup)
 - [01-03]: encode_queries for query input_type, encode for document
 - [01-03]: Token estimation via word split count
+- [01-04]: Singleton manager with 30s idle timeout, 60s request timeout
+- [01-04]: SIGTERM + 5s grace + SIGKILL for shutdown
+- [01-04]: _resetManagerForTesting() hook for test isolation
 
 ### Pending Todos
 
@@ -61,5 +64,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-06
-Stopped at: Completed 01-03-PLAN.md
+Stopped at: Completed 01-04-PLAN.md
 Resume file: None
