@@ -60,13 +60,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DEMO-01 | Phase 6 | Complete |
-| DEMO-02 | Phase 6 | Complete |
-| DEMO-03 | Phase 6 | Complete |
-| DEMO-04 | Phase 6 | Complete |
-| DEMO-05 | Phase 6 | Complete |
-| DEMO-06 | Phase 6 | Complete |
-| DEMO-07 | Phase 6 | Complete |
+| DEMO-01 | Phase 6 (verify: Phase 9) | Satisfied |
+| DEMO-02 | Phase 6 (verify: Phase 9) | Satisfied |
+| DEMO-03 | Phase 6 (verify: Phase 9) | Satisfied |
+| DEMO-04 | Phase 6 (verify: Phase 9) | Satisfied |
+| DEMO-05 | Phase 6 (verify: Phase 9) | Satisfied |
+| DEMO-06 | Phase 6 (verify: Phase 9) | Satisfied |
+| DEMO-07 | Phase 6 (verify: Phase 9) | Satisfied |
 | DOCS-01 | Phase 7 | Pending |
 | DOCS-02 | Phase 7 | Pending |
 | CHAT-01 | Phase 8 | Pending |
@@ -81,4 +81,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-03-06*
-*Last updated: 2026-03-06 after roadmap creation*
+*Last updated: 2026-03-06 after Phase 9 verification*
