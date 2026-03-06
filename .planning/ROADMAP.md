@@ -15,8 +15,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Bridge Protocol** - Python subprocess bridge and Node.js manager with reliable JSON-over-stdio communication
 - [x] **Phase 2: Setup and Environment** - One-command provisioning, health checks, nano subcommands, and release packaging
 - [x] **Phase 3: Command Integration** - --local flags on embed/ingest/pipeline, MRL dimensions, quantization, catalog entry
-- [ ] **Phase 4: Error Remediation Display** - Surface error .fix property in Phase 3 command catch blocks, remove dead code
-- [ ] **Phase 5: Documentation & Verification Cleanup** - Update stale checkboxes, progress table, and create VERIFICATION.md files
+- [x] **Phase 4: Error Remediation Display** - Surface error .fix property in Phase 3 command catch blocks, remove dead code
+- [x] **Phase 5: Documentation & Verification Cleanup** - Update stale checkboxes, progress table, and create VERIFICATION.md files
 
 ## Phase Details
 
@@ -91,7 +91,7 @@ Plans:
 **Plans**: 1 plan
 
 Plans:
-- [ ] 04-01-PLAN.md -- Surface error .fix in command catch blocks, remove dead code, add test
+- [x] 04-01-PLAN.md -- Surface error .fix in command catch blocks, remove dead code, add test
 
 ### Phase 5: Documentation & Verification Cleanup
 **Goal**: All planning documents accurately reflect the completed state of Phases 1-4
@@ -105,17 +105,17 @@ Plans:
 **Plans**: 1 plan
 
 Plans:
-- [ ] 05-01-PLAN.md -- Update documentation, create VERIFICATION.md files
+- [x] 05-01-PLAN.md -- Update documentation, create VERIFICATION.md files
 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 3
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Bridge Protocol | 5/5 | Complete | 2026-03-06 |
 | 2. Setup and Environment | 8/8 | Complete | 2026-03-06 |
 | 3. Command Integration | 3/3 | Complete | 2026-03-06 |
-| 4. Error Remediation Display | 0/1 | Not started | - |
-| 5. Documentation & Verification Cleanup | 0/1 | Not started | - |
+| 4. Error Remediation Display | 1/1 | Complete | 2026-03-06 |
+| 5. Documentation & Verification Cleanup | 1/1 | In Progress | - |
