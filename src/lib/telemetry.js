@@ -1,33 +1,180 @@
 'use strict';
 
+const { request } = require('https');
+const { getVersion } = require('./banner');
+const { deleteConfigValue, getConfigValue, setConfigValue } = require('./config');
+const { BASE_FIELDS, getTelemetryEvent, getTelemetryEvents } = require('./telemetry-catalog');
+
 /**
  * Anonymous telemetry for Vai CLI.
- * Sends minimal, non-identifying data to help improve the tool.
- * Respects: VAI_TELEMETRY=0 env var or `vai config set telemetry false`
- *
- * No API keys, no file contents, no PII. Just:
- * - command name, version, platform, locale
+ * Sends anonymous, non-content telemetry to help improve the tool.
  */
 
 const TELEMETRY_URL = 'https://vaicli.com/api/telemetry';
 const TIMEOUT_MS = 3000;
+const NOTICE_URL = 'https://vaicli.com/telemetry';
+const NOTICE_LINES = [
+  '  ┌──────────────────────────────────────────────────────────────┐',
+  '  │  vai collects anonymous usage data to improve the product.  │',
+  '  │                                                              │',
+  '  │  This includes command names, runtime metadata, aggregate    │',
+  '  │  counts, platform, and version. No API keys, file contents,  │',
+  '  │  or conversation text are sent.                              │',
+  '  │                                                              │',
+  '  │  Disable anytime:  vai telemetry off                         │',
+  `  │  Details:          ${NOTICE_URL.padEnd(44)}│`,
+  '  └──────────────────────────────────────────────────────────────┘',
+];
+
+let suppressForCurrentProcess = false;
+
+function isTruthyEnv(value) {
+  return value === '1' || value === 'true';
+}
+
+function isFalsyEnv(value) {
+  return value === '0' || value === 'false';
+}
+
+function getNoticeState() {
+  try {
+    return {
+      shown: getConfigValue('telemetryNoticeShown') === true,
+      shownAt: getConfigValue('telemetryNoticeShownAt') || null,
+    };
+  } catch {
+    return { shown: false, shownAt: null };
+  }
+}
+
+function hasNoticeBeenShown() {
+  return getNoticeState().shown;
+}
+
+function markNoticeShown() {
+  const shownAt = new Date().toISOString().slice(0, 10);
+  setConfigValue('telemetryNoticeShown', true);
+  setConfigValue('telemetryNoticeShownAt', shownAt);
+  return shownAt;
+}
+
+function resetNoticeState() {
+  try {
+    deleteConfigValue('telemetryNoticeShown');
+    deleteConfigValue('telemetryNoticeShownAt');
+  } catch {
+    // Telemetry state should never break the CLI.
+  }
+  suppressForCurrentProcess = false;
+}
+
+function printCliNotice() {
+  process.stderr.write(`${NOTICE_LINES.join('\n')}\n`);
+}
+
+function getTelemetryPolicy() {
+  const dntValue = process.env.DO_NOT_TRACK;
+  const telemetryValue = process.env.VAI_TELEMETRY;
+  const debug = isTruthyEnv(process.env.VAI_TELEMETRY_DEBUG);
+  const disabledByEnv = isFalsyEnv(telemetryValue);
+  const disabledByDnt = isTruthyEnv(dntValue);
+
+  let disabledByConfig = false;
+  try {
+    const val = getConfigValue('telemetry');
+    disabledByConfig = val === false || val === 'false';
+  } catch {
+    disabledByConfig = false;
+  }
+
+  let disabledReason = null;
+  if (disabledByEnv) disabledReason = 'VAI_TELEMETRY';
+  else if (disabledByDnt) disabledReason = 'DO_NOT_TRACK';
+  else if (disabledByConfig) disabledReason = 'config';
+
+  const noticeState = getNoticeState();
+  const enabled = !disabledReason;
+
+  return {
+    enabled,
+    debug,
+    disabledReason,
+    noticeShown: noticeState.shown,
+    noticeShownAt: noticeState.shownAt,
+    skipCurrentProcess: suppressForCurrentProcess,
+    canSend: enabled && noticeState.shown && !suppressForCurrentProcess,
+  };
+}
 
 /**
  * Check if telemetry is enabled.
- * Disabled by: VAI_TELEMETRY=0, or config telemetry=false
+ * Disabled by: VAI_TELEMETRY=0, DO_NOT_TRACK=1|true, or config telemetry=false
  */
 function isEnabled() {
-  // Env var override (highest priority)
-  if (process.env.VAI_TELEMETRY === '0' || process.env.VAI_TELEMETRY === 'false') {
-    return false;
+  return getTelemetryPolicy().enabled;
+}
+
+function buildPayload(event, extra = {}) {
+  return {
+    event,
+    version: getVersion(),
+    context: 'cli',
+    platform: `${process.platform}-${process.arch}`,
+    locale: Intl.DateTimeFormat().resolvedOptions().locale || undefined,
+    ...extra,
+  };
+}
+
+function preview(event, extra = {}) {
+  return buildPayload(event, extra);
+}
+
+function writeDebugPayload(payload) {
+  process.stderr.write(`[vai:telemetry] ${JSON.stringify(payload)}\n`);
+}
+
+function ensureNoticeShown(options = {}) {
+  const surface = options.surface || 'cli';
+  const presentNotice = options.presentNotice;
+  const policy = getTelemetryPolicy();
+
+  if (!policy.enabled || process.env.CI === 'true' || process.env.CI === '1') {
+    return { shown: false, skipped: true };
   }
-  // Config file check
-  try {
-    const { getConfigValue } = require('./config');
-    const val = getConfigValue('telemetry');
-    if (val === false || val === 'false') return false;
-  } catch { /* config not available, default to enabled */ }
-  return true;
+  if (policy.noticeShown) {
+    return { shown: false, alreadyShown: true };
+  }
+
+  suppressForCurrentProcess = true;
+
+  if (surface === 'desktop') {
+    if (typeof presentNotice === 'function') {
+      Promise.resolve(presentNotice({ url: NOTICE_URL }))
+        .then((didRender) => {
+          if (didRender !== false) {
+            markNoticeShown();
+          }
+        })
+        .catch(() => {});
+    }
+    return { shown: true, pending: true };
+  }
+
+  printCliNotice();
+  const shownAt = markNoticeShown();
+  return { shown: true, shownAt };
+}
+
+function getTelemetryStatus() {
+  const policy = getTelemetryPolicy();
+  return {
+    endpoint: TELEMETRY_URL,
+    policy,
+    noticeShown: policy.noticeShown,
+    noticeShownAt: policy.noticeShownAt,
+    baseFields: BASE_FIELDS,
+    events: getTelemetryEvents(),
+  };
 }
 
 /**
@@ -36,22 +183,19 @@ function isEnabled() {
  * @param {object} [extra] - Additional fields
  */
 function send(event, extra = {}) {
-  if (!isEnabled()) return;
+  const policy = getTelemetryPolicy();
+  if (!policy.canSend) return;
 
-  const { getVersion } = require('./banner');
+  const payloadObject = buildPayload(event, extra);
+  if (policy.debug) {
+    writeDebugPayload(payloadObject);
+    return;
+  }
 
-  const payload = JSON.stringify({
-    event,
-    version: getVersion(),
-    context: 'cli',
-    platform: `${process.platform}-${process.arch}`,
-    locale: Intl.DateTimeFormat().resolvedOptions().locale || undefined,
-    ...extra,
-  });
+  const payload = JSON.stringify(payloadObject);
 
   try {
     // Use native https, fire-and-forget
-    const { request } = require('https');
     const url = new URL(TELEMETRY_URL);
     const req = request({
       hostname: url.hostname,
@@ -91,4 +235,19 @@ function timer(event, baseFields = {}) {
   };
 }
 
-module.exports = { send, isEnabled, timer };
+module.exports = {
+  TELEMETRY_URL,
+  NOTICE_URL,
+  buildPayload,
+  ensureNoticeShown,
+  getTelemetryEvent,
+  getTelemetryPolicy,
+  getTelemetryStatus,
+  hasNoticeBeenShown,
+  isEnabled,
+  markNoticeShown,
+  preview,
+  resetNoticeState,
+  send,
+  timer,
+};

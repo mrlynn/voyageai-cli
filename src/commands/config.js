@@ -15,6 +15,7 @@ const {
 const ui = require('../lib/ui');
 
 const VALID_KEYS = Object.keys(KEY_MAP);
+const INTERNAL_KEYS = new Set(['telemetryNoticeShown', 'telemetryNoticeShownAt']);
 
 /**
  * Register the config command on a Commander program.
@@ -138,6 +139,7 @@ function registerConfig(program) {
         }
 
         for (const [intKey, value] of Object.entries(config)) {
+          if (INTERNAL_KEYS.has(intKey)) continue;
           const cliKey = reverseMap[intKey] || intKey;
           const display = SECRET_KEYS.has(intKey) ? ui.dim(maskSecret(String(value))) : value;
           console.log(`${ui.cyan(cliKey)}: ${display}`);

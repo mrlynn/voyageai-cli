@@ -41,6 +41,7 @@ const { registerBug } = require('./commands/bug');
 const { registerChat } = require('./commands/chat');
 const { registerMcpServer } = require('./commands/mcp-server');
 const { registerNano } = require('./commands/nano');
+const { registerTelemetry } = require('./commands/telemetry');
 const { registerWorkflow } = require('./commands/workflow');
 const { registerIndexWorkspace } = require('./commands/index-workspace');
 const { registerExport } = require('./commands/export');
@@ -90,6 +91,7 @@ registerBug(program);
 registerChat(program);
 registerMcpServer(program);
 registerNano(program);
+registerTelemetry(program);
 registerWorkflow(program);
 registerIndexWorkspace(program);
 registerExport(program);
@@ -108,8 +110,10 @@ const telemetry = require('./lib/telemetry');
 // If no args (just `vai`), show welcome wizard (first run) or banner + help
 if (process.argv.length <= 2) {
   const { shouldShowWelcome, runWelcome } = require('./lib/welcome');
+  const showWelcome = shouldShowWelcome();
+  telemetry.ensureNoticeShown({ surface: 'cli' });
 
-  if (shouldShowWelcome()) {
+  if (showWelcome) {
     runWelcome()
       .then((completed) => {
         if (!completed) {
@@ -133,6 +137,8 @@ if (process.argv.length <= 2) {
     process.exit(0);
   }
 }
+
+telemetry.ensureNoticeShown({ surface: 'cli' });
 
 // Track command usage after parsing
 program.hook('preAction', (thisCommand) => {

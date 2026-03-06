@@ -532,6 +532,35 @@ vai config set mongodb-uri "mongodb+srv://..."
 
 Config is stored in `~/.vai/config.json`. Use `vai config get` to see all values (secrets are masked) or `vai config get <key>` for a specific value. The desktop app's Settings → Database page also reads and writes this file.
 
+#### Telemetry
+
+vai collects anonymous usage telemetry for the CLI and desktop app. On first launch, vai shows a one-time notice before any telemetry is sent. The CLI and desktop app share the same telemetry preference and notice state via `~/.vai/config.json`.
+
+Use the built-in telemetry controls:
+
+```bash
+vai telemetry
+vai telemetry off
+vai telemetry on
+vai telemetry status
+vai telemetry reset
+```
+
+You can also disable telemetry with environment variables:
+
+```bash
+export VAI_TELEMETRY=0
+export DO_NOT_TRACK=1
+```
+
+For local auditing, set:
+
+```bash
+export VAI_TELEMETRY_DEBUG=1
+```
+
+This prints telemetry payloads to `stderr` instead of sending them.
+
 ### Shell Completions
 
 ```bash

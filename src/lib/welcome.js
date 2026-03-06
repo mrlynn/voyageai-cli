@@ -1,6 +1,13 @@
 'use strict';
 
-const { isFirstRun, isWelcomeSuppressed, saveConfig } = require('./config');
+const pc = require('picocolors');
+const { identifyKey } = require('./api');
+const { showBanner } = require('./banner');
+const { loadConfig, isFirstRun, isWelcomeSuppressed, saveConfig } = require('./config');
+const { send } = require('./telemetry');
+const { runWizard } = require('./wizard');
+const { createCLIRenderer } = require('./wizard-cli');
+const { welcomeSteps } = require('./wizard-steps-welcome');
 
 /**
  * Determine if the welcome flow should run.
@@ -26,13 +33,6 @@ function shouldShowWelcome(configPath) {
  * @returns {Promise<boolean>} true if setup completed, false if cancelled
  */
 async function runWelcome(opts = {}) {
-  const pc = require('picocolors');
-  const { showBanner } = require('./banner');
-  const { runWizard } = require('./wizard');
-  const { createCLIRenderer } = require('./wizard-cli');
-  const { welcomeSteps } = require('./wizard-steps-welcome');
-  const { identifyKey } = require('./api');
-
   // Show the banner first
   showBanner();
 
@@ -57,7 +57,7 @@ async function runWelcome(opts = {}) {
   }
 
   // Build config object
-  const config = {};
+  const config = loadConfig(opts.configPath);
   const apiKey = (answers.apiKey || '').trim();
 
   if (apiKey) {
@@ -101,8 +101,7 @@ async function runWelcome(opts = {}) {
   console.log(pc.dim('  Run vai --help to see all commands.\n'));
 
   // Telemetry (non-blocking, fire-and-forget)
-  const telemetry = require('./telemetry');
-  telemetry.send('cli_welcome_complete', {
+  send('cli_welcome_complete', {
     hasApiKey: !!apiKey,
     hasMongo: !!answers.mongodbUri,
     keyType: apiKey ? identifyKey(apiKey).type : 'none',

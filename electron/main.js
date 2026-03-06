@@ -570,6 +570,35 @@ function compareVersions(a, b) {
   return 0;
 }
 
+function maybeShowTelemetryNotice() {
+  try {
+    const telemetry = require('../src/lib/telemetry');
+    telemetry.ensureNoticeShown({
+      surface: 'desktop',
+      presentNotice: () => {
+        if (!mainWindow || mainWindow.isDestroyed()) return false;
+        return dialog.showMessageBox(mainWindow, {
+          type: 'info',
+          title: 'Telemetry Notice',
+          message: 'Vai collects anonymous usage data to improve the product.',
+          detail: [
+            'This includes command names, runtime metadata, aggregate counts, platform, and version.',
+            'No API keys, file contents, or conversation text are sent.',
+            '',
+            'Disable anytime in the CLI with: vai telemetry off',
+            'Details: https://vaicli.com/telemetry',
+          ].join('\n'),
+          buttons: ['OK'],
+          defaultId: 0,
+          noLink: true,
+        }).then(() => true);
+      },
+    });
+  } catch {
+    // Telemetry notice should never break desktop startup.
+  }
+}
+
 // ── App name & early dock icon (must be set before 'ready') ──
 if (process.platform === 'darwin') {
   app.setName('Vai');
@@ -1105,6 +1134,7 @@ app.whenReady().then(async () => {
   try {
     await startPlaygroundServer();
     createWindow();
+    maybeShowTelemetryNotice();
     // Desktop telemetry
     try {
       const telemetry = require('../src/lib/telemetry');
