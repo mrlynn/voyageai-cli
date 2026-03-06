@@ -20,7 +20,7 @@ Requirements for this milestone. Each maps to roadmap phases.
 - [x] **BRDG-01**: Python bridge (nano-bridge.py) loads voyage-4-nano and returns embeddings via JSON-over-stdin/stdout
 - [x] **BRDG-02**: Node.js bridge manager (nano.js) spawns, communicates with, and manages the Python subprocess
 - [x] **BRDG-03**: Bridge manager keeps Python process warm between calls with configurable idle timeout
-- [ ] **BRDG-04**: Every failure mode has a clear error message with an actionable remediation command
+- [x] **BRDG-04**: Every failure mode has a clear error message with an actionable remediation command
 - [x] **BRDG-05**: BRIDGE_VERSION in Python matches package.json, with automated sync script and CI check
 
 ### Command Integration
@@ -90,7 +90,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BRDG-01 | Phase 1 | Complete |
 | BRDG-02 | Phase 1 | Complete |
 | BRDG-03 | Phase 1 | Complete |
-| BRDG-04 | Phase 4 | Pending |
+| BRDG-04 | Phase 4 | Complete |
 | BRDG-05 | Phase 1 | Complete |
 | CMD-01 | Phase 3 | Complete |
 | CMD-02 | Phase 3 | Complete |
