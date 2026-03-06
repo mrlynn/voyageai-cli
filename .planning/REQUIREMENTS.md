@@ -30,7 +30,7 @@ Requirements for this milestone. Each maps to roadmap phases.
 - [ ] **CMD-03**: User can run `vai pipeline --local` to run a complete RAG pipeline with zero API keys
 - [ ] **CMD-04**: User can specify `--dimensions 256/512/1024/2048` for MRL dimension selection
 - [ ] **CMD-05**: User can specify `--precision float32/int8/uint8/binary` for quantization
-- [ ] **CMD-06**: voyage-4-nano appears in `vai models` catalog with local/free indicators
+- [x] **CMD-06**: voyage-4-nano appears in `vai models` catalog with local/free indicators
 
 ### Release Engineering
 
@@ -43,7 +43,7 @@ Requirements for this milestone. Each maps to roadmap phases.
 - [ ] **TEST-01**: Unit tests for bridge protocol (mock subprocess, verify JSON in/out)
 - [ ] **TEST-02**: Unit tests for bridge manager lifecycle (spawn, warm, shutdown, timeout)
 - [x] **TEST-03**: Unit tests for setup logic (Python detection, step resumption)
-- [ ] **TEST-04**: Unit tests for error taxonomy (every error has remediation string)
+- [x] **TEST-04**: Unit tests for error taxonomy (every error has remediation string)
 
 ## Future Requirements
 
@@ -97,14 +97,14 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CMD-03 | Phase 3 | Pending |
 | CMD-04 | Phase 3 | Pending |
 | CMD-05 | Phase 3 | Pending |
-| CMD-06 | Phase 3 | Pending |
+| CMD-06 | Phase 3 | Complete |
 | REL-01 | Phase 2 | Complete |
 | REL-02 | Phase 2 | Complete |
 | REL-03 | Phase 2 | Complete |
 | TEST-01 | Phase 1 | Pending |
 | TEST-02 | Phase 1 | Pending |
 | TEST-03 | Phase 2 | Complete |
-| TEST-04 | Phase 3 | Pending |
+| TEST-04 | Phase 3 | Complete |
 
 **Coverage:**
 - v1 requirements: 23 total
