@@ -26,6 +26,8 @@ function registerEmbed(program) {
     .option('--no-truncation', 'Disable truncation')
     .option('--output-dtype <type>', 'Output data type: float, int8, uint8, binary, ubinary', 'float')
     .option('-o, --output-format <format>', 'Output format: json or array', 'json')
+    .option('--local', 'Use local voyage-4-nano model (no API key required)')
+    .option('--precision <type>', 'Output precision for local mode: float32, int8, uint8, binary', 'float32')
     .option('--estimate', 'Show estimated tokens and cost without calling the API')
     .option('--json', 'Machine-readable JSON output')
     .option('-q, --quiet', 'Suppress non-essential output')
@@ -149,54 +151,88 @@ function registerEmbed(program) {
         // Standard text embedding path
         const texts = await resolveTextInput(text, opts.file);
 
-        // --estimate: show cost comparison, optionally switch model
-        if (opts.estimate) {
-          const { estimateTokensForTexts, confirmOrSwitchModel } = require('../lib/cost');
-          const tokens = estimateTokensForTexts(texts);
-          const chosenModel = await confirmOrSwitchModel(tokens, opts.model, { json: opts.json });
-          if (!chosenModel) return; // cancelled
-          opts.model = chosenModel;
-        }
-
+        let result;
+        let done;
         const useColor = !opts.json;
         const useSpinner = useColor && !opts.quiet;
+        const isLocal = !!opts.local;
 
-        // Show hint when --input-type is not provided and output is interactive
-        if (!opts.inputType && !opts.json && !opts.quiet && process.stdout.isTTY) {
-          console.error(ui.dim('ℹ Tip: Use --input-type query or --input-type document for better retrieval accuracy.'));
+        if (isLocal) {
+          // Local path: route through nano adapter (no API key required)
+          const { generateLocalEmbeddings } = require('../nano/nano-local.js');
+          opts.model = 'voyage-4-nano';
+
+          done = telemetry.timer('cli_embed', {
+            model: opts.model,
+            local: true,
+            inputType: opts.inputType || 'document',
+            textCount: texts.length,
+          });
+
+          let spin;
+          if (useSpinner) {
+            spin = ui.spinner('Generating local embeddings...');
+            spin.start();
+          }
+
+          const localOpts = {
+            inputType: opts.inputType || 'document',
+            dimensions: opts.dimensions,
+            precision: opts.precision || 'float32',
+          };
+
+          result = await generateLocalEmbeddings(texts, localOpts);
+
+          if (spin) spin.stop();
+        } else {
+          // API path
+          // --estimate: show cost comparison, optionally switch model
+          if (opts.estimate) {
+            const { estimateTokensForTexts, confirmOrSwitchModel } = require('../lib/cost');
+            const tokens = estimateTokensForTexts(texts);
+            const chosenModel = await confirmOrSwitchModel(tokens, opts.model, { json: opts.json });
+            if (!chosenModel) return; // cancelled
+            opts.model = chosenModel;
+          }
+
+          // Show hint when --input-type is not provided and output is interactive
+          if (!opts.inputType && !opts.json && !opts.quiet && process.stdout.isTTY) {
+            console.error(ui.dim('ℹ Tip: Use --input-type query or --input-type document for better retrieval accuracy.'));
+          }
+
+          done = telemetry.timer('cli_embed', {
+            model: opts.model,
+            inputType: opts.inputType || undefined,
+            textCount: texts.length,
+            outputDtype: opts.outputDtype,
+          });
+
+          let spin;
+          if (useSpinner) {
+            spin = ui.spinner('Generating embeddings...');
+            spin.start();
+          }
+
+          const embedOpts = {
+            model: opts.model,
+            inputType: opts.inputType,
+            dimensions: opts.dimensions,
+          };
+          // Only pass truncation when explicitly set via --truncation or --no-truncation
+          if (opts.truncation !== undefined) {
+            embedOpts.truncation = opts.truncation;
+          }
+          // Only pass output_dtype when not the default float
+          if (opts.outputDtype && opts.outputDtype !== 'float') {
+            embedOpts.outputDtype = opts.outputDtype;
+          }
+
+          result = await generateEmbeddings(texts, embedOpts);
+
+          if (spin) spin.stop();
         }
 
-        const done = telemetry.timer('cli_embed', {
-          model: opts.model,
-          inputType: opts.inputType || undefined,
-          textCount: texts.length,
-          outputDtype: opts.outputDtype,
-        });
-
-        let spin;
-        if (useSpinner) {
-          spin = ui.spinner('Generating embeddings...');
-          spin.start();
-        }
-
-        const embedOpts = {
-          model: opts.model,
-          inputType: opts.inputType,
-          dimensions: opts.dimensions,
-        };
-        // Only pass truncation when explicitly set via --truncation or --no-truncation
-        if (opts.truncation !== undefined) {
-          embedOpts.truncation = opts.truncation;
-        }
-        // Only pass output_dtype when not the default float
-        if (opts.outputDtype && opts.outputDtype !== 'float') {
-          embedOpts.outputDtype = opts.outputDtype;
-        }
-
-        const result = await generateEmbeddings(texts, embedOpts);
-
-        if (spin) spin.stop();
-
+        // Shared output formatting for both local and API paths
         if (opts.outputFormat === 'array') {
           if (result.data.length === 1) {
             console.log(JSON.stringify(result.data[0].embedding));
@@ -214,12 +250,17 @@ function registerEmbed(program) {
         // Friendly output
         if (!opts.quiet) {
           console.log(ui.label('Model', ui.cyan(result.model)));
+          if (isLocal) {
+            console.log(ui.label('Mode', ui.cyan('local')));
+          }
           console.log(ui.label('Texts', String(result.data.length)));
           if (result.usage) {
             console.log(ui.label('Tokens', ui.dim(String(result.usage.total_tokens))));
           }
           console.log(ui.label('Dimensions', ui.bold(String(result.data[0]?.embedding?.length || 'N/A'))));
-          showCostSummary(result.model || model, result.usage?.total_tokens || 0, opts);
+          if (!isLocal) {
+            showCostSummary(result.model || opts.model, result.usage?.total_tokens || 0, opts);
+          }
           console.log('');
         }
 
@@ -229,7 +270,7 @@ function registerEmbed(program) {
         }
 
         console.log('');
-        console.log(ui.success('Embeddings generated'));
+        console.log(ui.success(isLocal ? 'Local embeddings generated' : 'Embeddings generated'));
 
         done({ dimensions: result.data[0]?.embedding?.length });
       } catch (err) {
