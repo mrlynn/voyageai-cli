@@ -11,63 +11,11 @@ const { runWizard } = require('../lib/wizard');
 const { createCLIRenderer } = require('../lib/wizard-cli');
 const { chatSetupSteps } = require('../lib/wizard-steps-chat');
 const ui = require('../lib/ui');
+const chatUI = require('../lib/chat-ui');
 const pc = require('picocolors');
 const fs = require('fs');
 
-const SPINNER_FRAMES = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
-
-/**
- * Create a spinner with auto-updating elapsed time display.
- * Writes directly to stderr to avoid conflicts with readline on stdout.
- * @param {string} baseText - Base spinner message (e.g., "Searching knowledge base")
- * @returns {{ stop: Function, succeed: Function, updateText: Function }}
- */
-function createTimedSpinner(baseText) {
-  const isTTY = process.stderr.isTTY;
-  const startTime = Date.now();
-  let frameIndex = 0;
-  let stopped = false;
-
-  const render = () => {
-    if (stopped) return;
-    const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-    const frame = pc.cyan(SPINNER_FRAMES[frameIndex % SPINNER_FRAMES.length]);
-    const line = `${frame} ${baseText}... ${pc.dim(`${elapsed}s`)}`;
-    if (isTTY) {
-      process.stderr.write(`\r\x1b[K${line}`);
-    }
-    frameIndex++;
-  };
-
-  // Render first frame immediately, then animate
-  render();
-  const timer = setInterval(render, 80);
-
-  const clear = () => {
-    if (stopped) return;
-    stopped = true;
-    clearInterval(timer);
-    if (isTTY) {
-      process.stderr.write('\r\x1b[K');
-    }
-  };
-
-  return {
-    stop: clear,
-    succeed(msg) {
-      if (stopped) return;
-      const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-      clear();
-      if (isTTY) {
-        const text = msg || `${baseText} ${pc.dim(`(${elapsed}s)`)}`;
-        process.stderr.write(`${pc.green('✓')} ${text}\n`);
-      }
-    },
-    updateText(newBase) {
-      baseText = newBase;
-    },
-  };
-}
+const { createTimedSpinner } = chatUI;
 
 /**
  * Register the chat command.
@@ -89,6 +37,7 @@ function registerChat(program) {
     .option('--max-turns <n>', 'Max conversation turns before truncation', (v) => parseInt(v, 10), 20)
     .option('--no-history', 'Disable MongoDB persistence (in-memory only)')
     .option('--no-rerank', 'Skip reranking step')
+    .option('--local', 'Use local nano embeddings instead of Voyage API')
     .option('--no-stream', 'Wait for complete response instead of streaming')
     .option('--system-prompt <text>', 'Override the system prompt')
     .option('--text-field <name>', 'Document text field name', 'text')
@@ -118,7 +67,8 @@ async function runChat(opts) {
   const maxDocs = opts.maxContextDocs || chatConf.maxContextDocs || 5;
   const maxTurns = opts.maxTurns || chatConf.maxConversationTurns || 20;
   const textField = opts.textField || 'text';
-  const doRerank = opts.rerank !== false;
+  const isLocal = opts.local || false;
+  const doRerank = isLocal ? false : (opts.rerank !== false);
   const doStream = opts.stream !== false;
   const systemPrompt = opts.systemPrompt || chatConf.systemPrompt;
 
@@ -137,6 +87,21 @@ async function runChat(opts) {
     console.error('  Or use --mode agent to let the LLM discover collections.');
     console.error('');
     process.exit(1);
+  }
+
+  // Nano prerequisite check (before LLM config)
+  if (isLocal) {
+    const { checkVenv, checkModel } = require('../nano/nano-health');
+    const venv = checkVenv();
+    const model = checkModel();
+    if (!venv.ok || !model.ok) {
+      if (startupSpinner) startupSpinner.stop();
+      console.error('');
+      console.error(pc.red('  voyage-4-nano is not set up.'));
+      console.error(`  Run ${pc.cyan('vai nano setup')} to install voyage-4-nano`);
+      console.error('');
+      process.exit(1);
+    }
   }
 
   // Resolve LLM config — run interactive setup if missing
@@ -218,6 +183,7 @@ async function runChat(opts) {
       field: proj.field || 'embedding',
       llmConfig,
       textField,
+      local: isLocal,
     });
     if (startupSpinner) startupSpinner.stop();
 
@@ -300,20 +266,15 @@ async function runChat(opts) {
 
   // Print header
   if (!opts.quiet && !opts.json) {
-    console.log('');
-    console.log(`${pc.bold('vai chat')} v${getVersion()}`);
-    console.log(ui.label('Provider', `${llmConfig.provider} (${llmConfig.model})`));
-    if (isAgent) {
-      console.log(ui.label('Mode', 'agent (tool-calling)'));
-      if (db) console.log(ui.label('Default DB', db));
-      if (collection) console.log(ui.label('Default collection', collection));
-    } else {
-      console.log(ui.label('Mode', 'pipeline (fixed RAG)'));
-      console.log(ui.label('Knowledge base', `${db}.${collection}`));
-    }
-    console.log(ui.label('Session', pc.dim(history.sessionId)));
-    console.log(pc.dim('Type /help for commands, /quit to exit.'));
-    console.log('');
+    console.log(chatUI.renderHeader({
+      version: getVersion(),
+      provider: llmConfig.provider,
+      model: llmConfig.model,
+      mode: isAgent ? 'agent' : 'pipeline',
+      db,
+      collection,
+      sessionId: history.sessionId,
+    }));
   }
 
   // Start REPL
@@ -357,7 +318,7 @@ async function runChat(opts) {
       } else {
         await handlePipelineTurn(input, {
           db, collection, llm, history, opts,
-          maxDocs, doRerank, doStream, systemPrompt, textField, chatConf,
+          maxDocs, doRerank, doStream, systemPrompt, textField, chatConf, isLocal,
         });
       }
     } catch (err) {
@@ -398,7 +359,14 @@ async function runChat(opts) {
  * Handle a single pipeline mode turn.
  */
 async function handlePipelineTurn(input, ctx) {
-  const { db, collection, llm, history, opts, maxDocs, doRerank, doStream, systemPrompt, textField, chatConf } = ctx;
+  const { db, collection, llm, history, opts, maxDocs, doRerank, doStream, systemPrompt, textField, chatConf, isLocal } = ctx;
+
+  // Build local embedding options if in local mode
+  let localOpts = {};
+  if (isLocal) {
+    const { generateLocalEmbeddings } = require('../nano/nano-local');
+    localOpts = { embedFn: generateLocalEmbeddings, model: 'voyage-4-nano', dimensions: 1024 };
+  }
   const turnNum = Math.floor(history.turns.length / 2) + 1;
 
   if (opts.json) {
@@ -409,7 +377,7 @@ async function handlePipelineTurn(input, ctx) {
 
     for await (const event of chatTurn({
       query: input, db, collection, llm, history,
-      opts: { maxDocs, rerank: doRerank, stream: false, systemPrompt, textField, filter: opts.filter },
+      opts: { maxDocs, rerank: doRerank, stream: false, systemPrompt, textField, filter: opts.filter, ...localOpts },
     })) {
       if (event.type === 'chunk') fullResponse += event.data;
       if (event.type === 'done') {
@@ -427,11 +395,12 @@ async function handlePipelineTurn(input, ctx) {
       metadata,
     }));
   } else {
-    // Interactive mode — stream output with spinners
+    // Interactive mode — stream output with markdown rendering
     const showSpinners = !opts.quiet;
     let retrievalShown = false;
     let retrievalSpinner = null;
     let generationSpinner = null;
+    let streamRenderer = null;
 
     if (showSpinners) {
       retrievalSpinner = createTimedSpinner('Searching knowledge base');
@@ -440,7 +409,7 @@ async function handlePipelineTurn(input, ctx) {
     try {
       for await (const event of chatTurn({
         query: input, db, collection, llm, history,
-        opts: { maxDocs, rerank: doRerank, stream: doStream, systemPrompt, textField, filter: opts.filter },
+        opts: { maxDocs, rerank: doRerank, stream: doStream, systemPrompt, textField, filter: opts.filter, ...localOpts },
       })) {
         if (event.type === 'history') {
           const { turnCount } = event.data;
@@ -457,7 +426,8 @@ async function handlePipelineTurn(input, ctx) {
 
           if (!opts.quiet && !retrievalShown) {
             const { docs, timeMs } = event.data;
-            console.log(pc.dim(`  [${docs.length} docs retrieved in ${timeMs}ms]`));
+            const rerankNote = isLocal ? ', reranking skipped' : '';
+            console.log(pc.dim(`  [${docs.length} docs retrieved in ${timeMs}ms${rerankNote}]`));
             console.log('');
             retrievalShown = true;
           }
@@ -472,21 +442,26 @@ async function handlePipelineTurn(input, ctx) {
             generationSpinner.stop();
             generationSpinner = null;
           }
-          process.stdout.write(event.data);
+          // Initialize streaming markdown renderer on first chunk
+          if (!streamRenderer) {
+            streamRenderer = chatUI.createStreamRenderer();
+          }
+          streamRenderer.write(event.data);
         }
 
         if (event.type === 'done') {
-          console.log(''); // End the streamed response line
+          // Flush any remaining buffered markdown
+          if (streamRenderer) {
+            streamRenderer.flush();
+            streamRenderer = null;
+          } else {
+            console.log('');
+          }
 
-          // Show sources
+          // Show sources as box-drawn cards
           const { sources } = event.data;
           if (sources.length > 0 && chatConf.showSources !== false) {
-            console.log('');
-            console.log(pc.dim('Sources:'));
-            for (let i = 0; i < sources.length; i++) {
-              const s = sources[i];
-              console.log(pc.dim(`  [${i + 1}] ${s.source} (relevance: ${s.score?.toFixed(2) || 'N/A'})`));
-            }
+            console.log(chatUI.renderSources(sources));
           }
           console.log('');
         }
@@ -494,6 +469,7 @@ async function handlePipelineTurn(input, ctx) {
     } finally {
       if (retrievalSpinner) retrievalSpinner.stop();
       if (generationSpinner) generationSpinner.stop();
+      if (streamRenderer) streamRenderer.flush();
     }
   }
 }
@@ -533,10 +509,11 @@ async function handleAgentTurn(input, ctx) {
       metadata,
     }));
   } else {
-    // Interactive mode with spinners
+    // Interactive mode with markdown rendering
     const showSpinners = !opts.quiet;
     let thinkingSpinner = null;
     let hasShownToolCalls = false;
+    let streamRenderer = null;
 
     if (showSpinners) {
       thinkingSpinner = createTimedSpinner('Thinking');
@@ -564,19 +541,7 @@ async function handleAgentTurn(input, ctx) {
           hasShownToolCalls = true;
 
           if (showToolCalls) {
-            const { name, timeMs, error } = event.data;
-            if (error) {
-              console.log(pc.dim(`  [tool] ${name} ${pc.red('failed')} (${timeMs}ms): ${error}`));
-            } else if (showToolCalls === 'verbose') {
-              console.log(pc.dim(`  [tool] ${name} (${timeMs}ms)`));
-              const result = event.data.result;
-              if (result) {
-                const preview = JSON.stringify(result).substring(0, 200);
-                console.log(pc.dim(`    ${preview}${JSON.stringify(result).length > 200 ? '...' : ''}`));
-              }
-            } else {
-              console.log(pc.dim(`  [tool] ${name} (${timeMs}ms)`));
-            }
+            console.log(chatUI.renderToolCall(event.data, showToolCalls));
           }
 
           // Start spinner for next LLM call (analyzing tool results)
@@ -594,16 +559,25 @@ async function handleAgentTurn(input, ctx) {
             console.log(''); // Visual separator after tool calls
             hasShownToolCalls = false;
           }
-          process.stdout.write(event.data);
+          if (!streamRenderer) {
+            streamRenderer = chatUI.createStreamRenderer();
+          }
+          streamRenderer.write(event.data);
         }
 
         if (event.type === 'done') {
-          console.log(''); // End the response line
+          if (streamRenderer) {
+            streamRenderer.flush();
+            streamRenderer = null;
+          } else {
+            console.log('');
+          }
           console.log('');
         }
       }
     } finally {
       if (thinkingSpinner) thinkingSpinner.stop();
+      if (streamRenderer) streamRenderer.flush();
     }
   }
 
@@ -649,11 +623,7 @@ async function handleSlashCommand(input, ctx) {
       if (!sources) {
         console.log(pc.dim('  No sources available yet.'));
       } else {
-        console.log('');
-        for (let i = 0; i < sources.length; i++) {
-          console.log(`  [${i + 1}] ${sources[i].source} (${sources[i].score?.toFixed(2) || 'N/A'})`);
-        }
-        console.log('');
+        console.log(chatUI.renderSources(sources, { showPreview: true }));
       }
       return true;
     }
