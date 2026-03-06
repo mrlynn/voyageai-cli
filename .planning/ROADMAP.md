@@ -3,7 +3,7 @@
 ## Milestones
 
 - v1.0 **voyage-4-nano Local Inference** -- Phases 1-5 (shipped 2026-03-06)
-- v1.1 **Nano Documentation & Demos** -- Phases 6-8 (in progress)
+- v1.1 **Nano Documentation & Demos** -- Phases 6-9 (in progress)
 
 ## Phases
 
@@ -73,6 +73,20 @@ Plans:
 - [ ] 08-01: TBD
 - [ ] 08-02: TBD
 
+### Phase 9: Phase 6 Verification
+**Goal**: Formally verify Phase 6 (Demo Nano) implementation to promote 7 DEMO requirements from "partial" to "satisfied"
+**Depends on**: Phase 6
+**Requirements**: DEMO-01, DEMO-02, DEMO-03, DEMO-04, DEMO-05, DEMO-06, DEMO-07
+**Gap Closure:** Closes verification gaps from v1.1 audit
+**Success Criteria** (what must be TRUE):
+  1. VERIFICATION.md exists for Phase 6 confirming all 7 DEMO requirements are satisfied
+  2. Each DEMO requirement has evidence linking implementation to requirement
+  3. `vai demo nano` runs end-to-end without errors
+**Plans:** 1 plan
+
+Plans:
+- [ ] 09-01-PLAN.md -- Verify all 7 DEMO requirements against code, produce 06-VERIFICATION.md, update traceability
+
 ## Progress
 
 **Execution Order:**
@@ -88,3 +102,4 @@ Phases execute in numeric order: 6 -> 7 -> 8
 | 6. Demo Nano | v1.1 | 0/2 | Planning complete | - |
 | 7. Documentation | v1.1 | 0/? | Not started | - |
 | 8. Chat Local Embeddings | v1.1 | 0/? | Not started | - |
+| 9. Phase 6 Verification | v1.1 | 0/1 | Planning complete | - |
