@@ -67,11 +67,11 @@ Plans:
   2. Chat retrieval uses local embeddings when --local flag is set, returning relevant results
   3. Reranking is automatically skipped in --local mode without errors or confusing output
   4. Demo clearly communicates that MongoDB and an LLM provider are still required even in --local mode
-**Plans**: TBD
+**Plans:** 2 plans
 
 Plans:
-- [ ] 08-01: TBD
-- [ ] 08-02: TBD
+- [ ] 08-01-PLAN.md -- Core library wiring: embedFn injection in demo-ingest/chat/preflight, --local flag on vai chat
+- [ ] 08-02-PLAN.md -- Demo chat --local: full demo flow with nano embeddings, human verification
 
 ### Phase 9: Phase 6 Verification
 **Goal**: Formally verify Phase 6 (Demo Nano) implementation to promote 7 DEMO requirements from "partial" to "satisfied"
@@ -101,5 +101,5 @@ Phases execute in numeric order: 6 -> 7 -> 8
 | 5. Documentation & Verification Cleanup | v1.0 | 1/1 | Complete | 2026-03-06 |
 | 6. Demo Nano | v1.1 | 0/2 | Planning complete | - |
 | 7. Documentation | v1.1 | 1/1 | Complete | 2026-03-06 |
-| 8. Chat Local Embeddings | v1.1 | 0/? | Not started | - |
+| 8. Chat Local Embeddings | v1.1 | 0/2 | Planning complete | - |
 | 9. Phase 6 Verification | v1.1 | 0/1 | Planning complete | - |
