@@ -29,8 +29,24 @@
  * @param {string} [params.textField]   - document text field (default: 'text')
  * @returns {Promise<{ checks: PreflightCheck[], ready: boolean }>}
  */
-async function runPreflight({ db, collection, field = 'embedding', llmConfig, textField = 'text' }) {
+async function runPreflight({ db, collection, field = 'embedding', llmConfig, textField = 'text', local }) {
   const checks = [];
+
+  // Local mode status indicators
+  if (local) {
+    checks.push({
+      id: 'embeddings-mode',
+      label: 'Embeddings',
+      ok: true,
+      detail: 'local (voyage-4-nano)',
+    });
+    checks.push({
+      id: 'reranking',
+      label: 'Reranking',
+      ok: true,
+      detail: 'skipped (local mode)',
+    });
+  }
 
   // 1. LLM Provider
   checks.push({
