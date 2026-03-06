@@ -19,8 +19,8 @@ GET /users/user_123
 ```
 
 **Database Cache** (Query result cache):
-```
-SELECT * FROM users WHERE status='active'
+```js
+db.users.find({ status: 'active' })
 → Result cached for 1 hour
 → Repeated queries served from cache
 ```

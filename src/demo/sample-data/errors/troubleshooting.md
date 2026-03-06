@@ -100,7 +100,7 @@ ping -c 5 api.example.com
 curl https://api.example.com/health
 
 # Check database queries
-EXPLAIN ANALYZE SELECT * FROM users WHERE id = 'user_123'
+db.users.find({ _id: 'user_123' }).explain('executionStats')
 ```
 
 ## Data Inconsistency
@@ -112,7 +112,7 @@ Verify data consistency:
 curl https://api.example.com/users/user_123 | jq .
 
 # Fetch from database (if access available)
-SELECT * FROM users WHERE user_id = 'user_123'
+db.users.findOne({ _id: 'user_123' })
 
 # Compare values
 # If different: cache stale, database inconsistent, or API bug

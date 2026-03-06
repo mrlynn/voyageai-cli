@@ -1,177 +1,300 @@
 # Indexes
 
-Indexes dramatically improve query performance by allowing the database to locate data without scanning entire tables. Understanding indexes is critical for optimizing API performance.
+Indexes in MongoDB improve query performance by allowing the database to locate
+documents without scanning every document in a collection. Proper indexing is
+critical for production workloads.
 
-## Index Basics
+## Single Field Index
 
-An index is a database structure that maps column values to row locations. Without indexes, queries scan every row (full table scan). With indexes, the database jumps directly to matching rows.
+The most basic index type, created on a single field.
 
-**Query without index**: Scan all 1M rows → 50ms
-**Query with index**: Locate matching rows → 1ms (50x faster!)
+```javascript
+// Ascending index on email
+db.users.createIndex({ email: 1 })
 
-## B-Tree Index (Default)
+// Descending index on createdAt
+db.users.createIndex({ createdAt: -1 })
 
-B-Tree is the default index type for most columns:
-
-```sql
-CREATE INDEX idx_users_email ON users(email);
-CREATE INDEX idx_users_created_at ON users(created_at);
+// Verify the index was created
+db.users.getIndexes()
 ```
 
-Use B-Tree for:
-- Equality queries: `WHERE email = '...'`
-- Range queries: `WHERE created_at > '2026-01-01'`
-- Sorting: `ORDER BY created_at`
+## Unique Index
 
-## Composite Indexes
+Enforce uniqueness on a field. Rejects duplicate values.
 
-Indexes on multiple columns for combined filters:
+```javascript
+db.users.createIndex({ email: 1 }, { unique: true })
 
-```sql
-CREATE INDEX idx_resources_org_type ON resources(org_id, type);
+// Unique compound index
+db.inventory.createIndex({ warehouse: 1, sku: 1 }, { unique: true })
+
+// Attempting a duplicate insert will throw an error
+db.users.insertOne({ email: "ada@example.com" })
+db.users.insertOne({ email: "ada@example.com" })
+// MongoServerError: E11000 duplicate key error
 ```
 
-Efficiently queries:
-```sql
-SELECT * FROM resources WHERE org_id = 'org_123' AND type = 'file'
+## Compound Index
+
+An index on multiple fields. Field order matters for query optimization.
+
+```javascript
+db.orders.createIndex({ customerId: 1, orderDate: -1 })
+
+// This index supports queries on:
+// - { customerId: ... }                       (prefix)
+// - { customerId: ..., orderDate: ... }        (full match)
+// - { customerId: ... } sorted by orderDate    (sort)
+
+// It does NOT efficiently support:
+// - { orderDate: ... } alone (not a prefix)
 ```
 
-Column order matters! Put heavily filtered columns first.
+## Multikey Index (Array Fields)
 
-## Unique Indexes
+MongoDB automatically creates a multikey index when you index a field that
+contains an array. Each array element gets an index entry.
 
-Enforce uniqueness while improving query performance:
+```javascript
+db.articles.createIndex({ tags: 1 })
 
-```sql
-CREATE UNIQUE INDEX idx_users_email ON users(email);
+// Efficiently query any element in the array
+db.articles.find({ tags: "mongodb" })
+db.articles.find({ tags: { $in: ["mongodb", "nosql"] } })
 ```
 
-Combines constraint enforcement with performance.
+## Text Index
 
-## Partial Indexes
+Full-text search index for string content. One text index per collection.
 
-Index only rows matching a condition:
+```javascript
+db.articles.createIndex({
+  title: "text",
+  body: "text",
+  tags: "text"
+}, {
+  weights: { title: 10, body: 5, tags: 2 },
+  name: "article_text_search"
+})
 
-```sql
-CREATE INDEX idx_active_users ON users(name) WHERE status = 'active';
+// Search using the text index
+db.articles.find({ $text: { $search: "mongodb aggregation" } })
+
+// Sort by relevance score
+db.articles.find(
+  { $text: { $search: "mongodb aggregation" } },
+  { score: { $meta: "textScore" } }
+).sort({ score: { $meta: "textScore" } })
 ```
 
-Reduces index size for large tables with many inactive rows.
+## Geospatial Index (2dsphere)
 
-## Full-Text Indexes
+Index for querying location data stored as GeoJSON.
 
-Search text efficiently:
+```javascript
+db.places.createIndex({ location: "2dsphere" })
 
-```sql
-CREATE INDEX idx_documents_search ON documents USING GIN(to_tsvector('english', content));
+db.places.insertOne({
+  name: "MongoDB HQ",
+  location: {
+    type: "Point",
+    coordinates: [-73.9857, 40.7484]  // [longitude, latitude]
+  }
+})
+
+// Find places within 5 km of a point
+db.places.find({
+  location: {
+    $near: {
+      $geometry: { type: "Point", coordinates: [-73.9857, 40.7484] },
+      $maxDistance: 5000  // meters
+    }
+  }
+})
 ```
 
-Query full-text:
-```sql
-SELECT * FROM documents WHERE to_tsvector('english', content) @@ to_tsquery('english', 'postgresql & performance')
+## Hashed Index
+
+Supports hash-based sharding. Provides even distribution for shard keys.
+
+```javascript
+db.sessions.createIndex({ userId: "hashed" })
+
+// Used for hash-based sharding
+sh.shardCollection("mydb.sessions", { userId: "hashed" })
 ```
 
-## GIN and GIST Indexes
+## Wildcard Index
 
-For complex data types (arrays, JSONB):
+Indexes all fields or fields matching a pattern. Useful for documents with
+unpredictable or dynamic field names.
 
-```sql
-CREATE INDEX idx_users_tags ON users USING GIN(tags);
-CREATE INDEX idx_metadata ON resources USING GIN(metadata);
+```javascript
+// Index all fields in the document
+db.logs.createIndex({ "$**": 1 })
+
+// Index all fields under a specific path
+db.products.createIndex({ "attributes.$**": 1 })
+
+// Query any attribute without knowing field names in advance
+db.products.find({ "attributes.color": "red" })
+db.products.find({ "attributes.weight": { $gte: 10 } })
 ```
 
-Query JSONB with indexes:
-```sql
-SELECT * FROM resources WHERE metadata @> '{"tier": "premium"}'
+## TTL Index (Time-To-Live)
+
+Automatically deletes documents after a specified time period. The field
+must contain a Date value.
+
+```javascript
+// Documents expire 24 hours after createdAt
+db.sessions.createIndex({ createdAt: 1 }, { expireAfterSeconds: 86400 })
+
+// Documents expire 7 days after lastAccessed
+db.cache.createIndex({ lastAccessed: 1 }, { expireAfterSeconds: 604800 })
+
+// Modify TTL on an existing index
+db.runCommand({
+  collMod: "sessions",
+  index: { keyPattern: { createdAt: 1 }, expireAfterSeconds: 3600 }
+})
 ```
 
-## Index Selection
+## Partial Index
 
-When creating indexes, consider:
+Indexes only documents matching a filter expression. Reduces index size and
+improves write performance.
 
-1. **Query frequency**: Index heavily used queries
-2. **Cardinality**: High-cardinality columns (many unique values) benefit most
-3. **Write performance**: Indexes slow down INSERT/UPDATE/DELETE
-4. **Storage**: Each index consumes disk space
+```javascript
+// Only index active users
+db.users.createIndex(
+  { email: 1 },
+  { partialFilterExpression: { isActive: true } }
+)
 
-Monitor slow queries:
-
-```sql
--- Enable query logging
-SET log_min_duration_statement = 1000;  -- Log queries >1000ms
-
--- Check query plan
-EXPLAIN ANALYZE SELECT * FROM users WHERE email = '...'
+// Only index orders above $100
+db.orders.createIndex(
+  { customerId: 1, orderDate: -1 },
+  { partialFilterExpression: { total: { $gte: 100 } } }
+)
 ```
 
-## Index Maintenance
+## Sparse Index
 
-Indexes can become fragmented. Rebuild periodically:
+Only includes documents that contain the indexed field. Documents missing
+the field are excluded from the index.
 
-```sql
-REINDEX INDEX idx_users_email;
+```javascript
+db.contacts.createIndex({ phone: 1 }, { sparse: true })
+
+// Only documents that have a "phone" field are in the index
+// Useful when the field is optional and you want unique + sparse
+db.contacts.createIndex({ phone: 1 }, { unique: true, sparse: true })
 ```
 
-Or recreate:
+## Atlas Search Index
 
-```sql
-DROP INDEX idx_users_email;
-CREATE INDEX idx_users_email ON users(email);
+MongoDB Atlas provides Lucene-based full-text search via Atlas Search indexes.
+
+```javascript
+// Create an Atlas Search index (via Atlas UI, CLI, or API)
+// Index definition:
+{
+  "mappings": {
+    "dynamic": false,
+    "fields": {
+      "title": { "type": "string", "analyzer": "lucene.standard" },
+      "description": { "type": "string", "analyzer": "lucene.english" },
+      "category": { "type": "stringFacet" }
+    }
+  }
+}
+
+// Query using $search in an aggregation pipeline
+db.products.aggregate([
+  { $search: {
+    index: "product_search",
+    compound: {
+      must: [{ text: { query: "wireless headphones", path: "title" } }],
+      filter: [{ text: { query: "electronics", path: "category" } }]
+    }
+  }},
+  { $limit: 10 },
+  { $project: { title: 1, price: 1, score: { $meta: "searchScore" } } }
+])
 ```
 
-PostgreSQL auto-vacuums to reduce index bloat.
+## Vector Search Index
 
-## Indexed Columns in the Schema
+Atlas Vector Search enables semantic search using vector embeddings.
 
-Common indexed columns:
+```javascript
+// Vector search index definition (via Atlas UI or API)
+{
+  "fields": [{
+    "type": "vector",
+    "path": "embedding",
+    "numDimensions": 1024,
+    "similarity": "cosine"
+  }]
+}
 
-- `user_id`, `org_id`, `resource_id` (foreign keys)
-- `email` (unique searches)
-- `created_at`, `updated_at` (date ranges, sorting)
-- `status` (filtering)
-- `type` (enum filtering)
-
-Check existing indexes:
-
-```sql
-SELECT indexname, indexdef FROM pg_indexes WHERE tablename = 'users'
+// Query using $vectorSearch
+db.documents.aggregate([
+  { $vectorSearch: {
+    index: "vector_index",
+    path: "embedding",
+    queryVector: [0.12, -0.34, 0.56, /* ... 1024 dimensions */],
+    numCandidates: 100,
+    limit: 10
+  }},
+  { $project: { title: 1, content: 1, score: { $meta: "vectorSearchScore" } } }
+])
 ```
 
-## Index Performance Impact
+## Query Analysis with explain()
 
-Adding indexes affects read vs. write performance:
+Use `explain()` to understand how MongoDB executes a query and whether indexes
+are being used.
 
-**Reads**: Faster (direct lookup instead of scan)
-**Writes**: Slower (must update indexes)
+```javascript
+// Check if a query uses an index
+db.users.find({ email: "ada@example.com" }).explain("executionStats")
 
-For read-heavy APIs, more indexes is better. For write-heavy operations, use fewer indexes.
+// Key fields to check in the output:
+// - winningPlan.stage: "IXSCAN" means an index is used
+// - winningPlan.stage: "COLLSCAN" means a full collection scan (no index)
+// - executionStats.totalDocsExamined: documents scanned
+// - executionStats.nReturned: documents returned
 
-## Best Practices
-
-1. **Index filtered columns**: If a query uses `WHERE status = '...'`, index `status`
-2. **Composite indexes for common filters**: `(org_id, type)` for `WHERE org_id AND type`
-3. **Unique indexes for uniqueness**: Enforce email uniqueness with indexes
-4. **Avoid over-indexing**: Each index consumes storage and slows writes
-5. **Monitor slow queries**: Use EXPLAIN ANALYZE to identify missing indexes
-6. **Regular maintenance**: Rebuild fragmented indexes monthly
-
-## Examples from Schema
-
-From the users table:
-
-```sql
-CREATE INDEX idx_users_email ON users(email);          -- Email lookups
-CREATE INDEX idx_users_created_at ON users(created_at); -- Date filtering
-CREATE INDEX idx_users_org_id ON users(org_id);         -- Organization membership
-CREATE INDEX idx_users_status ON users(status);         -- Status filtering
+// Compare index candidates
+db.orders.find({ customerId: "abc", status: "shipped" })
+  .sort({ orderDate: -1 })
+  .explain("allPlansExecution")
 ```
 
-From the resources table:
+## Managing Indexes
 
-```sql
-CREATE INDEX idx_resources_org_type ON resources(org_id, type);
-CREATE INDEX idx_resources_created_at ON resources(created_at);
-CREATE INDEX idx_resources_metadata ON resources USING GIN(metadata);
+```javascript
+// List all indexes on a collection
+db.users.getIndexes()
+
+// Drop a specific index by name
+db.users.dropIndex("email_1")
+
+// Drop all non-_id indexes
+db.users.dropIndexes()
+
+// Hide an index (stops the query planner from using it, without dropping)
+db.users.hideIndex("email_1")
+db.users.unhideIndex("email_1")
 ```
 
-Proper indexing is essential for API query performance. See [Performance Tuning](../deployment/performance-tuning.md) for optimization strategies.
+## Tips
+
+- Follow the ESR rule for compound indexes: **E**quality, **S**ort, **R**ange.
+- Use `explain()` regularly to verify your queries hit the expected indexes.
+- Avoid over-indexing -- each index adds overhead to write operations.
+- Partial and sparse indexes save space when fields are optional.
+- In MongoDB Atlas, the Performance Advisor recommends indexes based on slow queries.

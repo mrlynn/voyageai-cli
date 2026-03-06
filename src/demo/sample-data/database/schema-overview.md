@@ -1,191 +1,269 @@
-# Database Schema Overview
+# Document Schema Design
 
-The SaaS platform uses PostgreSQL 13+ with a normalized schema designed for scalability, data integrity, and query performance. Understanding the schema is essential for effective API usage and troubleshooting.
+MongoDB uses a document model where data is stored as flexible BSON documents
+in collections. Unlike relational databases, MongoDB does not require a fixed
+schema -- documents in the same collection can have different fields and structures.
+Effective schema design in MongoDB means modeling data around your application's
+access patterns.
 
-## Core Entities
+## The Document Model
 
-### Users
+A MongoDB document is a set of field-value pairs, analogous to a JSON object.
+Documents are grouped into collections.
 
-```
-users (user_id, email, name, created_at, updated_at, status)
-  ├── Primary Key: user_id
-  ├── Unique: email
-  ├── Indexes: email, created_at, status
-  └── Relations: organizations (via org_members), sessions
-```
-
-### Organizations
-
-```
-organizations (org_id, name, created_at, updated_at, plan_tier)
-  ├── Primary Key: org_id
-  ├── Indexes: created_at
-  └── Relations: users (via org_members), billing_accounts
-```
-
-### Sessions
-
-```
-sessions (session_id, user_id, org_id, token, created_at, expires_at)
-  ├── Primary Key: session_id
-  ├── Foreign Keys: user_id, org_id
-  ├── Indexes: user_id, expires_at
-  └── Relations: users, organizations
+```javascript
+// A single document in a "users" collection
+db.users.insertOne({
+  _id: ObjectId("65a1f2c3d4e5f6a7b8c9d0e1"),
+  name: "Ada Lovelace",
+  email: "ada@example.com",
+  role: "engineer",
+  skills: ["algorithms", "mathematics", "programming"],
+  address: {
+    street: "12 Babbage Lane",
+    city: "London",
+    country: "UK"
+  },
+  createdAt: new Date("2025-01-15T10:00:00Z")
+})
 ```
 
-### Resources
+Key characteristics:
+- Documents can contain nested objects (embedded documents) and arrays
+- Each document has a unique `_id` field (auto-generated ObjectId if not provided)
+- Fields can vary between documents in the same collection
+- Maximum document size is 16 MB
 
-```
-resources (resource_id, org_id, name, type, created_at, updated_at)
-  ├── Primary Key: resource_id
-  ├── Foreign Key: org_id
-  ├── Indexes: org_id, type, created_at
-  └── Relations: organizations, resource_metadata
-```
+## Embedded Documents vs References
 
-## Data Types
+The fundamental schema design decision in MongoDB is whether to **embed** related
+data within a single document or **reference** it from a separate collection.
 
-- **BIGSERIAL**: Auto-incrementing 64-bit integer (primary keys)
-- **UUID**: Universally unique identifiers for distributed systems
-- **VARCHAR(255)**: Variable-length text (emails, names)
-- **TEXT**: Unlimited text (descriptions, content)
-- **TIMESTAMP WITH TIME ZONE**: Timezone-aware timestamps (UTC)
-- **JSONB**: JSON data with indexing and querying
-- **ENUM**: Fixed set of values (status, plan_tier)
-- **BIGINT**: Large integers (quotas, counts)
+### Embedding (Denormalized)
 
-## Relationships
+Store related data together in one document. Best when data is read together.
 
-Relationships are enforced via foreign keys with cascading rules:
+```javascript
+// Order with embedded line items -- read in a single query
+db.orders.insertOne({
+  orderNumber: "ORD-2025-4521",
+  customer: {
+    name: "Grace Hopper",
+    email: "grace@example.com"
+  },
+  items: [
+    { product: "MongoDB Handbook", quantity: 1, price: NumberDecimal("49.99") },
+    { product: "USB Drive 128GB", quantity: 2, price: NumberDecimal("12.50") }
+  ],
+  total: NumberDecimal("74.99"),
+  status: "shipped",
+  orderDate: new Date("2025-02-20")
+})
 
-```
-organizations
-  ├── (1) ──── (N) users  [via org_members]
-  ├── (1) ──── (N) sessions
-  └── (1) ──── (N) resources
-
-resources
-  ├── (N) ──── (1) organizations
-  └── (1) ──── (N) resource_metadata
-```
-
-ON DELETE CASCADE is used selectively (e.g., deleting org deletes its resources).
-ON DELETE RESTRICT is used for critical data (e.g., cannot delete user with active sessions).
-
-## Schema Normalization
-
-The schema is normalized to 3rd Normal Form (3NF) to reduce redundancy and improve data integrity:
-
-**Example: User and Organization Relationship**
-
-```
-users
-  user_id (PK)
-  email
-  name
-
-org_members  [junction table]
-  org_id (FK)
-  user_id (FK)
-  role
-
-organizations
-  org_id (PK)
-  name
+// One query returns the full order
+db.orders.findOne({ orderNumber: "ORD-2025-4521" })
 ```
 
-Users can belong to multiple organizations with different roles.
+### Referencing (Normalized)
 
-## Temporal Data
+Store related data in separate collections and link with ObjectId references.
+Best when data is large, frequently updated independently, or shared across
+many documents.
 
-All tables include:
+```javascript
+// Separate collections linked by reference
+db.authors.insertOne({
+  _id: ObjectId("65b2a1d4e5f6a7b8c9d0e2f3"),
+  name: "Alan Turing",
+  bio: "Pioneer of computer science..."
+})
 
-```
-created_at TIMESTAMP WITH TIME ZONE  -- Immutable creation time
-updated_at TIMESTAMP WITH TIME ZONE  -- Updated on every modification
-```
+db.books.insertOne({
+  title: "Computing Machinery and Intelligence",
+  authorId: ObjectId("65b2a1d4e5f6a7b8c9d0e2f3"),  // reference to authors
+  publishedYear: 1950
+})
 
-These columns are automatically managed and timezone-aware.
-
-For historical tracking, some tables include:
-
-```
-deleted_at TIMESTAMP WITH TIME ZONE  -- Soft deletes (NULL if not deleted)
-```
-
-Soft deletes allow recovery and audit trails without physical data loss.
-
-## Partitioning Strategy
-
-Large tables (events, audit_logs) are partitioned by date range:
-
-```
-events_2026_01  (events from 2026-01)
-events_2026_02  (events from 2026-02)
-...
-```
-
-Partitioning improves query performance for time-based filters and enables efficient archival.
-
-## JSON/JSONB Columns
-
-Some tables use JSONB for flexible data:
-
-```
-resource_metadata (resource_id, data)
-  data: JSONB containing user-defined attributes
-  Indexed: GIN index for efficient querying
+// Requires two queries or a $lookup to combine
+db.books.aggregate([
+  { $lookup: {
+    from: "authors",
+    localField: "authorId",
+    foreignField: "_id",
+    as: "author"
+  }},
+  { $unwind: "$author" }
+])
 ```
 
-Query JSONB efficiently:
+## One-to-Many Patterns
 
-```sql
-SELECT * FROM resources 
-WHERE metadata @> '{"tier": "premium"}'
+### Embedding (Few Side)
+
+When the "many" side is small and bounded, embed directly.
+
+```javascript
+// Blog post with embedded comments (bounded to a reasonable number)
+db.posts.insertOne({
+  title: "Schema Design Best Practices",
+  content: "When designing schemas in MongoDB...",
+  comments: [
+    { author: "Alice", text: "Great post!", date: new Date("2025-03-01") },
+    { author: "Bob", text: "Very helpful.", date: new Date("2025-03-02") }
+  ]
+})
 ```
 
-## Access Control
+### Referencing (Many Side)
 
-Row-level security (RLS) is enforced at the database level. Users can only query their organization's data:
+When the "many" side is large or unbounded, use references.
 
-```
-users see rows WHERE org_id = current_user_org_id
-```
+```javascript
+// Store the parent reference in the child document
+db.reviews.insertOne({
+  productId: ObjectId("65c3b2e5f6a7b8c9d0e3f4a5"),
+  userId: ObjectId("65a1f2c3d4e5f6a7b8c9d0e1"),
+  rating: 5,
+  text: "Excellent product!",
+  createdAt: new Date()
+})
 
-This is enforced in the database layer, not just the application layer.
-
-## Archival and Retention
-
-Old data is archived automatically:
-- Audit logs older than 1 year are moved to cold storage
-- Event data older than 2 years is purged
-- User data is retained indefinitely (unless deleted)
-
-See [Backup and Recovery](backup-recovery.md) for data retention policies.
-
-## Viewing the Schema
-
-Query the schema information:
-
-```sql
--- List all tables
-SELECT table_name FROM information_schema.tables 
-WHERE table_schema = 'public'
-
--- Get table columns
-\d users  -- In psql
-
--- Foreign key constraints
-SELECT constraint_name, constraint_type 
-FROM information_schema.table_constraints 
-WHERE table_name = 'resources'
+// Fetch all reviews for a product
+db.reviews.find({ productId: ObjectId("65c3b2e5f6a7b8c9d0e3f4a5") })
+  .sort({ createdAt: -1 })
 ```
 
-## Performance Considerations
+## Many-to-Many Pattern
 
-The schema is optimized for:
-- **Query performance**: Proper indexes on frequently filtered columns
-- **Write performance**: Denormalization where needed for bulk inserts
-- **Disk usage**: Efficient storage with compression
+Use arrays of references on one or both sides.
 
-See [Indexes](indexes.md) and [Performance Tuning](../deployment/performance-tuning.md) for optimization details.
+```javascript
+// Students and courses
+db.students.insertOne({
+  name: "Marie Curie",
+  enrolledCourses: [
+    ObjectId("65d4c3f6a7b8c9d0e4f5a6b7"),
+    ObjectId("65d4c3f6a7b8c9d0e4f5a6b8")
+  ]
+})
+
+db.courses.insertOne({
+  _id: ObjectId("65d4c3f6a7b8c9d0e4f5a6b7"),
+  title: "Radioactivity 101",
+  enrolledStudents: [
+    ObjectId("65a1f2c3d4e5f6a7b8c9d0e1"),
+    ObjectId("65e5d4a7b8c9d0e5f6a7b8c9")
+  ]
+})
+```
+
+## Polymorphic Pattern
+
+Store documents with different structures in the same collection, differentiated
+by a type field. Ideal for content management, event logging, and product catalogs.
+
+```javascript
+db.products.insertMany([
+  {
+    type: "book",
+    title: "MongoDB: The Definitive Guide",
+    author: "Shannon Bradshaw",
+    pages: 514,
+    isbn: "978-1491954461"
+  },
+  {
+    type: "electronics",
+    title: "Wireless Headphones",
+    brand: "AudioTech",
+    batteryLife: "30 hours",
+    connectivity: ["bluetooth", "usb-c"]
+  },
+  {
+    type: "clothing",
+    title: "Developer T-Shirt",
+    size: "L",
+    material: "cotton",
+    color: "green"
+  }
+])
+
+// Query all products regardless of type
+db.products.find({ title: /mongodb/i })
+
+// Query a specific product type
+db.products.find({ type: "electronics", batteryLife: { $exists: true } })
+```
+
+## Bucket Pattern
+
+Group related data into fixed-size buckets to reduce document count and improve
+query efficiency. Common for time-series data, IoT, and analytics.
+
+```javascript
+db.sensor_readings.insertOne({
+  sensorId: "sensor-042",
+  date: new Date("2025-03-01"),
+  readings: [
+    { ts: new Date("2025-03-01T00:00:00Z"), temp: 22.1, humidity: 45 },
+    { ts: new Date("2025-03-01T00:05:00Z"), temp: 22.3, humidity: 44 },
+    { ts: new Date("2025-03-01T00:10:00Z"), temp: 22.0, humidity: 46 }
+  ],
+  count: 3,
+  summary: { avgTemp: 22.13, minTemp: 22.0, maxTemp: 22.3 }
+})
+
+// Add a new reading to the bucket
+db.sensor_readings.updateOne(
+  { sensorId: "sensor-042", date: new Date("2025-03-01"), count: { $lt: 288 } },
+  {
+    $push: { readings: { ts: new Date("2025-03-01T00:15:00Z"), temp: 21.9, humidity: 47 } },
+    $inc: { count: 1 }
+  }
+)
+```
+
+## Outlier Pattern
+
+Handle documents that deviate significantly from the norm by flagging them
+and storing overflow data separately.
+
+```javascript
+// A popular book with many reviews -- flag it and cap the embedded array
+db.books.insertOne({
+  title: "Best Seller",
+  reviews: [/* first 50 reviews */],
+  reviewCount: 15420,
+  hasOverflow: true
+})
+
+// Overflow reviews go to a separate collection
+db.book_reviews_overflow.insertOne({
+  bookId: ObjectId("65f6e5a7b8c9d0e6f7a8b9c0"),
+  reviews: [/* reviews 51+ */]
+})
+
+// Application logic checks hasOverflow to decide whether to query overflow
+const book = db.books.findOne({ title: "Best Seller" })
+if (book.hasOverflow) {
+  const overflow = db.book_reviews_overflow.find({ bookId: book._id })
+}
+```
+
+## Design Guidelines
+
+| Consideration                | Embed                          | Reference                        |
+|------------------------------|--------------------------------|----------------------------------|
+| Read together frequently     | Yes                            | No                               |
+| Data size                    | Small/bounded                  | Large/unbounded                  |
+| Update frequency             | Rarely changes                 | Changes independently            |
+| Duplication acceptable       | Yes (for read performance)     | No (single source of truth)      |
+| Document size                | Within 16 MB                   | Would exceed 16 MB               |
+
+## Tips
+
+- Design your schema around your queries, not your entities.
+- Embedding improves read performance; referencing improves write flexibility.
+- Use MongoDB Atlas Schema Suggestions in the Performance Advisor to identify
+  optimization opportunities.
+- Consider using MongoDB time series collections for high-volume temporal data
+  instead of the bucket pattern -- they are optimized at the storage engine level.

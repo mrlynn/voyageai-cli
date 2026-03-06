@@ -23,7 +23,7 @@ test_unit:
 
 test_integration:
   script: npm run test:integration
-  services: [postgres, redis]
+  services: [mongodb, redis]
 
 test_e2e:
   script: npm run test:e2e

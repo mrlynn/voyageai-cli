@@ -1,229 +1,242 @@
-# Transactions
+# MongoDB Transactions
 
-Transactions ensure data consistency by grouping multiple operations into atomic units: either all operations succeed or all roll back.
+## Overview
 
-## ACID Properties
+MongoDB provides multi-document ACID transactions for operations that require
+atomicity across multiple documents or collections. Since MongoDB 4.0 (replica sets)
+and 4.2 (sharded clusters), you can group multiple read and write operations into
+a single atomic unit.
 
-Transactions provide ACID guarantees:
+**Key principle:** MongoDB guarantees single-document atomicity by default. Because
+documents can embed related data, many operations that would require transactions
+in other systems are already atomic in MongoDB. Use multi-document transactions
+only when you genuinely need cross-document or cross-collection atomicity.
 
-- **Atomicity**: All operations in a transaction succeed or all fail
-- **Consistency**: Database moves from one valid state to another
-- **Isolation**: Concurrent transactions don't interfere
-- **Durability**: Committed data survives crashes
+## Single-Document Atomicity
 
-## Transaction Basics
+MongoDB writes to a single document are always atomic, even when the operation
+modifies multiple embedded documents or array elements within that document.
 
-Begin and commit a transaction:
-
-```sql
-BEGIN;
-UPDATE users SET balance = balance - 100 WHERE user_id = 1;
-UPDATE users SET balance = balance + 100 WHERE user_id = 2;
-COMMIT;
+```javascript
+// This is fully atomic without a transaction
+db.orders.updateOne(
+  { _id: ObjectId("6651a1f8b23c9a001e4d72ab") },
+  {
+    $set: { status: "shipped", "shipping.trackingNumber": "1Z999AA10123456784" },
+    $push: {
+      statusHistory: {
+        status: "shipped",
+        timestamp: new Date(),
+        updatedBy: "system"
+      }
+    },
+    $inc: { "metadata.updateCount": 1 }
+  }
+);
 ```
 
-If an error occurs, rollback:
+No transaction needed. The entire update to this single document is atomic.
 
-```sql
-BEGIN;
-UPDATE users SET balance = balance - 100 WHERE user_id = 1;
--- Error occurs during second update
-UPDATE users SET balance = balance + 100 WHERE user_id = 999;  -- User doesn't exist
-ROLLBACK;  -- Both updates are undone
+## Multi-Document Transactions
+
+When you need to update multiple documents atomically, use a session-based transaction.
+
+### Basic Transaction Pattern
+
+```javascript
+const session = db.getMongo().startSession();
+const accounts = session.getDatabase("bank").getCollection("accounts");
+
+session.startTransaction({
+  readConcern: { level: "snapshot" },
+  writeConcern: { w: "majority" },
+  maxCommitTimeMS: 5000
+});
+
+try {
+  // Debit source account
+  accounts.updateOne(
+    { accountId: "ACC-001", balance: { $gte: 500 } },
+    { $inc: { balance: -500 }, $push: { ledger: { type: "debit", amount: 500, date: new Date() } } },
+    { session }
+  );
+
+  // Credit destination account
+  accounts.updateOne(
+    { accountId: "ACC-002" },
+    { $inc: { balance: 500 }, $push: { ledger: { type: "credit", amount: 500, date: new Date() } } },
+    { session }
+  );
+
+  session.commitTransaction();
+  print("Transfer committed successfully.");
+} catch (error) {
+  session.abortTransaction();
+  print("Transfer aborted: " + error.message);
+} finally {
+  session.endSession();
+}
 ```
 
-## Savepoints
+### The withTransaction() Helper
 
-Create checkpoints within transactions:
+The recommended approach uses `withTransaction()`, which handles transient errors
+and retries automatically.
 
-```sql
-BEGIN;
-UPDATE users SET status = 'pending' WHERE user_id = 1;
-SAVEPOINT sp1;
-UPDATE orders SET status = 'cancelled' WHERE user_id = 1;
--- Something went wrong, rollback to savepoint
-ROLLBACK TO sp1;
--- First update still applied, second rolled back
-COMMIT;
+```javascript
+const session = db.getMongo().startSession();
+
+session.withTransaction(() => {
+  const orders = session.getDatabase("shop").getCollection("orders");
+  const inventory = session.getDatabase("shop").getCollection("inventory");
+
+  // Reserve inventory
+  const result = inventory.updateOne(
+    { sku: "WIDGET-42", stock: { $gte: 3 } },
+    { $inc: { stock: -3, reserved: 3 } },
+    { session }
+  );
+
+  if (result.modifiedCount === 0) {
+    throw new Error("Insufficient stock for WIDGET-42");
+  }
+
+  // Create the order
+  orders.insertOne({
+    customerId: ObjectId("6651a2f0c88e1a001f5e83bc"),
+    items: [{ sku: "WIDGET-42", quantity: 3, unitPrice: 29.99 }],
+    total: 89.97,
+    status: "confirmed",
+    createdAt: new Date()
+  }, { session });
+
+}, {
+  readConcern: { level: "snapshot" },
+  writeConcern: { w: "majority" }
+});
+
+session.endSession();
 ```
 
-## Isolation Levels
+The `withTransaction()` helper automatically retries on `TransientTransactionError`
+and `UnknownTransactionCommitResult` errors.
 
-Different isolation levels provide different guarantees:
+## Read and Write Concerns
 
-### READ UNCOMMITTED (Lowest)
+### Write Concern
 
-Allows dirty reads (reading uncommitted changes). Rarely used in practice.
+Controls acknowledgment of write operations within a transaction.
 
-### READ COMMITTED (Default)
+| Write Concern   | Behavior                                         |
+|-----------------|--------------------------------------------------|
+| `w: 1`          | Acknowledged by primary only                     |
+| `w: "majority"` | Acknowledged by majority of replica set members  |
+| `w: 3`          | Acknowledged by exactly 3 members                |
 
-Only reads committed data. Prevents dirty reads.
+### Read Concern
 
-```sql
-BEGIN ISOLATION LEVEL READ COMMITTED;
--- Only sees committed data
-COMMIT;
+Controls the consistency and isolation of read operations.
+
+| Read Concern   | Behavior                                                    |
+|----------------|-------------------------------------------------------------|
+| `"snapshot"`   | Reads from a consistent snapshot (recommended for txns)     |
+| `"majority"`   | Reads data acknowledged by a majority of members            |
+| `"local"`      | Reads the most recent data available on the primary          |
+
+```javascript
+session.startTransaction({
+  readConcern: { level: "snapshot" },
+  writeConcern: { w: "majority", j: true }
+});
 ```
 
-### REPEATABLE READ
+## Causal Consistency
 
-Ensures consistent reads within a transaction.
+Causal consistency guarantees that operations within a causally consistent session
+are observed in an order consistent with their causal relationships.
 
-```sql
-BEGIN ISOLATION LEVEL REPEATABLE READ;
-SELECT balance FROM users WHERE user_id = 1;  -- Read 1
--- Other transaction commits changes
-SELECT balance FROM users WHERE user_id = 1;  -- Read 2 (same as Read 1)
-COMMIT;
+```javascript
+const session = db.getMongo().startSession({ causalConsistency: true });
+const users = session.getDatabase("app").getCollection("users");
+
+// Write followed by a guaranteed-consistent read
+users.updateOne(
+  { _id: ObjectId("6651a3a0d44b2c001a6f94cd") },
+  { $set: { role: "admin" } },
+  { session }
+);
+
+// This read is guaranteed to see the update above
+const user = users.findOne(
+  { _id: ObjectId("6651a3a0d44b2c001a6f94cd") },
+  { session }
+);
+print(user.role); // "admin"
+session.endSession();
 ```
 
-### SERIALIZABLE (Highest)
+## Transaction Limits and Constraints
 
-Full isolation. Transactions execute as if serially.
+| Limit                        | Default Value          |
+|------------------------------|------------------------|
+| Max transaction runtime      | 60 seconds             |
+| Max transaction size (oplog) | 16 MB                  |
+| Max open transactions        | Dependent on resources |
+| DDL operations in txns       | Not supported          |
 
-```sql
-BEGIN ISOLATION LEVEL SERIALIZABLE;
--- Highest safety, but lowest performance
-COMMIT;
+Additional constraints:
+
+- You cannot create or drop collections inside a transaction.
+- You cannot create indexes inside a transaction.
+- Transactions that run longer than `transactionLifetimeLimitSeconds` are aborted.
+- Cursors created outside a transaction cannot be used inside, and vice versa.
+
+```javascript
+// Adjust the transaction lifetime limit (requires admin privileges)
+db.adminCommand({
+  setParameter: 1,
+  transactionLifetimeLimitSeconds: 120
+});
 ```
 
-## Conflict Resolution
+## When You Need Transactions (and When You Do Not)
 
-Handle conflicts when concurrent transactions modify the same data:
+### Transactions NOT needed
 
-```sql
-BEGIN;
-UPDATE users SET balance = balance - 50 WHERE user_id = 1;
--- Other transaction also updates user_id = 1
--- This transaction now conflicts
-COMMIT;  -- May fail with serialization error
-```
+- Updating a single document (already atomic)
+- Embedding related data within one document
+- Using `$push`, `$pull`, `$set` on nested fields in one document
+- Upserting a single document
 
-Retry on conflict:
+### Transactions needed
 
-```python
-max_retries = 3
-for attempt in range(max_retries):
-    try:
-        cursor.execute("BEGIN ISOLATION LEVEL SERIALIZABLE")
-        # Perform operations
-        cursor.execute("COMMIT")
-        break
-    except psycopg2.extensions.TransactionRollbackError:
-        if attempt == max_retries - 1:
-            raise
-        time.sleep(0.1 * (2 ** attempt))  # Exponential backoff
-```
+- Transferring funds between two account documents
+- Creating an order document and decrementing inventory in a separate collection
+- Inserting audit log entries that must be consistent with the operation they track
+- Any multi-collection or multi-document operation requiring all-or-nothing semantics
 
-## Deadlock Prevention
+## Monitoring Transactions
 
-Deadlocks occur when two transactions wait on each other:
+```javascript
+// Check current active transactions
+db.currentOp({ "transaction": { $exists: true } });
 
-```sql
--- Transaction A
-BEGIN; UPDATE users SET balance = balance - 100 WHERE user_id = 1;
--- Waiting for Transaction B to release user_id = 2
+// View transaction metrics in serverStatus
+db.serverStatus().transactions;
 
--- Transaction B
-BEGIN; UPDATE users SET balance = balance - 100 WHERE user_id = 2;
--- Waiting for Transaction A to release user_id = 1
--- DEADLOCK!
-```
-
-Prevent deadlocks by:
-
-1. Always lock resources in the same order
-2. Keep transactions short
-3. Use appropriate isolation levels
-4. Avoid long-running transactions
-
-## Deadlock Example and Handling
-
-If deadlock occurs:
-
-```sql
-ERROR: deadlock detected
-DETAIL: Process A waits for... while holding...
-HINT: The involved index objects are determined by the constraint violations.
-```
-
-Handle in application:
-
-```python
-import psycopg2
-from psycopg2 import OperationalError
-
-try:
-    connection.execute("BEGIN")
-    # Perform operations
-    connection.commit()
-except OperationalError as e:
-    if 'deadlock' in str(e):
-        connection.rollback()
-        # Retry transaction
-    else:
-        raise
-```
-
-## Explicit Locking
-
-Lock resources explicitly to prevent conflicts:
-
-```sql
-BEGIN;
-SELECT * FROM users WHERE user_id = 1 FOR UPDATE;  -- Exclusive lock
--- No other transaction can modify this row
-UPDATE users SET balance = 100 WHERE user_id = 1;
-COMMIT;
-```
-
-Lock types:
-
-- **FOR UPDATE**: Exclusive lock (no other transaction can read or write)
-- **FOR SHARE**: Shared lock (other transactions can read, not write)
-- **FOR NO KEY UPDATE**: Write lock (other transactions can't write)
-
-## Async Transactions
-
-API transactions often span multiple HTTP requests:
-
-```python
-# Request 1: Start transaction
-transaction_id = start_transaction()
-response = transfer_funds(transaction_id, from_user, amount)
-
-# Request 2: Commit transaction
-result = commit_transaction(transaction_id)
-```
-
-This is complex—prefer keeping transactions within single requests.
-
-## Transaction Timeouts
-
-Long transactions block resources. Set timeouts:
-
-```sql
-SET statement_timeout = '30s';  -- Kill queries after 30 seconds
-BEGIN;
--- Queries exceeding 30s will be terminated
-COMMIT;
-```
-
-In application code:
-
-```python
-cursor.execute("SET statement_timeout = '30s'")
-# Perform operations; exceeding timeout raises exception
+// Key metrics to watch
+const txnStats = db.serverStatus().transactions;
+print("Total started:", txnStats.totalStarted);
+print("Total committed:", txnStats.totalCommitted);
+print("Total aborted:", txnStats.totalAborted);
 ```
 
 ## Best Practices
 
-1. Keep transactions short
-2. Lock resources in consistent order
-3. Use appropriate isolation levels
-4. Implement retry logic for serialization conflicts
-5. Set statement timeouts
-6. Avoid user interaction within transactions
-7. Monitor long-running transactions
-
-Transactions are critical for data consistency. See [Backup and Recovery](backup-recovery.md) for durability guarantees.
+1. **Design documents to minimize transaction usage.** Embed related data when possible.
+2. **Keep transactions short.** Long-running transactions hold resources and risk timeouts.
+3. **Use `withTransaction()` for automatic retry logic.**
+4. **Set appropriate write concern.** Use `w: "majority"` for durability guarantees.
+5. **Always end sessions** with `session.endSession()` to free server resources.
+6. **Monitor transaction metrics** in production via `db.serverStatus().transactions`.
+7. **Test transaction behavior under load** to identify contention and lock issues.

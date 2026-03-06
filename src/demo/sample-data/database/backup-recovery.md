@@ -1,110 +1,258 @@
-# Backup and Recovery
+# MongoDB Backup and Recovery
 
-The platform maintains automated backups and provides recovery procedures for disaster scenarios. Understanding backup policies ensures data safety.
+## Overview
 
-## Backup Strategy
+A robust backup and recovery strategy is essential for any production MongoDB
+deployment. This guide covers backup methods, restore procedures, point-in-time
+recovery, and disaster recovery planning for both self-managed and MongoDB Atlas
+deployments.
 
-Automated backups are taken continuously:
+## Backup Methods
 
-- **Point-in-time snapshots**: Every hour
-- **Continuous replication**: Real-time to standby
-- **Off-site backup**: Daily copy to cold storage
-- **Retention**: 30 days of hourly backups, 1 year of daily backups
+### mongodump and mongorestore
 
-## Backup Locations
+The `mongodump` tool exports data in BSON dump format, capturing collections,
+indexes, and metadata. `mongorestore` imports BSON dumps back into a MongoDB instance.
 
-- **Hot storage**: Last 30 days of hourly snapshots (fast recovery)
-- **Warm storage**: Last 90 days (slower access)
-- **Cold storage**: Year-long archive (very slow, compliance)
+```javascript
+// Verify database status before backup
+db.adminCommand({ serverStatus: 1, repl: 1 });
 
-## Recovery Point Objective (RPO)
-
-RPO measures how much data you might lose:
-
-- **Standard Plan**: 1-hour RPO (lose up to 1 hour of data)
-- **Premium Plan**: 15-minute RPO
-- **Enterprise Plan**: 5-minute RPO
-
-Request higher RPO for additional cost.
-
-## Recovery Time Objective (RTO)
-
-RTO measures how quickly service is restored:
-
-- **Standard Plan**: 4-hour RTO (service restored in 4 hours)
-- **Premium Plan**: 1-hour RTO
-- **Enterprise Plan**: 15-minute RTO
-
-## Automated Failover
-
-If the primary database fails:
-
-1. Health checks detect failure (within 30 seconds)
-2. Promote standby replica to primary (within 2 minutes)
-3. DNS updated to route to new primary (propagates in minutes)
-
-Total downtime: <5 minutes for Premium/Enterprise
-
-## Manual Recovery
-
-For manual data recovery, request point-in-time restore (PITR):
-
-```
-https://dashboard.example.com/settings/backup
-
-1. Select recovery timestamp
-2. Click "Restore to Point in Time"
-3. Confirmation required (prevents accidental overwrites)
-4. New database created with historical data
-5. Test thoroughly before promoting
+// List all databases and their sizes
+db.adminCommand({ listDatabases: 1 }).databases.forEach(d => {
+  print(`${d.name}: ${(d.sizeOnDisk / 1024 / 1024).toFixed(2)} MB`);
+});
 ```
 
-PITR availability:
-- Last 30 days: Restore to any hour
-- 30-90 days: Restore to any day
-- >90 days: Contact support
-
-## Full Backup Export
-
-Export complete database backup:
+#### Full Backup with mongodump
 
 ```bash
-curl -X POST https://api.example.com/admin/backups/export \
-  -H "Authorization: Bearer <token>" \
-  -d '{"format": "sql"}' \
-  > backup.sql.gz
+# Full cluster backup with oplog for point-in-time recovery
+mongodump --uri="mongodb+srv://cluster0.example.mongodb.net" \
+  --oplog \
+  --gzip \
+  --out=/backups/full/$(date +%Y%m%d_%H%M%S)
+
+# Backup a single database
+mongodump --uri="mongodb://localhost:27017" \
+  --db=production \
+  --gzip \
+  --out=/backups/db_production/$(date +%Y%m%d)
+
+# Backup a single collection
+mongodump --uri="mongodb://localhost:27017" \
+  --db=production \
+  --collection=orders \
+  --gzip \
+  --out=/backups/collection_orders/$(date +%Y%m%d)
 ```
 
-Formats:
-- **sql**: SQL dump (text format, human-readable)
-- **binary**: PostgreSQL binary format (faster restore)
-
-Export includes:
-- Schema and indexes
-- All data
-- Sequences and functions
-
-## Backup Verification
-
-Automatically verify backups are restorable:
+#### Restore with mongorestore
 
 ```bash
-# View recent backup verification results
-GET /admin/backups/verify
-{
-  "last_verified": "2026-02-18T00:00:00Z",
-  "status": "success",
-  "tested_restore_time": 45  // minutes
-}
+# Full restore from a BSON dump
+mongorestore --uri="mongodb://localhost:27017" \
+  --gzip \
+  --oplogReplay \
+  /backups/full/20260305_020000
+
+# Restore a single database
+mongorestore --uri="mongodb://localhost:27017" \
+  --db=production \
+  --gzip \
+  /backups/db_production/20260305/production
+
+# Restore a single collection, dropping existing data
+mongorestore --uri="mongodb://localhost:27017" \
+  --db=production \
+  --collection=orders \
+  --drop \
+  --gzip \
+  /backups/collection_orders/20260305/production/orders.bson.gz
 ```
 
-Weekly full recovery tests ensure backups are valid.
+### Filesystem Snapshots
+
+For WiredTiger deployments, filesystem-level snapshots (LVM, EBS, ZFS) provide
+fast, consistent backups when journaling is enabled.
+
+Requirements:
+- Journaling must be enabled (default for WiredTiger).
+- The snapshot must capture the entire `dbPath` directory.
+- For sharded clusters, stop the balancer and snapshot all shards and config servers.
+
+```javascript
+// Verify journaling is enabled
+db.serverStatus().storageEngine;
+// { "name": "wiredTiger", "supportsCommittedReads": true, ... }
+
+// For sharded clusters, stop the balancer before snapshots
+sh.stopBalancer();
+// ... take filesystem snapshots ...
+sh.startBalancer();
+```
+
+### MongoDB Atlas Continuous Backup
+
+MongoDB Atlas provides fully managed backup with:
+
+- **Continuous backups** with point-in-time restore granularity.
+- **Cloud provider snapshots** taken at configurable intervals.
+- **Snapshot retention policies** (hourly, daily, weekly, monthly).
+- **Cross-region snapshot distribution** for disaster recovery.
+
+Atlas backup requires no manual tooling. Snapshots are taken automatically
+and can be restored through the Atlas UI or API.
+
+## Recovery Point and Recovery Time Objectives
+
+| Metric | Target       | Strategy                                        |
+|--------|--------------|-------------------------------------------------|
+| RPO    | < 1 minute   | Oplog-based continuous backup (Atlas)           |
+| RPO    | < 1 hour     | Hourly filesystem snapshots                     |
+| RPO    | < 24 hours   | Daily mongodump with oplog                      |
+| RTO    | < 5 minutes  | Replica set automatic failover                  |
+| RTO    | < 30 minutes | mongorestore from local BSON dump               |
+| RTO    | < 2 hours    | Atlas point-in-time restore to new cluster      |
+
+## Point-in-Time Recovery
+
+### Oplog-Based Recovery
+
+The oplog (operations log) is a capped collection that records all write operations.
+Combined with a base backup, you can replay the oplog to restore to any specific
+point in time.
+
+```javascript
+// Check oplog status
+const oplogInfo = db.getSiblingDB("local").getCollection("oplog.rs").stats();
+print("Oplog size:", (oplogInfo.maxSize / 1024 / 1024).toFixed(0), "MB");
+print("Oplog used:", (oplogInfo.size / 1024 / 1024).toFixed(2), "MB");
+
+// Find the oplog time window
+const first = db.getSiblingDB("local").oplog.rs.find().sort({ $natural: 1 }).limit(1).next();
+const last = db.getSiblingDB("local").oplog.rs.find().sort({ $natural: -1 }).limit(1).next();
+print("Oplog window start:", first.ts);
+print("Oplog window end:", last.ts);
+```
+
+```bash
+# Restore base backup, then replay oplog to a specific timestamp
+mongorestore --oplogReplay \
+  --oplogLimit="1709654400:1" \
+  --gzip \
+  /backups/full/20260305_020000
+```
+
+### Atlas Point-in-Time Restore
+
+In MongoDB Atlas, point-in-time restore allows you to restore a cluster to
+any second within the backup retention window. Atlas handles oplog replay
+automatically.
+
+## Replica Set Failover and Recovery
+
+MongoDB replica sets provide automatic failover. When a primary becomes
+unavailable, the remaining members hold an election to choose a new primary.
+
+```javascript
+// Check replica set health
+rs.status().members.forEach(m => {
+  print(`${m.name} | state: ${m.stateStr} | health: ${m.health} | lag: ${m.optimeDate}`);
+});
+
+// Force a replica set member to become primary (for maintenance)
+rs.stepDown(120); // Primary steps down for 120 seconds
+
+// Check replication lag
+rs.printSecondaryReplicationInfo();
+```
+
+### Failover Timeline
+
+| Phase                          | Duration     |
+|--------------------------------|--------------|
+| Failure detection              | 5-10 seconds |
+| Election initiation            | ~2 seconds   |
+| New primary election           | ~2 seconds   |
+| Driver reconnection            | ~1-5 seconds |
+| **Total automatic failover**   | 10-20 seconds|
+
+## Disaster Recovery
+
+### Multi-Region Replica Set
+
+Deploy replica set members across regions for geographic redundancy.
+
+```javascript
+// Example replica set config with multi-region members
+rs.initiate({
+  _id: "rs-production",
+  members: [
+    { _id: 0, host: "mongo-us-east-1:27017", priority: 10 },
+    { _id: 1, host: "mongo-us-west-2:27017", priority: 5 },
+    { _id: 2, host: "mongo-eu-west-1:27017", priority: 1 },
+    { _id: 3, host: "mongo-us-east-1b:27017", priority: 0, hidden: true, tags: { role: "backup" } },
+    { _id: 4, host: "mongo-us-east-1c:27017", arbiterOnly: true }
+  ],
+  settings: {
+    getLastErrorDefaults: { w: "majority", wtimeout: 5000 }
+  }
+});
+```
+
+### Backup Verification
+
+Regularly test that backups are restorable.
+
+```javascript
+// After restoring to a test environment, verify data integrity
+const collections = db.getCollectionNames();
+collections.forEach(name => {
+  const count = db.getCollection(name).estimatedDocumentCount();
+  const indexes = db.getCollection(name).getIndexes().length;
+  print(`${name}: ${count} documents, ${indexes} indexes`);
+});
+
+// Validate a collection for internal consistency
+db.orders.validate({ full: true });
+```
+
+### Backup Automation Script
+
+```javascript
+// Run from mongosh to log backup metadata
+const backupRecord = {
+  timestamp: new Date(),
+  type: "full",
+  method: "mongodump",
+  databases: db.adminCommand({ listDatabases: 1 }).databases.map(d => ({
+    name: d.name,
+    sizeOnDisk: d.sizeOnDisk
+  })),
+  oplogPosition: db.getSiblingDB("local").oplog.rs.find().sort({ $natural: -1 }).limit(1).next().ts,
+  status: "completed"
+};
+
+db.getSiblingDB("admin").getCollection("backupLog").insertOne(backupRecord);
+print("Backup record logged:", backupRecord.timestamp);
+```
 
 ## Data Retention Policies
 
 ### Active Data
 
-User data is retained indefinitely (unless deleted). Soft-deleted data (marked with `deleted_at`) is retained for 90 days before permanent purge.
+Document data is retained indefinitely unless explicitly removed. Documents
+marked with a `deletedAt` field are retained for 90 days before permanent
+removal via a TTL index or scheduled cleanup job.
+
+```javascript
+// Create a TTL index for automatic document expiration
+db.sessionLogs.createIndex(
+  { "expiresAt": 1 },
+  { expireAfterSeconds: 0 }
+);
+```
 
 ### Logs and Audit Trails
 
@@ -112,120 +260,13 @@ User data is retained indefinitely (unless deleted). Soft-deleted data (marked w
 - Audit logs: 1 year (for compliance)
 - Error logs: 30 days
 
-Older logs are archived to cold storage but remain queryable.
-
-### Compliance Holds
-
-For legal/compliance reasons, data can be placed on legal hold:
-
-```
-POST /admin/legal-hold/{user_id}
-{
-  "hold_id": "hold_123",
-  "reason": "litigation"
-}
-```
-
-Data with legal hold:
-- Cannot be deleted (even during retention period expiry)
-- Must be recovered if deleted elsewhere
-- Retained indefinitely
-
-## Disaster Recovery Runbook
-
-### Scenario 1: Database Corruption
-
-If data corruption is detected:
-
-1. **Assess scope**: Which tables/records are affected?
-2. **Decide recovery point**: How far back to restore?
-3. **Test restore**: Restore to separate database, verify
-4. **Execute restore**: Promote recovered database to primary
-5. **Verify**: Spot-check recovered data
-
-Estimated time: 30 min - 2 hours
-
-### Scenario 2: Accidental Data Deletion
-
-If important data is deleted:
-
-1. **Immediately file incident**: Stops cleanup processes
-2. **Identify deletion time**: When was data deleted?
-3. **Request PITR**: Recover database to point before deletion
-4. **Verify recovered data**: Confirm correct data restored
-5. **Promote**: Switch to recovered database
-
-Estimated time: 15 min - 1 hour
-
-### Scenario 3: Complete Data Center Failure
-
-If entire data center is unavailable:
-
-1. **Activate DR site**: Standby region is promoted
-2. **Validate**: Ensure all data replicated correctly
-3. **Route traffic**: DNS updated to DR site
-4. **Monitor**: Watch for anomalies
-5. **Restore**: When primary recovers, sync and failback
-
-Estimated time: 5 - 30 minutes (depends on plan)
-
-## Testing Recovery
-
-Regularly test recovery procedures:
-
-```bash
-# Simulate disaster recovery test
-POST /admin/dr-test
-{
-  "target_restore_time": "2026-02-17T12:00:00Z"
-}
-```
-
-Tests include:
-- PITR restore
-- Failover to standby
-- Data validation
-- Application restart
-
-Schedule monthly tests for critical systems.
-
-## Backup Monitoring
-
-Monitor backup health:
-
-```
-GET /admin/backups/status
-{
-  "last_backup_time": "2026-02-18T07:00:00Z",
-  "backup_size": "500GB",
-  "next_backup_time": "2026-02-18T08:00:00Z",
-  "retention_days": 30,
-  "health": "healthy"
-}
-```
-
-Alerts:
-- Backup failure: Immediate notification
-- Backup size anomaly: >20% change → review
-- Restore test failure: Security incident
-
 ## Best Practices
 
-1. **Test recovery regularly**: Untested backups are useless
-2. **Maintain backups off-site**: Protects against data center failure
-3. **Document procedures**: Runbooks should be clear and tested
-4. **Monitor health**: Watch backup success rates
-5. **Separate access**: Different credentials for production and backups
-6. **Encrypt sensitive data**: Backup encryption at rest and in transit
-7. **Verify retention policies**: Ensure compliance with regulations
-
-## Compliance Certifications
-
-Backup practices support:
-
-- **SOC 2 Type II**: Automated testing and recovery
-- **ISO 27001**: Data protection and encryption
-- **GDPR**: Right to erasure (soft delete + purge after 90 days)
-- **HIPAA**: Backup encryption and audit trails
-
-See [Security Hardening](../deployment/security-hardening.md) for security details.
+1. **Automate backups** on a schedule matching your RPO requirements.
+2. **Always include the oplog** when using mongodump for point-in-time recovery.
+3. **Test restores regularly.** A backup you have never restored is not a backup.
+4. **Monitor oplog window size.** Ensure the oplog retains enough history for your needs.
+5. **Use Atlas managed backups** when possible for automated snapshots and restore.
+6. **Store backups in a different region** from your primary deployment.
+7. **Encrypt backups at rest** using `--gzip` with filesystem-level encryption.
+8. **Document your recovery runbook** and practice failover drills quarterly.

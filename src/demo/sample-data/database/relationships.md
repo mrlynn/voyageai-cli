@@ -1,252 +1,290 @@
-# Relationships and Foreign Keys
+# Data Modeling Patterns
 
-Relationships define how data in different tables relates to each other. Foreign keys enforce referential integrity, ensuring data consistency.
+MongoDB data modeling revolves around the decision to embed related data within
+a single document or reference it across collections. This document covers the
+core patterns and trade-offs for modeling relationships in a document database.
 
-## One-to-Many Relationships
+## Embedding vs Referencing
 
-The most common relationship type. One parent record relates to many child records.
+**Embedding** places related data inside a single document. It provides atomic
+reads and writes -- one query retrieves everything.
 
-**Example: Organization to Users**
+**Referencing** stores related data in separate collections linked by ObjectId.
+It avoids duplication and handles unbounded or frequently changing data.
 
-```
-organizations (1) ─── (N) users
-org_id (PK)              user_id (PK)
-name                     user_id
-                         email
-                         org_id (FK) ──→ organizations.org_id
-```
+```javascript
+// Embedded: user with inline address
+{
+  name: "Ada Lovelace",
+  address: { street: "12 Babbage Lane", city: "London", country: "UK" }
+}
 
-A single organization has many users. Each user belongs to one organization.
-
-```sql
-CREATE TABLE organizations (
-  org_id BIGSERIAL PRIMARY KEY,
-  name VARCHAR(255) NOT NULL
-);
-
-CREATE TABLE users (
-  user_id BIGSERIAL PRIMARY KEY,
-  email VARCHAR(255) NOT NULL,
-  org_id BIGINT NOT NULL,
-  FOREIGN KEY (org_id) REFERENCES organizations(org_id)
-);
+// Referenced: user points to a separate address document
+{
+  name: "Ada Lovelace",
+  addressId: ObjectId("65a1b2c3d4e5f6a7b8c9d0e1")
+}
 ```
 
-Query relationships:
+## One-to-One (Embedded)
 
-```sql
--- Users in an organization
-SELECT * FROM users WHERE org_id = 'org_123'
+When two entities always appear together, embed the child directly.
 
--- Organization and its users
-SELECT o.name, u.email FROM organizations o
-JOIN users u ON o.org_id = u.org_id
-WHERE o.org_id = 'org_123'
+```javascript
+db.employees.insertOne({
+  name: "Grace Hopper",
+  badge: "EMP-7291",
+  healthInsurance: {
+    provider: "BlueCross",
+    policyNumber: "BC-55023",
+    effectiveDate: new Date("2025-01-01"),
+    coveredDependents: 2
+  }
+})
+
+// Access in a single read
+db.employees.findOne(
+  { badge: "EMP-7291" },
+  { name: 1, "healthInsurance.provider": 1 }
+)
 ```
 
-## Many-to-Many Relationships
+## One-to-Many: Embedded Array
 
-Multiple records in one table relate to multiple records in another.
+Best when the "many" side is small and bounded (e.g., phone numbers, addresses).
 
-**Example: Users and Roles**
+```javascript
+db.contacts.insertOne({
+  name: "Alan Turing",
+  phones: [
+    { label: "work", number: "+44-20-7946-0958" },
+    { label: "mobile", number: "+44-77-1234-5678" }
+  ]
+})
 
-```
-users (N) ─── (N) roles
-user_id             role_id
-email               name
-                    
-         user_roles [junction table]
-         user_id (FK)
-         role_id (FK)
-```
+// Query within the embedded array
+db.contacts.find({ "phones.label": "work" })
 
-A user can have multiple roles. Each role can be assigned to multiple users.
+// Add a new phone number
+db.contacts.updateOne(
+  { name: "Alan Turing" },
+  { $push: { phones: { label: "home", number: "+44-20-8123-4567" } } }
+)
 
-```sql
-CREATE TABLE roles (
-  role_id BIGSERIAL PRIMARY KEY,
-  name VARCHAR(100) NOT NULL
-);
-
-CREATE TABLE user_roles (
-  user_id BIGINT NOT NULL,
-  role_id BIGINT NOT NULL,
-  PRIMARY KEY (user_id, role_id),
-  FOREIGN KEY (user_id) REFERENCES users(user_id),
-  FOREIGN KEY (role_id) REFERENCES roles(role_id)
-);
+// Remove a phone number
+db.contacts.updateOne(
+  { name: "Alan Turing" },
+  { $pull: { phones: { label: "home" } } }
+)
 ```
 
-Query many-to-many:
+## One-to-Many: Child References
 
-```sql
--- Roles for a user
-SELECT r.name FROM roles r
-JOIN user_roles ur ON r.role_id = ur.role_id
-WHERE ur.user_id = 'user_123'
+When the "many" side is large or unbounded, store a reference in each child
+document pointing back to the parent.
 
--- Users with a specific role
-SELECT u.email FROM users u
-JOIN user_roles ur ON u.user_id = ur.user_id
-WHERE ur.role_id = 'role_admin'
+```javascript
+// Parent: a company
+db.companies.insertOne({
+  _id: ObjectId("65b2a1d4e5f6a7b8c9d0e2f3"),
+  name: "MongoDB Inc.",
+  headquarters: "New York"
+})
+
+// Children: employees referencing their company
+db.employees.insertMany([
+  { name: "Dev Ittycheria", companyId: ObjectId("65b2a1d4e5f6a7b8c9d0e2f3"), role: "CEO" },
+  { name: "Sahir Azam", companyId: ObjectId("65b2a1d4e5f6a7b8c9d0e2f3"), role: "CPO" }
+])
+
+// Find all employees of a company
+db.employees.find({ companyId: ObjectId("65b2a1d4e5f6a7b8c9d0e2f3") })
 ```
 
-## Foreign Key Constraints
+## Many-to-Many: Array of References
 
-Foreign keys enforce referential integrity:
+Model many-to-many relationships with arrays of ObjectIds on one or both sides.
 
-```sql
-FOREIGN KEY (org_id) REFERENCES organizations(org_id)
+```javascript
+// Actors and movies
+db.actors.insertOne({
+  _id: ObjectId("65c3b2e5f6a7b8c9d0e3f4a5"),
+  name: "Keanu Reeves",
+  movieIds: [
+    ObjectId("65d4c3f6a7b8c9d0e4f5a6b7"),
+    ObjectId("65d4c3f6a7b8c9d0e4f5a6b8")
+  ]
+})
+
+db.movies.insertMany([
+  {
+    _id: ObjectId("65d4c3f6a7b8c9d0e4f5a6b7"),
+    title: "The Matrix",
+    actorIds: [ObjectId("65c3b2e5f6a7b8c9d0e3f4a5")]
+  },
+  {
+    _id: ObjectId("65d4c3f6a7b8c9d0e4f5a6b8"),
+    title: "John Wick",
+    actorIds: [ObjectId("65c3b2e5f6a7b8c9d0e3f4a5")]
+  }
+])
+
+// Find all movies for an actor
+db.movies.find({ actorIds: ObjectId("65c3b2e5f6a7b8c9d0e3f4a5") })
 ```
 
-Prevents:
-- Creating a user with non-existent org_id
-- Deleting an organization with users (unless ON DELETE CASCADE)
+## $lookup for Combining Collections
 
-### Cascade Options
+The `$lookup` aggregation stage combines data from two collections.
 
-**NO ACTION** (Default): Prevent deletion if child records exist.
+```javascript
+// Combine orders with customer details
+db.orders.aggregate([
+  { $lookup: {
+    from: "customers",
+    localField: "customerId",
+    foreignField: "_id",
+    as: "customer"
+  }},
+  { $unwind: "$customer" },
+  { $project: {
+    orderNumber: 1,
+    total: 1,
+    "customer.name": 1,
+    "customer.email": 1
+  }}
+])
 
-```sql
-CREATE TABLE users (
-  org_id BIGINT,
-  FOREIGN KEY (org_id) REFERENCES organizations(org_id)
-  ON DELETE NO ACTION
-);
--- Cannot delete org with users
+// Pipeline-based $lookup for more complex combinations
+db.orders.aggregate([
+  { $lookup: {
+    from: "products",
+    let: { itemIds: "$items.productId" },
+    pipeline: [
+      { $match: { $expr: { $in: ["$_id", "$$itemIds"] } } },
+      { $project: { name: 1, price: 1 } }
+    ],
+    as: "productDetails"
+  }}
+])
 ```
 
-**CASCADE**: Delete child records when parent is deleted.
+## Denormalization Trade-offs
 
-```sql
-CREATE TABLE users (
-  org_id BIGINT,
-  FOREIGN KEY (org_id) REFERENCES organizations(org_id)
-  ON DELETE CASCADE
-);
--- Deleting org deletes all its users
+Duplicating data across documents improves read performance but creates
+consistency challenges.
+
+```javascript
+// Denormalized: store author name directly on each book
+db.books.insertOne({
+  title: "Computing Machinery and Intelligence",
+  authorName: "Alan Turing",             // duplicated for fast reads
+  authorId: ObjectId("65b2a1d4e5f6a7b8c9d0e2f3")  // reference for updates
+})
+
+// Trade-off: if the author name changes, you must update all books
+db.books.updateMany(
+  { authorId: ObjectId("65b2a1d4e5f6a7b8c9d0e2f3") },
+  { $set: { authorName: "Alan M. Turing" } }
+)
 ```
 
-**SET NULL**: Set foreign key to NULL when parent is deleted.
+**When to denormalize:**
+- The duplicated data changes infrequently
+- Read performance is more important than write consistency
+- You want to avoid `$lookup` in hot query paths
 
-```sql
-CREATE TABLE comments (
-  deleted_by_user BIGINT,
-  FOREIGN KEY (deleted_by_user) REFERENCES users(user_id)
-  ON DELETE SET NULL
-);
--- When user deleted, set deleted_by_user to NULL
+## Extended Reference Pattern
+
+Store a subset of a referenced document's fields alongside the reference.
+Avoids full `$lookup` while keeping the link for complete data when needed.
+
+```javascript
+db.orders.insertOne({
+  orderNumber: "ORD-2025-9910",
+  // Extended reference: enough customer info for display, full doc via customerId
+  customer: {
+    _id: ObjectId("65e5d4a7b8c9d0e5f6a7b8c9"),
+    name: "Marie Curie",
+    email: "marie@example.com"
+  },
+  items: [
+    {
+      productId: ObjectId("65f6e5a7b8c9d0e6f7a8b9c0"),
+      name: "Lab Equipment Set",         // copied for display
+      quantity: 1,
+      unitPrice: NumberDecimal("299.99")
+    }
+  ],
+  total: NumberDecimal("299.99"),
+  orderDate: new Date("2025-03-01")
+})
+
+// Most reads need only the embedded data -- no $lookup required
+db.orders.find({ "customer._id": ObjectId("65e5d4a7b8c9d0e5f6a7b8c9") })
 ```
 
-**RESTRICT**: Same as NO ACTION but checked immediately.
+## Subset Pattern
 
-## Self-Referencing Relationships
+When a document contains a large array but queries typically need only a portion,
+store a subset in the main document and the full set in a secondary collection.
 
-A table referencing itself.
+```javascript
+// Main document with the 10 most recent reviews
+db.products.insertOne({
+  name: "Wireless Headphones",
+  recentReviews: [
+    { user: "Alice", rating: 5, text: "Amazing sound!", date: new Date("2025-03-05") },
+    { user: "Bob", rating: 4, text: "Great value.", date: new Date("2025-03-04") }
+    // ... up to 10 most recent
+  ],
+  totalReviewCount: 4823,
+  avgRating: 4.3
+})
 
-**Example: Manager-Employee Hierarchy**
+// Full review history in a separate collection
+db.product_reviews.insertOne({
+  productId: ObjectId("65f6e5a7b8c9d0e6f7a8b9c0"),
+  user: "Charlie",
+  rating: 3,
+  text: "Decent, but could be better.",
+  date: new Date("2024-06-15")
+})
 
-```sql
-CREATE TABLE users (
-  user_id BIGSERIAL PRIMARY KEY,
-  name VARCHAR(255),
-  manager_id BIGINT,
-  FOREIGN KEY (manager_id) REFERENCES users(user_id) ON DELETE SET NULL
-);
+// Update the subset when a new review arrives
+db.products.updateOne(
+  { _id: ObjectId("65f6e5a7b8c9d0e6f7a8b9c0") },
+  {
+    $push: {
+      recentReviews: {
+        $each: [{ user: "Dana", rating: 5, text: "Love it!", date: new Date() }],
+        $sort: { date: -1 },
+        $slice: 10  // keep only the 10 most recent
+      }
+    },
+    $inc: { totalReviewCount: 1 }
+  }
+)
 ```
 
-Query hierarchies:
+## Pattern Selection Guide
 
-```sql
--- Employee's manager
-SELECT m.name AS manager FROM users e
-JOIN users m ON e.manager_id = m.user_id
-WHERE e.user_id = 'user_123'
+| Pattern              | Use When                                          |
+|----------------------|---------------------------------------------------|
+| Embedded document    | Data is read together, "many" side is small       |
+| Child reference      | "Many" side is large or unbounded                 |
+| Array of references  | Many-to-many relationship                         |
+| Extended reference   | You need fast reads with some referenced fields   |
+| Subset               | Large arrays where only recent/top items are read |
+| Denormalization      | Read-heavy workload, data rarely changes          |
 
--- Employee's direct reports
-SELECT name FROM users WHERE manager_id = 'user_123'
-```
+## Tips
 
-## Polymorphic Relationships
-
-One table relates to multiple types (advanced).
-
-**Example: Comments on Posts and Users**
-
-```sql
-CREATE TABLE comments (
-  comment_id BIGSERIAL PRIMARY KEY,
-  text TEXT,
-  target_type VARCHAR(50),  -- 'post' or 'user'
-  target_id BIGINT         -- References post_id or user_id
-);
-```
-
-This lacks enforced referential integrity. Better approach:
-
-```sql
--- Separate tables for each relationship
-CREATE TABLE post_comments (
-  comment_id BIGSERIAL PRIMARY KEY,
-  post_id BIGINT REFERENCES posts(post_id) ON DELETE CASCADE,
-  text TEXT
-);
-
-CREATE TABLE user_comments (
-  comment_id BIGSERIAL PRIMARY KEY,
-  user_id BIGINT REFERENCES users(user_id) ON DELETE CASCADE,
-  text TEXT
-);
-```
-
-## Join Queries
-
-Retrieve related data using joins.
-
-```sql
--- INNER JOIN: Only matching records
-SELECT u.email, o.name FROM users u
-INNER JOIN organizations o ON u.org_id = o.org_id
-
--- LEFT JOIN: All users, matching org (if exists)
-SELECT u.email, o.name FROM users u
-LEFT JOIN organizations o ON u.org_id = o.org_id
-
--- Find users without organization (org_id IS NULL)
-SELECT * FROM users WHERE org_id IS NULL
-```
-
-## Viewing Relationships
-
-Query foreign key relationships:
-
-```sql
-SELECT 
-  constraint_name, 
-  table_name, 
-  column_name,
-  foreign_table_name, 
-  foreign_column_name
-FROM information_schema.key_column_usage
-WHERE table_name = 'users'
-```
-
-## Performance Considerations
-
-- **Index foreign keys**: Foreign keys should be indexed for join performance
-- **Eager loading**: Avoid N+1 queries (load related data upfront)
-- **Denormalization**: Sometimes duplicate data for performance
-
-Example N+1 problem:
-
-```sql
--- Bad: N queries
-SELECT * FROM users
--- For each user: SELECT * FROM organizations WHERE org_id = X
-
--- Good: 1 query
-SELECT u.*, o.* FROM users u
-LEFT JOIN organizations o ON u.org_id = o.org_id
-```
-
-See [Indexes](indexes.md) for optimizing join performance.
+- Profile your queries with `db.collection.find().explain()` to validate that
+  your chosen pattern avoids unnecessary `$lookup` stages.
+- Use MongoDB Atlas Performance Advisor to identify slow queries caused by
+  suboptimal data modeling.
+- Remember the 16 MB document size limit when deciding between embedding
+  and referencing -- unbounded arrays can push documents past this limit.
+- Consider change streams for keeping denormalized data in sync across
+  collections in real time.
