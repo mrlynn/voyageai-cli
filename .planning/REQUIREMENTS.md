@@ -24,10 +24,10 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Chat Local
 
-- [ ] **CHAT-01**: User can run `vai demo chat --local` to use local embeddings during demo ingestion
-- [ ] **CHAT-02**: Chat retrieval uses local embeddings when --local flag is set
-- [ ] **CHAT-03**: Reranking is skipped in --local mode (reranker requires API key)
-- [ ] **CHAT-04**: Demo clearly communicates that MongoDB and LLM are still required
+- [x] **CHAT-01**: User can run `vai demo chat --local` to use local embeddings during demo ingestion
+- [x] **CHAT-02**: Chat retrieval uses local embeddings when --local flag is set
+- [x] **CHAT-03**: Reranking is skipped in --local mode (reranker requires API key)
+- [x] **CHAT-04**: Demo clearly communicates that MongoDB and LLM are still required
 
 ## Future Requirements
 
@@ -69,10 +69,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DEMO-07 | Phase 6 (verify: Phase 9) | Satisfied |
 | DOCS-01 | Phase 7 | Complete |
 | DOCS-02 | Phase 7 | Complete |
-| CHAT-01 | Phase 8 | Pending |
-| CHAT-02 | Phase 8 | Pending |
-| CHAT-03 | Phase 8 | Pending |
-| CHAT-04 | Phase 8 | Pending |
+| CHAT-01 | Phase 8 | Complete |
+| CHAT-02 | Phase 8 | Complete |
+| CHAT-03 | Phase 8 | Complete |
+| CHAT-04 | Phase 8 | Complete |
 
 **Coverage:**
 - v1 requirements: 13 total
