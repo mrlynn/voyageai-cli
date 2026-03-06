@@ -69,11 +69,12 @@ Plans:
   3. User can pass `--dimensions 256/512/1024/2048` and `--precision float32/int8/uint8/binary` to control output
   4. voyage-4-nano appears in `vai models` catalog with local and free indicators
   5. Every error across all commands has a remediation string, verified by unit tests for the error taxonomy
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 03-01: TBD
-- [ ] 03-02: TBD
+- [ ] 03-05-PLAN.md -- Local embedding adapter and embed --local/--precision flags (CMD-01, CMD-04, CMD-05)
+- [ ] 03-06-PLAN.md -- Ingest and pipeline --local flag wiring (CMD-02, CMD-03)
+- [ ] 03-07-PLAN.md -- Models local/free badges and error taxonomy tests (CMD-06, TEST-04)
 
 ## Progress
 
@@ -84,4 +85,4 @@ Phases execute in numeric order: 1 -> 2 -> 3
 |-------|----------------|--------|-----------|
 | 1. Bridge Protocol | 3/5 | In progress | - |
 | 2. Setup and Environment | 0/8 | Not started | - |
-| 3. Command Integration | 0/0 | Not started | - |
+| 3. Command Integration | 0/3 | Not started | - |
