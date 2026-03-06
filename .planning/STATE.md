@@ -1,100 +1,65 @@
----
-gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: milestone
-status: in-progress
-stopped_at: Phase 2 complete — all 4 plans executed
-last_updated: "2026-03-03T06:00:00Z"
-progress:
-  total_phases: 2
-  completed_phases: 1
-  total_plans: 6
-  completed_plans: 6
----
-
-# vai Social Awareness Dashboard - State
-
-**Project:** vai Social Awareness Dashboard
-**Created:** 2026-03-02
-**Status:** Milestone complete
+# Project State
 
 ## Project Reference
 
-**Core Value:** Developers discover vai through consistent, high-quality content that shows them exactly how vai solves their embedding and retrieval problems.
+See: .planning/PROJECT.md (updated 2026-03-06)
 
-**Thesis:** vai needs a systematic way to generate, format, and publish educational content across developer platforms. The dashboard is the hub for this outreach machine.
-
-**Current Focus:** Phase 2 (Knowledge Base)
+**Core value:** Zero-API-key path from install to working vector search, with seamless upgrade to Voyage API.
+**Current focus:** Phase 1: Bridge Protocol
 
 ## Current Position
 
-| Item | Value |
-|------|-------|
-| Phase | 2 - Knowledge Base |
-| Plan | All 4 plans complete |
-| Status | Phase 2 execution complete — pending verification |
-| Progress | 6/6 plans complete |
+Phase: 1 of 3 (Bridge Protocol)
+Plan: 3 of 5 in current phase
+Status: Executing
+Last activity: 2026-03-06 -- Completed 01-03 (error taxonomy, protocol helpers, Python bridge)
 
-## Phases Overview
-
-| # | Phase | Goal | Requirements |
-|---|-------|------|--------------|
-| 1 | Foundation | Project infrastructure ready | None (setup) |
-| 2 | Knowledge Base | Access vai docs/codebase for content context | KNOW-01, KNOW-02 |
-| 3 | Content Generation Engine | Generate drafts for all content types | CGEN-01, CGEN-02, CGEN-03, CGEN-04 |
-| 4 | Platform Formatting & Library | Format for copy-paste publishing | PLAT-01, PLAT-02, PLAT-03 |
-| 5 | Dashboard & Campaign Management | Plan, track, manage campaigns | DASH-01, DASH-02, DASH-03 |
+Progress: [██████░░░░] 60%
 
 ## Performance Metrics
 
-- **Requirement Coverage:** 12/12 v1 requirements mapped
-- **Phases:** 5 (Quick depth)
-- **Dependencies:** Linear (Phase 1 → 2 → 3 → 4 → 5)
+**Velocity:**
+- Total plans completed: 3
+- Average duration: ~2 min
+- Total execution time: ~6 min
+
+**By Phase:**
+
+| Phase | Plans | Total | Avg/Plan |
+|-------|-------|-------|----------|
+| 1 - Bridge Protocol | 3/5 | ~6 min | ~2 min |
+
+**Recent Trend:**
+- Last 3 plans: 01-01, 01-02, 01-03
+- Trend: Steady
+
+*Updated after each plan completion*
 
 ## Accumulated Context
 
-### Decisions Made
+### Decisions
 
-| Decision | Rationale | Status |
-|----------|-----------|--------|
-| 5-phase structure for quick depth | Natural delivery boundaries: Foundation → Knowledge → Generation → Formatting → Dashboard | Active |
-| No Phase 0 (research) | Config set to research: false, moving straight to execution | Active |
-| Linear phase dependencies | Each phase delivers a complete, testable capability | Active |
-| Next.js 16 used over planned 14 | create-next-app latest, fully compatible and forward-looking | Active |
-| Tailwind CSS v4 CSS-based config | No tailwind.config.ts needed — @import tailwindcss in globals.css | Active |
-| jest.config.ts uses correct option names | setupFilesAfterEnv and testMatch — plan had typos for both | Active |
-| @jest-environment node for OpenAI tests | jsdom triggers OpenAI SDK browser safety guard — node env required for openai.test.ts | Active |
-| Vercel deployment deferred | vercel login required before `vercel --yes` can succeed — auth gate | Active |
-| UUID id field for knowledge sources | Using custom uuid id (not MongoDB _id) for API-consistent lookups | Active |
-| Global MongoClient cache | global._mongoKnowledgeClient survives Next.js dev hot reloads | Active |
-| Tag inference in buildSourceDocument() | url→web, codebase→codebase, file→docs, text→pasted | Active |
-| Synchronous ingestion in /index route | await ingestSource() instead of fire-and-forget — serverless background jobs risk truncation, reliability wins for solo dev tool | Active |
-| Chunk strategy by file extension | .md→markdown, .ts/.js→fixed(400), .json/.yaml→fixed(600), text/url→paragraph | Active |
-| input_type 'query' for Voyage AI search embeddings | Asymmetric embedding (query vs document) is the correct RAG pattern for retrieval quality | Active |
-| Tag filtering post-search via knowledge_sources join | Atlas $vectorSearch pre-filter only supports simple equality on indexed fields; tag is on knowledge_sources | Active |
-| retrieveContext() returns string[] | Compatible with existing GenerationRequest.knowledgeContext — Phase 3 needs no type changes | Active |
-| KnowledgePageClient wrapper pattern | Thin 'use client' wrapper lifts refreshKey state while keeping page.tsx a server component | Active |
-| Optimistic delete in SourceList | Source removed from local state immediately on delete without re-verifying with server | Active |
-| TestRetrievalPanel collapsed by default | Minimizes visual noise; expanded on toggle to reveal full search UI | Active |
+Decisions are logged in PROJECT.md Key Decisions table.
+Recent decisions affecting current work:
 
-### Technical Constraints
+- [Roadmap]: 3-phase structure (bridge -> setup -> commands) derived from dependency analysis
+- [Research]: Python 3.10+ is true minimum (not 3.9) due to sentence-transformers 5.x
+- [01-03]: Request envelope: {id, type, ...payload} with crypto.randomUUID for ids
+- [01-03]: Lazy model loading on first embed request (not at startup)
+- [01-03]: encode_queries for query input_type, encode for document
+- [01-03]: Token estimation via word split count
 
-- **Stack:** Next.js, OpenAI API, Vercel deployment
-- **User:** Single user, no auth required
-- **Publishing:** Copy-paste workflow (no platform APIs)
+### Pending Todos
 
-### Open Questions
+None yet.
 
-- Exact structure of vai knowledge base (docs location, codebase structure, retrieval method)
-- OpenAI model selection for content generation (GPT-4, GPT-3.5, fine-tuning?)
-- Performance tracking scope (manual vs. analytics tools)
+### Blockers/Concerns
+
+- Python 3.10 minimum needs to be updated in PROJECT.md before Phase 2 implementation
+- PyTorch install size (~2GB default) needs platform-aware strategy during Phase 2 planning
 
 ## Session Continuity
 
-**Last Update:** 2026-03-03 - Phase 2 fully executed: all 4 plans complete, checkpoint approved
-**Stopped At:** Phase 2 execution complete
-**Next:** Phase verification, then Phase 3 (Content Generation Engine)
-
----
-
-*Project memory. Update during work. Rewind to this state if clarification needed.*
+Last session: 2026-03-06
+Stopped at: Completed 01-03-PLAN.md
+Resume file: None
