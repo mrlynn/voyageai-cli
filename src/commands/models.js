@@ -86,7 +86,9 @@ function registerModels(program) {
       const displayLegacy = models.filter(m => m.legacy);
 
       const formatWideRow = (m) => {
-        const label = m.unreleased ? ui.cyan(m.name) + ' ' + ui.dim('(unreleased)') : ui.cyan(m.name);
+        let label = m.unreleased ? ui.cyan(m.name) + ' ' + ui.dim('(unreleased)') : ui.cyan(m.name);
+        if (m.local) label += ' ' + ui.green('[local]');
+        if (m.pricePerMToken === 0) label += ' ' + ui.green('[free]');
         const type = m.type.startsWith('embedding') ? ui.green(m.type) : ui.yellow(m.type);
         const price = ui.dim(m.price);
         const arch = m.architecture ? (m.architecture === 'moe' ? ui.cyan('MoE') : m.architecture) : '—';
@@ -95,7 +97,9 @@ function registerModels(program) {
       };
 
       const formatCompactRow = (m) => {
-        const label = m.unreleased ? ui.cyan(m.name) + ' ' + ui.dim('(soon)') : ui.cyan(m.name);
+        let label = m.unreleased ? ui.cyan(m.name) + ' ' + ui.dim('(soon)') : ui.cyan(m.name);
+        if (m.local) label += ' ' + ui.green('[local]');
+        if (m.pricePerMToken === 0) label += ' ' + ui.green('[free]');
         const type = m.type.startsWith('embedding') ? ui.green(m.multimodal ? 'multi' : 'embed') : ui.yellow('rerank');
         const dims = compactDimensions(m.dimensions);
         const price = ui.dim(compactPrice(m.price));
