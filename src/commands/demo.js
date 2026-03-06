@@ -1,5 +1,6 @@
 'use strict';
 
+const fs = require('fs');
 const path = require('path');
 const readline = require('readline');
 const pc = require('picocolors');
