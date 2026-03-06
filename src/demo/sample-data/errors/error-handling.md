@@ -166,8 +166,8 @@ Don't expose internal details; provide helpful messages:
 
 ```python
 # ✗ Bad: Internal details
-if error.code == 'FOREIGN_KEY_VIOLATION':
-    raise Exception("Foreign key constraint violated on users.org_id")
+if error.code == 'DOCUMENT_VALIDATION_FAILURE':
+    raise Exception("Document failed validation: required field 'orgId' missing")
 
 # ✓ Good: User-friendly
 if error.code == 'INVALID_ORGANIZATION':

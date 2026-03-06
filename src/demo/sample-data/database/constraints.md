@@ -1,229 +1,276 @@
-# Constraints
+# Schema Validation
 
-Constraints enforce data validity and integrity at the database level, ensuring only valid data is stored.
+MongoDB provides flexible schema validation using JSON Schema, allowing you to enforce
+document structure at the collection level while preserving the document model's flexibility.
 
-## Primary Key
+## Creating a Collection with Validation
 
-Uniquely identifies each row in a table. Cannot be NULL.
+Use `db.createCollection()` with a `$jsonSchema` validator to enforce structure on insert and update operations.
 
-```sql
-CREATE TABLE users (
-  user_id BIGSERIAL PRIMARY KEY,
-  email VARCHAR(255)
-);
+```javascript
+db.createCollection("users", {
+  validator: {
+    $jsonSchema: {
+      bsonType: "object",
+      title: "User Validation",
+      required: ["email", "name", "createdAt"],
+      properties: {
+        email: {
+          bsonType: "string",
+          pattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$",
+          description: "Must be a valid email address and is required"
+        },
+        name: {
+          bsonType: "string",
+          minLength: 1,
+          maxLength: 200,
+          description: "Full name of the user"
+        },
+        age: {
+          bsonType: "int",
+          minimum: 0,
+          maximum: 150,
+          description: "Age must be an integer between 0 and 150"
+        },
+        role: {
+          enum: ["admin", "editor", "viewer"],
+          description: "Must be one of the allowed roles"
+        },
+        createdAt: {
+          bsonType: "date",
+          description: "Timestamp of account creation"
+        }
+      }
+    }
+  }
+})
 ```
 
-Composite primary key:
+## Required Fields
 
-```sql
-CREATE TABLE order_items (
-  order_id BIGINT,
-  item_id BIGINT,
-  quantity INTEGER,
-  PRIMARY KEY (order_id, item_id)
-);
+The `required` array ensures specified fields are present in every document.
+
+```javascript
+db.createCollection("products", {
+  validator: {
+    $jsonSchema: {
+      bsonType: "object",
+      required: ["sku", "name", "price", "category"],
+      properties: {
+        sku: { bsonType: "string" },
+        name: { bsonType: "string" },
+        price: { bsonType: "decimal" },
+        category: { bsonType: "string" }
+      }
+    }
+  }
+})
+
+// This insert will fail — missing required field "category"
+db.products.insertOne({ sku: "ABC-123", name: "Widget", price: NumberDecimal("9.99") })
+// MongoServerError: Document failed validation
 ```
 
-## Unique Constraint
+## BSON Type Validators
 
-Ensures all values in a column (or combination) are unique.
+Enforce specific BSON types for fields using `bsonType`.
 
-```sql
-CREATE TABLE users (
-  user_id BIGSERIAL PRIMARY KEY,
-  email VARCHAR(255) UNIQUE NOT NULL
-);
+```javascript
+properties: {
+  count: { bsonType: "int" },           // 32-bit integer
+  total: { bsonType: "long" },          // 64-bit integer
+  score: { bsonType: "double" },        // floating point
+  price: { bsonType: "decimal" },       // Decimal128 (precise)
+  active: { bsonType: "bool" },         // boolean
+  tags: { bsonType: "array" },          // array
+  metadata: { bsonType: "object" },     // embedded document
+  _id: { bsonType: "objectId" },        // ObjectId
+  timestamp: { bsonType: "date" }       // ISODate
+}
 ```
 
-Composite unique:
+You can also allow multiple types for a single field:
 
-```sql
-CREATE TABLE subscriptions (
-  user_id BIGINT,
-  plan_id BIGINT,
-  UNIQUE (user_id, plan_id)
-);
+```javascript
+properties: {
+  value: {
+    bsonType: ["int", "double", "decimal"],
+    description: "Accepts any numeric type"
+  }
+}
 ```
 
-Allow multiple NULLs (NULLs are not considered duplicates):
+## Enum Validators
 
-```sql
-phone VARCHAR(20) UNIQUE
--- Multiple users can have NULL phone
+Restrict field values to a predefined set.
+
+```javascript
+properties: {
+  status: {
+    enum: ["pending", "active", "suspended", "deleted"],
+    description: "Must be a valid account status"
+  },
+  priority: {
+    bsonType: "int",
+    enum: [1, 2, 3, 4, 5],
+    description: "Priority level from 1 (highest) to 5 (lowest)"
+  }
+}
 ```
 
-## Not Null Constraint
+## Min/Max Validators
 
-A field must always have a value.
+Apply numeric range and string length constraints.
 
-```sql
-CREATE TABLE users (
-  user_id BIGSERIAL PRIMARY KEY,
-  email VARCHAR(255) NOT NULL,
-  name VARCHAR(255) NOT NULL,
-  phone VARCHAR(20)  -- Can be NULL
-);
+```javascript
+properties: {
+  quantity: {
+    bsonType: "int",
+    minimum: 0,
+    maximum: 10000,
+    description: "Stock quantity must be between 0 and 10,000"
+  },
+  discount: {
+    bsonType: "double",
+    minimum: 0,
+    maximum: 1,
+    description: "Discount as a fraction between 0.0 and 1.0"
+  },
+  title: {
+    bsonType: "string",
+    minLength: 3,
+    maxLength: 500
+  }
+}
 ```
 
-## Default Values
+## Nested Document Validation
 
-Automatically assign values if not provided.
+Validate the structure of embedded documents and arrays of documents.
 
-```sql
-CREATE TABLE users (
-  user_id BIGSERIAL PRIMARY KEY,
-  email VARCHAR(255) NOT NULL,
-  status VARCHAR(20) DEFAULT 'active',
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  verified BOOLEAN DEFAULT FALSE
-);
+```javascript
+db.createCollection("orders", {
+  validator: {
+    $jsonSchema: {
+      bsonType: "object",
+      required: ["customer", "items", "orderDate"],
+      properties: {
+        customer: {
+          bsonType: "object",
+          required: ["name", "email"],
+          properties: {
+            name: { bsonType: "string" },
+            email: { bsonType: "string" },
+            address: {
+              bsonType: "object",
+              properties: {
+                street: { bsonType: "string" },
+                city: { bsonType: "string" },
+                state: { bsonType: "string" },
+                zip: { bsonType: "string" }
+              }
+            }
+          }
+        },
+        items: {
+          bsonType: "array",
+          minItems: 1,
+          items: {
+            bsonType: "object",
+            required: ["productId", "quantity", "price"],
+            properties: {
+              productId: { bsonType: "objectId" },
+              quantity: { bsonType: "int", minimum: 1 },
+              price: { bsonType: "decimal" }
+            }
+          }
+        },
+        orderDate: { bsonType: "date" }
+      }
+    }
+  }
+})
 ```
 
-## Check Constraint
+## Modifying Validation on Existing Collections
 
-Validates data based on a condition.
+Use `collMod` to add or update validation rules on an existing collection.
 
-```sql
-CREATE TABLE products (
-  price DECIMAL(10,2) CHECK (price > 0),
-  discount DECIMAL(5,2) CHECK (discount >= 0 AND discount <= 100),
-  inventory INTEGER CHECK (inventory >= 0)
-);
-
-CREATE TABLE users (
-  age INTEGER CHECK (age >= 0 AND age <= 150),
-  status VARCHAR(20) CHECK (status IN ('active', 'inactive', 'archived'))
-);
+```javascript
+db.runCommand({
+  collMod: "users",
+  validator: {
+    $jsonSchema: {
+      bsonType: "object",
+      required: ["email", "name", "role", "createdAt"],
+      properties: {
+        email: { bsonType: "string" },
+        name: { bsonType: "string" },
+        role: { enum: ["admin", "editor", "viewer", "superadmin"] },
+        createdAt: { bsonType: "date" }
+      }
+    }
+  },
+  validationLevel: "moderate",
+  validationAction: "warn"
+})
 ```
 
-Named constraints for better error messages:
+## Validation Level
 
-```sql
-CREATE TABLE products (
-  price DECIMAL(10,2),
-  CONSTRAINT positive_price CHECK (price > 0)
-);
+Controls which documents the validation applies to.
+
+| Level        | Behavior                                                        |
+|--------------|-----------------------------------------------------------------|
+| `strict`     | Validates all inserts and updates (default)                     |
+| `moderate`   | Validates inserts and updates to documents that already match   |
+| `off`        | Disables validation entirely                                    |
+
+```javascript
+// Strict: every write must pass validation
+db.runCommand({ collMod: "users", validationLevel: "strict" })
+
+// Moderate: existing non-conforming documents can still be updated
+db.runCommand({ collMod: "users", validationLevel: "moderate" })
 ```
 
-## Foreign Key Constraint
+## Validation Action
 
-Maintains referential integrity between tables.
+Controls what happens when a document fails validation.
 
-```sql
-CREATE TABLE users (
-  user_id BIGSERIAL PRIMARY KEY,
-  org_id BIGINT,
-  CONSTRAINT fk_users_org FOREIGN KEY (org_id)
-    REFERENCES organizations(org_id) ON DELETE CASCADE
-);
+| Action   | Behavior                                           |
+|----------|----------------------------------------------------|
+| `error`  | Rejects the write operation (default)              |
+| `warn`   | Allows the write but logs a warning to the server  |
+
+```javascript
+// Reject invalid documents
+db.runCommand({ collMod: "products", validationAction: "error" })
+
+// Allow invalid documents but log warnings
+db.runCommand({ collMod: "products", validationAction: "warn" })
 ```
 
-See [Relationships](relationships.md) for detailed foreign key usage.
+## Inspecting Existing Validation Rules
 
-## Exclude Constraint
+```javascript
+// View the validation rules for a collection
+db.getCollectionInfos({ name: "users" })[0].options.validator
 
-Prevents certain combinations of values (advanced).
-
-```sql
-CREATE TABLE room_bookings (
-  room_id BIGINT,
-  booking_range TSRANGE,
-  EXCLUDE USING GIST (room_id WITH =, booking_range WITH &&)
-);
+// List all collections with their validation settings
+db.getCollectionInfos().forEach(c => {
+  if (c.options.validator) {
+    print(`${c.name}: validationLevel=${c.options.validationLevel || "strict"}`)
+  }
+})
 ```
 
-This prevents overlapping bookings for the same room.
+## Tips
 
-## Domain Constraints
-
-Create custom data types with built-in constraints.
-
-```sql
-CREATE DOMAIN email AS VARCHAR(255)
-  CHECK (VALUE ~ '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}$');
-
-CREATE TABLE users (
-  user_id BIGSERIAL PRIMARY KEY,
-  email email NOT NULL UNIQUE
-);
-```
-
-## Adding/Removing Constraints
-
-Add constraint after table creation:
-
-```sql
-ALTER TABLE users ADD CONSTRAINT positive_age CHECK (age > 0);
-```
-
-Remove:
-
-```sql
-ALTER TABLE users DROP CONSTRAINT positive_age;
-```
-
-## Disabling Constraints (Careful!)
-
-Temporarily disable for bulk operations:
-
-```sql
--- Disable foreign key checks
-SET session_replication_role = replica;
--- Perform bulk inserts without FK validation
-SET session_replication_role = default;  -- Re-enable
-```
-
-Use sparingly; risks data inconsistency.
-
-## Viewing Constraints
-
-Query constraint information:
-
-```sql
--- All constraints on a table
-SELECT constraint_name, constraint_type
-FROM information_schema.table_constraints
-WHERE table_name = 'users'
-
--- Check constraint details
-SELECT constraint_name, check_clause
-FROM information_schema.check_constraints
-WHERE constraint_schema = 'public'
-```
-
-## Best Practices
-
-1. **Use NOT NULL** for required fields
-2. **Use UNIQUE** for email, usernames, etc.
-3. **Use CHECK** for valid value ranges
-4. **Use FOREIGN KEY** for relationships
-5. **Use DEFAULT** for common values
-6. **Name constraints explicitly** for clear error messages
-7. **Combine constraints** for comprehensive validation
-
-Example comprehensive table:
-
-```sql
-CREATE TABLE users (
-  user_id BIGSERIAL PRIMARY KEY,
-  email VARCHAR(255) UNIQUE NOT NULL,
-  name VARCHAR(255) NOT NULL,
-  age INTEGER CHECK (age >= 0),
-  org_id BIGINT NOT NULL REFERENCES organizations(org_id) ON DELETE CASCADE,
-  status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'inactive')),
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  verified BOOLEAN DEFAULT FALSE,
-  CONSTRAINT valid_email CHECK (email LIKE '%@%.%')
-);
-```
-
-## Performance Impact
-
-Constraints add minimal overhead but catch bugs early:
-
-- **PRIMARY KEY / UNIQUE**: Slight overhead (maintains index)
-- **NOT NULL**: No overhead (checked at insert time)
-- **CHECK**: Minimal overhead (simple validation)
-- **FOREIGN KEY**: Moderate overhead (references check)
-
-Always use constraints; performance cost is negligible compared to benefit of data integrity.
+- Start with `validationAction: "warn"` when adding rules to existing collections
+  to identify non-conforming documents before enforcing strict validation.
+- Use `moderate` validation level during migrations so legacy documents are not
+  blocked from unrelated updates.
+- Combine schema validation with unique indexes for complete data integrity.
+- In MongoDB Atlas, you can manage validation rules through the Atlas UI under
+  the collection's Validation tab.

@@ -81,7 +81,7 @@ This will:
 - Cross-references are hyperlinked where semantically appropriate
 - Overlapping content uses different terminology/context to test retrieval precision
 - Some files intentionally reference "undocumented behaviors" or deprecated patterns to test search robustness
-- Database schema examples use PostgreSQL conventions; SDK examples target current stable versions
+- Database examples use MongoDB conventions (MQL, mongosh, BSON types); SDK examples target current stable versions
 
 ---
 

@@ -6,19 +6,18 @@ Optimization techniques to improve API performance.
 
 **Add Indexes**:
 ```
-SELECT * FROM users WHERE email = '...'
-→ Without index: Full table scan (1M rows scanned)
-→ With index: Direct lookup (1 row scanned)
+db.users.find({ email: '...' })
+→ Without index: Full collection scan (1M docs scanned)
+→ With index: Direct lookup (1 doc scanned)
 
 Performance: 1000x faster
 ```
 
 **Use Explain to Analyze**:
-```sql
-EXPLAIN ANALYZE SELECT * FROM users WHERE email = '...'
-→ Seq Scan on users (1000ms)
-→ Add index idx_users_email
-→ Index Scan on idx_users_email (1ms)
+```js
+db.users.find({ email: '...' }).explain('executionStats')
+// Without index: COLLSCAN (1M docs scanned)
+// With index: IXSCAN on { email: 1 } (1 doc scanned)
 ```
 
 ## Connection Pooling
@@ -42,12 +41,12 @@ Configure pool size: min 5, max 20 connections.
 Reduce data returned:
 
 ```
-✗ Bad: SELECT * FROM large_table
-  → Returns 1M rows (1GB)
+✗ Bad: db.largeCollection.find({})
+  → Returns 1M docs (1GB)
   → Timeout or crash
 
-✓ Good: SELECT * FROM large_table WHERE date > '2026-01-01' LIMIT 100
-  → Returns 100 rows (100KB)
+✓ Good: db.largeCollection.find({ date: { $gt: ISODate('2026-01-01') } }).limit(100)
+  → Returns 100 docs (100KB)
   → Fast response
 ```
 

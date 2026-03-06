@@ -1,265 +1,286 @@
-# Data Types
+# BSON Data Types
 
-Understanding PostgreSQL data types used in the schema ensures proper data handling and storage efficiency.
+MongoDB stores data in BSON (Binary JSON), a binary-encoded serialization format that
+extends JSON with additional data types. Understanding BSON types is essential for
+schema design, validation, and querying.
+
+## Core BSON Types
+
+| Type             | Number | Alias       | Description                              |
+|------------------|--------|-------------|------------------------------------------|
+| Double           | 1      | `double`    | 64-bit floating point                    |
+| String           | 2      | `string`    | UTF-8 encoded string                     |
+| Object           | 3      | `object`    | Embedded document                        |
+| Array            | 4      | `array`     | Ordered list of values                   |
+| Binary Data      | 5      | `binData`   | Binary content (images, files, etc.)     |
+| ObjectId         | 7      | `objectId`  | 12-byte unique identifier               |
+| Boolean          | 8      | `bool`      | `true` or `false`                        |
+| Date             | 9      | `date`      | 64-bit integer (ms since Unix epoch)     |
+| Null             | 10     | `null`      | Null value                               |
+| Regular Expr.    | 11     | `regex`     | Regular expression with options          |
+| 32-bit Integer   | 16     | `int`       | 32-bit signed integer                    |
+| Timestamp        | 17     | `timestamp` | Internal MongoDB replication timestamp   |
+| 64-bit Integer   | 18     | `long`      | 64-bit signed integer                    |
+| Decimal128       | 19     | `decimal`   | 128-bit high-precision decimal           |
+
+## String
+
+UTF-8 strings are the most common BSON type.
+
+```javascript
+db.products.insertOne({
+  name: "MongoDB in Action",
+  description: "A comprehensive guide to MongoDB",
+  sku: "MDB-2024-001"
+})
+
+// Query with regex on string fields
+db.products.find({ name: /mongodb/i })
+
+// String comparison
+db.products.find({ sku: { $gte: "MDB-2024", $lt: "MDB-2025" } })
+```
 
 ## Numeric Types
 
-**SMALLINT**: 2-byte integer (-32,768 to 32,767). Use for small counts, priorities.
+MongoDB distinguishes between several numeric types. In mongosh, numbers
+default to Double unless you use explicit constructors.
 
-**INTEGER**: 4-byte integer (-2.1B to 2.1B). Standard for IDs, counts.
+```javascript
+db.metrics.insertOne({
+  count: NumberInt(42),              // Int32 - 32-bit integer
+  bigCount: NumberLong("900719925"), // Int64 - 64-bit integer
+  score: 3.14,                       // Double - 64-bit float (default)
+  price: NumberDecimal("29.99")      // Decimal128 - exact precision
+})
 
-**BIGINT**: 8-byte integer for very large numbers. Used for user IDs and timestamps.
-
-```sql
-user_id BIGINT PRIMARY KEY  -- Supports 9.2 quintillion values
-count INTEGER DEFAULT 0
-priority SMALLINT
+// Use Decimal128 for financial data to avoid floating-point errors
+db.accounts.insertOne({
+  balance: NumberDecimal("10452.37"),
+  interestRate: NumberDecimal("0.0425")
+})
 ```
 
-**DECIMAL(precision, scale)**: Fixed-point decimal for financial data.
+## Boolean
 
-```sql
-price DECIMAL(10,2)  -- Allows 12345678.90
+Standard true/false values.
+
+```javascript
+db.users.insertOne({
+  email: "ada@example.com",
+  isActive: true,
+  emailVerified: false
+})
+
+db.users.find({ isActive: true, emailVerified: false })
 ```
 
-**FLOAT / DOUBLE PRECISION**: Floating-point for approximate values.
+## Date
 
-```sql
-latitude DOUBLE PRECISION
-score FLOAT
+Dates are stored as 64-bit integers representing milliseconds since the Unix epoch.
+
+```javascript
+db.events.insertOne({
+  title: "MongoDB World",
+  startDate: new Date("2025-06-10T09:00:00Z"),
+  endDate: new Date("2025-06-12T17:00:00Z"),
+  createdAt: new Date()    // current timestamp
+})
+
+// Date range queries
+db.events.find({
+  startDate: { $gte: new Date("2025-01-01"), $lt: new Date("2026-01-01") }
+})
+
+// Date aggregation
+db.events.aggregate([
+  { $project: { title: 1, year: { $year: "$startDate" }, month: { $month: "$startDate" } } }
+])
 ```
 
-## Text Types
+## ObjectId
 
-**CHAR(n)**: Fixed-length text. Use sparingly (pads with spaces).
+A 12-byte identifier automatically generated for the `_id` field. Contains a
+timestamp, random value, and incrementing counter.
 
-```sql
-country_code CHAR(2)  -- Exactly 2 characters
+```javascript
+// Auto-generated _id
+db.logs.insertOne({ message: "App started" })
+// { _id: ObjectId("65a1f2c3d4e5f6a7b8c9d0e1"), message: "App started" }
+
+// Extract the creation timestamp from an ObjectId
+const doc = db.logs.findOne()
+doc._id.getTimestamp()
+// ISODate("2025-01-13T10:30:27.000Z")
+
+// Create a specific ObjectId
+const customId = ObjectId("507f1f77bcf86cd799439011")
 ```
 
-**VARCHAR(n)**: Variable-length text with maximum length.
+## UUID
 
-```sql
-email VARCHAR(255)
-name VARCHAR(100)
+Universally unique identifiers, stored as Binary subtype 4.
+
+```javascript
+db.sessions.insertOne({
+  sessionId: UUID(),
+  userId: ObjectId("65a1f2c3d4e5f6a7b8c9d0e1"),
+  createdAt: new Date()
+})
+
+// Query by UUID
+db.sessions.find({ sessionId: UUID("a1b2c3d4-e5f6-7890-abcd-ef1234567890") })
 ```
 
-**TEXT**: Unlimited length text. Preferred for flexibility.
+## Array
 
-```sql
-description TEXT
-content TEXT
+Arrays can hold values of any BSON type, including other arrays and documents.
+
+```javascript
+db.articles.insertOne({
+  title: "Getting Started with MongoDB",
+  tags: ["mongodb", "nosql", "tutorial"],
+  scores: [95, 87, 92],
+  authors: [
+    { name: "Alice", role: "lead" },
+    { name: "Bob", role: "contributor" }
+  ]
+})
+
+// Query elements in an array
+db.articles.find({ tags: "mongodb" })
+
+// Query with array operators
+db.articles.find({ tags: { $all: ["mongodb", "tutorial"] } })
+db.articles.find({ scores: { $elemMatch: { $gte: 90 } } })
+db.articles.find({ tags: { $size: 3 } })
 ```
 
-## Date/Time Types
+## Embedded Document (Object)
 
-**DATE**: Year, month, day only (no time).
+Documents can be nested to any depth, enabling rich data models.
 
-```sql
-birth_date DATE
-```
+```javascript
+db.employees.insertOne({
+  name: "Grace Hopper",
+  contact: {
+    email: "grace@example.com",
+    phone: "+1-555-0100",
+    address: {
+      street: "123 Navy Yard",
+      city: "Arlington",
+      state: "VA",
+      zip: "22204"
+    }
+  }
+})
 
-**TIME**: Time of day only (no date).
+// Query nested fields with dot notation
+db.employees.find({ "contact.address.city": "Arlington" })
 
-```sql
-start_time TIME
-```
-
-**TIMESTAMP**: Date and time without timezone (discouraged).
-
-```sql
--- Avoid; timezone info lost
-created_at TIMESTAMP
-```
-
-**TIMESTAMP WITH TIME ZONE**: Date and time with timezone. Always use this.
-
-```sql
--- Recommended; always in UTC
-created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-updated_at TIMESTAMP WITH TIME ZONE
-```
-
-Internally stored in UTC; displayed in client's timezone.
-
-## Boolean Type
-
-**BOOLEAN**: True or false values.
-
-```sql
-is_active BOOLEAN DEFAULT TRUE
-verified BOOLEAN
-```
-
-## UUID Type
-
-**UUID**: Universally unique identifier (128-bit).
-
-```sql
-request_id UUID DEFAULT gen_random_uuid()
-```
-
-Advantages:
-- No central sequence needed (good for distributed systems)
-- Cannot guess next ID
-- Sortable (with version 4)
-
-```sql
--- Generate UUID
-SELECT gen_random_uuid();
--- Example: 550e8400-e29b-41d4-a716-446655440000
-```
-
-## JSON Types
-
-**JSON**: Stores JSON without processing. Must re-parse on each query.
-
-```sql
-metadata JSON
-```
-
-**JSONB**: Stores JSON in binary format. Faster queries, indexable.
-
-```sql
-attributes JSONB
-```
-
-Query JSONB efficiently:
-
-```sql
--- Membership operator
-SELECT * FROM users WHERE attributes @> '{"tier": "premium"}'
-
--- Get value
-SELECT attributes->>'name' AS name FROM users
-
--- Check key exists
-SELECT * FROM users WHERE attributes ? 'phone'
-```
-
-## Array Types
-
-PostgreSQL supports arrays:
-
-```sql
-tags TEXT[]
-ids BIGINT[] DEFAULT ARRAY[]::BIGINT[]
-```
-
-Query arrays:
-
-```sql
--- Array contains
-SELECT * FROM resources WHERE tags @> ARRAY['important']
-
--- Array length
-SELECT * FROM resources WHERE array_length(tags, 1) > 5
-```
-
-## Enum Type
-
-**ENUM**: Fixed set of allowed values.
-
-```sql
-CREATE TYPE status_enum AS ENUM ('active', 'inactive', 'archived');
-
-users (
-  status status_enum DEFAULT 'active'
+// Update nested fields
+db.employees.updateOne(
+  { name: "Grace Hopper" },
+  { $set: { "contact.phone": "+1-555-0200" } }
 )
 ```
 
-Advantages:
-- Type safety (invalid values rejected)
-- Efficient storage
-- Self-documenting
+## Binary Data
 
-## Composite Types
+Store binary content such as small files, hashes, or encrypted data.
 
-**COMPOSITE**: User-defined structured types.
-
-```sql
-CREATE TYPE address AS (
-  street VARCHAR(255),
-  city VARCHAR(100),
-  zip VARCHAR(10),
-  country VARCHAR(100)
-);
-
-users (
-  address address
-)
+```javascript
+db.files.insertOne({
+  filename: "avatar.png",
+  contentType: "image/png",
+  data: BinData(0, "iVBORw0KGgoAAAANSUhEUg..."),  // base64-encoded
+  checksum: BinData(5, "d4a1b2c3e5f67890...")        // MD5 subtype
+})
 ```
 
-## Type Conversions
+## Null
 
-PostgreSQL performs implicit conversions:
+Represents the absence of a value. Distinct from a field not existing.
 
-```sql
-SELECT COUNT(*) FROM users WHERE user_id = '123'  -- String '123' converted to BIGINT
+```javascript
+db.profiles.insertOne({ name: "Test User", bio: null })
+
+// Find documents where bio is null
+db.profiles.find({ bio: null })
+
+// Find documents where bio field exists but is null (not just missing)
+db.profiles.find({ bio: { $type: "null" } })
+
+// Find documents where the field does not exist at all
+db.profiles.find({ bio: { $exists: false } })
 ```
 
-Explicit conversion:
+## Regular Expression
 
-```sql
-SELECT user_id::VARCHAR AS id FROM users  -- Cast BIGINT to VARCHAR
-SELECT price::INTEGER FROM products       -- Cast DECIMAL to INTEGER
+Store and query with regex patterns.
+
+```javascript
+// Store a regex
+db.rules.insertOne({
+  name: "Email Pattern",
+  pattern: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
+})
+
+// Query using regex
+db.users.find({ email: { $regex: /@example\.com$/, $options: "i" } })
 ```
 
-## NULL Handling
+## Timestamp
 
-**NULL** represents missing data (different from empty string or 0):
+An internal type used by MongoDB for replication. Application code should
+use `Date` instead.
 
-```sql
-name VARCHAR(100)  -- Can be NULL
-name VARCHAR(100) NOT NULL  -- Must have value
-name VARCHAR(100) DEFAULT 'Unknown'  -- Default if not provided
+```javascript
+// Timestamp is typically set by the server for oplog entries
+// In application code, prefer Date:
+db.audit.insertOne({
+  action: "login",
+  performedAt: new Date()
+})
 ```
 
-Queries with NULL:
+## Querying by Type with $type
 
-```sql
-SELECT * FROM users WHERE phone IS NULL
-SELECT * FROM users WHERE phone IS NOT NULL
+Use the `$type` operator to find documents based on the BSON type of a field.
+
+```javascript
+// Find documents where "price" is a Decimal128
+db.products.find({ price: { $type: "decimal" } })
+
+// Find documents where "value" is any numeric type
+db.metrics.find({ value: { $type: ["int", "long", "double", "decimal"] } })
+
+// Find documents where "tags" is an array
+db.articles.find({ tags: { $type: "array" } })
+
+// You can also use the numeric type code
+db.products.find({ price: { $type: 19 } })  // 19 = Decimal128
 ```
 
-## Storage Size
+## Type Conversion in Aggregation
 
-Data type storage impacts database size and query performance:
-
-| Type | Storage |
-|------|---------|
-| BOOLEAN | 1 byte |
-| SMALLINT | 2 bytes |
-| INTEGER | 4 bytes |
-| BIGINT | 8 bytes |
-| DATE | 4 bytes |
-| TIMESTAMP | 8 bytes |
-| UUID | 16 bytes |
-| VARCHAR(n) | 1 to n bytes |
-| TEXT | Variable |
-| JSONB | Variable |
-
-Choose appropriate types to minimize storage.
-
-## Validation with Constraints
-
-Use constraints to ensure data validity:
-
-```sql
-price DECIMAL(10,2) CHECK (price > 0)
-email VARCHAR(255) UNIQUE NOT NULL
-status VARCHAR(20) CHECK (status IN ('active', 'inactive'))
+```javascript
+db.raw_data.aggregate([
+  { $project: {
+    label: 1,
+    numericValue: { $toDouble: "$stringValue" },
+    dateValue: { $toDate: "$timestampMs" },
+    stringId: { $toString: "$_id" }
+  }}
+])
 ```
 
-## Best Practices
+## Tips
 
-1. Always use TIMESTAMP WITH TIME ZONE for temporal data
-2. Use VARCHAR with reasonable length limits
-3. Use ENUM for fixed sets of values
-4. Use BIGINT for IDs in distributed systems
-5. Use DECIMAL for financial data (not FLOAT)
-6. Use JSONB for flexible data (not JSON)
-7. Use UUID for non-sequential IDs
-8. Add NOT NULL and DEFAULT constraints where appropriate
-
-See [Constraints](constraints.md) for validation details.
+- Use `NumberDecimal()` for monetary values to avoid floating-point rounding.
+- Use `ObjectId` for `_id` unless you have a natural unique key.
+- Prefer `Date` over `Timestamp` in application documents.
+- Arrays are automatically indexed as multikey indexes, enabling efficient queries
+  on array elements.
+- In MongoDB Atlas, the Data Explorer displays BSON types with visual indicators
+  for easy identification.

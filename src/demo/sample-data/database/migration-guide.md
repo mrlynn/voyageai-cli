@@ -1,329 +1,306 @@
-# Migration Guide
+# MongoDB Migration Guide
 
-Migrating between API versions requires updating SDKs, understanding schema changes, and testing thoroughly. This guide covers the v1 → v2 migration.
+## Overview
+
+This guide covers migration strategies for MongoDB deployments, including
+schema versioning patterns, data backfilling, collection validation updates,
+and major version upgrades (MongoDB 6.0 to 7.0). It follows a v1 to v2 API
+migration as a practical example.
+
+## Schema Versioning Strategy
+
+MongoDB's flexible document model does not enforce a rigid schema, but production
+applications benefit from explicit schema versioning. The recommended pattern
+uses a `schemaVersion` field in every document.
+
+```javascript
+// v1 document structure
+{
+  _id: ObjectId("6651b2a0c88e1a001f5e83bc"),
+  schemaVersion: 1,
+  name: "Acme Corp",
+  contactEmail: "admin@acme.com",
+  address: "123 Main St, Springfield, IL 62701",
+  createdAt: ISODate("2025-01-15T10:30:00Z")
+}
+
+// v2 document structure (address split into structured embedded document)
+{
+  _id: ObjectId("6651b2a0c88e1a001f5e83bc"),
+  schemaVersion: 2,
+  name: "Acme Corp",
+  contactEmail: "admin@acme.com",
+  address: {
+    street: "123 Main St",
+    city: "Springfield",
+    state: "IL",
+    postalCode: "62701",
+    country: "US"
+  },
+  tags: [],
+  createdAt: ISODate("2025-01-15T10:30:00Z"),
+  migratedAt: ISODate("2026-03-01T08:00:00Z")
+}
+```
 
 ## Version Compatibility
 
-The v2 API and SDK introduce breaking changes:
-
-| Component | v1 | v2 | Compatible |
-|-----------|----|----|-----------|
-| API endpoint | /v1/ | /v2/ | No |
-| SDK version | 1.x | 2.x | No |
-| Database | PostgreSQL 11 | PostgreSQL 13+ | Mostly |
-| Python SDK | 1.x | 2.x | No |
+| Component       | v1              | v2              | Compatible |
+|-----------------|-----------------|-----------------|------------|
+| API endpoint    | /v1/            | /v2/            | No         |
+| SDK version     | 1.x             | 2.x             | No         |
+| MongoDB version | MongoDB 6.0     | MongoDB 7.0+    | Mostly     |
+| Node.js SDK     | 1.x             | 2.x             | No         |
 
 ## Pre-Migration Checklist
 
 Before starting migration:
 
-- [ ] Review breaking changes documentation
-- [ ] Test in sandbox environment first
-- [ ] Backup production database
-- [ ] Schedule migration during low-traffic period
-- [ ] Prepare rollback plan
-- [ ] Update documentation and runbooks
+- Review breaking changes documentation
+- Test in a staging environment first
+- Take a full mongodump backup of the production database
+- Schedule migration during low-traffic period
+- Prepare rollback plan
+- Update documentation and runbooks
 
-## Breaking Changes in v2
+## Migration Phases
 
-### API Endpoint Changes
+### Phase 1: Preparation
 
-v1 endpoints are removed; use v2 equivalents:
-
-| v1 | v2 | Notes |
-|----|----|----- |
-| `/v1/users` | `/v2/users` | Same structure |
-| `/v1/orgs` | `/v2/organizations` | Renamed |
-| `GET /v1/users/{id}` | `GET /v2/users/{id}` | Same |
-
-All endpoints require explicit v2 in URL.
-
-### Response Format Changes
-
-v1 response:
-
-```json
-{
-  "id": "user_123",
-  "name": "Alice",
-  "created": "2026-01-01T00:00:00Z"
-}
-```
-
-v2 response:
-
-```json
-{
-  "data": {
-    "id": "user_123",
-    "name": "Alice",
-    "created_at": "2026-01-01T00:00:00Z"
-  },
-  "meta": {
-    "timestamp": "2026-02-18T12:34:56Z",
-    "request_id": "req_abc123"
-  }
-}
-```
-
-Wrap response data in `data` object; use `created_at` instead of `created`.
-
-### Authentication Changes
-
-v1 API key header:
-
-```
-Authorization: ApiKey sk_live_abc123
-```
-
-v2 API key header:
-
-```
-Authorization: Bearer sk_live_abc123
-```
-
-All SDKs updated automatically; if making raw requests, update headers.
-
-### SDK Changes
-
-v1 Python SDK:
-
-```python
-from saasplatform import Client
-client = Client('sk_live_abc123')
-users = client.list_users()
-```
-
-v2 Python SDK:
-
-```python
-from saasplatform import Client
-client = Client(api_key='sk_live_abc123')
-users = client.users.list()
-```
-
-Initialize with keyword arguments; use fluent API.
-
-## Migration Steps
-
-### Step 1: Update SDKs
-
-Update all SDKs to v2.x:
-
-```bash
-# Python
-pip install --upgrade saasplatform-sdk
-
-# Node.js
-npm install @saasplatform/sdk@latest
-
-# Go
-go get -u github.com/saasplatform/sdk-go
-```
-
-Don't deploy yet; test first.
-
-### Step 2: Update Code
-
-Replace v1 SDK calls with v2 equivalents:
-
-**Python v1 → v2:**
-
-```python
-# v1
-for user in client.get_users(status='active'):
-    print(user['name'])
-
-# v2
-for user in client.users.list(filter={'status': 'active'}):
-    print(user.name)
-```
-
-**Node.js v1 → v2:**
+Audit current documents and identify the scope of changes.
 
 ```javascript
-// v1
-const users = await client.getUsers();
+// Count documents by schema version
+db.organizations.aggregate([
+  { $group: { _id: "$schemaVersion", count: { $sum: 1 } } },
+  { $sort: { _id: 1 } }
+]);
 
-// v2
-const result = await client.users.list();
-for (const user of result.data) {
-  console.log(user.name);
+// Find documents missing schemaVersion (pre-versioning data)
+db.organizations.countDocuments({ schemaVersion: { $exists: false } });
+
+// Sample documents to understand current structure
+db.organizations.find({ schemaVersion: 1 }).limit(5).pretty();
+```
+
+### Phase 2: Backfill Missing Fields
+
+Use `updateMany()` to add default values for new fields and set the schema
+version on legacy documents.
+
+```javascript
+// Step 1: Tag legacy documents with schemaVersion 1
+db.organizations.updateMany(
+  { schemaVersion: { $exists: false } },
+  { $set: { schemaVersion: 1 } }
+);
+
+// Step 2: Add the new 'tags' field to all v1 documents
+db.organizations.updateMany(
+  { schemaVersion: 1, tags: { $exists: false } },
+  { $set: { tags: [] } }
+);
+
+// Step 3: Parse and restructure the address field using an aggregation pipeline
+db.organizations.updateMany(
+  { schemaVersion: 1, address: { $type: "string" } },
+  [
+    {
+      $set: {
+        "_oldAddress": "$address",
+        "address": {
+          street: { $trim: { input: { $arrayElemAt: [{ $split: ["$address", ","] }, 0] } } },
+          city: { $trim: { input: { $arrayElemAt: [{ $split: ["$address", ","] }, 1] } } },
+          state: { $trim: { input: {
+            $arrayElemAt: [
+              { $split: [{ $trim: { input: { $arrayElemAt: [{ $split: ["$address", ","] }, 2] } } }, " "] },
+              0
+            ]
+          } } },
+          postalCode: { $trim: { input: {
+            $arrayElemAt: [
+              { $split: [{ $trim: { input: { $arrayElemAt: [{ $split: ["$address", ","] }, 2] } } }, " "] },
+              1
+            ]
+          } } },
+          country: "US"
+        },
+        schemaVersion: 2,
+        migratedAt: new Date()
+      }
+    }
+  ]
+);
+```
+
+### Phase 3: Batch Migration for Large Collections
+
+For collections with millions of documents, process migrations in batches
+to avoid excessive memory use and oplog pressure.
+
+```javascript
+const batchSize = 1000;
+let processed = 0;
+let hasMore = true;
+
+while (hasMore) {
+  const batch = db.organizations.find(
+    { schemaVersion: 1 },
+    { _id: 1 }
+  ).limit(batchSize).toArray();
+
+  if (batch.length === 0) {
+    hasMore = false;
+    break;
+  }
+
+  const ids = batch.map(doc => doc._id);
+
+  db.organizations.updateMany(
+    { _id: { $in: ids } },
+    [
+      {
+        $set: {
+          tags: { $ifNull: ["$tags", []] },
+          schemaVersion: 2,
+          migratedAt: new Date()
+        }
+      }
+    ]
+  );
+
+  processed += batch.length;
+  print(`Migrated ${processed} documents...`);
+
+  sleep(100); // Small delay to reduce oplog pressure
 }
+
+print(`Migration complete. Total processed: ${processed}`);
 ```
 
-### Step 3: Test in Sandbox
+### Phase 4: Update Collection Validation
 
-Test all functionality in sandbox environment:
+After migrating all documents, update the collection's JSON Schema validation
+to enforce the new structure using `collMod`.
 
-```bash
-API_KEY=sk_test_sandbox_key npm test
+```javascript
+db.runCommand({
+  collMod: "organizations",
+  validator: {
+    $jsonSchema: {
+      bsonType: "object",
+      required: ["schemaVersion", "name", "contactEmail", "address"],
+      properties: {
+        schemaVersion: { bsonType: "int", minimum: 2 },
+        name: { bsonType: "string", minLength: 1 },
+        contactEmail: { bsonType: "string", pattern: "^.+@.+\\..+$" },
+        address: {
+          bsonType: "object",
+          required: ["street", "city", "state", "postalCode", "country"],
+          properties: {
+            street: { bsonType: "string" },
+            city: { bsonType: "string" },
+            state: { bsonType: "string" },
+            postalCode: { bsonType: "string" },
+            country: { bsonType: "string" }
+          }
+        },
+        tags: { bsonType: "array", items: { bsonType: "string" } }
+      }
+    }
+  },
+  validationLevel: "strict",
+  validationAction: "error"
+});
 ```
 
-Verify:
-- Authentication works
-- CRUD operations succeed
-- Error handling works
-- Pagination and filtering work
+## MongoDB 6.0 to 7.0 Upgrade Path
 
-### Step 4: Test in Production (Canary)
+### Pre-Upgrade Checklist
 
-Route a small percentage of traffic to v2:
+```javascript
+// Check current version
+db.version();
 
-```yaml
-# Kubernetes rollout
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: my-app
-spec:
-  strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxUnavailable: 0
-      maxSurge: 1
+// Ensure feature compatibility version is set correctly
+db.adminCommand({ getParameter: 1, featureCompatibilityVersion: 1 });
+
+// Verify all replica set members are healthy
+rs.status().members.forEach(m => {
+  print(`${m.name}: ${m.stateStr}`);
+});
 ```
 
-Monitor for errors:
+### Upgrade Steps
 
-```bash
-# Watch error rates
-kubectl logs -l app=my-app --since=5m | grep ERROR
+1. **Upgrade secondaries first**, one at a time, waiting for each to recover.
+2. **Step down the primary** using `rs.stepDown()`.
+3. **Upgrade the former primary** (now a secondary).
+4. **Set the feature compatibility version** after all members are upgraded.
 
-# Check response times
-kubectl top pods
+```javascript
+// After all members are on MongoDB 7.0
+db.adminCommand({ setFeatureCompatibilityVersion: "7.0" });
+
+// Verify the upgrade
+db.adminCommand({ getParameter: 1, featureCompatibilityVersion: 1 });
 ```
 
-### Step 5: Full Rollout
+### MongoDB 7.0 Features to Adopt
 
-If canary succeeds, roll out to all:
+After upgrading, take advantage of new capabilities:
 
-```bash
-kubectl rollout status deployment/my-app
+```javascript
+// Compound wildcard indexes
+db.organizations.createIndex({ "address.$**": 1 });
+
+// $percentile and $median aggregation operators
+db.orders.aggregate([
+  {
+    $group: {
+      _id: null,
+      medianTotal: { $median: { input: "$total", method: "approximate" } },
+      p95Total: { $percentile: { input: "$total", p: [0.95], method: "approximate" } }
+    }
+  }
+]);
 ```
 
-### Step 6: Monitor
+## Rollback Strategy
 
-After rollout, closely monitor:
+Always prepare a rollback plan before migrating.
 
-- Error rates (target: <0.1%)
-- Response times (no significant increase)
-- Authentication failures
-- Rate limiting issues
+```javascript
+// Before migration, store a rollback record
+db.migrationLog.insertOne({
+  migration: "v1-to-v2-organizations",
+  startedAt: new Date(),
+  backupPath: "/backups/pre-migration/20260301",
+  rollbackScript: "rollback-v2-to-v1.js",
+  status: "in-progress"
+});
 
-## Database Migration
-
-No database schema migration needed; v2 API is compatible with existing data.
-
-However, some v2 features require schema extensions:
-
-```sql
--- v2 adds column
-ALTER TABLE users ADD COLUMN verification_status VARCHAR(50) DEFAULT 'pending';
-
--- Create index for new field
-CREATE INDEX idx_users_verification ON users(verification_status);
+// Rollback: revert v2 documents to v1 using the stored old address
+db.organizations.updateMany(
+  { schemaVersion: 2, _oldAddress: { $exists: true } },
+  [
+    {
+      $set: {
+        address: "$_oldAddress",
+        schemaVersion: 1
+      }
+    },
+    { $unset: ["_oldAddress", "migratedAt", "tags"] }
+  ]
+);
 ```
 
-Run migrations during low-traffic period.
+## Best Practices
 
-## Rollback Plan
-
-If migration fails:
-
-1. **Revert SDKs to v1.x**
-2. **Revert code changes**
-3. **Redeploy to production**
-4. **Restore database** (if schema changed)
-
-Rollback should complete within 30 minutes.
-
-## Parallel Running (Optional)
-
-For critical applications, run v1 and v2 in parallel:
-
-```
-┌──────────────┐
-│ Load Balancer │
-├──────────────┤
-│ v1 API (50%) │
-│ v2 API (50%) │
-└──────────────┘
-```
-
-Gradually increase v2 percentage:
-
-- Day 1: 10% v2
-- Day 2: 25% v2
-- Day 3: 50% v2
-- Day 4: 100% v2
-
-This approach is safer but more complex.
-
-## Troubleshooting
-
-### "401 Unauthorized"
-
-Check API key format. v2 requires `Bearer` scheme:
-
-```
-Authorization: Bearer sk_live_abc123
-```
-
-### "404 Not Found"
-
-Endpoint path changed. Check v2 documentation:
-
-```
-/v1/orgs → /v2/organizations
-```
-
-### Response parsing errors
-
-v2 wraps responses in `data` object:
-
-```python
-# v1
-users = response['users']
-
-# v2
-users = response['data']
-```
-
-### Type errors (Python/TypeScript)
-
-v2 uses different types. Update type annotations:
-
-```python
-# v1
-def process(user: dict):
-
-# v2
-from saasplatform.models import User
-def process(user: User):
-```
-
-## Timeline Estimate
-
-Typical migration timeline:
-
-- Planning & testing: 1-2 weeks
-- Code updates: 1-2 weeks
-- Canary deployment: 1 week
-- Full rollout: 1 day
-- Monitoring & stability: 1 week
-
-**Total: 4-6 weeks** for large applications
-
-Smaller applications: 1-2 weeks
-
-## Support
-
-For migration assistance:
-
-- Review [v2 Documentation](../endpoints/overview.md)
-- Check [SDK Release Notes](sdks/sdk-versioning.md)
-- Contact support: support@example.com
-- Community: Discord/forum
-
-v1 support ends 2026-01-01. Plan migration accordingly.
+1. **Always include a `schemaVersion` field** in your documents from day one.
+2. **Migrate in batches** to control resource consumption and enable progress tracking.
+3. **Test migrations on a staging replica** before running in production.
+4. **Take a full mongodump backup** immediately before any migration.
+5. **Use aggregation pipelines in updates** for complex field transformations.
+6. **Keep rollback scripts** alongside migration scripts.
+7. **Monitor oplog lag** during large batch migrations with `rs.printSecondaryReplicationInfo()`.

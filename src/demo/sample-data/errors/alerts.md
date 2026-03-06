@@ -102,8 +102,8 @@ Document standard responses:
 
 ## Response
 1. Check service logs: `kubectl logs -f deployment/payment`
-2. Check database: `psql ... "SELECT count(*) FROM connections"`
-3. If database connections maxed: increase pool size
+2. Check database: `mongosh --eval "db.serverStatus().connections"`
+3. If database connections maxed: increase pool size in connection string
 4. If recent deploy: rollback: `kubectl rollout undo deployment/payment`
 5. If unknown: page db-oncall team
 
