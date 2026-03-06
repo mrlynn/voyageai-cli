@@ -203,6 +203,7 @@ function registerIngest(program) {
     .option('--batch-size <n>', 'Documents per batch (default: 50, max: 128)', (v) => parseInt(v, 10), 50)
     .option('--text-column <name>', 'CSV column to embed (required for CSV)')
     .option('--text-field <name>', 'JSON/JSONL field containing text to embed', 'text')
+    .option('--local', 'Use local voyage-4-nano model (no API key required)')
     .option('--dry-run', 'Parse file and show stats without embedding or inserting')
     .option('--strict', 'Abort on first batch error')
     .option('--json', 'Machine-readable JSON output')
@@ -220,7 +221,10 @@ function registerIngest(program) {
 
       // Clamp batch size
       if (opts.batchSize > 128) {
-        console.error(ui.error('Batch size cannot exceed 128 (Voyage API limit).'));
+        const reason = opts.local
+          ? 'Batch size cannot exceed 128 (memory limit).'
+          : 'Batch size cannot exceed 128 (Voyage API limit).';
+        console.error(ui.error(reason));
         process.exit(1);
       }
       if (opts.batchSize < 1) {
@@ -303,18 +307,42 @@ function registerIngest(program) {
           const batchTexts = batch.map(d => d[textKey]);
 
           try {
-            const embedResult = await generateEmbeddings(batchTexts, {
-              model: opts.model,
-              inputType: opts.inputType,
-              dimensions: opts.dimensions,
-            });
+            let embedResult;
+            if (opts.local) {
+              const { generateLocalEmbeddings } = require('../nano/nano-local.js');
+              embedResult = await generateLocalEmbeddings(batchTexts, {
+                inputType: opts.inputType,
+                dimensions: opts.dimensions,
+              });
+            } else {
+              embedResult = await generateEmbeddings(batchTexts, {
+                model: opts.model,
+                inputType: opts.inputType,
+                dimensions: opts.dimensions,
+              });
+            }
 
-            // Attach embeddings to documents
+            // Attach embeddings + source metadata to documents
+            const sourceFile = path.basename(opts.file);
             for (let j = 0; j < batch.length; j++) {
               batch[j][opts.field] = embedResult.data[j].embedding;
-              batch[j].model = opts.model;
+              batch[j].model = opts.local ? 'voyage-4-nano' : opts.model;
               batch[j].dimensions = embedResult.data[j].embedding.length;
               batch[j].ingestedAt = new Date();
+              // Ensure every document has a source label for chat display
+              if (!batch[j].source) {
+                batch[j].source = sourceFile;
+              }
+              // Ensure metadata object exists with identifying fields
+              if (!batch[j].metadata) {
+                batch[j].metadata = {};
+              }
+              if (!batch[j].metadata.source) {
+                batch[j].metadata.source = sourceFile;
+              }
+              if (!batch[j].metadata.filename) {
+                batch[j].metadata.filename = sourceFile;
+              }
             }
 
             // Insert batch into MongoDB
