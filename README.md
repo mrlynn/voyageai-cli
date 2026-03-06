@@ -83,6 +83,7 @@ RAG workflows from npm<br/><br/>
   - [Core Workflow](#core-workflow)
   - [Individual Commands](#individual-commands)
   - [Models & Benchmarks](#models--benchmarks)
+  - [Local Inference](#local-inference)
   - [Benchmarking Your Data](#benchmarking-your-data)
   - [Learn](#learn)
   - [Environment & Auth](#environment--auth)
@@ -427,6 +428,59 @@ vai models --benchmarks
 | OpenAI v3 Large | 62.57 |
 
 Also available: `voyage-code-3` (code), `voyage-finance-2` (finance), `voyage-law-2` (legal), `rerank-2.5` / `rerank-2.5-lite`.
+
+### Local Inference
+
+Run embeddings locally with `voyage-4-nano` -- no API key, no network, no cost.
+Nano shares the same embedding space as the Voyage 4 API models, so you can
+prototype locally and upgrade to the API when ready.
+
+**Prerequisites:** Python 3.10+ and ~700MB disk space for the model.
+
+#### Setup (one-time)
+
+```bash
+vai nano setup      # Creates venv, installs deps, downloads model
+vai nano status     # Verify everything is ready
+```
+
+#### Usage
+
+```bash
+# Embed text locally
+vai embed "What is MongoDB?" --local
+
+# Run the full pipeline locally
+vai pipeline ./docs/ --local --db myapp --collection knowledge
+
+# Bulk ingest with local embeddings
+vai ingest --file corpus.jsonl --local --db myapp --collection docs
+```
+
+#### Interactive Demo
+
+```bash
+vai demo nano       # Zero-dependency guided walkthrough
+```
+
+Covers similarity matrices, MRL dimension comparison, and interactive REPL --
+all without an API key or MongoDB connection.
+
+#### Nano Commands
+
+| Command | Description |
+|---------|-------------|
+| `vai nano setup` | Set up Python venv, install deps, download model |
+| `vai nano status` | Check local inference readiness |
+| `vai nano test` | Smoke-test local inference |
+| `vai nano info` | Show model details and cache location |
+| `vai nano clear-cache` | Remove cached model files |
+
+#### Upgrade Path
+
+Since nano shares the Voyage 4 embedding space, your local embeddings are
+compatible with `voyage-4`, `voyage-4-lite`, and `voyage-4-large`. No
+re-vectorization needed when you add an API key.
 
 ### Benchmarking Your Data
 
