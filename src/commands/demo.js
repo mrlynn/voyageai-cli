@@ -103,6 +103,7 @@ function registerDemo(program) {
     .description('Guided demonstrations of Voyage AI features')
     .option('--no-pause', 'Skip Enter prompts and interactive REPL (for CI/recording)')
     .option('-v, --verbose', 'Show theory and behind-the-scenes detail')
+    .option('--local', 'Use local nano embeddings for chat demo')
     .action(async (subcommand, opts) => {
       if (!subcommand) {
         await showDemoMenu(opts);
@@ -709,34 +710,68 @@ async function runChatDemo(opts) {
   const telemetry = require('../lib/telemetry');
   const verbose = opts.verbose || false;
   const interactive = opts.pause !== false;
+  const isLocal = opts.local || false;
 
-  const prereq = checkPrerequisites(['api-key', 'mongodb', 'llm']);
+  // Nano prerequisite check (before standard prerequisites)
+  let generateLocalEmbeddings;
+  if (isLocal) {
+    const { checkVenv, checkModel } = require('../nano/nano-health');
+    const venv = checkVenv();
+    const model = checkModel();
+    if (!venv.ok || !model.ok) {
+      console.log('');
+      console.log(pc.red('  voyage-4-nano is not set up.'));
+      console.log(`  Run ${pc.cyan('vai nano setup')} to install voyage-4-nano`);
+      console.log('');
+      process.exit(1);
+    }
+    generateLocalEmbeddings = require('../nano/nano-local').generateLocalEmbeddings;
+  }
+
+  const requiredChecks = isLocal ? ['mongodb', 'llm'] : ['api-key', 'mongodb', 'llm'];
+  const prereq = checkPrerequisites(requiredChecks);
   if (!prereq.ok) {
     printPrereqErrors(prereq.errors);
     process.exit(1);
   }
 
   console.log('');
-  console.log(pc.bold('  💬 Chat With Your Docs Demo'));
+  console.log(pc.bold(isLocal ? '  💬 Chat With Your Docs Demo (local)' : '  💬 Chat With Your Docs Demo'));
   console.log(pc.dim('  ━━━━━━━━━━━━━━━━━━━━━━━━━━━'));
   console.log('');
   console.log('  This demo ingests sample documentation, then runs a RAG-powered');
   console.log('  chat session — asking questions answered by the knowledge base.');
   console.log('');
 
-  theory(verbose,
-    'RAG (Retrieval-Augmented Generation) combines search with LLM generation:',
-    '',
-    '  1. CHUNK: Split documents into overlapping sections (~800 chars)',
-    '  2. EMBED: Convert each chunk to a 1024-dim vector with voyage-4-large',
-    '  3. INDEX: Store vectors in MongoDB Atlas with a vector search index',
-    '  4. QUERY: Embed the user\'s question, find nearest chunk vectors',
-    '  5. RERANK: Re-score candidates with a cross-encoder for precision',
-    '  6. GENERATE: Send top chunks + question to an LLM for a grounded answer',
-    '',
-    'The result: the LLM answers using your documents as evidence,',
-    'reducing hallucination and providing traceable sources.',
-  );
+  if (isLocal) {
+    theory(verbose,
+      'RAG (Retrieval-Augmented Generation) combines search with LLM generation:',
+      '',
+      '  1. CHUNK: Split documents into overlapping sections (~800 chars)',
+      '  2. EMBED: Convert each chunk to a 1024-dim vector with voyage-4-nano (local inference)',
+      '  3. INDEX: Store vectors in MongoDB Atlas with a vector search index',
+      '  4. QUERY: Embed the user\'s question, find nearest chunk vectors',
+      '  5. RERANK: Skipped in local mode (requires API key)',
+      '  6. GENERATE: Send top chunks + question to an LLM for a grounded answer',
+      '',
+      'The result: the LLM answers using your documents as evidence,',
+      'reducing hallucination and providing traceable sources.',
+    );
+  } else {
+    theory(verbose,
+      'RAG (Retrieval-Augmented Generation) combines search with LLM generation:',
+      '',
+      '  1. CHUNK: Split documents into overlapping sections (~800 chars)',
+      '  2. EMBED: Convert each chunk to a 1024-dim vector with voyage-4-large',
+      '  3. INDEX: Store vectors in MongoDB Atlas with a vector search index',
+      '  4. QUERY: Embed the user\'s question, find nearest chunk vectors',
+      '  5. RERANK: Re-score candidates with a cross-encoder for precision',
+      '  6. GENERATE: Send top chunks + question to an LLM for a grounded answer',
+      '',
+      'The result: the LLM answers using your documents as evidence,',
+      'reducing hallucination and providing traceable sources.',
+    );
+  }
 
   const demoStart = Date.now();
   const dbName = opts.db || 'vai_demo';
@@ -751,7 +786,7 @@ async function runChatDemo(opts) {
     step(verbose, 'Splitting by ## heading sections (preserving context)');
     step(verbose, 'Stamping source metadata for human-readable attribution');
 
-    const ingestResult = await ingestChunkedData(SAMPLE_DATA_DIR, {
+    const ingestOpts = {
       db: dbName,
       collection: collName,
       onProgress: (event, data) => {
@@ -768,7 +803,15 @@ async function runChatDemo(opts) {
             break;
         }
       },
-    });
+    };
+
+    if (isLocal) {
+      ingestOpts.embedFn = generateLocalEmbeddings;
+      ingestOpts.model = 'voyage-4-nano';
+      ingestOpts.dimensions = 1024;
+    }
+
+    const ingestResult = await ingestChunkedData(SAMPLE_DATA_DIR, ingestOpts);
 
     console.log(`  ✓ Stored in ${ingestResult.collectionName}`);
     console.log('');
@@ -826,6 +869,14 @@ async function runChatDemo(opts) {
 
       process.stdout.write(`  ${pc.green('vai:')} `);
 
+      const chatOpts = { maxDocs: 3, stream: true, textField: 'text' };
+      if (isLocal) {
+        chatOpts.embedFn = generateLocalEmbeddings;
+        chatOpts.model = 'voyage-4-nano';
+        chatOpts.dimensions = 1024;
+        chatOpts.rerank = false;
+      }
+
       await retryQuery(async () => {
         for await (const event of chatTurn({
           query,
@@ -833,14 +884,15 @@ async function runChatDemo(opts) {
           collection: collName,
           llm,
           history,
-          opts: { maxDocs: 3, stream: true, textField: 'text' },
+          opts: chatOpts,
         })) {
           switch (event.type) {
             case 'retrieval':
               if (verbose) {
                 const docs = event.data.docs || [];
+                const rerankedNote = isLocal ? ', reranking skipped' : '';
                 console.log('');
-                console.log(`  ${pc.dim(`  Retrieved ${docs.length} chunks in ${event.data.timeMs}ms`)}`);
+                console.log(`  ${pc.dim(`  Retrieved ${docs.length} chunks in ${event.data.timeMs}ms${rerankedNote}`)}`);
                 for (const d of docs.slice(0, 3)) {
                   console.log(`  ${pc.dim(`    • ${d.source} (score: ${(d.score || 0).toFixed(3)})`)}`);
                 }
@@ -878,13 +930,23 @@ async function runChatDemo(opts) {
       console.log(`  ${pc.cyan('You:')} ${query}`);
       console.log('');
 
-      theory(verbose,
-        'Step A: Embedding query with voyage-4-large',
-        `Step B: $vectorSearch against ${ingestResult.chunkCount} chunks (cosine similarity)`,
-        'Step C: Reranking top candidates with cross-encoder',
-        'Step D: Building prompt with retrieved context + history',
-        `Step E: Streaming response from ${llm.name}/${llm.model}`,
-      );
+      if (isLocal) {
+        theory(verbose,
+          'Step A: Embedding query with voyage-4-nano (local)',
+          `Step B: $vectorSearch against ${ingestResult.chunkCount} chunks (cosine similarity)`,
+          'Step C: Reranking: skipped (local mode)',
+          'Step D: Building prompt with retrieved context + history',
+          `Step E: Streaming response from ${llm.name}/${llm.model}`,
+        );
+      } else {
+        theory(verbose,
+          'Step A: Embedding query with voyage-4-large',
+          `Step B: $vectorSearch against ${ingestResult.chunkCount} chunks (cosine similarity)`,
+          'Step C: Reranking top candidates with cross-encoder',
+          'Step D: Building prompt with retrieved context + history',
+          `Step E: Streaming response from ${llm.name}/${llm.model}`,
+        );
+      }
 
       try {
         await executeChatTurn(query);
