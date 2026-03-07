@@ -22,12 +22,12 @@ See: .planning/PROJECT.md (updated 2026-03-07)
 
 ## Current Position
 
-Phase: 12 of 15 (Nano API Server)
-Plan: 1 of 2 in current phase (12-01 complete)
-Status: Executing
-Last activity: 2026-03-07 — Completed 12-01 nano API server module (2 tasks, 2 files)
+Phase: 12 of 15 (Nano API Server) -- COMPLETE
+Plan: 2 of 2 in current phase (12-02 complete)
+Status: Phase Complete
+Last activity: 2026-03-07 — Completed 12-02 nano API endpoint tests (1 task, 1 file)
 
-Progress: [██████████████████████░░░░░░░░] 73% (11/15 phases shipped in v1.0-v1.2)
+Progress: [████████████████████████░░░░░░] 80% (12/15 phases shipped)
 
 ## Performance Metrics
 
@@ -44,6 +44,8 @@ Full decision log in PROJECT.md Key Decisions tables.
 - [12-01] Dependencies injected via context parameter for testability and decoupling
 - [12-01] No caching on status endpoint - fresh health checks every call
 - [12-01] Texts echoed back in similarity response for frontend label alignment
+- [12-02] Used Readable.from() for stream-based mock requests in tests
+- [12-02] Mock generateLocalEmbeddings returns deterministic vectors for predictable assertions
 
 ### Pending Todos
 
@@ -56,5 +58,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-07
-Stopped at: Completed 12-01-PLAN.md
+Stopped at: Completed 12-02-PLAN.md (Phase 12 complete)
 Resume file: None
