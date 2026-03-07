@@ -3921,6 +3921,72 @@ select:focus { outline: none; border-color: var(--accent); }
   vertical-align: middle;
 }
 
+/* ── Cross-Bridge Comparison ── */
+.nano-xbridge-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  margin-top: 12px;
+}
+.nano-xbridge-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+.nano-xbridge-card .xbridge-source {
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+.nano-xbridge-card .xbridge-model {
+  font-size: 0.85em;
+  color: var(--text-muted);
+}
+.nano-xbridge-card .xbridge-latency {
+  font-size: 0.85em;
+  color: var(--text-dim);
+}
+.nano-xbridge-card .xbridge-vector-preview {
+  font-family: var(--mono);
+  font-size: 0.8em;
+  max-height: 60px;
+  overflow: hidden;
+  color: var(--text-dim);
+  margin-top: 8px;
+}
+.nano-xbridge-similarity {
+  text-align: center;
+  margin: 16px 0;
+}
+.nano-xbridge-similarity .score {
+  font-size: 2em;
+  font-weight: bold;
+  color: var(--accent);
+  display: block;
+}
+.nano-xbridge-similarity .label {
+  font-size: 0.85em;
+  color: var(--text-muted);
+}
+.nano-xbridge-similarity.perfect .score { color: var(--success); }
+.nano-xbridge-similarity.high .score { color: var(--success); }
+.nano-xbridge-similarity.mid .score { color: var(--warning); }
+.nano-xbridge-similarity.low .score { color: var(--error); }
+.nano-xbridge-no-key {
+  background: var(--bg-surface);
+  border: 1px dashed var(--border);
+  padding: 16px;
+  border-radius: var(--radius);
+  text-align: center;
+  color: var(--text-dim);
+}
+.nano-xbridge-interpretation {
+  text-align: center;
+  font-size: 0.9em;
+  color: var(--text-muted);
+  margin-top: 8px;
+}
+
 /* ── Library Search ── */
 .wf-library-search-wrap {
   padding: 8px 12px 4px; position: relative;
@@ -8715,7 +8781,7 @@ Reranking models rescore initial search results to improve relevance ordering.</
           <strong>💬 Chat</strong> — RAG-powered chat with your documents, configurable system prompts<br>
           <strong>🔄 Workflows</strong> — Multi-step agent workflows with thinking panels and tool orchestration<br>
           <strong>⏱ Benchmark</strong> — Compare model latency, ranking quality, and costs<br>
-          <strong>📚 Explore</strong> — 22 interactive concepts covering embeddings, vector search, multimodal, RAG, and more
+          <strong>📚 Explore</strong> — 23 interactive concepts covering embeddings, vector search, multimodal, RAG, and more
         </div>
       </div>
 
@@ -9300,6 +9366,43 @@ Retrieval augmented generation combines search with LLMs</textarea>
         <div class="card-title">Results</div>
         <div id="nanoDimStats"></div>
         <div id="nanoDimCards"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cross-Bridge Comparison Section (shown when nano bridge is ready) -->
+  <div id="nanoCrossbridgeSection" style="display:none;">
+    <div class="card" style="margin-top:16px;">
+      <div class="card-title">Cross-Bridge Comparison</div>
+      <p style="color:var(--text-dim);font-size:0.9em;margin-bottom:12px;">Compare nano (local) vs API (cloud) embeddings for the same text to verify they share the same vector space.</p>
+      <textarea id="nanoXbridgeText" rows="3" placeholder="Enter text to compare across bridges..." aria-label="Text for cross-bridge comparison">MongoDB Atlas Vector Search enables semantic search over your data using embeddings.</textarea>
+    </div>
+
+    <div class="options-row">
+      <div class="option-group">
+        <span class="option-label">Dimension</span>
+        <select id="nanoXbridgeDimension">
+          <option value="256">256</option>
+          <option value="512">512</option>
+          <option value="1024" selected>1024</option>
+          <option value="2048">2048</option>
+        </select>
+      </div>
+      <button class="btn" id="nanoXbridgeBtn" onclick="nanoDoCrossbridge()">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M4 12h16M4 12l4-4M4 12l4 4M20 12l-4-4M20 12l-4 4"/></svg>
+        Compare Bridges
+      </button>
+    </div>
+
+    <div class="error-msg" id="nanoXbridgeError"></div>
+
+    <div class="result-section" id="nanoXbridgeResult">
+      <div class="card">
+        <div class="card-title">Results</div>
+        <div id="nanoXbridgeNoKey" class="nano-xbridge-no-key" style="display:none;">
+          &#128273; No API key configured. Add your Voyage AI API key in Settings to enable cross-bridge comparison.
+        </div>
+        <div id="nanoXbridgeContent"></div>
       </div>
     </div>
   </div>
@@ -10135,6 +10238,7 @@ async function nanoInit() {
   const embedSection = document.getElementById('nanoEmbedSection');
   const simSection = document.getElementById('nanoSimilaritySection');
   const dimSection = document.getElementById('nanoDimensionSection');
+  const xbridgeSection = document.getElementById('nanoCrossbridgeSection');
 
   content.innerHTML = '<div class="nano-status-loading">Checking nano bridge status...</div>';
   banner.style.display = 'none';
@@ -10170,12 +10274,14 @@ async function nanoInit() {
       if (embedSection) embedSection.style.display = 'block';
       if (simSection) simSection.style.display = 'block';
       if (dimSection) dimSection.style.display = 'block';
+      if (xbridgeSection) xbridgeSection.style.display = 'block';
     } else {
       // Show setup required banner, disable embed section
       banner.style.display = 'flex';
       if (embedSection) embedSection.style.display = 'none';
       if (simSection) simSection.style.display = 'none';
       if (dimSection) dimSection.style.display = 'none';
+      if (xbridgeSection) xbridgeSection.style.display = 'none';
     }
   } catch (err) {
     content.innerHTML = '<div class="nano-status-loading" style="color:var(--error,#ff6b6b)">Failed to check nano status: ' + err.message + '</div>';
@@ -10183,6 +10289,7 @@ async function nanoInit() {
     if (embedSection) embedSection.style.display = 'none';
     if (simSection) simSection.style.display = 'none';
     if (dimSection) dimSection.style.display = 'none';
+    if (xbridgeSection) xbridgeSection.style.display = 'none';
   }
 }
 
@@ -10453,6 +10560,112 @@ window.nanoDoDimensions = async function() {
     showError('nanoDimError', err.message);
   } finally {
     setLoading('nanoDimBtn', false);
+  }
+};
+
+// ── Cross-Bridge Comparison ──
+
+window.nanoDoCrossbridge = async function() {
+  hideError('nanoXbridgeError');
+  var text = document.getElementById('nanoXbridgeText').value.trim();
+  if (!text) {
+    showError('nanoXbridgeError', 'Enter some text to compare across bridges');
+    return;
+  }
+
+  var dimension = parseInt(document.getElementById('nanoXbridgeDimension').value, 10);
+  setLoading('nanoXbridgeBtn', true);
+
+  try {
+    var res = await fetch('/api/nano/crossbridge', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: text, dimension: dimension }),
+    });
+    var data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.error || 'Cross-bridge comparison failed');
+    }
+
+    var noKeyEl = document.getElementById('nanoXbridgeNoKey');
+    var contentEl = document.getElementById('nanoXbridgeContent');
+
+    if (data.apiError) {
+      // No API key or API error - show message
+      noKeyEl.style.display = 'block';
+      noKeyEl.innerHTML = '&#128273; ' + data.apiError + '. Add your Voyage AI API key in Settings to enable cross-bridge comparison.';
+      contentEl.innerHTML = '';
+
+      // Still show nano result
+      var nanoOnlyHtml = '<div class="nano-xbridge-cards">';
+      nanoOnlyHtml += '<div class="nano-xbridge-card">';
+      nanoOnlyHtml += '<div class="xbridge-source">Nano (Local)</div>';
+      nanoOnlyHtml += '<div class="xbridge-model">' + data.nano.model + '</div>';
+      nanoOnlyHtml += '<div class="xbridge-latency">' + data.nano.latency_ms + 'ms</div>';
+      var nanoPreview = data.nano.embedding.slice(0, 8).map(function(v) { return v.toFixed(6); }).join(', ');
+      nanoOnlyHtml += '<div class="xbridge-vector-preview">[' + nanoPreview + ', ...]</div>';
+      nanoOnlyHtml += '</div>';
+      nanoOnlyHtml += '</div>';
+      contentEl.innerHTML = nanoOnlyHtml;
+    } else {
+      // Both nano and API results available
+      noKeyEl.style.display = 'none';
+
+      var html = '';
+
+      // Similarity score
+      var score = data.similarity;
+      var cls = 'low';
+      if (score >= 0.99) cls = 'perfect';
+      else if (score >= 0.95) cls = 'high';
+      else if (score >= 0.90) cls = 'mid';
+
+      html += '<div class="nano-xbridge-similarity ' + cls + '">';
+      html += '<span class="score">' + score.toFixed(6) + '</span>';
+      html += '<span class="label">Cosine Similarity</span>';
+      html += '</div>';
+
+      // Two-card grid
+      html += '<div class="nano-xbridge-cards">';
+
+      // Nano card
+      html += '<div class="nano-xbridge-card">';
+      html += '<div class="xbridge-source">Nano (Local)</div>';
+      html += '<div class="xbridge-model">' + data.nano.model + '</div>';
+      html += '<div class="xbridge-latency">' + data.nano.latency_ms + 'ms</div>';
+      var nPrev = data.nano.embedding.slice(0, 8).map(function(v) { return v.toFixed(6); }).join(', ');
+      html += '<div class="xbridge-vector-preview">[' + nPrev + ', ...]</div>';
+      html += '</div>';
+
+      // API card
+      html += '<div class="nano-xbridge-card">';
+      html += '<div class="xbridge-source">API (Cloud)</div>';
+      html += '<div class="xbridge-model">' + data.api.model + '</div>';
+      html += '<div class="xbridge-latency">' + data.api.latency_ms + 'ms</div>';
+      var aPrev = data.api.embedding.slice(0, 8).map(function(v) { return v.toFixed(6); }).join(', ');
+      html += '<div class="xbridge-vector-preview">[' + aPrev + ', ...]</div>';
+      html += '</div>';
+
+      html += '</div>';
+
+      // Interpretation
+      var interp = '';
+      if (score >= 0.99) interp = 'Vectors are nearly identical - nano faithfully reproduces API embeddings';
+      else if (score >= 0.95) interp = 'Vectors are highly similar - nano embeddings are interoperable with API';
+      else if (score >= 0.90) interp = 'Vectors share the same space with minor differences';
+      else interp = 'Significant differences detected';
+
+      html += '<div class="nano-xbridge-interpretation">' + interp + '</div>';
+
+      contentEl.innerHTML = html;
+    }
+
+    document.getElementById('nanoXbridgeResult').classList.add('visible');
+  } catch (err) {
+    showError('nanoXbridgeError', err.message);
+  } finally {
+    setLoading('nanoXbridgeBtn', false);
   }
 };
 
@@ -11717,7 +11930,8 @@ const CONCEPT_META = {
   'mixture-of-experts': { icon: LI.puzzle,    tab: 'embed' },
   'shared-embedding-space': { icon: LI.link,  tab: 'compare' },
   'rteb-benchmarks':   { icon: LI.barChart,   tab: 'benchmark' },
-  'voyage-4-nano':     { icon: LI.microscope, tab: 'embed' },
+  'voyage-4-nano':     { icon: LI.microscope, tab: 'nano' },
+  'local-inference':   { icon: LI.laptop,     tab: 'nano' },
   'rerank-eval':       { icon: LI.ruler,      tab: 'benchmark' },
   'multimodal-embeddings': { icon: LI.image,  tab: 'multimodal' },
   'cross-modal-search':    { icon: LI.shuffle, tab: 'multimodal' },

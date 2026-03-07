@@ -329,6 +329,7 @@ function createPlaygroundServer() {
           checkVenv: require('../nano/nano-health.js').checkVenv,
           checkModel: require('../nano/nano-health.js').checkModel,
           checkDevice: require('../nano/nano-health.js').checkDevice,
+          generateCloudEmbeddings: generateEmbeddings,
         });
         if (handled) return;
       }
@@ -2041,8 +2042,14 @@ function createPlaygroundServer() {
       // Catch API errors that call process.exit — we override for playground
       console.error(`Playground API error: ${err.message}`);
       if (!res.headersSent) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: err.message || 'Internal server error' }));
+        const statusCode = Number.isInteger(err.statusCode) ? err.statusCode : 500;
+        res.writeHead(statusCode, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          error: err.message || 'Internal server error',
+          code: err.code,
+          hint: err.hint,
+          details: err.details,
+        }));
       }
     }
   });
