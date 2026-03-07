@@ -9,6 +9,7 @@ const RST = '\x1b[0m';
 
 const teal = (text) => `${fg(...COLORS.teal)}${text}${RST}`;
 const cyan = (text) => `${fg(...COLORS.cyan)}${text}${RST}`;
+const green = (text) => `${fg(...COLORS.green)}${text}${RST}`;
 const dim  = (text) => pc.dim(text);
 const bold = (text) => pc.bold(text);
 
@@ -610,7 +611,7 @@ function scoreBar(score, barWidth = 12) {
   const filled = Math.round(score * barWidth);
   const empty = barWidth - filled;
   const bar = '█'.repeat(filled) + '░'.repeat(empty);
-  const color = score >= 0.7 ? pc.green : score >= 0.4 ? pc.yellow : pc.red;
+  const color = score >= 0.7 ? green : score >= 0.4 ? pc.yellow : pc.red;
   return color(bar) + ' ' + color(score.toFixed(2));
 }
 
@@ -712,7 +713,7 @@ function truncate(str, maxLen) {
  * @returns {string}
  */
 function renderUserPrompt() {
-  return pc.bold(pc.green('\u276F '));
+  return pc.bold(green('\u276F '));
 }
 
 /**
@@ -780,7 +781,7 @@ function createTimedSpinner(baseText) {
       clear();
       if (isTTY) {
         const text = msg || `${baseText} ${pc.dim(`(${elapsed}s)`)}`;
-        process.stderr.write(`${pc.green('✓')} ${text}\n`);
+        process.stderr.write(`${green('✓')} ${text}\n`);
       }
     },
     updateText(newBase) {
@@ -811,10 +812,20 @@ function renderHeader(info) {
       ? `${dim('Database:')}  ${info.db || 'auto'}`
       : `${dim('Knowledge:')} ${info.db}.${info.collection}`;
 
+    // Embedding model badge
+    const embedName = info.embeddingModel || 'default';
+    const embedBadge = info.isLocalEmbed
+      ? dim('[') + green('LOCAL') + dim(']')
+      : dim('[') + cyan('API') + dim(']');
+    const embedLine = info.embeddingModel
+      ? `${dim('Embedding:')} ${embedName} ${embedBadge}`
+      : `${dim('Embedding:')} ${dim(embedName)}`;
+
     const textLines = [
       bold(teal('vai chat')) + dim(` v${info.version}`),
       '',
       `${dim('Provider:')}  ${info.provider}` + dim(` (${info.model})`),
+      embedLine,
       `${dim('Mode:')}      ${modeLabel}`,
       knowledgeLine,
       `${dim('Session:')}   ${dim(info.sessionId)}`,
@@ -825,10 +836,19 @@ function renderHeader(info) {
   }
 
   // ── Plain-text fallback (non-interactive / --json / --quiet) ──
+  const embedNamePlain = info.embeddingModel || 'default';
+  const embedBadgePlain = info.isLocalEmbed
+    ? pc.dim('[') + green('LOCAL') + pc.dim(']')
+    : pc.dim('[') + cyan('API') + pc.dim(']');
+  const embedLinePlain = info.embeddingModel
+    ? `  ${pc.dim('Embedding:')} ${embedNamePlain} ${embedBadgePlain}`
+    : `  ${pc.dim('Embedding:')} ${pc.dim(embedNamePlain)}`;
+
   const lines = [];
   lines.push('');
   lines.push(`${pc.bold('vai chat')} v${info.version}`);
   lines.push(`  ${pc.dim('Provider:')}  ${info.provider} (${info.model})`);
+  lines.push(embedLinePlain);
   if (info.mode === 'agent') {
     lines.push(`  ${pc.dim('Mode:')}      agent (tool-calling)`);
     if (info.db) lines.push(`  ${pc.dim('Default DB:')} ${info.db}`);
@@ -868,6 +888,33 @@ function renderToolCall(call, verbose) {
   return line;
 }
 
+// ── Per-message latency line ──────────────────────────────────────────
+
+/**
+ * Render a per-message latency line showing retrieval and generation times.
+ * @param {object} metadata
+ * @param {number} [metadata.retrievalTimeMs] - Embedding retrieval elapsed ms
+ * @param {number} [metadata.generationTimeMs] - LLM generation elapsed ms
+ * @param {number} [metadata.totalTimeMs] - Total agent elapsed ms (agent mode)
+ * @param {string} [metadata.mode] - 'agent' for agent mode
+ * @returns {string}
+ */
+function renderLatencyLine(metadata) {
+  if (!metadata) return '';
+  if (metadata.mode === 'agent' || metadata.totalTimeMs != null) {
+    return dim('  Latency: ') + cyan(`${metadata.totalTimeMs}ms`) + dim(' total');
+  }
+  const parts = [];
+  if (metadata.retrievalTimeMs != null) {
+    parts.push(dim('Retrieval: ') + cyan(`${metadata.retrievalTimeMs}ms`));
+  }
+  if (metadata.generationTimeMs != null) {
+    parts.push(dim('LLM: ') + cyan(`${metadata.generationTimeMs}ms`));
+  }
+  if (parts.length === 0) return '';
+  return dim('  ') + parts.join(dim(' | '));
+}
+
 module.exports = {
   // Core rendering
   renderMarkdown,
@@ -876,6 +923,7 @@ module.exports = {
   renderSources,
   renderHeader,
   renderToolCall,
+  renderLatencyLine,
 
   // Streaming
   createStreamRenderer,

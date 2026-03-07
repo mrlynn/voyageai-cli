@@ -107,11 +107,11 @@ Plans:
   2. Embedding model name in header shows LOCAL or API badge matching the selected source
   3. Token count and estimated USD cost accumulate visibly as the user sends messages
   4. Each message shows elapsed time for embedding retrieval and LLM response separately
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 18-01: TBD
-- [ ] 18-02: TBD
+- [ ] 18-01-PLAN.md — Model pair header with LOCAL/API badges and per-message latency display
+- [ ] 18-02-PLAN.md — Session token/cost accumulator with running totals
 
 ### Phase 19: KB Ingest
 **Goal**: Users can add documents to the knowledge base without leaving the chat interface
@@ -148,6 +148,6 @@ Plans:
 | 14. Similarity & Dimensions | v1.3 | 2/2 | Complete | 2026-03-07 |
 | 15. Cross-Bridge Comparison | v1.3 | 2/2 | Complete | 2026-03-07 |
 | 16. Embedding Config | v1.4 | 2/2 | Complete | 2026-03-07 |
-| 17. Onboarding & Detection | 3/3 | Complete   | 2026-03-07 | - |
-| 18. Status Bar | v1.4 | 0/? | Not started | - |
+| 17. Onboarding & Detection | 3/3 | Complete    | 2026-03-07 | - |
+| 18. Status Bar | v1.4 | 0/2 | Not started | - |
 | 19. KB Ingest | v1.4 | 0/? | Not started | - |

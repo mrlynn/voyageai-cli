@@ -292,6 +292,8 @@ async function runChat(opts) {
       collection,
       sessionId: history.sessionId,
       interactive: moments.isInteractive({ json: opts.json, plain: opts.quiet }),
+      embeddingModel: embeddingModel || null,
+      isLocalEmbed,
     }));
   }
 
@@ -356,8 +358,10 @@ async function runChat(opts) {
   function sendChatTelemetry() {
     telemetry.send('cli_chat', {
       provider: llmConfig.provider,
+      rerankModel: doRerank ? 'rerank-2.5' : undefined,
       llmModel: llmConfig.model,
       embeddingModel: embeddingModel || proj.model || undefined,
+      local: isLocalEmbed,
       turnCount,
       durationMs: Date.now() - chatStartTime,
     });
