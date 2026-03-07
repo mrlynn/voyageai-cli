@@ -12,21 +12,22 @@ A developer can go from `npm install` to a working vector search pipeline with z
 
 ### Validated
 
-- Python subprocess bridge (nano-bridge.py) with NDJSON-over-stdio -- v1.0
-- Setup orchestrator with step-based resumability -- v1.0
-- Health diagnostics (status/test/info/clear-cache) -- v1.0
-- `--local` flag on embed/ingest/pipeline commands -- v1.0
-- MRL dimensions (256-2048) and quantization (float32/int8/uint8/binary) -- v1.0
-- Bridge manager with warm process lifecycle and version sync -- v1.0
-- Release packaging with Python source inclusion and bytecode exclusion -- v1.0
-- Unit test coverage across all subsystems -- v1.0
+- Python subprocess bridge (nano-bridge.py) with NDJSON-over-stdio — v1.0
+- Setup orchestrator with step-based resumability — v1.0
+- Health diagnostics (status/test/info/clear-cache) — v1.0
+- `--local` flag on embed/ingest/pipeline commands — v1.0
+- MRL dimensions (256-2048) and quantization (float32/int8/uint8/binary) — v1.0
+- Bridge manager with warm process lifecycle and version sync — v1.0
+- Release packaging with Python source inclusion and bytecode exclusion — v1.0
+- Unit test coverage across all subsystems — v1.0
+- `vai demo nano` zero-dependency guided demo — v1.1
+- README "Local Inference" section with nano workflow — v1.1
+- `vai explain nano` content refresh with CLI workflow — v1.1
+- `vai demo chat --local` with local embeddings (MongoDB + LLM still required) — v1.1
 
 ### Active
 
-- [ ] `vai demo nano` zero-dependency guided demo (no API key, no MongoDB)
-- [ ] README "Local Inference" section with nano workflow
-- [ ] `vai explain nano` content refresh with full workflow documentation
-- [ ] `vai demo chat --local` variant using local embeddings (needs MongoDB + LLM, not API key)
+(None — define in next milestone)
 
 ### Out of Scope
 
@@ -50,6 +51,8 @@ A developer can go from `npm install` to a working vector search pipeline with z
 
 **v1.0 shipped 2026-03-06:** 5 phases, 18 plans, 52 files changed (+5,396 lines). Full local inference pipeline operational with zero-API-key path from install to vector search.
 
+**v1.1 shipped 2026-03-07:** 4 phases, 6 plans, 94 files changed (+9,201/-4,913). Zero-dependency demos (`vai demo nano`, `vai demo chat --local`), documentation, and formal verification.
+
 ## Constraints
 
 - **Language boundary**: Node.js spawns Python subprocess -- no native ML in Node
@@ -71,15 +74,15 @@ A developer can go from `npm install` to a working vector search pipeline with z
 | Minor/major version bump requires venv rebuild | Patch releases are safe; minor/major may change requirements.txt | Validated |
 
 ---
-## Current Milestone: v1.1 Nano Documentation & Demos
+## Key Decisions (v1.1)
 
-**Goal:** Make local inference discoverable and demonstrable -- zero-config demos, README documentation, and explain content so developers can experience nano in 30 seconds.
-
-**Target features:**
-- `vai demo nano` -- self-contained demo requiring nothing but Python and Node.js
-- README "Local Inference" section -- the nano workflow front and center
-- `vai explain nano` refresh -- full workflow documentation
-- `vai demo chat --local` -- chat demo without Voyage API key
+| Decision | Rationale | Outcome |
+|----------|-----------|---------|
+| Function injection (embedFn param) over strategy pattern | Simpler, matches existing callback patterns in demo-ingest/chat | ✓ Good |
+| Lazy-require nano modules inside isLocal blocks | Avoids spawning Python when not in local mode | ✓ Good |
+| Duplicate theory()/step() helpers (~10 lines) | demo.js doesn't export them; refactoring would change v1.0 code | ✓ Good |
+| Rewrite all sample docs to MongoDB-native | PostgreSQL content in MongoDB product was confusing | ✓ Good |
+| Dual spinners for chat UX | Eliminates dead time between retrieval and first LLM chunk | ✓ Good |
 
 ---
-*Last updated: 2026-03-06 after v1.1 milestone start*
+*Last updated: 2026-03-07 after v1.1 milestone*
