@@ -645,8 +645,22 @@ function createPlaygroundServer() {
       if (req.method === 'GET' && req.url === '/api/chat/config') {
         const { resolveLLMConfig } = require('../lib/llm');
         const { loadProject } = require('../lib/project');
+        const { getConfigValue } = require('../lib/config');
         const llmConfig = resolveLLMConfig();
         const { config: proj } = loadProject();
+
+        // Check nano availability
+        let nanoAvailable = false;
+        try {
+          const { checkVenv, checkModel } = require('../nano/nano-health');
+          const venvOk = checkVenv().ok;
+          const modelOk = checkModel().ok;
+          nanoAvailable = venvOk && modelOk;
+        } catch { /* nano-health not available */ }
+
+        // Check API key availability
+        const hasApiKey = !!(process.env.VOYAGE_API_KEY || getConfigValue('apiKey'));
+
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({
           provider: llmConfig.provider || null,
@@ -656,6 +670,9 @@ function createPlaygroundServer() {
           collection: proj.collection || null,
           chat: proj.chat || {},
           mode: proj.chat?.mode || 'pipeline',
+          embeddingModel: proj.chat?.embeddingModel || null,
+          nanoAvailable,
+          hasApiKey,
         }));
         return;
       }
@@ -1447,6 +1464,7 @@ function createPlaygroundServer() {
         if (parsed.rerank !== undefined) proj.chat.rerank = parsed.rerank;
         if (parsed.systemPrompt !== undefined) proj.chat.systemPrompt = parsed.systemPrompt;
         if (parsed.mode !== undefined) proj.chat.mode = parsed.mode;
+        if (parsed.embeddingModel !== undefined) proj.chat.embeddingModel = parsed.embeddingModel;
 
         try {
           saveProject(proj, filePath || undefined);
@@ -1531,8 +1549,9 @@ function createPlaygroundServer() {
 
         // API: Chat message (streaming SSE)
         if (req.url === '/api/chat/message') {
-          const { query, db, collection, provider, model, maxDocs, rerank, systemPrompt, mode, textField } = parsed;
+          const { query, db, collection, provider, model, maxDocs, rerank, systemPrompt, mode, textField, embeddingModel } = parsed;
           const isAgent = mode === 'agent';
+          const isLocalEmbed = embeddingModel === 'voyage-4-nano';
 
           if (!query) {
             res.writeHead(400, { 'Content-Type': 'application/json' });
@@ -1568,6 +1587,29 @@ function createPlaygroundServer() {
             return;
           }
 
+          // Validate embedding model availability
+          if (isLocalEmbed) {
+            try {
+              const { checkVenv, checkModel } = require('../nano/nano-health');
+              if (!checkVenv().ok || !checkModel().ok) {
+                res.writeHead(400, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: "voyage-4-nano is not available. Run 'vai nano setup' to install." }));
+                return;
+              }
+            } catch {
+              res.writeHead(400, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ error: "voyage-4-nano is not available. Run 'vai nano setup' to install." }));
+              return;
+            }
+          } else if (embeddingModel && embeddingModel !== 'voyage-4-nano') {
+            const { getConfigValue } = require('../lib/config');
+            if (!process.env.VOYAGE_API_KEY && !getConfigValue('apiKey')) {
+              res.writeHead(400, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ error: `Voyage API key required for ${embeddingModel}. Set VOYAGE_API_KEY or run 'vai config set api-key'.` }));
+              return;
+            }
+          }
+
           // Use in-memory history for playground (no session persistence)
           if (!_chatHistory) _chatHistory = new ChatHistory({ maxTurns: 20 });
           const history = _chatHistory;
@@ -1579,16 +1621,28 @@ function createPlaygroundServer() {
             'Connection': 'keep-alive',
           });
 
+          // Build embedding options based on selected model
+          const embedOpts = {};
+          if (isLocalEmbed) {
+            const { generateLocalEmbeddings } = require('../nano/nano-local');
+            embedOpts.embedFn = generateLocalEmbeddings;
+            embedOpts.model = 'voyage-4-nano';
+            embedOpts.dimensions = 1024;
+          } else if (embeddingModel) {
+            embedOpts.model = embeddingModel;
+          }
+
           // Helper: run pipeline mode
           const runPipeline = async () => {
             for await (const event of chatTurn({
               query, db, collection, llm, history,
               opts: {
                 maxDocs: maxDocs || 5,
-                rerank: rerank !== false,
+                rerank: isLocalEmbed ? false : (rerank !== false),
                 stream: true,
                 systemPrompt,
                 textField: textField || 'content',
+                ...embedOpts,
               },
             })) {
               if (event.type === 'retrieval') {
