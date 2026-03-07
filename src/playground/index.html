@@ -7384,6 +7384,25 @@ select:focus { outline: none; border-color: var(--accent); }
 [data-theme="light"] .embed-badge-local { background: #dcfce7; color: #166534; }
 [data-theme="light"] .embed-badge-api { background: #dbeafe; color: #1e40af; }
 
+/* ── Health Dot Indicators ── */
+.health-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-left: 6px;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+.health-dot.available {
+  background: #22c55e;
+  box-shadow: 0 0 4px rgba(34, 197, 94, 0.4);
+}
+.health-dot.unavailable {
+  background: #ef4444;
+  box-shadow: 0 0 4px rgba(239, 68, 68, 0.3);
+}
+
 /* Instructions textarea compact */
 .kb-instructions-textarea {
   width: 100%;
@@ -10385,10 +10404,56 @@ function isTelemetryEnabled() {
   return stored === null ? true : stored === 'true'; // default on
 }
 
+function uniqueTelemetryModels(values) {
+  return Array.from(new Set(values.filter(v => typeof v === 'string' && v.trim())));
+}
+
+function inferTelemetryModelRole(event, primaryField, extra) {
+  if (typeof extra.modelRole === 'string' && extra.modelRole.trim()) return extra.modelRole;
+  if (primaryField === 'embeddingModel') return 'embedding';
+  if (primaryField === 'rerankModel') return 'rerank';
+  if (primaryField === 'llmModel') return 'llm';
+  if (typeof event !== 'string') return undefined;
+  if (event.indexOf('rerank') !== -1) return 'rerank';
+  if (event.indexOf('embed') !== -1 || event.indexOf('search') !== -1 || event.indexOf('similarity') !== -1) return 'embedding';
+  return undefined;
+}
+
+function normalizeTelemetryModels(event, extra) {
+  const modelEntries = [
+    ['model', extra.model],
+    ['embeddingModel', extra.embeddingModel],
+    ['rerankModel', extra.rerankModel],
+    ['llmModel', extra.llmModel],
+  ].filter(([, value]) => typeof value === 'string' && value.trim());
+
+  if (modelEntries.length === 0) return {};
+
+  const primaryField = modelEntries[0][0];
+  const primaryModel = modelEntries[0][1];
+  const models = uniqueTelemetryModels(modelEntries.map(([, value]) => value));
+  const normalized = {
+    models,
+    modelCount: models.length,
+  };
+
+  if (!extra.model) normalized.model = primaryModel;
+
+  const modelRole = inferTelemetryModelRole(event, primaryField, extra);
+  if (!extra.modelRole && modelRole) normalized.modelRole = modelRole;
+
+  if (extra.local === undefined && models.indexOf('voyage-4-nano') !== -1) {
+    normalized.local = true;
+  }
+
+  return normalized;
+}
+
 function sendTelemetry(event, extra = {}) {
   if (!isTelemetryEnabled()) return;
   try {
     const isElectron = !!(window.vai && window.vai.isElectron);
+    const normalizedModels = normalizeTelemetryModels(event, extra);
     const payload = {
       event,
       version: document.getElementById('appVersionLabel')?.textContent?.replace('v','') || 'web',
@@ -10396,6 +10461,7 @@ function sendTelemetry(event, extra = {}) {
       platform: navigator.platform || undefined,
       locale: navigator.language || undefined,
       ...extra,
+      ...normalizedModels,
     };
     // Use sendBeacon for fire-and-forget (survives page unload)
     if (navigator.sendBeacon) {
@@ -11841,8 +11907,15 @@ window.doCompare = async function() {
 // ── Search ──
 window.doSearch = async function(withRerank) {
   hideError('searchError');
-  sendTelemetry('api_call', { endpoint: withRerank ? 'rerank' : 'search' });
-  const _searchDone = telemetryTimer(withRerank ? 'playground_rerank' : 'playground_search', { model: document.getElementById('searchEmbedModel').value });
+  sendTelemetry('api_call', {
+    endpoint: withRerank ? 'rerank' : 'search',
+    model: document.getElementById('searchEmbedModel').value,
+    rerankModel: withRerank ? document.getElementById('searchRerankModel').value : undefined,
+  });
+  const _searchDone = telemetryTimer(withRerank ? 'playground_rerank' : 'playground_search', {
+    model: document.getElementById('searchEmbedModel').value,
+    rerankModel: withRerank ? document.getElementById('searchRerankModel').value : undefined,
+  });
   const query = document.getElementById('searchQuery').value.trim();
   const docsText = document.getElementById('searchDocs').value.trim();
   if (!query || !docsText) { showError('searchError', 'Enter a query and documents'); return; }

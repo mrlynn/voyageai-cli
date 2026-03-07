@@ -661,6 +661,14 @@ function createPlaygroundServer() {
         // Check API key availability
         const hasApiKey = !!(process.env.VOYAGE_API_KEY || getConfigValue('apiKey'));
 
+        // Check Ollama availability
+        let ollamaAvailable = false;
+        try {
+          const { listOllamaModels } = require('../lib/llm');
+          const ollamaModels = await listOllamaModels({ timeoutMs: 2000 });
+          ollamaAvailable = ollamaModels && ollamaModels.length > 0;
+        } catch { /* ollama not reachable */ }
+
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({
           provider: llmConfig.provider || null,
@@ -673,6 +681,7 @@ function createPlaygroundServer() {
           embeddingModel: proj.chat?.embeddingModel || null,
           nanoAvailable,
           hasApiKey,
+          ollamaAvailable,
         }));
         return;
       }
