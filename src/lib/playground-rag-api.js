@@ -664,6 +664,217 @@ async function handleRAGRequest(req, res, context) {
     }
   }
 
+  // POST /api/rag/ingest-text - Ingest pasted text
+  if (req.method === 'POST' && req.url === '/api/rag/ingest-text') {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', async () => {
+      try {
+        const { text, kbName, title } = JSON.parse(body);
+
+        if (!text || typeof text !== 'string' || !text.trim()) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'text is required and must be non-empty' }));
+          return;
+        }
+        if (!kbName) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'kbName is required' }));
+          return;
+        }
+
+        const { client: kbClient, collection: kbsCollection } = await getMongoCollection(RAG_DB, KBS_COLLECTION);
+        const kb = await kbsCollection.findOne({ name: kbName });
+        if (!kb) {
+          kbClient.close();
+          res.writeHead(404, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: `KB not found: ${kbName}` }));
+          return;
+        }
+
+        const { collection: docsCollection } = await getMongoCollection(RAG_DB, `kb_${kbName}_docs`);
+
+        res.writeHead(200, {
+          'Content-Type': 'application/x-ndjson',
+          'Transfer-Encoding': 'chunked',
+          'Cache-Control': 'no-cache'
+        });
+
+        const chunks = chunkText(text.trim());
+        const fileName = title && title.trim() ? title.trim().slice(0, 80) : `pasted-text-${Date.now()}`;
+        const totalSize = Buffer.byteLength(text, 'utf8');
+
+        res.write(JSON.stringify({ type: 'progress', stage: 'chunking', current: chunks.length, total: chunks.length }) + '\n');
+
+        let totalChunks = 0;
+        for (let i = 0; i < chunks.length; i++) {
+          res.write(JSON.stringify({ type: 'progress', stage: 'embedding', current: i + 1, total: chunks.length }) + '\n');
+          try {
+            const embedding = await generateEmbeddings(chunks[i], 'voyage-4-large');
+            const doc = {
+              _id: crypto.randomUUID(),
+              kbName,
+              fileName,
+              content: chunks[i],
+              embedding: embedding.data[0].embedding,
+              createdAt: new Date()
+            };
+            await docsCollection.insertOne(doc);
+            totalChunks++;
+          } catch (embedErr) {
+            console.warn(`Failed to embed chunk from pasted text:`, embedErr.message);
+          }
+        }
+
+        await kbsCollection.updateOne(
+          { name: kbName },
+          {
+            $inc: { docCount: 1, chunkCount: totalChunks, size: totalSize },
+            $set: { updatedAt: new Date() }
+          }
+        );
+
+        res.write(JSON.stringify({ type: 'complete', kbName, docCount: 1, chunkCount: totalChunks }) + '\n');
+        res.end();
+        kbClient.close();
+      } catch (err) {
+        console.error('Error in ingest-text:', err);
+        res.write(JSON.stringify({ type: 'error', error: err.message }) + '\n');
+        res.end();
+      }
+    });
+    return true;
+  }
+
+  // POST /api/rag/ingest-url - Fetch URL content and ingest
+  if (req.method === 'POST' && req.url === '/api/rag/ingest-url') {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', async () => {
+      try {
+        const { url, kbName } = JSON.parse(body);
+
+        if (!url || typeof url !== 'string' || !/^https?:\/\//i.test(url)) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'url must start with http:// or https://' }));
+          return;
+        }
+        if (!kbName) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'kbName is required' }));
+          return;
+        }
+
+        const { client: kbClient, collection: kbsCollection } = await getMongoCollection(RAG_DB, KBS_COLLECTION);
+        const kb = await kbsCollection.findOne({ name: kbName });
+        if (!kb) {
+          kbClient.close();
+          res.writeHead(404, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: `KB not found: ${kbName}` }));
+          return;
+        }
+
+        const { collection: docsCollection } = await getMongoCollection(RAG_DB, `kb_${kbName}_docs`);
+
+        res.writeHead(200, {
+          'Content-Type': 'application/x-ndjson',
+          'Transfer-Encoding': 'chunked',
+          'Cache-Control': 'no-cache'
+        });
+
+        res.write(JSON.stringify({ type: 'progress', stage: 'fetching', current: 0, total: 1 }) + '\n');
+
+        // Fetch URL with 15s timeout
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 15000);
+        let fetchRes;
+        try {
+          fetchRes = await fetch(url, { signal: controller.signal });
+          clearTimeout(timeout);
+        } catch (fetchErr) {
+          clearTimeout(timeout);
+          res.write(JSON.stringify({ type: 'error', error: `Failed to fetch URL: ${fetchErr.message}` }) + '\n');
+          res.end();
+          kbClient.close();
+          return;
+        }
+
+        if (!fetchRes.ok) {
+          res.write(JSON.stringify({ type: 'error', error: `URL returned status ${fetchRes.status}` }) + '\n');
+          res.end();
+          kbClient.close();
+          return;
+        }
+
+        let content = await fetchRes.text();
+        const contentType = fetchRes.headers.get('content-type') || '';
+
+        // Strip HTML if needed
+        if (contentType.includes('text/html')) {
+          content = content
+            .replace(/<script[\s\S]*?<\/script>/gi, '')
+            .replace(/<style[\s\S]*?<\/style>/gi, '')
+            .replace(/<[^>]+>/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+        }
+
+        if (!content) {
+          res.write(JSON.stringify({ type: 'error', error: 'No text content extracted from URL' }) + '\n');
+          res.end();
+          kbClient.close();
+          return;
+        }
+
+        const chunks = chunkText(content);
+        // Build fileName from URL hostname + path, truncated to 80 chars
+        let parsedUrl;
+        try { parsedUrl = new URL(url); } catch { parsedUrl = { hostname: 'unknown', pathname: '' }; }
+        const fileName = (parsedUrl.hostname + parsedUrl.pathname).slice(0, 80);
+        const totalSize = Buffer.byteLength(content, 'utf8');
+
+        res.write(JSON.stringify({ type: 'progress', stage: 'chunking', current: chunks.length, total: chunks.length }) + '\n');
+
+        let totalChunks = 0;
+        for (let i = 0; i < chunks.length; i++) {
+          res.write(JSON.stringify({ type: 'progress', stage: 'embedding', current: i + 1, total: chunks.length }) + '\n');
+          try {
+            const embedding = await generateEmbeddings(chunks[i], 'voyage-4-large');
+            const doc = {
+              _id: crypto.randomUUID(),
+              kbName,
+              fileName,
+              content: chunks[i],
+              embedding: embedding.data[0].embedding,
+              createdAt: new Date()
+            };
+            await docsCollection.insertOne(doc);
+            totalChunks++;
+          } catch (embedErr) {
+            console.warn(`Failed to embed chunk from URL ${url}:`, embedErr.message);
+          }
+        }
+
+        await kbsCollection.updateOne(
+          { name: kbName },
+          {
+            $inc: { docCount: 1, chunkCount: totalChunks, size: totalSize },
+            $set: { updatedAt: new Date() }
+          }
+        );
+
+        res.write(JSON.stringify({ type: 'complete', kbName, docCount: 1, chunkCount: totalChunks }) + '\n');
+        res.end();
+        kbClient.close();
+      } catch (err) {
+        console.error('Error in ingest-url:', err);
+        res.write(JSON.stringify({ type: 'error', error: err.message }) + '\n');
+        res.end();
+      }
+    });
+    return true;
+  }
+
   // Not a RAG endpoint
   return false;
 }
