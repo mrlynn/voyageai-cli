@@ -29,9 +29,9 @@ Requirements for Playground Local Inference tab. Each maps to roadmap phases.
 
 ### Similarity Matrix
 
-- [ ] **SIM-01**: User can enter multiple texts (2-10) for similarity comparison
-- [ ] **SIM-02**: User can view an NxN cosine similarity heatmap with color-coded values
-- [ ] **SIM-03**: Heatmap highlights highest and lowest similarity pairs
+- [x] **SIM-01**: User can enter multiple texts (2-10) for similarity comparison
+- [x] **SIM-02**: User can view an NxN cosine similarity heatmap with color-coded values
+- [x] **SIM-03**: Heatmap highlights highest and lowest similarity pairs
 
 ### Dimension Comparison
 
@@ -76,9 +76,9 @@ Requirements for Playground Local Inference tab. Each maps to roadmap phases.
 | EMBED-02 | Phase 13 | Complete |
 | EMBED-03 | Phase 13 | Complete |
 | EMBED-04 | Phase 13 | Complete |
-| SIM-01 | Phase 14 | Pending |
-| SIM-02 | Phase 14 | Pending |
-| SIM-03 | Phase 14 | Pending |
+| SIM-01 | Phase 14 | Complete |
+| SIM-02 | Phase 14 | Complete |
+| SIM-03 | Phase 14 | Complete |
 | DIM-01 | Phase 14 | Pending |
 | DIM-02 | Phase 14 | Pending |
 | DIM-03 | Phase 14 | Pending |
