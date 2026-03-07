@@ -92,11 +92,11 @@ Plans:
   2. Config panel shows green dot for available services and red dot for unavailable ones
   3. System recommends a working LLM + embedding config based on what it detects (e.g., Ollama + nano if both available)
   4. First-time users see a welcome banner listing detected services and a one-click path to start chatting
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 17-01: TBD
-- [ ] 17-02: TBD
+- [ ] 17-01-PLAN.md — Service detection endpoint + config panel health dots
+- [ ] 17-02-PLAN.md — Recommendation engine + first-run welcome banner
 
 ### Phase 18: Status Bar
 **Goal**: Users always know which models are active and what their chat session is costing
@@ -147,7 +147,7 @@ Plans:
 | 13. Setup Status & Embed UI | v1.3 | 2/2 | Complete | 2026-03-07 |
 | 14. Similarity & Dimensions | v1.3 | 2/2 | Complete | 2026-03-07 |
 | 15. Cross-Bridge Comparison | v1.3 | 2/2 | Complete | 2026-03-07 |
-| 16. Embedding Config | 2/2 | Complete   | 2026-03-07 | - |
-| 17. Onboarding & Detection | v1.4 | 0/? | Not started | - |
+| 16. Embedding Config | v1.4 | 2/2 | Complete | 2026-03-07 |
+| 17. Onboarding & Detection | 1/2 | In Progress|  | - |
 | 18. Status Bar | v1.4 | 0/? | Not started | - |
 | 19. KB Ingest | v1.4 | 0/? | Not started | - |

@@ -1,3 +1,16 @@
+---
+gsd_state_version: 1.0
+milestone: v1.4
+milestone_name: Chat Experience Overhaul
+status: unknown
+last_updated: "2026-03-07T14:14:58.140Z"
+progress:
+  total_phases: 2
+  completed_phases: 1
+  total_plans: 4
+  completed_plans: 3
+---
+
 # Project State
 
 ## Project Reference
@@ -5,14 +18,14 @@
 See: .planning/PROJECT.md (updated 2026-03-07)
 
 **Core value:** Zero-API-key path from install to working vector search, with seamless upgrade to Voyage API
-**Current focus:** Phase 16 - Embedding Config
+**Current focus:** Phase 17 - Onboarding Detection
 
 ## Current Position
 
-Phase: 16 of 19 (Embedding Config)
-Plan: 2 of 2 in current phase
-Status: Phase 16 complete
-Last activity: 2026-03-07 — Completed 16-01 (embedding config dropdown + backend wiring)
+Phase: 17 of 19 (Onboarding Detection)
+Plan: 1 of 2 in current phase
+Status: 17-01 complete
+Last activity: 2026-03-07 — Completed 17-01 (service detection + health dots)
 
 Progress: [████████████████░░░░] 84% (16/19 phases complete)
 
@@ -29,6 +42,7 @@ Progress: [████████████████░░░░] 84% (16
 | v1.1 | 4 | 6 | 94 (+9,201/-4,913) |
 | v1.2 | 2 | 4 | 21 (+1,550/-1,393) |
 | v1.3 | 4 | 8 | 17 (+3,581/-321) |
+| Phase 17-01 P01 | 3min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -37,6 +51,8 @@ Progress: [████████████████░░░░] 84% (16
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- [v1.4]: Health dots inline with config labels for visual proximity to service controls
+- [v1.4]: Ollama detection with 2s timeout to avoid blocking config load
 - [v1.4]: Embedding availability served from config endpoint (avoid extra fetches)
 - [v1.4]: Nano auto-default when available, rerank auto-disabled with nano
 - [v1.4]: Extracted resolveEmbeddingConfig helper for testable model resolution
@@ -56,5 +72,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-07
-Stopped at: Completed 16-01-PLAN.md (all Phase 16 plans done)
+Stopped at: Completed 17-01-PLAN.md
 Resume file: None

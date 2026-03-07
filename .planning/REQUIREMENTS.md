@@ -16,8 +16,8 @@ Requirements for the chat experience overhaul. Each maps to roadmap phases.
 
 ### Onboarding
 
-- [ ] **ONBD-01**: Chat detects available services on load (Ollama running, Voyage API key, nano bridge ready)
-- [ ] **ONBD-02**: Config panel shows green/red health dots for each detected service
+- [x] **ONBD-01**: Chat detects available services on load (Ollama running, Voyage API key, nano bridge ready)
+- [x] **ONBD-02**: Config panel shows green/red health dots for each detected service
 - [ ] **ONBD-03**: System suggests quickest working config based on detected services
 - [ ] **ONBD-04**: First-run welcome banner shows detected services and recommended config
 
@@ -68,8 +68,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | EMBD-02 | Phase 16 | Complete |
 | EMBD-03 | Phase 16 | Complete |
 | EMBD-04 | Phase 16 | Complete |
-| ONBD-01 | Phase 17 | Pending |
-| ONBD-02 | Phase 17 | Pending |
+| ONBD-01 | Phase 17 | Complete |
+| ONBD-02 | Phase 17 | Complete |
 | ONBD-03 | Phase 17 | Pending |
 | ONBD-04 | Phase 17 | Pending |
 | STAT-01 | Phase 18 | Pending |
