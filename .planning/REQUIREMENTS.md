@@ -11,8 +11,8 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 - [x] **ROBO-01**: Chat uses animated robot `searching` pose during vector retrieval instead of plain spinner
 - [x] **ROBO-02**: Chat uses animated robot `thinking` pose during LLM response generation instead of plain spinner
-- [ ] **ROBO-03**: Chat shows robot `success` pose when a response completes with sources
-- [ ] **ROBO-04**: Chat shows robot `error` pose when a chat turn fails
+- [x] **ROBO-03**: Chat shows robot `success` pose when a response completes with sources
+- [x] **ROBO-04**: Chat shows robot `error` pose when a chat turn fails
 - [x] **ROBO-05**: Robot animations are skipped in non-TTY, --json, and --quiet modes
 
 ### Chat Header
@@ -58,8 +58,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 |-------------|-------|--------|
 | ROBO-01 | Phase 10 | Complete |
 | ROBO-02 | Phase 10 | Complete |
-| ROBO-03 | Phase 10 | Pending |
-| ROBO-04 | Phase 10 | Pending |
+| ROBO-03 | Phase 10 | Complete |
+| ROBO-04 | Phase 10 | Complete |
 | ROBO-05 | Phase 10 | Complete |
 | HEAD-01 | Phase 11 | Pending |
 | HEAD-02 | Phase 11 | Pending |

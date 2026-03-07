@@ -8,7 +8,7 @@ progress:
   total_phases: 2
   completed_phases: 0
   total_plans: 2
-  completed_plans: 1
+  completed_plans: 2
 ---
 
 # Project State
@@ -23,9 +23,9 @@ See: .planning/PROJECT.md (updated 2026-03-07)
 ## Current Position
 
 Phase: 10 of 11 (Robot Chat Poses)
-Plan: 1 of 2 in current phase
-Status: In progress
-Last activity: 2026-03-07 -- Completed 10-01 elapsed timer and startWaving moment
+Plan: 2 of 2 in current phase (COMPLETE)
+Status: Phase complete
+Last activity: 2026-03-07 -- Completed 10-02 robot chat poses with collapse-on-stop
 
 ## Performance Metrics
 
@@ -43,6 +43,7 @@ Recent decisions affecting current work:
 - [v1.1]: Function injection (embedFn param) over strategy pattern for local mode
 - [v1.2]: Raw ANSI dim codes for elapsed timer in robot animations (consistent with robot.js no-picocolors approach)
 - [v1.2]: node:test runner for robot-moments tests (matching project convention over plan's vitest suggestion)
+- [v1.2]: Collapse-to-one-liner on animation stop (clean pipeline transitions, user-selected over leave-frame or clear-entirely)
 
 ### Pending Todos
 
@@ -55,5 +56,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-07
-Stopped at: Completed 10-01-PLAN.md (elapsed timer + startWaving moment)
+Stopped at: Completed 10-02-PLAN.md (robot chat poses with collapse-on-stop)
 Resume file: None

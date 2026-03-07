@@ -35,7 +35,7 @@ Full details: [milestones/v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md)
 
 ### v1.2 Robot Chat UX (In Progress)
 
-- [ ] **Phase 10: Robot Chat Poses** - Replace plain spinners with animated robot poses during chat processing
+- [x] **Phase 10: Robot Chat Poses** - Replace plain spinners with animated robot poses during chat processing
 - [ ] **Phase 11: Chat Visual Polish** - Robot-branded header and styled turn separation
 
 ## Phase Details
@@ -50,10 +50,10 @@ Full details: [milestones/v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md)
   3. After a successful response with sources, robot briefly shows success pose
   4. When a chat turn errors out, robot shows error pose before the error message
   5. In non-TTY, --json, or --quiet modes, no robot animations appear (graceful degradation)
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans executed
 Plans:
-- [ ] 10-01-PLAN.md -- Extend robot animation API with elapsed timer and startWaving moment
-- [ ] 10-02-PLAN.md -- Replace all chat spinners with robot pose animations
+- [x] 10-01-PLAN.md -- Extend robot animation API with elapsed timer and startWaving moment
+- [x] 10-02-PLAN.md -- Replace all chat spinners with robot pose animations
 
 ### Phase 11: Chat Visual Polish
 **Goal**: Chat experience has branded startup and clear visual separation between conversation turns
@@ -80,5 +80,5 @@ Plans:
 | 7. Documentation | v1.1 | 1/1 | Complete | 2026-03-06 |
 | 8. Chat Local Embeddings | v1.1 | 2/2 | Complete | 2026-03-06 |
 | 9. Phase 6 Verification | v1.1 | 1/1 | Complete | 2026-03-06 |
-| 10. Robot Chat Poses | 1/2 | In Progress|  | - |
+| 10. Robot Chat Poses | v1.2 | 2/2 | Complete | 2026-03-07 |
 | 11. Chat Visual Polish | v1.2 | 0/? | Not started | - |
