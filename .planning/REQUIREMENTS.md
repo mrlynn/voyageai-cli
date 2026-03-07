@@ -16,9 +16,9 @@ Requirements for Playground Local Inference tab. Each maps to roadmap phases.
 
 ### Setup & Status
 
-- [ ] **SETUP-01**: Local Inference tab shows nano setup status (Python, venv, model) on load
-- [ ] **SETUP-02**: Tab displays actionable "Run vai nano setup" prompt when setup is incomplete
-- [ ] **SETUP-03**: Tab becomes fully functional when nano bridge is available
+- [x] **SETUP-01**: Local Inference tab shows nano setup status (Python, venv, model) on load
+- [x] **SETUP-02**: Tab displays actionable "Run vai nano setup" prompt when setup is incomplete
+- [x] **SETUP-03**: Tab becomes fully functional when nano bridge is available
 
 ### Embedding
 
@@ -69,9 +69,9 @@ Requirements for Playground Local Inference tab. Each maps to roadmap phases.
 | ENDP-02 | Phase 12 | Complete |
 | ENDP-03 | Phase 12 | Complete |
 | ENDP-04 | Phase 12 | Complete |
-| SETUP-01 | Phase 13 | Pending |
-| SETUP-02 | Phase 13 | Pending |
-| SETUP-03 | Phase 13 | Pending |
+| SETUP-01 | Phase 13 | Complete |
+| SETUP-02 | Phase 13 | Complete |
+| SETUP-03 | Phase 13 | Complete |
 | EMBED-01 | Phase 13 | Pending |
 | EMBED-02 | Phase 13 | Pending |
 | EMBED-03 | Phase 13 | Pending |
