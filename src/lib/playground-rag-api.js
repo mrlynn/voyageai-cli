@@ -7,8 +7,19 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const crypto = require('crypto');
+const pdfParse = require('pdf-parse');
 const { getMongoCollection } = require('./mongo');
 const { getConfigValue } = require('./config');
+
+/**
+ * Extract text content from a PDF buffer
+ * @param {Buffer} buffer - Raw PDF file data
+ * @returns {Promise<string>} Extracted text
+ */
+async function extractTextFromPDF(buffer) {
+  const data = await pdfParse(buffer);
+  return data.text;
+}
 
 // MongoDB database for RAG
 const RAG_DB = 'vai_rag';
@@ -31,6 +42,31 @@ const KB_NOUNS = [
   'archive', 'cellar', 'trove', 'cache', 'index',
   'codex', 'realm', 'scope', 'shelf', 'depot',
 ];
+
+/**
+ * Split text into chunks by paragraphs, max ~1000 words per chunk
+ */
+function chunkText(content) {
+  const paragraphs = content.split(/\n\n+/);
+  const chunks = [];
+  let currentChunk = [];
+  let currentLength = 0;
+
+  for (const para of paragraphs) {
+    const paraLength = para.split(/\s+/).length; // rough token count
+    if (currentLength + paraLength > 1000 && currentChunk.length > 0) {
+      chunks.push(currentChunk.join('\n\n'));
+      currentChunk = [];
+      currentLength = 0;
+    }
+    currentChunk.push(para);
+    currentLength += paraLength;
+  }
+  if (currentChunk.length > 0) {
+    chunks.push(currentChunk.join('\n\n'));
+  }
+  return chunks;
+}
 
 function generateKBName() {
   const adj = KB_ADJECTIVES[Math.floor(Math.random() * KB_ADJECTIVES.length)];
@@ -181,30 +217,56 @@ async function handleRAGRequest(req, res, context) {
 
       req.on('end', async () => {
         try {
-          // Parse multipart form data (simple parser for text files)
-          const bodyStr = body.toString();
-          const parts = bodyStr.split(`--${boundary}`);
+          // Parse multipart form data using Buffer-based boundary splitting
+          // (preserves binary PDF data that would be corrupted by toString())
+          const boundaryBuf = Buffer.from(`--${boundary}`);
+          const headerSep = Buffer.from('\r\n\r\n');
+          const crlf = Buffer.from('\r\n');
           let kbName = null;
 
-          for (const part of parts) {
-            if (!part.includes('Content-Disposition')) continue;
+          // Find all boundary positions in the raw Buffer
+          let searchStart = 0;
+          const partPositions = [];
+          while (true) {
+            const idx = body.indexOf(boundaryBuf, searchStart);
+            if (idx === -1) break;
+            partPositions.push(idx + boundaryBuf.length);
+            searchStart = idx + boundaryBuf.length;
+          }
 
-            const contentDispositionMatch = part.match(/name="([^"]+)"/);
-            const filenameMatch = part.match(/filename="([^"]+)"/);
+          for (let p = 0; p < partPositions.length; p++) {
+            const partStart = partPositions[p];
+            const partEnd = (p + 1 < partPositions.length)
+              ? body.indexOf(boundaryBuf, partStart) - crlf.length
+              : body.length;
+
+            // Skip terminal boundary marker (--)
+            if (body[partStart] === 0x2D && body[partStart + 1] === 0x2D) continue;
+
+            // Find header/body separator
+            const sepIdx = body.indexOf(headerSep, partStart);
+            if (sepIdx === -1) continue;
+
+            const headerStr = body.slice(partStart, sepIdx).toString('utf8');
+            if (!headerStr.includes('Content-Disposition')) continue;
+
+            const contentStart = sepIdx + headerSep.length;
+            // Content ends before the trailing CRLF before next boundary
+            const contentEnd = (p + 1 < partPositions.length)
+              ? body.indexOf(boundaryBuf, contentStart) - crlf.length
+              : body.length;
+
+            const nameMatch = headerStr.match(/name="([^"]+)"/);
+            const filenameMatch = headerStr.match(/filename="([^"]+)"/);
 
             if (filenameMatch) {
               const filename = filenameMatch[1];
-              const contentStart = part.indexOf('\r\n\r\n') + 4;
-              const contentEnd = part.lastIndexOf('\r\n');
-              const content = part.slice(contentStart, contentEnd);
-
+              const contentBuf = body.slice(contentStart, contentEnd);
               const filepath = path.join(tempDir, filename);
-              fs.writeFileSync(filepath, content);
+              fs.writeFileSync(filepath, contentBuf);
               files.push({ name: filename, path: filepath });
-            } else if (contentDispositionMatch && contentDispositionMatch[1] === 'kbName') {
-              const contentStart = part.indexOf('\r\n\r\n') + 4;
-              const contentEnd = part.lastIndexOf('\r\n');
-              kbName = part.slice(contentStart, contentEnd).trim();
+            } else if (nameMatch && nameMatch[1] === 'kbName') {
+              kbName = body.slice(contentStart, contentEnd).toString('utf8').trim();
             }
           }
 
@@ -274,46 +336,57 @@ async function handleRAGRequest(req, res, context) {
 
           for (let i = 0; i < files.length; i++) {
             const file = files[i];
+            const isPDF = path.extname(file.name).toLowerCase() === '.pdf';
+
+            // Stage: reading
             res.write(JSON.stringify({
               type: 'progress',
-              current: i,
-              total: files.length,
-              file: file.name
+              stage: 'reading',
+              file: file.name,
+              fileIndex: i,
+              fileCount: files.length
             }) + '\n');
 
-            // Read file
-            const content = fs.readFileSync(file.path, 'utf8');
+            // Read file — PDF uses binary buffer extraction, others use utf8
+            let content;
+            if (isPDF) {
+              const buffer = fs.readFileSync(file.path);
+              content = await extractTextFromPDF(buffer);
+            } else {
+              content = fs.readFileSync(file.path, 'utf8');
+            }
             totalSize += Buffer.byteLength(content, 'utf8');
 
-            // Simple chunking (split by paragraphs, max 1000 tokens per chunk)
-            const paragraphs = content.split(/\n\n+/);
-            const chunks = [];
-            let currentChunk = [];
-            let currentLength = 0;
+            // Stage: chunking
+            const chunks = chunkText(content);
+            res.write(JSON.stringify({
+              type: 'progress',
+              stage: 'chunking',
+              file: file.name,
+              chunks: chunks.length,
+              fileIndex: i,
+              fileCount: files.length
+            }) + '\n');
 
-            for (const para of paragraphs) {
-              const paraLength = para.split(/\s+/).length; // rough token count
-              if (currentLength + paraLength > 1000 && currentChunk.length > 0) {
-                chunks.push(currentChunk.join('\n\n'));
-                currentChunk = [];
-                currentLength = 0;
-              }
-              currentChunk.push(para);
-              currentLength += paraLength;
-            }
-            if (currentChunk.length > 0) {
-              chunks.push(currentChunk.join('\n\n'));
-            }
-
-            // Embed chunks
-            for (const chunk of chunks) {
+            // Stage: embedding (per-chunk progress)
+            for (let c = 0; c < chunks.length; c++) {
               try {
-                const embedding = await generateEmbeddings(chunk, 'voyage-4-large');
+                res.write(JSON.stringify({
+                  type: 'progress',
+                  stage: 'embedding',
+                  file: file.name,
+                  current: c + 1,
+                  total: chunks.length,
+                  fileIndex: i,
+                  fileCount: files.length
+                }) + '\n');
+
+                const embedding = await generateEmbeddings(chunks[c], 'voyage-4-large');
                 const doc = {
                   _id: crypto.randomUUID(),
                   kbName,
                   fileName: file.name,
-                  content: chunk,
+                  content: chunks[c],
                   embedding: embedding.data[0].embedding,
                   createdAt: new Date()
                 };
@@ -323,6 +396,15 @@ async function handleRAGRequest(req, res, context) {
                 console.warn(`Failed to embed chunk from ${file.name}:`, embedErr.message);
               }
             }
+
+            // Stage: storing
+            res.write(JSON.stringify({
+              type: 'progress',
+              stage: 'storing',
+              file: file.name,
+              fileIndex: i,
+              fileCount: files.length
+            }) + '\n');
 
             totalDocs++;
             try {
