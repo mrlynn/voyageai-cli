@@ -162,6 +162,134 @@ class KBManager {
   }
 
   /**
+   * Ingest pasted text into a KB
+   * Yields progress events via NDJSON stream
+   */
+  async *ingestText(text, kbName, title) {
+    if (!text || !text.trim()) {
+      throw new Error('Text content is required');
+    }
+
+    try {
+      this.isIngesting = true;
+      const res = await fetch('/api/rag/ingest-text', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, kbName, title })
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Text ingestion failed');
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop();
+
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          try {
+            const event = JSON.parse(line);
+            yield event;
+            if (event.type === 'progress') {
+              this.ingestionProgress = {
+                current: event.current || 0,
+                total: event.total || 0,
+                currentFile: event.stage || ''
+              };
+            }
+          } catch (e) {
+            console.warn('Failed to parse event:', line, e);
+          }
+        }
+      }
+
+      if (buffer.trim()) {
+        try { yield JSON.parse(buffer); } catch (e) { /* ignore */ }
+      }
+
+      this.isIngesting = false;
+    } catch (err) {
+      this.isIngesting = false;
+      console.error('Error ingesting text:', err);
+      throw err;
+    }
+  }
+
+  /**
+   * Ingest content from a URL into a KB
+   * Yields progress events via NDJSON stream
+   */
+  async *ingestURL(url, kbName) {
+    if (!url || !/^https?:\/\//i.test(url)) {
+      throw new Error('A valid URL starting with http:// or https:// is required');
+    }
+
+    try {
+      this.isIngesting = true;
+      const res = await fetch('/api/rag/ingest-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url, kbName })
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'URL ingestion failed');
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop();
+
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          try {
+            const event = JSON.parse(line);
+            yield event;
+            if (event.type === 'progress') {
+              this.ingestionProgress = {
+                current: event.current || 0,
+                total: event.total || 0,
+                currentFile: event.stage || ''
+              };
+            }
+          } catch (e) {
+            console.warn('Failed to parse event:', line, e);
+          }
+        }
+      }
+
+      if (buffer.trim()) {
+        try { yield JSON.parse(buffer); } catch (e) { /* ignore */ }
+      }
+
+      this.isIngesting = false;
+    } catch (err) {
+      this.isIngesting = false;
+      console.error('Error ingesting URL:', err);
+      throw err;
+    }
+  }
+
+  /**
    * Remove a document from KB
    */
   async removeDoc(kbName, docId) {

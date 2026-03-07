@@ -8785,16 +8785,41 @@ Reranking models rescore initial search results to improve relevance ordering.</
         </div>
         <div class="kb-section-body" data-kb-section="upload" style="max-height:none;">
           <div class="kb-section-body-inner">
-            <div id="kbPanelDropZone" class="kb-panel-dropzone-compact">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                <polyline points="17 8 12 3 7 8"/>
-                <line x1="12" y1="3" x2="12" y2="15"/>
-              </svg>
-              <p style="margin:4px 0 0; font-weight:600; font-size:12px; color:var(--text);">Drop files here</p>
-              <p style="font-size:10px; color:var(--text-muted); margin:2px 0 0;">.txt, .md, .pdf &mdash; max 10MB</p>
+            <!-- Ingest method tabs -->
+            <div style="display:flex; gap:0; margin-bottom:8px; border-bottom:1px solid var(--border);">
+              <span class="kb-ingest-tab active" data-kb-ingest-tab="files" onclick="kbSwitchIngestTab('files')" style="padding:4px 10px; font-size:11px; cursor:pointer; color:var(--text-muted); border-bottom:2px solid var(--accent);">Files</span>
+              <span class="kb-ingest-tab" data-kb-ingest-tab="paste" onclick="kbSwitchIngestTab('paste')" style="padding:4px 10px; font-size:11px; cursor:pointer; color:var(--text-muted); border-bottom:2px solid transparent;">Paste</span>
+              <span class="kb-ingest-tab" data-kb-ingest-tab="url" onclick="kbSwitchIngestTab('url')" style="padding:4px 10px; font-size:11px; cursor:pointer; color:var(--text-muted); border-bottom:2px solid transparent;">URL</span>
             </div>
-            <input type="file" id="kbPanelFileInput" multiple accept=".txt,.md,.pdf" style="display:none;">
+
+            <!-- Files tab (default) -->
+            <div id="kbIngestTabFiles">
+              <div id="kbPanelDropZone" class="kb-panel-dropzone-compact">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="17 8 12 3 7 8"/>
+                  <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                <p style="margin:4px 0 0; font-weight:600; font-size:12px; color:var(--text);">Drop files here</p>
+                <p style="font-size:10px; color:var(--text-muted); margin:2px 0 0;">.txt, .md, .pdf &mdash; max 10MB</p>
+              </div>
+              <input type="file" id="kbPanelFileInput" multiple accept=".txt,.md,.pdf" style="display:none;">
+            </div>
+
+            <!-- Paste tab -->
+            <div id="kbIngestTabPaste" style="display:none;">
+              <textarea id="kbPasteText" rows="5" placeholder="Paste text content here..." style="width:100%; resize:vertical; font-size:12px; padding:8px; border:1px solid var(--border); border-radius:6px; background:var(--bg-secondary); color:var(--text); box-sizing:border-box;"></textarea>
+              <input id="kbPasteTitle" type="text" placeholder="Title (optional)" style="width:100%; font-size:12px; padding:6px 8px; margin-top:4px; border:1px solid var(--border); border-radius:6px; background:var(--bg-secondary); color:var(--text); box-sizing:border-box;">
+              <button id="kbPasteIngestBtn" class="kb-panel-btn kb-panel-btn-primary" style="margin-top:6px; width:100%;">Ingest Text</button>
+            </div>
+
+            <!-- URL tab -->
+            <div id="kbIngestTabURL" style="display:none;">
+              <input id="kbURLInput" type="url" placeholder="https://example.com/page" style="width:100%; font-size:12px; padding:8px; border:1px solid var(--border); border-radius:6px; background:var(--bg-secondary); color:var(--text); box-sizing:border-box;">
+              <button id="kbURLIngestBtn" class="kb-panel-btn kb-panel-btn-primary" style="margin-top:6px; width:100%;">Fetch & Ingest</button>
+            </div>
+
+            <!-- Progress bar (shared across all tabs) -->
             <div id="kbPanelProgress" class="kb-panel-progress" style="display:none;">
               <div class="kb-panel-progress-label" id="kbPanelProgressLabel">Ingesting...</div>
               <div class="kb-panel-progress-bar">
@@ -17315,6 +17340,19 @@ window.toggleKBPanel = function() {
 };
 window.kbToggleSection = function(key) {
   if (window.kbUI) window.kbUI.toggleSection(key);
+};
+window.kbSwitchIngestTab = function(tab) {
+  const tabs = ['files', 'paste', 'url'];
+  const tabIds = { files: 'kbIngestTabFiles', paste: 'kbIngestTabPaste', url: 'kbIngestTabURL' };
+  tabs.forEach(t => {
+    const el = document.getElementById(tabIds[t]);
+    if (el) el.style.display = t === tab ? 'block' : 'none';
+    const tabEl = document.querySelector(`.kb-ingest-tab[data-kb-ingest-tab="${t}"]`);
+    if (tabEl) {
+      tabEl.classList.toggle('active', t === tab);
+      tabEl.style.borderBottom = t === tab ? '2px solid var(--accent)' : '2px solid transparent';
+    }
+  });
 };
 window.kbOpenConfigSection = function() {
   // Ensure panel is open

@@ -438,6 +438,12 @@ class KBUIManager {
     if (clearBtn) clearBtn.addEventListener('click', () => this.onClearKB());
     if (deleteBtn) deleteBtn.addEventListener('click', () => this.onDeleteKB());
     if (collapseBtn) collapseBtn.addEventListener('click', () => this.togglePanelCollapse());
+
+    // Paste and URL ingest buttons
+    const pasteBtn = document.getElementById('kbPasteIngestBtn');
+    const urlBtn = document.getElementById('kbURLIngestBtn');
+    if (pasteBtn) pasteBtn.addEventListener('click', () => this.handlePasteIngest());
+    if (urlBtn) urlBtn.addEventListener('click', () => this.handleURLIngest());
   }
 
   setupFileDropZone() {
