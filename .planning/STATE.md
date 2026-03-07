@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Playground Local Inference
 status: in-progress
-last_updated: "2026-03-07T12:35:00Z"
+last_updated: "2026-03-07T12:48:00Z"
 progress:
-  total_phases: 3
+  total_phases: 4
   completed_phases: 3
-  total_plans: 6
-  completed_plans: 6
+  total_plans: 8
+  completed_plans: 7
 ---
 
 # Project State
@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-07)
 
 **Core value:** Zero-API-key path from install to working vector search, with seamless upgrade to Voyage API.
-**Current focus:** Phase 14 - Similarity & Dimensions
+**Current focus:** Phase 15 - Cross-Bridge Comparison
 
 ## Current Position
 
-Phase: 14 of 15 (Similarity & Dimensions)
-Plan: 2 of 2 in current phase
-Status: Phase 14 Complete
-Last activity: 2026-03-07 — Completed 14-02 dimension comparison UI, human-verify approved
+Phase: 15 of 15 (Cross-Bridge Comparison)
+Plan: 1 of 2 in current phase (plan 01 complete)
+Status: Phase 15 In Progress
+Last activity: 2026-03-07 — Completed 15-01 cross-bridge comparison endpoint and UI
 
-Progress: [██████████████████████████████] 100% (14/15 phases complete, phase 15 remaining)
+Progress: [████████████████████████████░░] 93% (14/15 phases complete, phase 15 plan 1/2 done)
 
 ## Performance Metrics
 
@@ -56,6 +56,9 @@ Full decision log in PROJECT.md Key Decisions tables.
 - [14-02] Client-side cosine similarity for preservation scores (avoids extra API call)
 - [14-02] CSS class-based color coding (high/mid/low) for preservation indicators
 - [14-02] Sparsity displayed as percentage with 1 decimal for readability
+- [15-01] generateCloudEmbeddings wired via context injection for testability consistency
+- [15-01] API errors return nano-only results with apiError field rather than failing entirely
+- [15-01] String concatenation maintained for browser compatibility (no template literals)
 
 ### Pending Todos
 
@@ -68,5 +71,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-07
-Stopped at: Completed 14-02-PLAN.md (human-verify approved, Phase 14 complete)
+Stopped at: Completed 15-01-PLAN.md (cross-bridge comparison endpoint and UI)
 Resume file: None

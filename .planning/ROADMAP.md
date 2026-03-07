@@ -44,7 +44,7 @@ Full details: [milestones/v1.2-ROADMAP.md](milestones/v1.2-ROADMAP.md)
 
 </details>
 
-### 🚧 v1.3 Playground Local Inference (In Progress)
+### v1.3 Playground Local Inference (In Progress)
 
 **Milestone Goal:** Add a Local Inference tab to the browser playground with nano setup status, text embedding, similarity matrix, MRL dimension comparison, and cross-bridge comparison.
 
@@ -97,8 +97,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 14-01-PLAN.md — NxN similarity heatmap with multi-text input and highlighted pairs
-- [ ] 14-02-PLAN.md — MRL dimension comparison with side-by-side stats and similarity preservation
+- [x] 14-01-PLAN.md — NxN similarity heatmap with multi-text input and highlighted pairs
+- [x] 14-02-PLAN.md — MRL dimension comparison with side-by-side stats and similarity preservation
 
 ### Phase 15: Cross-Bridge Comparison
 **Goal**: Users can verify that nano and API embeddings live in the same embedding space
@@ -108,10 +108,11 @@ Plans:
   1. When an API key is configured, user can generate both nano and API embeddings for the same text
   2. Cross-bridge panel shows cosine similarity score between nano and API vectors
   3. Cross-bridge panel visualizes shared embedding space with a clear proof of interoperability
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 15-01: TBD
+- [ ] 15-01-PLAN.md — Cross-bridge comparison endpoint and UI with dual embedding cards and similarity score
+- [ ] 15-02-PLAN.md — Vector alignment visualization with dimension chart and diff statistics
 
 ## Progress
 
@@ -130,5 +131,5 @@ Plans:
 | 11. Chat Visual Polish | v1.2 | 2/2 | Complete | 2026-03-07 |
 | 12. Nano API Server | v1.3 | 2/2 | Complete | 2026-03-07 |
 | 13. Setup Status & Embed UI | v1.3 | 2/2 | Complete | 2026-03-07 |
-| 14. Similarity & Dimensions | 2/2 | Complete   | 2026-03-07 | - |
-| 15. Cross-Bridge Comparison | v1.3 | 0/? | Not started | - |
+| 14. Similarity & Dimensions | v1.3 | 2/2 | Complete | 2026-03-07 |
+| 15. Cross-Bridge Comparison | 1/2 | In Progress|  | - |

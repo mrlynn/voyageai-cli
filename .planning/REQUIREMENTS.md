@@ -41,8 +41,8 @@ Requirements for Playground Local Inference tab. Each maps to roadmap phases.
 
 ### Cross-Bridge
 
-- [ ] **XBRIDGE-01**: When API key is configured, user can compare nano vs API embeddings for same text
-- [ ] **XBRIDGE-02**: Cross-bridge shows cosine similarity between nano and API vectors
+- [x] **XBRIDGE-01**: When API key is configured, user can compare nano vs API embeddings for same text
+- [x] **XBRIDGE-02**: Cross-bridge shows cosine similarity between nano and API vectors
 - [ ] **XBRIDGE-03**: Cross-bridge visualizes shared embedding space proof
 
 ## Future Requirements
@@ -82,8 +82,8 @@ Requirements for Playground Local Inference tab. Each maps to roadmap phases.
 | DIM-01 | Phase 14 | Complete |
 | DIM-02 | Phase 14 | Complete |
 | DIM-03 | Phase 14 | Complete |
-| XBRIDGE-01 | Phase 15 | Pending |
-| XBRIDGE-02 | Phase 15 | Pending |
+| XBRIDGE-01 | Phase 15 | Complete |
+| XBRIDGE-02 | Phase 15 | Complete |
 | XBRIDGE-03 | Phase 15 | Pending |
 
 **Coverage:**
