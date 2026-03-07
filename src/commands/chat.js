@@ -422,6 +422,11 @@ async function handlePipelineTurn(input, ctx) {
       response: fullResponse,
       sources,
       metadata,
+      latency: {
+        retrievalMs: metadata.retrievalTimeMs || null,
+        generationMs: metadata.generationTimeMs || null,
+        totalMs: metadata.totalTimeMs || null,
+      },
     }));
   } else {
     // Interactive mode — stream output with markdown rendering
@@ -501,6 +506,13 @@ async function handlePipelineTurn(input, ctx) {
             moments.success();
           }
 
+          // Show per-message latency
+          if (!opts.quiet) {
+            const { metadata } = event.data;
+            const latencyStr = chatUI.renderLatencyLine(metadata);
+            if (latencyStr) console.log(latencyStr);
+          }
+
           if (showAnimations) {
             console.log(chatUI.renderTurnDivider());
             console.log('');
@@ -550,6 +562,11 @@ async function handleAgentTurn(input, ctx) {
       response: fullResponse,
       toolCalls,
       metadata,
+      latency: {
+        retrievalMs: metadata.retrievalTimeMs || null,
+        generationMs: metadata.generationTimeMs || null,
+        totalMs: metadata.totalTimeMs || null,
+      },
     }));
   } else {
     // Interactive mode with markdown rendering
@@ -617,6 +634,13 @@ async function handleAgentTurn(input, ctx) {
             streamRenderer = null;
           } else {
             console.log('');
+          }
+
+          // Show per-message latency
+          if (!opts.quiet) {
+            const { metadata } = event.data;
+            const latencyStr = chatUI.renderLatencyLine(metadata);
+            if (latencyStr) console.log(latencyStr);
           }
 
           if (showAnimations) {
