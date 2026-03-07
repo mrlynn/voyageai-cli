@@ -78,13 +78,13 @@ echo "📦 Current versions: CLI=$CLI_VERSION_OLD  App=$APP_VERSION_OLD"
 
 # ── Bump CLI version ──
 # Use npm version without git tag (we'll tag manually)
-CLI_VERSION_NEW="$(npm version "$BUMP" --no-git-tag-version)"
+CLI_VERSION_NEW="$(npm version "$BUMP" --no-git-tag-version | tail -1)"
 CLI_VERSION_NEW="${CLI_VERSION_NEW#v}"  # strip leading 'v'
 echo "📦 CLI: $CLI_VERSION_OLD → $CLI_VERSION_NEW"
 
 # ── Bump Electron version to match ──
 # Electron app uses its own versioning scheme but we keep them in sync
-APP_VERSION_NEW="$(cd electron && npm version "$BUMP" --no-git-tag-version)"
+APP_VERSION_NEW="$(cd electron && npm version "$BUMP" --no-git-tag-version | tail -1)"
 APP_VERSION_NEW="${APP_VERSION_NEW#v}"
 echo "🖥️  App: $APP_VERSION_OLD → $APP_VERSION_NEW"
 
