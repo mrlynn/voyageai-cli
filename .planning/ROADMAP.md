@@ -122,11 +122,11 @@ Plans:
   2. User can paste raw text into an ingest input and it gets chunked, embedded, and stored
   3. User can enter a URL, and the page content is fetched, scraped, chunked, embedded, and stored
   4. During any ingest operation, a progress bar shows chunking, embedding, and storage stages with completion status
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 19-01: TBD
-- [ ] 19-02: TBD
+- [ ] 19-01-PLAN.md — Paste text and URL fetch ingest inputs with backend endpoints
+- [ ] 19-02-PLAN.md — PDF file support and stage-level ingest progress bar
 
 ## Progress
 
@@ -148,6 +148,6 @@ Plans:
 | 14. Similarity & Dimensions | v1.3 | 2/2 | Complete | 2026-03-07 |
 | 15. Cross-Bridge Comparison | v1.3 | 2/2 | Complete | 2026-03-07 |
 | 16. Embedding Config | v1.4 | 2/2 | Complete | 2026-03-07 |
-| 17. Onboarding & Detection | 3/3 | Complete    | 2026-03-07 | - |
-| 18. Status Bar | 2/2 | Complete   | 2026-03-07 | - |
-| 19. KB Ingest | v1.4 | 0/? | Not started | - |
+| 17. Onboarding & Detection | v1.4 | 3/3 | Complete | 2026-03-07 |
+| 18. Status Bar | v1.4 | 2/2 | Complete | 2026-03-07 |
+| 19. KB Ingest | v1.4 | 0/2 | Not started | - |
