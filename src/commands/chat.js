@@ -16,6 +16,7 @@ const pc = require('picocolors');
 const fs = require('fs');
 
 const { moments } = require('../lib/robot-moments');
+const { ChatSessionStats } = require('../lib/chat-session-stats');
 
 /**
  * Register the chat command.
@@ -275,6 +276,13 @@ async function runChat(opts) {
   const chatStartTime = Date.now();
   let turnCount = 0;
 
+  // Session-level token and cost accumulator
+  const sessionStats = new ChatSessionStats({
+    embeddingModel: embeddingModel || 'default',
+    llmProvider: llmConfig.provider,
+    llmModel: llmConfig.model,
+  });
+
   // Track tool calls from last agent response (for /tools and /export-workflow)
   let lastToolCalls = [];
 
@@ -333,13 +341,13 @@ async function runChat(opts) {
     try {
       if (isAgent) {
         lastToolCalls = await handleAgentTurn(input, {
-          llm, history, opts, db, collection, systemPrompt, chatConf,
+          llm, history, opts, db, collection, systemPrompt, chatConf, sessionStats,
         });
       } else {
         await handlePipelineTurn(input, {
           db, collection, llm, history, opts,
           maxDocs, doRerank, doStream, systemPrompt, textField, chatConf,
-          isLocal, embeddingModel, isLocalEmbed,
+          isLocal, embeddingModel, isLocalEmbed, sessionStats,
         });
       }
     } catch (err) {
@@ -386,7 +394,7 @@ async function runChat(opts) {
  * Handle a single pipeline mode turn.
  */
 async function handlePipelineTurn(input, ctx) {
-  const { db, collection, llm, history, opts, maxDocs, doRerank, doStream, systemPrompt, textField, chatConf, isLocal, embeddingModel, isLocalEmbed } = ctx;
+  const { db, collection, llm, history, opts, maxDocs, doRerank, doStream, systemPrompt, textField, chatConf, isLocal, embeddingModel, isLocalEmbed, sessionStats } = ctx;
 
   // Build embedding options based on model selection
   let localOpts = {};
@@ -415,6 +423,7 @@ async function handlePipelineTurn(input, ctx) {
       }
     }
 
+    sessionStats.recordTurn({ tokens: metadata.tokens });
     console.log(JSON.stringify({
       sessionId: history.sessionId,
       turn: turnNum,
@@ -427,6 +436,7 @@ async function handlePipelineTurn(input, ctx) {
         generationMs: metadata.generationTimeMs || null,
         totalMs: metadata.totalTimeMs || null,
       },
+      sessionStats: sessionStats.getTotals(),
     }));
   } else {
     // Interactive mode — stream output with markdown rendering
@@ -513,6 +523,12 @@ async function handlePipelineTurn(input, ctx) {
             if (latencyStr) console.log(latencyStr);
           }
 
+          // Accumulate and show session stats
+          sessionStats.recordTurn({ tokens: event.data.metadata?.tokens });
+          if (!opts.quiet) {
+            console.log(sessionStats.formatSummary());
+          }
+
           if (showAnimations) {
             console.log(chatUI.renderTurnDivider());
             console.log('');
@@ -534,7 +550,7 @@ async function handlePipelineTurn(input, ctx) {
  * @returns {Array} Tool calls from this turn (for /tools and /export-workflow)
  */
 async function handleAgentTurn(input, ctx) {
-  const { llm, history, opts, db, collection, systemPrompt, chatConf } = ctx;
+  const { llm, history, opts, db, collection, systemPrompt, chatConf, sessionStats } = ctx;
   const showToolCalls = chatConf.showToolCalls !== undefined ? chatConf.showToolCalls : true;
   const toolCalls = [];
 
@@ -556,6 +572,7 @@ async function handleAgentTurn(input, ctx) {
       }
     }
 
+    sessionStats.recordTurn({ tokens: metadata.tokens });
     console.log(JSON.stringify({
       sessionId: history.sessionId,
       query: input,
@@ -567,6 +584,7 @@ async function handleAgentTurn(input, ctx) {
         generationMs: metadata.generationTimeMs || null,
         totalMs: metadata.totalTimeMs || null,
       },
+      sessionStats: sessionStats.getTotals(),
     }));
   } else {
     // Interactive mode with markdown rendering
@@ -641,6 +659,12 @@ async function handleAgentTurn(input, ctx) {
             const { metadata } = event.data;
             const latencyStr = chatUI.renderLatencyLine(metadata);
             if (latencyStr) console.log(latencyStr);
+          }
+
+          // Accumulate and show session stats
+          sessionStats.recordTurn({ tokens: event.data.metadata?.tokens });
+          if (!opts.quiet) {
+            console.log(sessionStats.formatSummary());
           }
 
           if (showAnimations) {
