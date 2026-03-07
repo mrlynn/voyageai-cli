@@ -8880,7 +8880,7 @@ Reranking models rescore initial search results to improve relevance ordering.</
             <div class="kb-config-row">
               <div class="kb-config-toggle-row">
                 <label class="kb-config-label">Rerank Results</label>
-                <button class="settings-toggle active" id="chatRerank" type="button"></button>
+                <button class="settings-toggle active" id="chatRerank" type="button" onclick="toggleRerank()"></button>
               </div>
             </div>
             <div class="kb-config-row">
@@ -14222,14 +14222,7 @@ function initSettings() {
 
   // ── Chat settings event listeners (fields now live in settings page) ──
 
-  // Rerank toggle (was checkbox, now settings-toggle button)
-  const rerankToggle = document.getElementById('chatRerank');
-  if (rerankToggle) {
-    rerankToggle.addEventListener('click', () => {
-      rerankToggle.classList.toggle('active');
-      saveChatSettings();
-    });
-  }
+  // Rerank toggle now handled by inline onclick="toggleRerank()" on the button HTML
 
   // Immediate save on select/toggle changes
   const chatProvider = document.getElementById('chatProvider');
@@ -16257,6 +16250,7 @@ function updateEmbedBadge() {
       rerankBtn.style.cursor = 'not-allowed';
     } else {
       rerankBtn.disabled = false;
+      rerankBtn.classList.add('active');
       rerankBtn.title = '';
       rerankBtn.style.opacity = '';
       rerankBtn.style.cursor = '';
@@ -16352,6 +16346,14 @@ function saveChatSettings() {
 function saveChatSettingsDebounced() {
   clearTimeout(_chatSaveTimer);
   _chatSaveTimer = setTimeout(saveChatSettings, 500);
+}
+
+function toggleRerank() {
+  const btn = document.getElementById('chatRerank');
+  if (btn && !btn.disabled) {
+    btn.classList.toggle('active');
+    saveChatSettings();
+  }
 }
 
 // flashSaved() is defined earlier (near initSettings) — reused here

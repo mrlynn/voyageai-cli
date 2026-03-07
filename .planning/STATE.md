@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Chat Experience Overhaul
-status: unknown
-last_updated: "2026-03-07T14:14:58.140Z"
+status: in-progress
+last_updated: "2026-03-07T14:22:47Z"
 progress:
   total_phases: 2
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 4
-  completed_plans: 3
+  completed_plans: 4
 ---
 
 # Project State
@@ -22,17 +22,17 @@ See: .planning/PROJECT.md (updated 2026-03-07)
 
 ## Current Position
 
-Phase: 17 of 19 (Onboarding Detection)
-Plan: 1 of 2 in current phase
-Status: 17-01 complete
-Last activity: 2026-03-07 — Completed 17-01 (service detection + health dots)
+Phase: 17 of 19 (Onboarding Detection) -- COMPLETE
+Plan: 2 of 2 in current phase
+Status: 17-02 complete (phase complete)
+Last activity: 2026-03-07 — Completed 17-02 (recommendation engine + welcome banner)
 
-Progress: [████████████████░░░░] 84% (16/19 phases complete)
+Progress: [█████████████████░░░] 89% (17/19 phases complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 38 (across v1.0-v1.4)
+- Total plans completed: 39 (across v1.0-v1.4)
 
 **By Milestone:**
 
@@ -43,6 +43,7 @@ Progress: [████████████████░░░░] 84% (16
 | v1.2 | 2 | 4 | 21 (+1,550/-1,393) |
 | v1.3 | 4 | 8 | 17 (+3,581/-321) |
 | Phase 17-01 P01 | 3min | 2 tasks | 2 files |
+| Phase 17-02 P02 | 2min | 1 task | 1 file |
 
 ## Accumulated Context
 
@@ -51,6 +52,8 @@ Progress: [████████████████░░░░] 84% (16
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- [v1.4]: Recommendation priority: full-local > ollama-only > hybrid > cloud > embeddings-only > nothing
+- [v1.4]: Banner only shows when no provider configured (first-run detection)
 - [v1.4]: Health dots inline with config labels for visual proximity to service controls
 - [v1.4]: Ollama detection with 2s timeout to avoid blocking config load
 - [v1.4]: Embedding availability served from config endpoint (avoid extra fetches)
@@ -72,5 +75,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-07
-Stopped at: Completed 17-01-PLAN.md
+Stopped at: Completed 17-02-PLAN.md (Phase 17 complete)
 Resume file: None
