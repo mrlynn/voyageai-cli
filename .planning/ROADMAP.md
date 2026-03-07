@@ -61,7 +61,7 @@ Full details: [milestones/v1.3-ROADMAP.md](milestones/v1.3-ROADMAP.md)
 
 **Milestone Goal:** Full control over LLM and embedding model in chat, with guided onboarding, live status, and in-panel document ingest.
 
-- [ ] **Phase 16: Embedding Config** - Model selector with LOCAL/API badges and backend wiring
+- [x] **Phase 16: Embedding Config** - Model selector with LOCAL/API badges and backend wiring (completed 2026-03-07)
 - [ ] **Phase 17: Onboarding & Detection** - Auto-detect services, health dots, first-run welcome
 - [ ] **Phase 18: Status Bar** - Model pair display, token/cost counter, per-message latency
 - [ ] **Phase 19: KB Ingest** - File upload, paste text, URL fetch with progress tracking
@@ -147,7 +147,7 @@ Plans:
 | 13. Setup Status & Embed UI | v1.3 | 2/2 | Complete | 2026-03-07 |
 | 14. Similarity & Dimensions | v1.3 | 2/2 | Complete | 2026-03-07 |
 | 15. Cross-Bridge Comparison | v1.3 | 2/2 | Complete | 2026-03-07 |
-| 16. Embedding Config | 1/2 | In Progress|  | - |
+| 16. Embedding Config | 2/2 | Complete   | 2026-03-07 | - |
 | 17. Onboarding & Detection | v1.4 | 0/? | Not started | - |
 | 18. Status Bar | v1.4 | 0/? | Not started | - |
 | 19. KB Ingest | v1.4 | 0/? | Not started | - |

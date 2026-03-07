@@ -9,9 +9,9 @@ Requirements for the chat experience overhaul. Each maps to roadmap phases.
 
 ### Embedding Config
 
-- [ ] **EMBD-01**: User can select Voyage embedding model from dropdown in chat config panel
-- [ ] **EMBD-02**: Dropdown shows LOCAL badge on voyage-4-nano and API badge on cloud models
-- [ ] **EMBD-03**: Embedding model auto-defaults to voyage-4-nano when nano is set up and no API key exists
+- [x] **EMBD-01**: User can select Voyage embedding model from dropdown in chat config panel
+- [x] **EMBD-02**: Dropdown shows LOCAL badge on voyage-4-nano and API badge on cloud models
+- [x] **EMBD-03**: Embedding model auto-defaults to voyage-4-nano when nano is set up and no API key exists
 - [x] **EMBD-04**: Selected embedding model is passed to /api/chat/message and used for retrieval
 
 ### Onboarding
@@ -64,9 +64,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| EMBD-01 | Phase 16 | Pending |
-| EMBD-02 | Phase 16 | Pending |
-| EMBD-03 | Phase 16 | Pending |
+| EMBD-01 | Phase 16 | Complete |
+| EMBD-02 | Phase 16 | Complete |
+| EMBD-03 | Phase 16 | Complete |
 | EMBD-04 | Phase 16 | Complete |
 | ONBD-01 | Phase 17 | Pending |
 | ONBD-02 | Phase 17 | Pending |

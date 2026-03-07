@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-03-07)
 Phase: 16 of 19 (Embedding Config)
 Plan: 2 of 2 in current phase
 Status: Phase 16 complete
-Last activity: 2026-03-07 — Completed 16-02 (CLI embedding model flag)
+Last activity: 2026-03-07 — Completed 16-01 (embedding config dropdown + backend wiring)
 
 Progress: [████████████████░░░░] 84% (16/19 phases complete)
 
@@ -37,6 +37,8 @@ Progress: [████████████████░░░░] 84% (16
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- [v1.4]: Embedding availability served from config endpoint (avoid extra fetches)
+- [v1.4]: Nano auto-default when available, rerank auto-disabled with nano
 - [v1.4]: Extracted resolveEmbeddingConfig helper for testable model resolution
 - [v1.4]: isLocalEmbed drives nano checks instead of isLocal for precision
 - [v1.3]: Context injection for nano API handlers (testable routes)
@@ -54,5 +56,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-07
-Stopped at: Completed 16-02-PLAN.md (Phase 16 complete)
+Stopped at: Completed 16-01-PLAN.md (all Phase 16 plans done)
 Resume file: None
