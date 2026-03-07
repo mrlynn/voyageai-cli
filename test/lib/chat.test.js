@@ -98,8 +98,9 @@ describe('retrieve embedFn injection', () => {
     };
 
     // Will fail at MongoDB step but embedFn should be called first
+    let client;
     try {
-      await retrieve({
+      const result = await retrieve({
         query: 'test query',
         db: 'test_db',
         collection: 'test_col',
@@ -109,8 +110,11 @@ describe('retrieve embedFn injection', () => {
           dimensions: 1024,
         },
       });
+      client = result.client;
     } catch (err) {
       // Expected: MongoDB connection error
+    } finally {
+      if (client) await client.close();
     }
 
     assert.ok(calls.length > 0, 'Custom embedFn should have been called');
