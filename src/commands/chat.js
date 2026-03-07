@@ -275,6 +275,7 @@ async function runChat(opts) {
       db,
       collection,
       sessionId: history.sessionId,
+      interactive: moments.isInteractive({ json: opts.json, plain: opts.quiet }),
     }));
   }
 
