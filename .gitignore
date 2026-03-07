@@ -31,3 +31,7 @@ TOOLS.md
 USER.md
 .vai.json
 .env.local
+.claude/
+.cursor/
+.openclaw/
+.planning/
