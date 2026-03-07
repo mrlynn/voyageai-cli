@@ -139,6 +139,7 @@ function createPlaygroundServer() {
   const { cosineSimilarity } = require('../lib/math');
   const { getConfigValue } = require('../lib/config');
   const { handleRAGRequest } = require('../lib/playground-rag-api');
+  const { handleNanoRequest } = require('../lib/playground-nano-api');
 
   const htmlPath = path.join(__dirname, '..', 'playground', 'index.html');
   const loginHtmlPath = path.join(__dirname, '..', 'playground', 'login.html');
@@ -316,6 +317,19 @@ function createPlaygroundServer() {
       // Handle RAG API requests
       if (req.url.startsWith('/api/rag/')) {
         const handled = await handleRAGRequest(req, res, { generateEmbeddings });
+        if (handled) return;
+      }
+
+      // Handle Nano API requests
+      if (req.url.startsWith('/api/nano/')) {
+        const handled = await handleNanoRequest(req, res, {
+          readJsonBody,
+          generateLocalEmbeddings: require('../nano/nano-local.js').generateLocalEmbeddings,
+          checkPython: require('../nano/nano-health.js').checkPython,
+          checkVenv: require('../nano/nano-health.js').checkVenv,
+          checkModel: require('../nano/nano-health.js').checkModel,
+          checkDevice: require('../nano/nano-health.js').checkDevice,
+        });
         if (handled) return;
       }
 
