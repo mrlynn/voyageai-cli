@@ -38,6 +38,7 @@ function registerChat(program) {
     .option('--no-history', 'Disable MongoDB persistence (in-memory only)')
     .option('--no-rerank', 'Skip reranking step')
     .option('--local', 'Use local nano embeddings instead of Voyage API')
+    .option('--embedding-model <name>', 'Embedding model: voyage-4-nano, voyage-4-lite, voyage-4, voyage-4-large')
     .option('--no-stream', 'Wait for complete response instead of streaming')
     .option('--system-prompt <text>', 'Override the system prompt')
     .option('--text-field <name>', 'Document text field name', 'text')
@@ -69,8 +70,23 @@ async function runChat(opts) {
   const maxDocs = opts.maxContextDocs || chatConf.maxContextDocs || 5;
   const maxTurns = opts.maxTurns || chatConf.maxConversationTurns || 20;
   const textField = opts.textField || 'text';
-  const isLocal = opts.local || false;
-  const doRerank = isLocal ? false : (opts.rerank !== false);
+  // Resolve embedding model: explicit flag > --local shorthand > project config > default
+  let embeddingModel = opts.embeddingModel || chatConf.embeddingModel || null;
+  if (opts.local && !opts.embeddingModel) embeddingModel = 'voyage-4-nano';
+  const isLocalEmbed = embeddingModel === 'voyage-4-nano';
+  // Update isLocal to reflect embedding model choice (for existing isLocal checks)
+  const isLocal = isLocalEmbed || opts.local || false;
+  const doRerank = isLocalEmbed ? false : (opts.rerank !== false);
+
+  // Validate embedding model name if explicitly provided
+  const validEmbedModels = ['voyage-4-nano', 'voyage-4-lite', 'voyage-4', 'voyage-4-large'];
+  if (embeddingModel && !validEmbedModels.includes(embeddingModel)) {
+    if (startupAnim) startupAnim.stop();
+    console.error(ui.error(`Unknown embedding model: ${embeddingModel}`));
+    console.error(`  Valid models: ${validEmbedModels.join(', ')}`);
+    process.exit(1);
+  }
+
   const doStream = opts.stream !== false;
   const systemPrompt = opts.systemPrompt || chatConf.systemPrompt;
 
@@ -92,7 +108,7 @@ async function runChat(opts) {
   }
 
   // Nano prerequisite check (before LLM config)
-  if (isLocal) {
+  if (isLocalEmbed) {
     const { checkVenv, checkModel } = require('../nano/nano-health');
     const venv = checkVenv();
     const model = checkModel();
@@ -320,7 +336,8 @@ async function runChat(opts) {
       } else {
         await handlePipelineTurn(input, {
           db, collection, llm, history, opts,
-          maxDocs, doRerank, doStream, systemPrompt, textField, chatConf, isLocal,
+          maxDocs, doRerank, doStream, systemPrompt, textField, chatConf,
+          isLocal, embeddingModel, isLocalEmbed,
         });
       }
     } catch (err) {
@@ -340,7 +357,7 @@ async function runChat(opts) {
     telemetry.send('cli_chat', {
       provider: llmConfig.provider,
       llmModel: llmConfig.model,
-      embeddingModel: proj.model || undefined,
+      embeddingModel: embeddingModel || proj.model || undefined,
       turnCount,
       durationMs: Date.now() - chatStartTime,
     });
@@ -365,13 +382,15 @@ async function runChat(opts) {
  * Handle a single pipeline mode turn.
  */
 async function handlePipelineTurn(input, ctx) {
-  const { db, collection, llm, history, opts, maxDocs, doRerank, doStream, systemPrompt, textField, chatConf, isLocal } = ctx;
+  const { db, collection, llm, history, opts, maxDocs, doRerank, doStream, systemPrompt, textField, chatConf, isLocal, embeddingModel, isLocalEmbed } = ctx;
 
-  // Build local embedding options if in local mode
+  // Build embedding options based on model selection
   let localOpts = {};
-  if (isLocal) {
+  if (isLocalEmbed) {
     const { generateLocalEmbeddings } = require('../nano/nano-local');
     localOpts = { embedFn: generateLocalEmbeddings, model: 'voyage-4-nano', dimensions: 1024 };
+  } else if (embeddingModel) {
+    localOpts = { model: embeddingModel };
   }
   const turnNum = Math.floor(history.turns.length / 2) + 1;
 
@@ -696,7 +715,7 @@ async function handleSlashCommand(input, ctx) {
         } else {
           console.log('');
           for (const s of sessions) {
-            const active = s.sessionId === history.sessionId ? pc.green(' <- current') : '';
+            const active = s.sessionId === history.sessionId ? ui.green(' <- current') : '';
             const date = s.lastActivity ? new Date(s.lastActivity).toLocaleString() : 'unknown';
             const preview = (s.firstMessage || '').substring(0, 60);
             console.log(`  ${pc.bold(s.sessionId.slice(0, 8))}  ${pc.dim(date)}  ${s.turnCount} turns${active}`);
@@ -731,7 +750,7 @@ async function handleSlashCommand(input, ctx) {
             console.log('');
             console.log(`  Available models:`);
             for (const m of models) {
-              const current = m.id === llm.model ? pc.green(' <- current') : '';
+              const current = m.id === llm.model ? ui.green(' <- current') : '';
               let info = m.name || m.id;
               if (m.size) info += pc.dim(` (${m.size})`);
               if (m.parameterSize) info += pc.dim(` [${m.parameterSize}]`);
@@ -797,7 +816,7 @@ async function handleSlashCommand(input, ctx) {
       console.log('');
       for (let i = 0; i < lastToolCalls.length; i++) {
         const tc = lastToolCalls[i];
-        const status = tc.error ? pc.red('FAILED') : pc.green('OK');
+        const status = tc.error ? pc.red('FAILED') : ui.green('OK');
         console.log(`  ${i + 1}. ${pc.bold(tc.name)} [${status}] (${tc.timeMs}ms)`);
 
         // Show args
@@ -875,4 +894,16 @@ function getVersion() {
   }
 }
 
-module.exports = { registerChat };
+/**
+ * Resolve embedding model configuration from CLI opts and project config.
+ * Exported for testing.
+ */
+function resolveEmbeddingConfig(opts, chatConf = {}) {
+  let embeddingModel = opts.embeddingModel || chatConf.embeddingModel || null;
+  if (opts.local && !opts.embeddingModel) embeddingModel = 'voyage-4-nano';
+  const isLocalEmbed = embeddingModel === 'voyage-4-nano';
+  const doRerank = isLocalEmbed ? false : (opts.rerank !== false);
+  return { embeddingModel, isLocalEmbed, doRerank };
+}
+
+module.exports = { registerChat, resolveEmbeddingConfig };
