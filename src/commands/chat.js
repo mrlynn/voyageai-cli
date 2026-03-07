@@ -283,7 +283,7 @@ async function runChat(opts) {
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
-    prompt: pc.green('> '),
+    prompt: (!opts.json && !opts.quiet) ? chatUI.renderUserPrompt() : '> ',
     terminal: !opts.json,
   });
 
@@ -450,6 +450,9 @@ async function handlePipelineTurn(input, ctx) {
           }
           // Initialize streaming markdown renderer on first chunk
           if (!streamRenderer) {
+            if (showAnimations) {
+              console.log(chatUI.renderAssistantLabel());
+            }
             streamRenderer = chatUI.createStreamRenderer();
           }
           streamRenderer.write(event.data);
@@ -475,7 +478,12 @@ async function handlePipelineTurn(input, ctx) {
             moments.success();
           }
 
-          console.log('');
+          if (showAnimations) {
+            console.log(chatUI.renderTurnDivider());
+            console.log('');
+          } else {
+            console.log('');
+          }
         }
       }
     } finally {
@@ -572,6 +580,9 @@ async function handleAgentTurn(input, ctx) {
             hasShownToolCalls = false;
           }
           if (!streamRenderer) {
+            if (showAnimations) {
+              console.log(chatUI.renderAssistantLabel());
+            }
             streamRenderer = chatUI.createStreamRenderer();
           }
           streamRenderer.write(event.data);
@@ -584,7 +595,13 @@ async function handleAgentTurn(input, ctx) {
           } else {
             console.log('');
           }
-          console.log('');
+
+          if (showAnimations) {
+            console.log(chatUI.renderTurnDivider());
+            console.log('');
+          } else {
+            console.log('');
+          }
         }
       }
     } finally {
