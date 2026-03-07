@@ -3792,6 +3792,75 @@ select:focus { outline: none; border-color: var(--accent); }
   color: var(--success);
   font-weight: 500;
 }
+.nano-sim-heatmap {
+  display: grid;
+  gap: 2px;
+  margin-top: 12px;
+  overflow-x: auto;
+}
+.nano-sim-cell {
+  min-width: 60px;
+  text-align: center;
+  border-radius: 4px;
+  font-size: 0.8em;
+  padding: 8px 4px;
+  color: #fff;
+  font-weight: 500;
+}
+.nano-sim-label {
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.75em;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 2px;
+}
+.nano-sim-corner {
+  min-width: 60px;
+}
+.nano-sim-highlights {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 12px;
+}
+.nano-sim-highlight-card {
+  flex: 1;
+  min-width: 200px;
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--bg-card, #1a1a2e);
+  border-left: 4px solid var(--success);
+}
+.nano-sim-highlight-card.lowest {
+  border-left-color: var(--error, #ff6b6b);
+}
+.nano-sim-highlight-card .highlight-title {
+  font-weight: 600;
+  font-size: 0.85em;
+  margin-bottom: 6px;
+}
+.nano-sim-highlight-card .highlight-score {
+  font-size: 1.2em;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.nano-sim-highlight-card .highlight-texts {
+  font-size: 0.8em;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+.nano-sim-highlight-card .highlight-texts span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 250px;
+}
 
 /* ── Library Search ── */
 .wf-library-search-wrap {
@@ -9112,6 +9181,44 @@ Reranking models rescore initial search results to improve relevance ordering.</
       </div>
     </div>
   </div>
+
+  <!-- Similarity Matrix Section (shown when nano bridge is ready) -->
+  <div id="nanoSimilaritySection" style="display:none;">
+    <div class="card" style="margin-top:16px;">
+      <div class="card-title">Similarity Matrix</div>
+      <textarea id="nanoSimTexts" rows="6" placeholder="Enter 2-10 texts, one per line..." aria-label="Texts for similarity comparison">Vector search finds similar documents using embeddings
+Embedding models convert text into numerical vectors
+Cosine similarity measures the angle between two vectors
+Retrieval augmented generation combines search with LLMs</textarea>
+    </div>
+
+    <div class="options-row">
+      <div class="option-group">
+        <span class="option-label">Dimension</span>
+        <select id="nanoSimDimension">
+          <option value="256">256</option>
+          <option value="512">512</option>
+          <option value="1024" selected>1024</option>
+          <option value="2048">2048</option>
+        </select>
+      </div>
+      <button class="btn" id="nanoSimBtn" onclick="nanoDoSimilarity()">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        Compare
+      </button>
+    </div>
+
+    <div class="error-msg" id="nanoSimError"></div>
+
+    <div class="result-section" id="nanoSimResult">
+      <div class="card">
+        <div class="card-title">Results</div>
+        <div id="nanoSimStats"></div>
+        <div id="nanoSimHeatmap"></div>
+        <div id="nanoSimHighlights"></div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- ========== SETTINGS TAB ========== -->
@@ -9942,6 +10049,7 @@ async function nanoInit() {
   const content = document.getElementById('nanoStatusContent');
   const banner = document.getElementById('nanoSetupBanner');
   const embedSection = document.getElementById('nanoEmbedSection');
+  const simSection = document.getElementById('nanoSimilaritySection');
 
   content.innerHTML = '<div class="nano-status-loading">Checking nano bridge status...</div>';
   banner.style.display = 'none';
@@ -9975,15 +10083,18 @@ async function nanoInit() {
       var readyEl = document.getElementById('nanoReadyBanner');
       if (readyEl) readyEl.style.display = 'flex';
       if (embedSection) embedSection.style.display = 'block';
+      if (simSection) simSection.style.display = 'block';
     } else {
       // Show setup required banner, disable embed section
       banner.style.display = 'flex';
       if (embedSection) embedSection.style.display = 'none';
+      if (simSection) simSection.style.display = 'none';
     }
   } catch (err) {
     content.innerHTML = '<div class="nano-status-loading" style="color:var(--error,#ff6b6b)">Failed to check nano status: ' + err.message + '</div>';
     banner.style.display = 'flex';
     if (embedSection) embedSection.style.display = 'none';
+    if (simSection) simSection.style.display = 'none';
   }
 }
 
@@ -10048,6 +10159,126 @@ window.nanoCopyVector = function() {
         setTimeout(function() { btn.innerHTML = orig; }, 1500);
       }
     });
+};
+
+window.nanoDoSimilarity = async function() {
+  hideError('nanoSimError');
+  var rawText = document.getElementById('nanoSimTexts').value;
+  var lines = rawText.split('\n');
+  var texts = [];
+  for (var i = 0; i < lines.length; i++) {
+    var trimmed = lines[i].trim();
+    if (trimmed.length > 0) {
+      texts.push(trimmed);
+    }
+  }
+
+  if (texts.length < 2 || texts.length > 10) {
+    showError('nanoSimError', 'Please enter between 2 and 10 texts (one per line). Currently: ' + texts.length);
+    return;
+  }
+
+  var dimension = parseInt(document.getElementById('nanoSimDimension').value, 10);
+  setLoading('nanoSimBtn', true);
+
+  try {
+    var res = await fetch('/api/nano/similarity', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ texts: texts, dimension: dimension }),
+    });
+    var data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.error || 'Similarity comparison failed');
+    }
+
+    var matrix = data.matrix;
+    var n = texts.length;
+
+    // Stats
+    var statsEl = document.getElementById('nanoSimStats');
+    statsEl.innerHTML =
+      '<span class="stat"><span class="stat-label">Texts</span><span class="stat-value">' + n + '</span></span>' +
+      '<span class="stat"><span class="stat-label">Dimension</span><span class="stat-value">' + data.dimension + '</span></span>' +
+      '<span class="stat"><span class="stat-label">Latency</span><span class="stat-value">' + data.latency_ms + 'ms</span></span>';
+
+    // Build NxN heatmap grid
+    var gridCols = n + 1;
+    var heatmapHtml = '<div class="nano-sim-heatmap" style="grid-template-columns: repeat(' + gridCols + ', 1fr);">';
+
+    // Corner cell
+    heatmapHtml += '<div class="nano-sim-corner"></div>';
+
+    // Column header labels
+    for (var c = 0; c < n; c++) {
+      heatmapHtml += '<div class="nano-sim-label" title="' + texts[c].replace(/"/g, '&quot;') + '">' + texts[c].substring(0, 12) + '</div>';
+    }
+
+    // Rows
+    for (var r = 0; r < n; r++) {
+      // Row label
+      heatmapHtml += '<div class="nano-sim-label" title="' + texts[r].replace(/"/g, '&quot;') + '">' + texts[r].substring(0, 12) + '</div>';
+      // Cells
+      for (var ci = 0; ci < n; ci++) {
+        var score = matrix[r][ci];
+        var hue = Math.round(score * 120);
+        var bg = 'hsl(' + hue + ', 70%, 35%)';
+        heatmapHtml += '<div class="nano-sim-cell" style="background:' + bg + ';" title="' + texts[r].substring(0, 20) + ' vs ' + texts[ci].substring(0, 20) + '">' + score.toFixed(3) + '</div>';
+      }
+    }
+    heatmapHtml += '</div>';
+    document.getElementById('nanoSimHeatmap').innerHTML = heatmapHtml;
+
+    // Find highest and lowest off-diagonal pairs
+    var highScore = -Infinity;
+    var lowScore = Infinity;
+    var highPair = [0, 1];
+    var lowPair = [0, 1];
+    for (var ri = 0; ri < n; ri++) {
+      for (var cj = ri + 1; cj < n; cj++) {
+        if (matrix[ri][cj] > highScore) {
+          highScore = matrix[ri][cj];
+          highPair = [ri, cj];
+        }
+        if (matrix[ri][cj] < lowScore) {
+          lowScore = matrix[ri][cj];
+          lowPair = [ri, cj];
+        }
+      }
+    }
+
+    var highlightsHtml = '<div class="nano-sim-highlights">';
+
+    // Highest pair card
+    highlightsHtml += '<div class="nano-sim-highlight-card">' +
+      '<div class="highlight-title">Highest Similarity</div>' +
+      '<div class="highlight-score" style="color:var(--success);">' + highScore.toFixed(4) + '</div>' +
+      '<div class="highlight-texts">' +
+        '<span title="' + texts[highPair[0]].replace(/"/g, '&quot;') + '">' + texts[highPair[0]].substring(0, 50) + '</span>' +
+        '<span title="' + texts[highPair[1]].replace(/"/g, '&quot;') + '">' + texts[highPair[1]].substring(0, 50) + '</span>' +
+      '</div>' +
+    '</div>';
+
+    // Lowest pair card
+    highlightsHtml += '<div class="nano-sim-highlight-card lowest">' +
+      '<div class="highlight-title">Lowest Similarity</div>' +
+      '<div class="highlight-score" style="color:var(--error, #ff6b6b);">' + lowScore.toFixed(4) + '</div>' +
+      '<div class="highlight-texts">' +
+        '<span title="' + texts[lowPair[0]].replace(/"/g, '&quot;') + '">' + texts[lowPair[0]].substring(0, 50) + '</span>' +
+        '<span title="' + texts[lowPair[1]].replace(/"/g, '&quot;') + '">' + texts[lowPair[1]].substring(0, 50) + '</span>' +
+      '</div>' +
+    '</div>';
+
+    highlightsHtml += '</div>';
+    document.getElementById('nanoSimHighlights').innerHTML = highlightsHtml;
+
+    document.getElementById('nanoSimResult').classList.add('visible');
+  } catch (err) {
+    showError('nanoSimError', err.message);
+  } finally {
+    setLoading('nanoSimBtn', false);
+  }
 };
 
 // ── Home Page ──

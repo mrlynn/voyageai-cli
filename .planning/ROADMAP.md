@@ -82,8 +82,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 13-01-PLAN.md — Add Local Inference tab skeleton with setup status panel and CSS
-- [ ] 13-02-PLAN.md — Add embed text form with dimension/quantization controls and vector display
+- [x] 13-01-PLAN.md — Add Local Inference tab skeleton with setup status panel and CSS
+- [x] 13-02-PLAN.md — Add embed text form with dimension/quantization controls and vector display
 
 ### Phase 14: Similarity & Dimensions
 **Goal**: Users can explore semantic relationships between texts and understand MRL dimension tradeoffs
@@ -94,11 +94,11 @@ Plans:
   2. Heatmap visually highlights the highest and lowest similarity pairs
   3. User can enter text and see side-by-side embeddings across MRL dimensions (256, 512, 1024, 2048)
   4. Dimension comparison shows vector stats (norm, sparsity) and similarity preservation vs the full 2048-dim baseline
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 14-01: TBD
-- [ ] 14-02: TBD
+- [ ] 14-01-PLAN.md — NxN similarity heatmap with multi-text input and highlighted pairs
+- [ ] 14-02-PLAN.md — MRL dimension comparison with side-by-side stats and similarity preservation
 
 ### Phase 15: Cross-Bridge Comparison
 **Goal**: Users can verify that nano and API embeddings live in the same embedding space
@@ -129,6 +129,6 @@ Plans:
 | 10. Robot Chat Poses | v1.2 | 2/2 | Complete | 2026-03-07 |
 | 11. Chat Visual Polish | v1.2 | 2/2 | Complete | 2026-03-07 |
 | 12. Nano API Server | v1.3 | 2/2 | Complete | 2026-03-07 |
-| 13. Setup Status & Embed UI | 2/2 | Complete   | 2026-03-07 | - |
-| 14. Similarity & Dimensions | v1.3 | 0/? | Not started | - |
+| 13. Setup Status & Embed UI | v1.3 | 2/2 | Complete | 2026-03-07 |
+| 14. Similarity & Dimensions | v1.3 | 0/2 | Not started | - |
 | 15. Cross-Bridge Comparison | v1.3 | 0/? | Not started | - |
