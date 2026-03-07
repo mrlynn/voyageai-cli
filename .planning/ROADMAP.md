@@ -63,7 +63,7 @@ Full details: [milestones/v1.3-ROADMAP.md](milestones/v1.3-ROADMAP.md)
 
 - [x] **Phase 16: Embedding Config** - Model selector with LOCAL/API badges and backend wiring (completed 2026-03-07)
 - [x] **Phase 17: Onboarding & Detection** - Auto-detect services, health dots, first-run welcome (completed 2026-03-07)
-- [ ] **Phase 18: Status Bar** - Model pair display, token/cost counter, per-message latency
+- [x] **Phase 18: Status Bar** - Model pair display, token/cost counter, per-message latency (completed 2026-03-07)
 - [ ] **Phase 19: KB Ingest** - File upload, paste text, URL fetch with progress tracking
 
 ## Phase Details
@@ -149,5 +149,5 @@ Plans:
 | 15. Cross-Bridge Comparison | v1.3 | 2/2 | Complete | 2026-03-07 |
 | 16. Embedding Config | v1.4 | 2/2 | Complete | 2026-03-07 |
 | 17. Onboarding & Detection | 3/3 | Complete    | 2026-03-07 | - |
-| 18. Status Bar | 1/2 | In Progress|  | - |
+| 18. Status Bar | 2/2 | Complete   | 2026-03-07 | - |
 | 19. KB Ingest | v1.4 | 0/? | Not started | - |
