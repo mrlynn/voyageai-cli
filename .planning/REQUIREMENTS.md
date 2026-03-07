@@ -1,0 +1,77 @@
+# Requirements: Robot Chat UX
+
+**Defined:** 2026-03-07
+**Core Value:** Zero-API-key path from install to working vector search, with seamless upgrade to Voyage API.
+
+## v1 Requirements
+
+Requirements for this milestone. Each maps to roadmap phases.
+
+### Robot Chat
+
+- [x] **ROBO-01**: Chat uses animated robot `searching` pose during vector retrieval instead of plain spinner
+- [x] **ROBO-02**: Chat uses animated robot `thinking` pose during LLM response generation instead of plain spinner
+- [ ] **ROBO-03**: Chat shows robot `success` pose when a response completes with sources
+- [ ] **ROBO-04**: Chat shows robot `error` pose when a chat turn fails
+- [x] **ROBO-05**: Robot animations are skipped in non-TTY, --json, and --quiet modes
+
+### Chat Header
+
+- [ ] **HEAD-01**: Chat startup displays robot-branded header with sideBySide layout (like search/explain)
+- [ ] **HEAD-02**: Header shows session info: provider, model, mode, knowledge base, session ID
+
+### Turn Polish
+
+- [ ] **TURN-01**: User input is visually styled (prompt prefix or subtle highlight) to distinguish from assistant output
+- [ ] **TURN-02**: Assistant response has a visual prefix or label before streaming begins
+- [ ] **TURN-03**: Visual divider separates consecutive turns for readability
+
+## Future Requirements
+
+Deferred to future milestone. Tracked but not in current roadmap.
+
+### Extended Robot Integration
+
+- **ROBO-06**: Demo commands use robot moments for loading/processing states
+- **ROBO-07**: Robot blink animation as idle state during REPL wait
+- **ROBO-08**: Robot wave animation on first chat launch (onboarding)
+
+### Chat UX Advanced
+
+- **CHAT-05**: Typing indicator animation while streaming (character-by-character reveal)
+- **CHAT-06**: Chat sidebar with persistent session info panel
+
+## Out of Scope
+
+| Feature | Reason |
+|---------|--------|
+| Ink/blessed TUI framework | Too heavy for this milestone; raw ANSI with existing robot.js is sufficient |
+| Agent mode robot poses | Agent mode has different flow; focus on pipeline mode first |
+| Robot in playground web UI | Playground uses SVG renderer; terminal robot is separate concern |
+| Custom pose creation | Existing 7 poses cover all needed states |
+
+## Traceability
+
+Which phases cover which requirements. Updated during roadmap creation.
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| ROBO-01 | Phase 10 | Complete |
+| ROBO-02 | Phase 10 | Complete |
+| ROBO-03 | Phase 10 | Pending |
+| ROBO-04 | Phase 10 | Pending |
+| ROBO-05 | Phase 10 | Complete |
+| HEAD-01 | Phase 11 | Pending |
+| HEAD-02 | Phase 11 | Pending |
+| TURN-01 | Phase 11 | Pending |
+| TURN-02 | Phase 11 | Pending |
+| TURN-03 | Phase 11 | Pending |
+
+**Coverage:**
+- v1 requirements: 10 total
+- Mapped to phases: 10
+- Unmapped: 0
+
+---
+*Requirements defined: 2026-03-07*
+*Last updated: 2026-03-07 after roadmap creation*
