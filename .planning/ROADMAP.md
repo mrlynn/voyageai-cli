@@ -67,8 +67,8 @@ Full details: [milestones/v1.2-ROADMAP.md](milestones/v1.2-ROADMAP.md)
 **Plans**: 2 plans
 
 Plans:
-- [ ] 12-01-PLAN.md — Create nano API module with all 4 endpoints and wire into playground server
-- [ ] 12-02-PLAN.md — Unit tests for all nano API endpoints
+- [x] 12-01-PLAN.md — Create nano API module with all 4 endpoints and wire into playground server
+- [x] 12-02-PLAN.md — Unit tests for all nano API endpoints
 
 ### Phase 13: Setup Status & Embed UI
 **Goal**: Users see nano readiness at a glance and can generate embeddings with full control over parameters
@@ -79,11 +79,11 @@ Plans:
   2. When setup is incomplete, tab shows an actionable prompt telling the user to run `vai nano setup`
   3. When nano bridge is available, all tab controls are enabled and functional
   4. User can type text, select dimension and quantization, and see the resulting embedding vector with metadata (dimension count, quantization type, latency)
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 13-01: TBD
-- [ ] 13-02: TBD
+- [ ] 13-01-PLAN.md — Add Local Inference tab skeleton with setup status panel and CSS
+- [ ] 13-02-PLAN.md — Add embed text form with dimension/quantization controls and vector display
 
 ### Phase 14: Similarity & Dimensions
 **Goal**: Users can explore semantic relationships between texts and understand MRL dimension tradeoffs
@@ -128,7 +128,7 @@ Plans:
 | 9. Phase 6 Verification | v1.1 | 1/1 | Complete | 2026-03-06 |
 | 10. Robot Chat Poses | v1.2 | 2/2 | Complete | 2026-03-07 |
 | 11. Chat Visual Polish | v1.2 | 2/2 | Complete | 2026-03-07 |
-| 12. Nano API Server | 2/2 | Complete   | 2026-03-07 | - |
-| 13. Setup Status & Embed UI | v1.3 | 0/? | Not started | - |
+| 12. Nano API Server | v1.3 | 2/2 | Complete | 2026-03-07 |
+| 13. Setup Status & Embed UI | v1.3 | 0/2 | Planned | - |
 | 14. Similarity & Dimensions | v1.3 | 0/? | Not started | - |
 | 15. Cross-Bridge Comparison | v1.3 | 0/? | Not started | - |
