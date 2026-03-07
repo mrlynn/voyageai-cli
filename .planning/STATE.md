@@ -2,8 +2,8 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Robot Chat UX
-status: complete
-last_updated: "2026-03-07T09:25:57.241Z"
+status: shipped
+last_updated: "2026-03-07"
 progress:
   total_phases: 2
   completed_phases: 2
@@ -18,35 +18,25 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-07)
 
 **Core value:** Zero-API-key path from install to working vector search, with seamless upgrade to Voyage API.
-**Current focus:** Phase 11 - Chat Visual Polish
+**Current focus:** Planning next milestone
 
 ## Current Position
 
-Phase: 11 of 11 (Chat Visual Polish)
-Plan: 2 of 2 in current phase
-Status: Phase 11 complete -- all plans finished
-Last activity: 2026-03-07 -- Completed 11-02 turn styling for chat REPL
+Phase: All phases complete (v1.0-v1.2 shipped)
+Status: v1.2 Robot Chat UX shipped
+Last activity: 2026-03-07 — Completed v1.2 milestone archival
 
 ## Performance Metrics
 
 **v1.0:** 5 phases, 18 plans, 52 files changed
 **v1.1:** 4 phases, 6 plans, 94 files changed, 25 commits
+**v1.2:** 2 phases, 4 plans, 21 files changed, 11 commits
 
 ## Accumulated Context
 
 ### Decisions
 
 Full decision log in PROJECT.md Key Decisions tables.
-Recent decisions affecting current work:
-
-- [v1.1]: Dual spinners for chat UX (eliminates dead time between retrieval and first LLM chunk)
-- [v1.1]: Function injection (embedFn param) over strategy pattern for local mode
-- [v1.2]: Raw ANSI dim codes for elapsed timer in robot animations (consistent with robot.js no-picocolors approach)
-- [v1.2]: node:test runner for robot-moments tests (matching project convention over plan's vitest suggestion)
-- [v1.2]: Collapse-to-one-liner on animation stop (clean pipeline transitions, user-selected over leave-frame or clear-entirely)
-- [v1.2]: Copied sideBySide helper into chat-ui.js rather than exporting from robot-moments.js (avoids coupling)
-- [v1.2]: Interactive flag pattern -- caller passes boolean, renderer branches on it
-- [Phase 11]: Used showAnimations guard consistently for all turn styling (no new guard variables)
 
 ### Pending Todos
 
@@ -59,5 +49,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-07
-Stopped at: Completed 11-02-PLAN.md (turn styling for chat REPL)
+Stopped at: Completed v1.2 milestone archival
 Resume file: None

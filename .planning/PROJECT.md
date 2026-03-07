@@ -2,7 +2,7 @@
 
 ## What This Is
 
-Local embedding inference for voyageai-cli using the `voyage-4-nano` open-weight model. A Python subprocess bridge enables zero-API-key, zero-cost embedding generation that shares the same embedding space as the voyage-4 API models. Developers can embed documents locally with nano and later query them via the API with voyage-4-lite or voyage-4 -- no re-indexing needed.
+Local embedding inference for voyageai-cli using the `voyage-4-nano` open-weight model, with a branded robot chat experience. A Python subprocess bridge enables zero-API-key, zero-cost embedding generation that shares the same embedding space as the voyage-4 API models. The chat interface features animated robot poses during processing, branded headers, and styled turn separation for a polished conversational UX.
 
 ## Core Value
 
@@ -24,10 +24,13 @@ A developer can go from `npm install` to a working vector search pipeline with z
 - README "Local Inference" section with nano workflow — v1.1
 - `vai explain nano` content refresh with CLI workflow — v1.1
 - `vai demo chat --local` with local embeddings (MongoDB + LLM still required) — v1.1
+- Animated robot poses in chat (thinking, searching, success, error) — v1.2
+- Polished streaming output with visual turn separation — v1.2
+- Robot-branded chat header on startup — v1.2
 
 ### Active
 
-(None — define in next milestone)
+(None yet — define in next milestone)
 
 ### Out of Scope
 
@@ -52,6 +55,8 @@ A developer can go from `npm install` to a working vector search pipeline with z
 **v1.0 shipped 2026-03-06:** 5 phases, 18 plans, 52 files changed (+5,396 lines). Full local inference pipeline operational with zero-API-key path from install to vector search.
 
 **v1.1 shipped 2026-03-07:** 4 phases, 6 plans, 94 files changed (+9,201/-4,913). Zero-dependency demos (`vai demo nano`, `vai demo chat --local`), documentation, and formal verification.
+
+**v1.2 shipped 2026-03-07:** 2 phases, 4 plans, 21 files changed (+1,550/-1,393). Robot chat UX with animated poses, branded header, and styled turn separation.
 
 ## Constraints
 
@@ -85,4 +90,16 @@ A developer can go from `npm install` to a working vector search pipeline with z
 | Dual spinners for chat UX | Eliminates dead time between retrieval and first LLM chunk | ✓ Good |
 
 ---
-*Last updated: 2026-03-07 after v1.1 milestone*
+## Key Decisions (v1.2)
+
+| Decision | Rationale | Outcome |
+|----------|-----------|---------|
+| Raw ANSI dim codes for elapsed timer | Consistent with robot.js no-picocolors approach | ✓ Good |
+| node:test runner for robot-moments tests | Matches project convention over plan's vitest suggestion | ✓ Good |
+| Collapse-to-one-liner on animation stop | Clean pipeline transitions; user-selected over leave-frame or clear-entirely | ✓ Good |
+| Copied sideBySide helper into chat-ui.js | Avoids coupling chat-ui to robot-moments internals | ✓ Good |
+| Interactive flag pattern (caller passes boolean) | Simple, renderer branches on it without global state | ✓ Good |
+| showAnimations guard for all turn styling | No new guard variables; consistent gating pattern | ✓ Good |
+
+---
+*Last updated: 2026-03-07 after v1.2 milestone*
