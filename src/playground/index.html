@@ -3861,6 +3861,65 @@ select:focus { outline: none; border-color: var(--accent); }
   white-space: nowrap;
   max-width: 250px;
 }
+.nano-dim-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+.nano-dim-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+.nano-dim-card-title {
+  font-weight: 600;
+  font-size: 1.1em;
+  margin-bottom: 8px;
+  color: var(--accent-text);
+}
+.nano-dim-stat-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+  font-size: 0.85em;
+  border-bottom: 1px solid var(--border);
+}
+.nano-dim-stat-label {
+  color: var(--text-muted);
+}
+.nano-dim-stat-value {
+  font-family: var(--mono);
+  color: var(--text);
+}
+.nano-dim-preservation {
+  margin-top: 8px;
+  padding: 8px;
+  border-radius: 4px;
+  text-align: center;
+  font-weight: 600;
+}
+.nano-dim-preservation.high {
+  background: rgba(var(--success-rgb, 72, 199, 142), 0.15);
+  color: var(--success);
+}
+.nano-dim-preservation.mid {
+  background: rgba(var(--warning-rgb, 255, 193, 7), 0.15);
+  color: var(--warning);
+}
+.nano-dim-preservation.low {
+  background: rgba(var(--error-rgb, 255, 107, 107), 0.15);
+  color: var(--error, #ff6b6b);
+}
+.nano-dim-baseline-tag {
+  background: var(--accent);
+  color: var(--bg);
+  font-size: 0.7em;
+  padding: 2px 6px;
+  border-radius: 3px;
+  margin-left: 8px;
+  vertical-align: middle;
+}
 
 /* ── Library Search ── */
 .wf-library-search-wrap {
@@ -9219,6 +9278,31 @@ Retrieval augmented generation combines search with LLMs</textarea>
       </div>
     </div>
   </div>
+
+  <!-- Dimension Comparison Section (shown when nano bridge is ready) -->
+  <div id="nanoDimensionSection" style="display:none;">
+    <div class="card" style="margin-top:16px;">
+      <div class="card-title">MRL Dimension Comparison</div>
+      <textarea id="nanoDimText" rows="3" placeholder="Enter text to compare across dimensions..." aria-label="Text for dimension comparison">Vector search finds similar documents using high-dimensional embeddings.</textarea>
+    </div>
+
+    <div class="options-row">
+      <button class="btn" id="nanoDimBtn" onclick="nanoDoDimensions()">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        Compare Dimensions
+      </button>
+    </div>
+
+    <div class="error-msg" id="nanoDimError"></div>
+
+    <div class="result-section" id="nanoDimResult">
+      <div class="card">
+        <div class="card-title">Results</div>
+        <div id="nanoDimStats"></div>
+        <div id="nanoDimCards"></div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- ========== SETTINGS TAB ========== -->
@@ -10050,6 +10134,7 @@ async function nanoInit() {
   const banner = document.getElementById('nanoSetupBanner');
   const embedSection = document.getElementById('nanoEmbedSection');
   const simSection = document.getElementById('nanoSimilaritySection');
+  const dimSection = document.getElementById('nanoDimensionSection');
 
   content.innerHTML = '<div class="nano-status-loading">Checking nano bridge status...</div>';
   banner.style.display = 'none';
@@ -10084,17 +10169,20 @@ async function nanoInit() {
       if (readyEl) readyEl.style.display = 'flex';
       if (embedSection) embedSection.style.display = 'block';
       if (simSection) simSection.style.display = 'block';
+      if (dimSection) dimSection.style.display = 'block';
     } else {
       // Show setup required banner, disable embed section
       banner.style.display = 'flex';
       if (embedSection) embedSection.style.display = 'none';
       if (simSection) simSection.style.display = 'none';
+      if (dimSection) dimSection.style.display = 'none';
     }
   } catch (err) {
     content.innerHTML = '<div class="nano-status-loading" style="color:var(--error,#ff6b6b)">Failed to check nano status: ' + err.message + '</div>';
     banner.style.display = 'flex';
     if (embedSection) embedSection.style.display = 'none';
     if (simSection) simSection.style.display = 'none';
+    if (dimSection) dimSection.style.display = 'none';
   }
 }
 
@@ -10278,6 +10366,93 @@ window.nanoDoSimilarity = async function() {
     showError('nanoSimError', err.message);
   } finally {
     setLoading('nanoSimBtn', false);
+  }
+};
+
+function nanoCosineSim(a, b) {
+  var len = Math.min(a.length, b.length);
+  var dot = 0;
+  var normA = 0;
+  var normB = 0;
+  for (var i = 0; i < len; i++) {
+    dot += a[i] * b[i];
+    normA += a[i] * a[i];
+    normB += b[i] * b[i];
+  }
+  normA = Math.sqrt(normA);
+  normB = Math.sqrt(normB);
+  if (normA === 0 || normB === 0) return 0;
+  return dot / (normA * normB);
+}
+
+window.nanoDoDimensions = async function() {
+  hideError('nanoDimError');
+  var text = document.getElementById('nanoDimText').value.trim();
+  if (!text) {
+    showError('nanoDimError', 'Enter some text to compare across dimensions');
+    return;
+  }
+
+  setLoading('nanoDimBtn', true);
+
+  try {
+    var res = await fetch('/api/nano/dimensions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: text }),
+    });
+    var data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.error || 'Dimension comparison failed');
+    }
+
+    // Stats
+    var statsEl = document.getElementById('nanoDimStats');
+    statsEl.innerHTML =
+      '<span class="stat"><span class="stat-label">Latency</span><span class="stat-value">' + data.latency_ms + 'ms</span></span>';
+
+    var dims = ['256', '512', '1024', '2048'];
+    var baseline = data.dimensions['2048'].embedding;
+    var cardsHtml = '<div class="nano-dim-grid">';
+
+    for (var di = 0; di < dims.length; di++) {
+      var dim = dims[di];
+      var info = data.dimensions[dim];
+      var isBaseline = dim === '2048';
+
+      cardsHtml += '<div class="nano-dim-card">';
+      cardsHtml += '<div class="nano-dim-card-title">' + dim + ' dimensions';
+      if (isBaseline) {
+        cardsHtml += '<span class="nano-dim-baseline-tag">Baseline</span>';
+      }
+      cardsHtml += '</div>';
+
+      // Stat rows
+      cardsHtml += '<div class="nano-dim-stat-row"><span class="nano-dim-stat-label">Norm</span><span class="nano-dim-stat-value">' + info.norm.toFixed(4) + '</span></div>';
+      cardsHtml += '<div class="nano-dim-stat-row"><span class="nano-dim-stat-label">Sparsity</span><span class="nano-dim-stat-value">' + (info.sparsity * 100).toFixed(1) + '%</span></div>';
+      cardsHtml += '<div class="nano-dim-stat-row"><span class="nano-dim-stat-label">Vector Length</span><span class="nano-dim-stat-value">' + dim + '</span></div>';
+
+      // Similarity preservation
+      if (isBaseline) {
+        cardsHtml += '<div class="nano-dim-preservation high">1.0000 (baseline)</div>';
+      } else {
+        var sim = nanoCosineSim(info.embedding, baseline);
+        var cls = sim >= 0.99 ? 'high' : (sim >= 0.95 ? 'mid' : 'low');
+        cardsHtml += '<div class="nano-dim-preservation ' + cls + '">' + sim.toFixed(4) + '</div>';
+      }
+
+      cardsHtml += '</div>';
+    }
+
+    cardsHtml += '</div>';
+    document.getElementById('nanoDimCards').innerHTML = cardsHtml;
+
+    document.getElementById('nanoDimResult').classList.add('visible');
+  } catch (err) {
+    showError('nanoDimError', err.message);
+  } finally {
+    setLoading('nanoDimBtn', false);
   }
 };
 
