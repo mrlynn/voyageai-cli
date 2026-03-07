@@ -30,10 +30,10 @@ Requirements for the chat experience overhaul. Each maps to roadmap phases.
 
 ### KB Ingest
 
-- [ ] **KBIN-01**: User can upload files (text, markdown, PDF) via drag-and-drop or file picker
+- [x] **KBIN-01**: User can upload files (text, markdown, PDF) via drag-and-drop or file picker
 - [ ] **KBIN-02**: User can paste text content to be chunked, embedded, and stored
 - [ ] **KBIN-03**: User can enter a URL to fetch, scrape, chunk, embed, and store
-- [ ] **KBIN-04**: Ingest shows progress bar for chunking, embedding, and storage stages
+- [x] **KBIN-04**: Ingest shows progress bar for chunking, embedding, and storage stages
 
 ## Future Requirements
 
@@ -76,10 +76,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | STAT-02 | Phase 18 | Complete |
 | STAT-03 | Phase 18 | Complete |
 | STAT-04 | Phase 18 | Complete |
-| KBIN-01 | Phase 19 | Pending |
+| KBIN-01 | Phase 19 | Complete |
 | KBIN-02 | Phase 19 | Pending |
 | KBIN-03 | Phase 19 | Pending |
-| KBIN-04 | Phase 19 | Pending |
+| KBIN-04 | Phase 19 | Complete |
 
 **Coverage:**
 - v1.4 requirements: 16 total

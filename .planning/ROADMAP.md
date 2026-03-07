@@ -150,4 +150,4 @@ Plans:
 | 16. Embedding Config | v1.4 | 2/2 | Complete | 2026-03-07 |
 | 17. Onboarding & Detection | v1.4 | 3/3 | Complete | 2026-03-07 |
 | 18. Status Bar | v1.4 | 2/2 | Complete | 2026-03-07 |
-| 19. KB Ingest | v1.4 | 0/2 | Not started | - |
+| 19. KB Ingest | 1/2 | In Progress|  | - |

@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Chat Experience Overhaul
-status: unknown
-last_updated: "2026-03-07T15:09:01.800Z"
+status: complete
+last_updated: "2026-03-07T17:45:31Z"
 progress:
-  total_phases: 2
-  completed_phases: 2
-  total_plans: 5
-  completed_plans: 5
+  total_phases: 4
+  completed_phases: 4
+  total_plans: 8
+  completed_plans: 8
 ---
 
 # Project State
@@ -18,21 +18,21 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-07)
 
 **Core value:** Zero-API-key path from install to working vector search, with seamless upgrade to Voyage API
-**Current focus:** Phase 18 - Status Bar
+**Current focus:** Phase 19 - KB Ingest
 
 ## Current Position
 
-Phase: 18 of 19 (Status Bar)
+Phase: 19 of 19 (KB Ingest)
 Plan: 2 of 2 in current phase
-Status: 18-01 and 18-02 complete (phase complete)
-Last activity: 2026-03-07 — Completed 18-01 (model pair display and latency lines)
+Status: 19-02 complete (phase complete)
+Last activity: 2026-03-07 — Completed 19-02 (PDF ingest and stage-level progress)
 
-Progress: [██████████████████░░] 94% (18/19 phases complete)
+Progress: [████████████████████] 100% (19/19 phases complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 39 (across v1.0-v1.4)
+- Total plans completed: 40 (across v1.0-v1.4)
 
 **By Milestone:**
 
@@ -47,6 +47,7 @@ Progress: [██████████████████░░] 94% (18
 | Phase 17 P03 | 84s | 1 tasks | 1 files |
 | Phase 18 P01 | 6min | 2 tasks | 2 files |
 | Phase 18 P02 | 5min | 2 tasks | 3 files |
+| Phase 19 P02 | 3min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -69,6 +70,9 @@ Recent decisions affecting current work:
 - [v1.4]: Session stats line after latency line in chat done event block
 - [v1.4]: Extracted resolveEmbeddingConfig helper for testable model resolution
 - [v1.4]: isLocalEmbed drives nano checks instead of isLocal for precision
+- [v1.4]: Buffer-based multipart boundary splitting for binary PDF safety
+- [v1.4]: pdf-parse for PDF text extraction (pure JS, zero native deps)
+- [v1.4]: Stage progress percentages: reading=5%, chunking=15%, embedding=15-85%, storing=90%
 - [v1.3]: Context injection for nano API handlers (testable routes)
 - [v1.3]: API errors return nano-only with apiError field (graceful degradation)
 - [v1.2]: Interactive flag pattern for animation gating
@@ -84,5 +88,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-07
-Stopped at: Completed 18-01-PLAN.md (model pair display and latency lines, phase 18 fully complete)
+Stopped at: Completed 19-02-PLAN.md (PDF ingest and stage-level progress, phase 19 complete)
 Resume file: None
