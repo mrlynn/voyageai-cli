@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Robot Chat UX
 status: in-progress
-last_updated: "2026-03-07T09:00:00.000Z"
+last_updated: "2026-03-07T09:19:35.000Z"
 progress:
-  total_phases: 2
+  total_phases: 1
   completed_phases: 0
   total_plans: 2
-  completed_plans: 2
+  completed_plans: 1
 ---
 
 # Project State
@@ -18,14 +18,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-07)
 
 **Core value:** Zero-API-key path from install to working vector search, with seamless upgrade to Voyage API.
-**Current focus:** Phase 10 - Robot Chat Poses
+**Current focus:** Phase 11 - Chat Visual Polish
 
 ## Current Position
 
-Phase: 10 of 11 (Robot Chat Poses)
-Plan: 2 of 2 in current phase (COMPLETE)
-Status: Phase complete
-Last activity: 2026-03-07 -- Completed 10-02 robot chat poses with collapse-on-stop
+Phase: 11 of 11 (Chat Visual Polish)
+Plan: 1 of 2 in current phase
+Status: Plan 11-01 complete, 11-02 pending
+Last activity: 2026-03-07 -- Completed 11-01 robot-branded chat header with sideBySide layout
 
 ## Performance Metrics
 
@@ -44,6 +44,8 @@ Recent decisions affecting current work:
 - [v1.2]: Raw ANSI dim codes for elapsed timer in robot animations (consistent with robot.js no-picocolors approach)
 - [v1.2]: node:test runner for robot-moments tests (matching project convention over plan's vitest suggestion)
 - [v1.2]: Collapse-to-one-liner on animation stop (clean pipeline transitions, user-selected over leave-frame or clear-entirely)
+- [v1.2]: Copied sideBySide helper into chat-ui.js rather than exporting from robot-moments.js (avoids coupling)
+- [v1.2]: Interactive flag pattern -- caller passes boolean, renderer branches on it
 
 ### Pending Todos
 
@@ -56,5 +58,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-07
-Stopped at: Completed 10-02-PLAN.md (robot chat poses with collapse-on-stop)
+Stopped at: Completed 11-01-PLAN.md (robot-branded chat header with sideBySide layout)
 Resume file: None

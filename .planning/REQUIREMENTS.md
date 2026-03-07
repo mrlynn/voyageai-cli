@@ -17,8 +17,8 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Chat Header
 
-- [ ] **HEAD-01**: Chat startup displays robot-branded header with sideBySide layout (like search/explain)
-- [ ] **HEAD-02**: Header shows session info: provider, model, mode, knowledge base, session ID
+- [x] **HEAD-01**: Chat startup displays robot-branded header with sideBySide layout (like search/explain)
+- [x] **HEAD-02**: Header shows session info: provider, model, mode, knowledge base, session ID
 
 ### Turn Polish
 
@@ -61,8 +61,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ROBO-03 | Phase 10 | Complete |
 | ROBO-04 | Phase 10 | Complete |
 | ROBO-05 | Phase 10 | Complete |
-| HEAD-01 | Phase 11 | Pending |
-| HEAD-02 | Phase 11 | Pending |
+| HEAD-01 | Phase 11 | Complete |
+| HEAD-02 | Phase 11 | Complete |
 | TURN-01 | Phase 11 | Pending |
 | TURN-02 | Phase 11 | Pending |
 | TURN-03 | Phase 11 | Pending |
