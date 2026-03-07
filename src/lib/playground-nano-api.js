@@ -270,6 +270,104 @@ async function handleNanoRequest(req, res, context) {
     }
   }
 
+  // POST /api/nano/crossbridge
+  if (req.method === 'POST' && req.url === '/api/nano/crossbridge') {
+    try {
+      const body = await readJsonBody(req);
+
+      // Input validation
+      if (!body.text || typeof body.text !== 'string') {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'text is required and must be a string' }));
+        return true;
+      }
+      if (body.text.length > MAX_TEXT_LENGTH) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: `text exceeds maximum length of ${MAX_TEXT_LENGTH} characters` }));
+        return true;
+      }
+
+      const dimension = body.dimension || 1024;
+      if (!VALID_DIMENSIONS.includes(dimension)) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: `dimension must be one of: ${VALID_DIMENSIONS.join(', ')}` }));
+        return true;
+      }
+
+      // Check nano readiness
+      const venv = checkVenv();
+      const model = checkModel();
+      if (!venv.ok || !model.ok) {
+        res.writeHead(503, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Nano bridge not ready', code: 'NANO_NOT_READY', hint: 'Run: vai nano setup' }));
+        return true;
+      }
+
+      const totalStart = performance.now();
+
+      // Generate nano (local) embedding
+      const nanoStart = performance.now();
+      const nanoResult = await generateLocalEmbeddings([body.text], { dimensions: dimension });
+      const nanoLatency = Math.round(performance.now() - nanoStart);
+      const nanoEmbedding = nanoResult.data[0].embedding;
+
+      // Generate API (cloud) embedding
+      let apiEmbedding = null;
+      let apiModel = null;
+      let apiLatency = null;
+      let apiError = null;
+      let similarity = null;
+
+      const { generateCloudEmbeddings } = context;
+      if (generateCloudEmbeddings) {
+        try {
+          const apiStart = performance.now();
+          const apiResult = await generateCloudEmbeddings([body.text], {
+            outputDimension: dimension,
+          });
+          apiLatency = Math.round(performance.now() - apiStart);
+          apiEmbedding = apiResult.data[0].embedding;
+          apiModel = apiResult.model || 'voyage-3-large';
+
+          // Compute cosine similarity between nano and API vectors
+          similarity = cosineSimilarity(nanoEmbedding, apiEmbedding);
+        } catch (err) {
+          apiError = err.message || 'API embedding generation failed';
+        }
+      } else {
+        apiError = 'No API key configured';
+      }
+
+      const totalLatency = Math.round(performance.now() - totalStart);
+
+      const response = {
+        text: body.text,
+        dimension,
+        nano: {
+          embedding: nanoEmbedding,
+          model: 'voyage-4-nano',
+          latency_ms: nanoLatency,
+        },
+        api: apiEmbedding ? {
+          embedding: apiEmbedding,
+          model: apiModel,
+          latency_ms: apiLatency,
+        } : null,
+        apiError: apiError || undefined,
+        similarity,
+        latency_ms: totalLatency,
+      };
+
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(response));
+      return true;
+    } catch (err) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: err.message, code: err.code || 'NANO_UNKNOWN' }));
+      return true;
+    }
+  }
+
   // Not a nano endpoint
   return false;
 }
