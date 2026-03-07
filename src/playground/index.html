@@ -3736,6 +3736,63 @@ select:focus { outline: none; border-color: var(--accent); }
   font-size: 10px; font-weight: 600; color: var(--text-muted);
   padding: 8px 12px 2px; text-transform: uppercase; letter-spacing: 0.5px;
 }
+/* ── Local Inference Tab ── */
+.nano-status-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin-top: 8px;
+}
+.nano-status-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: rgba(0, 212, 170, 0.04);
+  border: 1px solid rgba(0, 212, 170, 0.1);
+}
+.nano-status-item.ok .nano-status-dot { background: var(--success); }
+.nano-status-item.fail .nano-status-dot { background: var(--error, #ff6b6b); }
+.nano-status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.nano-status-label { font-weight: 500; }
+.nano-status-detail { font-size: 0.85em; opacity: 0.7; margin-left: auto; }
+.nano-status-loading { color: var(--text-secondary); font-style: italic; }
+.nano-setup-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  margin-top: 16px;
+  border-radius: 8px;
+  background: rgba(255, 107, 107, 0.08);
+  border: 1px solid rgba(255, 107, 107, 0.2);
+}
+.nano-setup-banner code {
+  background: rgba(0, 212, 170, 0.15);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+.nano-setup-banner p { margin: 4px 0 0; opacity: 0.85; }
+.nano-ready-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  margin-top: 16px;
+  border-radius: 8px;
+  background: rgba(0, 212, 170, 0.08);
+  border: 1px solid rgba(0, 212, 170, 0.2);
+  color: var(--success);
+  font-weight: 500;
+}
+
 /* ── Library Search ── */
 .wf-library-search-wrap {
   padding: 8px 12px 4px; position: relative;
@@ -7035,6 +7092,7 @@ select:focus { outline: none; border-color: var(--accent); }
       <button class="tab-btn" data-tab="benchmark" data-tooltip="Benchmark" role="tab" aria-selected="false" aria-controls="tab-benchmark" id="tab-btn-benchmark"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-gauge"/></svg></span><span>Benchmark</span></button>
       <button class="tab-btn" data-tab="optimize" data-tooltip="Optimize" role="tab" aria-selected="false" aria-controls="tab-optimize" id="tab-btn-optimize"><span class="tab-btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v8m4-4H8"/><circle cx="12" cy="12" r="10"/></svg></span><span>Optimize</span></button>
       <button class="tab-btn" data-tab="explore" data-tooltip="Explore" role="tab" aria-selected="false" aria-controls="tab-explore" id="tab-btn-explore"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-bulb"/></svg></span><span>Explore</span></button>
+      <button class="tab-btn" data-tab="nano" data-tooltip="Local Inference" role="tab" aria-selected="false" aria-controls="tab-nano" id="tab-btn-nano"><span class="tab-btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg></span><span>Local Inference</span></button>
     </div>
     <div class="sidebar-nav-divider"></div>
     <div class="sidebar-nav-group" role="tablist" aria-label="Reference">
@@ -8974,6 +9032,42 @@ Reranking models rescore initial search results to improve relevance ordering.</
   </div>
 </div>
 
+<!-- ========== LOCAL INFERENCE TAB ========== -->
+<div class="tab-panel" id="tab-nano" role="tabpanel" aria-labelledby="tab-btn-nano" tabindex="0">
+  <div class="page-header">
+    <h2 class="page-header-title">Local Inference</h2>
+    <p class="page-header-subtitle">Generate embeddings locally with voyage-4-nano</p>
+    <p class="page-header-hint">Run embeddings on your machine — no API key required. Uses the voyage-4-nano model via Python bridge.</p>
+  </div>
+
+  <!-- Setup Status Section -->
+  <div class="card" id="nanoStatusCard">
+    <div class="card-title">Setup Status</div>
+    <div id="nanoStatusContent">
+      <div class="nano-status-loading">Checking nano bridge status...</div>
+    </div>
+  </div>
+
+  <!-- Setup Required Banner (shown when not ready) -->
+  <div class="nano-setup-banner" id="nanoSetupBanner" style="display:none;">
+    <div class="nano-setup-banner-icon">&#9888;</div>
+    <div class="nano-setup-banner-text">
+      <strong>Nano bridge not ready</strong>
+      <p>Run <code>vai nano setup</code> in your terminal to install Python dependencies and download the model.</p>
+    </div>
+  </div>
+
+  <!-- Ready Banner (shown when all components are ok) -->
+  <div class="nano-ready-banner" id="nanoReadyBanner" style="display:none;">
+    &#10003; Nano bridge ready — generate embeddings locally below
+  </div>
+
+  <!-- Embed Section (placeholder, filled in plan 02) -->
+  <div id="nanoEmbedSection" style="display:none;">
+    <!-- Plan 13-02 will populate this -->
+  </div>
+</div>
+
 <!-- ========== SETTINGS TAB ========== -->
 <div class="tab-panel" id="tab-settings">
   <div class="settings-layout">
@@ -9412,6 +9506,7 @@ Reranking models rescore initial search results to improve relevance ordering.</
   if (logo) logo.src = '/icons/' + (t === 'light' ? 'light' : 'dark') + '/64.png';
 })();
 </script>
+<script src="./js/robot-game-assets.js"></script>
 <script>
 (function() {
 'use strict';
@@ -10355,6 +10450,20 @@ async function apiPost(url, body) {
   if (!res.ok) {
     if (data.code === 'NO_API_KEY') {
       throw new Error('🔑 No API key configured. Open Settings (⚙) to add your Voyage AI API key, or run: vai config set api-key <your-key>');
+    }
+    if (data.code === 'API_KEY_BASE_MISMATCH') {
+      const details = data.details || {};
+      const lines = [
+        'Stored API key does not match the configured endpoint.',
+        details.keyLabel ? `Key type: ${details.keyLabel}` : '',
+        details.base ? `Current endpoint: ${details.base}` : '',
+        details.expectedBase ? `Expected endpoint: ${details.expectedBase}` : '',
+        data.hint || 'Open Settings (⚙) to update the saved key or endpoint.',
+      ].filter(Boolean);
+      throw new Error(lines.join('\n'));
+    }
+    if ((data.code === 'API_FORBIDDEN' || data.code === 'API_UNAUTHORIZED') && data.hint) {
+      throw new Error(`${data.error || 'API error'}\n\n${data.hint}`);
     }
     throw new Error(data.error || data.detail || 'API error');
   }
@@ -14148,10 +14257,63 @@ let _vsiGameTrigger = 'unknown';
   let konamiIdx = 0;
   let logoClicks = [];
 
+  function normalizeKonamiKey(key) {
+    return typeof key === 'string' && key.length === 1 ? key.toLowerCase() : key;
+  }
+
+  function isEditableTarget(target) {
+    if (!target || !(target instanceof HTMLElement)) return false;
+    if (target.isContentEditable) return true;
+    const tag = target.tagName;
+    return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+  }
+
+  function isVisibleOverlay(node) {
+    if (!node) return false;
+    const style = window.getComputedStyle(node);
+    if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') return false;
+    return node.classList.contains('open') || style.pointerEvents !== 'none' || node.style.display === 'flex' || node.style.display === 'block';
+  }
+
+  function isGameLaunchBlocked() {
+    const blockingIds = [
+      'commandPaletteOverlay',
+      'modelPickerOverlay',
+      'exploreModal',
+      'costHelpModal',
+      'agentInfoModal',
+      'onboardingOverlay',
+      'wfStoreOverlay',
+      'wfOutputModalBackdrop',
+      'wfHelpModalBackdrop',
+      'wfInputModalBackdrop',
+      'wfInfoModalBackdrop',
+      'bugOverlay',
+      'exportOverlay',
+      'vsiOverlay',
+    ];
+
+    return blockingIds.some(id => isVisibleOverlay(document.getElementById(id)));
+  }
+
   document.addEventListener('keydown', (e) => {
-    if (document.getElementById('vsiOverlay')?.style.display === 'flex') return;
-    if (e.key === KONAMI[konamiIdx]) { konamiIdx++; if (konamiIdx === KONAMI.length) { konamiIdx = 0; _vsiGameTrigger = 'konami'; launchVSI(); } }
-    else { konamiIdx = 0; }
+    if (e.repeat || e.metaKey || e.ctrlKey || e.altKey) return;
+    if (isEditableTarget(e.target) || isGameLaunchBlocked()) return;
+
+    const key = normalizeKonamiKey(e.key);
+    const expected = KONAMI[konamiIdx];
+
+    if (key === expected) {
+      konamiIdx++;
+      if (konamiIdx === KONAMI.length) {
+        konamiIdx = 0;
+        _vsiGameTrigger = 'konami';
+        launchVSI();
+      }
+      return;
+    }
+
+    konamiIdx = key === KONAMI[0] ? 1 : 0;
   });
 
   const logo = document.getElementById('sidebarLogo');
@@ -14193,41 +14355,63 @@ function startVSI(canvas, onExit) {
   const ctx = canvas.getContext('2d');
   const W = canvas.width = 600;
   const H = canvas.height = 500;
+  const robot = window.VAIRobotAssets || null;
+  const robotColors = {
+    teal: '#00D4AA',
+    cyan: '#40E0FF',
+    red: '#F85149',
+    white: '#E6EDF3',
+  };
 
-  // Helper function to draw a leaf shape
-  function drawLeaf(ctx, x, y, size, color) {
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    // Leaf shape using bezier curves
-    ctx.moveTo(x, y - size);
-    ctx.quadraticCurveTo(x + size * 0.6, y - size * 0.3, x + size * 0.3, y + size * 0.5);
-    ctx.quadraticCurveTo(x, y + size * 0.3, x, y + size);
-    ctx.quadraticCurveTo(x, y + size * 0.3, x - size * 0.3, y + size * 0.5);
-    ctx.quadraticCurveTo(x - size * 0.6, y - size * 0.3, x, y - size);
-    ctx.fill();
-    // Central vein
-    ctx.strokeStyle = color === '#00D4AA' ? '#009E80' : color;
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(x, y - size);
-    ctx.lineTo(x, y + size);
-    ctx.stroke();
+  function drawRobotPose(poseName, x, y, pixelSize, options = {}) {
+    if (!robot) {
+      ctx.save();
+      ctx.fillStyle = robotColors.teal;
+      ctx.fillRect(x - 10, y - 10, 20, 20);
+      ctx.restore();
+      return;
+    }
+
+    robot.drawPose(ctx, poseName, frame + (options.tickOffset || 0), {
+      x,
+      y,
+      pixelSize,
+      center: true,
+      alpha: options.alpha == null ? 1 : options.alpha,
+      mirror: !!options.mirror,
+    });
   }
 
-  // Ship
-  const ship = { x: W / 2, w: 40, h: 16, speed: 5 };
+  function drawGlow(x, y, radius, rgb, alpha) {
+    const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
+    gradient.addColorStop(0, `rgba(${rgb}, ${alpha})`);
+    gradient.addColorStop(1, `rgba(${rgb}, 0)`);
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(x, y, radius, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function drawPulseBolt(x, y, height, color) {
+    ctx.save();
+    ctx.fillStyle = color;
+    ctx.fillRect(x - 2, y - height, 4, height);
+    ctx.fillRect(x - 4, y - 6, 8, 6);
+    ctx.restore();
+  }
+
+  const ship = { x: W / 2, w: 54, h: 54, speed: 5, damageUntil: 0, boostUntil: 0 };
   const bullets = [];
   const particles = [];
   const explosionTexts = [];
-
-  // Enemies — vectors descending
-  const VECTORS = [
-    '[.23,-.41]', '[.95, .12]', '[-.56,.78]',
-    '[.44,-.71]', '[.01,-.99]', '[-.88,.35]',
-    '[.67, .91]', '[-.12,.84]', '[.33, .33]',
-    '[.77,-.64]', '[-.45,.78]', '[.91,-.42]',
+  const ENEMY_LABELS = [
+    'embed', 'query', 'atlas',
+    'rerank', 'chunk', 'search',
+    'agent', 'index', 'cache',
+    'drift', 'route', 'sync',
   ];
-  const BOSS_VEC = 'CLIP-ViT-L/14-336';
+  const ENEMY_POSES = ['idle', 'blink', 'search', 'thinking'];
+  const BOSS_LABEL = 'ROBOT CORE';
 
   let enemies = [];
   let wave = 1;
@@ -14239,170 +14423,254 @@ function startVSI(canvas, onExit) {
   let frame = 0;
   let lastShot = 0;
   let waveQueued = false;
+  let hudNotice = { text: 'Robot systems online', pose: 'wave', ttl: 140 };
 
   const keys = {};
-  const keyDown = (e) => { keys[e.key] = true; if (['ArrowLeft','ArrowRight',' ','Escape'].includes(e.key)) e.preventDefault(); if (e.key === 'Escape') { sendVSITelemetry('vsi_game_over', { score, wave, durationMs: Date.now() - _vsiGameStartTime, livesRemaining: lives, exitReason: 'esc' }); cleanup(); onExit(); } };
+  const keyDown = (e) => {
+    keys[e.key] = true;
+    if (['ArrowLeft', 'ArrowRight', ' ', 'Escape'].includes(e.key)) e.preventDefault();
+    if (e.key === 'Escape') {
+      sendVSITelemetry('vsi_game_over', {
+        score,
+        wave,
+        durationMs: Date.now() - _vsiGameStartTime,
+        livesRemaining: lives,
+        exitReason: 'esc',
+      });
+      cleanup();
+      onExit();
+    }
+  };
   const keyUp = (e) => { keys[e.key] = false; };
   document.addEventListener('keydown', keyDown);
   document.addEventListener('keyup', keyUp);
 
-  function cleanup() { document.removeEventListener('keydown', keyDown); document.removeEventListener('keyup', keyUp); gameOver = true; }
+  function cleanup() {
+    document.removeEventListener('keydown', keyDown);
+    document.removeEventListener('keyup', keyUp);
+    gameOver = true;
+  }
+
+  function setHudNotice(text, pose, ttl) {
+    hudNotice = { text, pose, ttl };
+  }
 
   function spawnWave() {
     enemies = [];
     if (wave % 5 === 0) {
-      // Boss wave every 5 waves
       bossMode = true;
-      boss = { x: W / 2, y: 50, w: 180, h: 30, hp: 10 + wave, maxHp: 10 + wave, dx: 2, text: BOSS_VEC };
-    } else {
-      bossMode = false;
-      boss = null;
-      const rows = Math.min(3, 1 + Math.floor(wave / 2));
-      const cols = Math.min(6, 3 + Math.floor(wave / 3));
-      for (let r = 0; r < rows; r++) {
-        for (let c = 0; c < cols; c++) {
-          enemies.push({
-            x: 60 + c * 90,
-            y: 40 + r * 40,
-            w: 78, h: 22,
-            hp: 1 + Math.floor(wave / 4),
-            text: VECTORS[(r * cols + c) % VECTORS.length],
-            dx: 1 + wave * 0.3,
-            dir: 1,
-          });
-        }
+      boss = {
+        x: W / 2,
+        y: 96,
+        w: 140,
+        h: 140,
+        hp: 10 + wave,
+        maxHp: 10 + wave,
+        dx: 2.2,
+        label: BOSS_LABEL,
+        flashUntil: 0,
+      };
+      setHudNotice('Boss wave: robot core breach', 'error', 120);
+      return;
+    }
+
+    bossMode = false;
+    boss = null;
+    const rows = Math.min(3, 1 + Math.floor(wave / 2));
+    const cols = Math.min(6, 3 + Math.floor(wave / 3));
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const index = (r * cols + c) % ENEMY_LABELS.length;
+        enemies.push({
+          x: 70 + c * 84,
+          y: 68 + r * 70,
+          w: 56,
+          h: 56,
+          hp: 1 + Math.floor(wave / 4),
+          label: ENEMY_LABELS[index],
+          dx: 1 + wave * 0.3,
+          dir: 1,
+          pose: ENEMY_POSES[index % ENEMY_POSES.length],
+          tickOffset: index * 6,
+          flashUntil: 0,
+        });
       }
     }
+    setHudNotice(`Wave ${wave}: robot sweep`, 'search', 90);
   }
 
   function shoot() {
     if (frame - lastShot < 10) return;
     lastShot = frame;
-    bullets.push({ x: ship.x, y: H - 40, dy: -7 });
+    bullets.push({ x: ship.x, y: H - 70, dy: -8, life: 90 });
   }
 
-  function addExplosion(x, y, sim) {
-    const color = sim > 0.7 ? '#00D4AA' : sim > 0.4 ? '#FFC010' : '#FF6960';
-    for (let i = 0; i < 8; i++) {
-      const angle = (Math.PI * 2 / 8) * i + Math.random() * 0.5;
-      const speed = 1.5 + Math.random() * 2;
-      const isLeaf = i % 3 === 0; // Every 3rd particle is a leaf
-      particles.push({ x, y, dx: Math.cos(angle) * speed, dy: Math.sin(angle) * speed, life: 30, color, isLeaf });
+  function addExplosion(x, y, sim, poseName = 'success') {
+    const color = sim > 0.7 ? robotColors.teal : sim > 0.4 ? '#FFC010' : '#FF6960';
+    for (let i = 0; i < 12; i++) {
+      const angle = (Math.PI * 2 / 12) * i + Math.random() * 0.35;
+      const speed = 1.4 + Math.random() * 2.2;
+      particles.push({
+        x,
+        y,
+        dx: Math.cos(angle) * speed,
+        dy: Math.sin(angle) * speed,
+        life: 26 + Math.floor(Math.random() * 10),
+        color,
+        size: 2 + Math.random() * 2,
+        robotPose: i % 4 === 0 ? poseName : null,
+        tickOffset: i * 4,
+      });
     }
     explosionTexts.push({ x, y, text: sim.toFixed(2), life: 40, color });
   }
 
   function update() {
-    // Move ship
-    if (keys['ArrowLeft'] || keys['a'])  ship.x = Math.max(ship.w / 2, ship.x - ship.speed);
-    if (keys['ArrowRight'] || keys['d']) ship.x = Math.min(W - ship.w / 2, ship.x + ship.speed);
+    if (keys['ArrowLeft'] || keys.a) {
+      ship.x = Math.max(ship.w / 2, ship.x - ship.speed);
+      ship.boostUntil = frame + 6;
+    }
+    if (keys['ArrowRight'] || keys.d) {
+      ship.x = Math.min(W - ship.w / 2, ship.x + ship.speed);
+      ship.boostUntil = frame + 6;
+    }
     if (keys[' ']) shoot();
 
-    // Move bullets
     for (let i = bullets.length - 1; i >= 0; i--) {
       bullets[i].y += bullets[i].dy;
-      if (bullets[i].y < -10) bullets.splice(i, 1);
+      bullets[i].life--;
+      if (bullets[i].y < -10 || bullets[i].life <= 0) bullets.splice(i, 1);
     }
 
-    // Boss logic
     if (bossMode && boss) {
       boss.x += boss.dx;
       if (boss.x < boss.w / 2 || boss.x > W - boss.w / 2) boss.dx *= -1;
-      // Boss drops enemy vectors periodically
       if (frame % 60 === 0) {
-        enemies.push({ x: boss.x, y: boss.y + 30, w: 78, h: 22, hp: 1, text: VECTORS[frame % VECTORS.length], dx: 0, dir: 0, dropping: true, dy: 2 });
+        enemies.push({
+          x: boss.x,
+          y: boss.y + 56,
+          w: 48,
+          h: 48,
+          hp: 1,
+          label: ENEMY_LABELS[frame % ENEMY_LABELS.length],
+          dx: 0,
+          dir: 0,
+          dropping: true,
+          dy: 2,
+          pose: 'search',
+          tickOffset: frame,
+          flashUntil: 0,
+        });
       }
-      // Bullet-boss collision
+
       for (let i = bullets.length - 1; i >= 0; i--) {
-        const b = bullets[i];
-        if (b.x > boss.x - boss.w / 2 && b.x < boss.x + boss.w / 2 && b.y > boss.y - boss.h / 2 && b.y < boss.y + boss.h / 2) {
+        const bullet = bullets[i];
+        if (bullet.x > boss.x - boss.w / 2 && bullet.x < boss.x + boss.w / 2 && bullet.y > boss.y - boss.h / 2 && bullet.y < boss.y + boss.h / 2) {
           boss.hp--;
+          boss.flashUntil = frame + 8;
           bullets.splice(i, 1);
-          const sim = 0.1 + Math.random() * 0.3;
-          addExplosion(b.x, b.y, sim);
+          addExplosion(bullet.x, bullet.y, 0.1 + Math.random() * 0.3, 'error');
           score += 50;
           if (boss.hp <= 0) {
-            addExplosion(boss.x, boss.y, 0.99);
-            score += 500;
+            addExplosion(boss.x, boss.y, 0.99, 'success');
+            score += 650;
             boss = null;
             bossMode = false;
             wave++;
             waveQueued = true;
+            setHudNotice('Core neutralized', 'success', 120);
             setTimeout(() => { waveQueued = false; spawnWave(); }, 1000);
           }
         }
       }
     }
 
-    // Move enemies
     let edgeHit = false;
-    for (const e of enemies) {
-      if (e.dropping) {
-        e.y += e.dy || 2;
+    for (const enemy of enemies) {
+      if (enemy.dropping) {
+        enemy.y += enemy.dy || 2;
       } else {
-        e.x += e.dx * e.dir;
-        if (e.x < 30 || e.x > W - 30) edgeHit = true;
+        enemy.x += enemy.dx * enemy.dir;
+        if (enemy.x < enemy.w / 2 + 20 || enemy.x > W - enemy.w / 2 - 20) edgeHit = true;
       }
     }
     if (edgeHit) {
-      for (const e of enemies) {
-        if (!e.dropping) { e.dir *= -1; e.y += 15; }
+      for (const enemy of enemies) {
+        if (!enemy.dropping) {
+          enemy.dir *= -1;
+          enemy.y += 15;
+        }
       }
     }
 
-    // Bullet-enemy collision
     for (let i = bullets.length - 1; i >= 0; i--) {
       for (let j = enemies.length - 1; j >= 0; j--) {
-        const b = bullets[i], e = enemies[j];
-        if (!b) break;
-        if (b.x > e.x - e.w / 2 && b.x < e.x + e.w / 2 && b.y > e.y - e.h / 2 && b.y < e.y + e.h / 2) {
-          e.hp--;
+        const bullet = bullets[i];
+        const enemy = enemies[j];
+        if (!bullet) break;
+        if (bullet.x > enemy.x - enemy.w / 2 && bullet.x < enemy.x + enemy.w / 2 && bullet.y > enemy.y - enemy.h / 2 && bullet.y < enemy.y + enemy.h / 2) {
+          enemy.hp--;
+          enemy.flashUntil = frame + 6;
           bullets.splice(i, 1);
-          const sim = 0.5 + Math.random() * 0.5;
-          addExplosion(b.x, b.y, sim);
-          if (e.hp <= 0) {
+          addExplosion(bullet.x, bullet.y, 0.5 + Math.random() * 0.5, enemy.pose);
+          if (enemy.hp <= 0) {
             enemies.splice(j, 1);
-            score += 100;
+            score += 125;
           }
           break;
         }
       }
     }
 
-    // Enemy reaching bottom = lose life
     for (let i = enemies.length - 1; i >= 0; i--) {
-      if (enemies[i].y > H - 50) {
+      if (enemies[i].y > H - 72) {
         enemies.splice(i, 1);
         lives--;
-        if (lives <= 0) { gameOver = true; sendVSITelemetry('vsi_game_over', { score, wave, durationMs: Date.now() - _vsiGameStartTime, livesRemaining: 0, exitReason: 'death' }); }
+        ship.damageUntil = frame + 24;
+        setHudNotice('Robot hull breach', 'error', 72);
+        if (lives <= 0) {
+          gameOver = true;
+          setHudNotice('Robot down', 'error', 240);
+          sendVSITelemetry('vsi_game_over', {
+            score,
+            wave,
+            durationMs: Date.now() - _vsiGameStartTime,
+            livesRemaining: 0,
+            exitReason: 'death',
+          });
+        }
       }
     }
 
-    // Next wave
     if (!bossMode && enemies.length === 0 && !gameOver && !waveQueued) {
       wave++;
       waveQueued = true;
+      setHudNotice('Wave cleared', 'success', 90);
       setTimeout(() => { waveQueued = false; spawnWave(); }, 800);
     }
 
-    // Particles
     for (let i = particles.length - 1; i >= 0; i--) {
-      const p = particles[i];
-      p.x += p.dx; p.y += p.dy; p.life--;
-      if (p.life <= 0) particles.splice(i, 1);
+      const particle = particles[i];
+      particle.x += particle.dx;
+      particle.y += particle.dy;
+      particle.life--;
+      if (particle.life <= 0) particles.splice(i, 1);
     }
     for (let i = explosionTexts.length - 1; i >= 0; i--) {
       explosionTexts[i].y -= 0.5;
       explosionTexts[i].life--;
       if (explosionTexts[i].life <= 0) explosionTexts.splice(i, 1);
     }
+    if (hudNotice.ttl > 0) hudNotice.ttl--;
   }
 
   function draw() {
-    ctx.fillStyle = '#001E2B';
+    const bgGradient = ctx.createLinearGradient(0, 0, 0, H);
+    bgGradient.addColorStop(0, '#031924');
+    bgGradient.addColorStop(1, '#071019');
+    ctx.fillStyle = bgGradient;
     ctx.fillRect(0, 0, W, H);
 
-    // Stars
     ctx.fillStyle = 'rgba(255,255,255,0.3)';
     for (let i = 0; i < 40; i++) {
       const sx = (i * 137 + frame * 0.1) % W;
@@ -14410,120 +14678,152 @@ function startVSI(canvas, onExit) {
       ctx.fillRect(sx, sy, 1, 1);
     }
 
-    // Ship (Voyage AI leaf)
-    drawLeaf(ctx, ship.x, H - 32, 12, '#00D4AA');
-    // Ship label
-    ctx.fillStyle = '#00D4AA';
-    ctx.font = '9px monospace';
-    ctx.textAlign = 'center';
-    ctx.fillText('voyage', ship.x, H - 14);
-
-    // Bullets (small leaf shapes)
-    for (const b of bullets) {
-      drawLeaf(ctx, b.x, b.y, 3, '#00D4AA');
+    for (let x = 0; x < W; x += 40) {
+      ctx.fillStyle = 'rgba(64, 224, 255, 0.03)';
+      ctx.fillRect(x, 0, 1, H);
     }
 
-    // Boss
+    const shipPose = gameOver
+      ? 'error'
+      : ship.damageUntil > frame
+        ? 'error'
+        : keys[' ']
+          ? 'thinking'
+          : ship.boostUntil > frame
+            ? 'search'
+            : 'idle';
+
+    drawGlow(ship.x, H - 46, 32, '0, 212, 170', 0.18);
+    ctx.fillStyle = 'rgba(64, 224, 255, 0.18)';
+    ctx.fillRect(ship.x - 22, H - 22, 44, 6);
+    drawRobotPose(shipPose, ship.x, H - 48, 3, { mirror: keys['ArrowLeft'] || keys.a });
+
+    for (const bullet of bullets) {
+      drawPulseBolt(bullet.x, bullet.y, 14, robotColors.cyan);
+    }
+
     if (boss) {
       const hpPct = boss.hp / boss.maxHp;
-      ctx.fillStyle = hpPct > 0.5 ? '#FF6960' : '#FFC010';
-      ctx.strokeStyle = '#FF6960';
-      ctx.lineWidth = 2;
+      ctx.fillStyle = 'rgba(12, 24, 35, 0.82)';
+      ctx.fillRect(boss.x - boss.w / 2, boss.y - boss.h / 2, boss.w, boss.h);
+      ctx.strokeStyle = boss.flashUntil > frame ? robotColors.red : robotColors.cyan;
+      ctx.lineWidth = 2.5;
       ctx.strokeRect(boss.x - boss.w / 2, boss.y - boss.h / 2, boss.w, boss.h);
-      ctx.fillStyle = '#FF6960';
-      ctx.font = 'bold 13px monospace';
+      drawGlow(boss.x, boss.y, 54, boss.flashUntil > frame ? '248, 81, 73' : '64, 224, 255', 0.18);
+      drawRobotPose(boss.flashUntil > frame ? 'error' : (hpPct > 0.4 ? 'thinking' : 'success'), boss.x, boss.y - 8, 5);
+      ctx.fillStyle = robotColors.white;
+      ctx.font = 'bold 12px monospace';
       ctx.textAlign = 'center';
-      ctx.fillText(boss.text, boss.x, boss.y + 5);
-      // HP bar
+      ctx.fillText(boss.label, boss.x, boss.y + boss.h / 2 - 20);
       ctx.fillStyle = '#3D4F58';
-      ctx.fillRect(boss.x - boss.w / 2, boss.y - boss.h / 2 - 8, boss.w, 4);
-      ctx.fillStyle = '#FF6960';
-      ctx.fillRect(boss.x - boss.w / 2, boss.y - boss.h / 2 - 8, boss.w * hpPct, 4);
+      ctx.fillRect(boss.x - boss.w / 2, boss.y - boss.h / 2 - 10, boss.w, 5);
+      ctx.fillStyle = hpPct > 0.35 ? robotColors.red : '#FFC010';
+      ctx.fillRect(boss.x - boss.w / 2, boss.y - boss.h / 2 - 10, boss.w * hpPct, 5);
     }
 
-    // Enemies
-    for (const e of enemies) {
-      ctx.fillStyle = 'rgba(61,79,88,0.6)';
-      ctx.fillRect(e.x - e.w / 2, e.y - e.h / 2, e.w, e.h);
-      ctx.strokeStyle = '#40E0FF';
+    for (const enemy of enemies) {
+      ctx.fillStyle = enemy.flashUntil > frame ? 'rgba(248,81,73,0.18)' : 'rgba(17, 39, 51, 0.78)';
+      ctx.fillRect(enemy.x - enemy.w / 2, enemy.y - enemy.h / 2, enemy.w, enemy.h);
+      ctx.strokeStyle = enemy.flashUntil > frame ? robotColors.red : 'rgba(64,224,255,0.8)';
       ctx.lineWidth = 1;
-      ctx.strokeRect(e.x - e.w / 2, e.y - e.h / 2, e.w, e.h);
-      ctx.fillStyle = '#E8EDEB';
-      ctx.font = '9px monospace';
+      ctx.strokeRect(enemy.x - enemy.w / 2, enemy.y - enemy.h / 2, enemy.w, enemy.h);
+      drawRobotPose(enemy.flashUntil > frame ? 'error' : enemy.pose, enemy.x, enemy.y - 6, 2, { tickOffset: enemy.tickOffset });
+      ctx.fillStyle = '#C1C7C6';
+      ctx.font = '8px monospace';
       ctx.textAlign = 'center';
-      ctx.fillText(e.text, e.x, e.y + 3);
+      ctx.fillText(enemy.label, enemy.x, enemy.y + enemy.h / 2 - 6);
     }
 
-    // Particles (with occasional leaf shapes)
-    for (const p of particles) {
-      ctx.globalAlpha = p.life / 30;
-      if (p.isLeaf) {
-        drawLeaf(ctx, p.x, p.y, 2, p.color);
+    for (const particle of particles) {
+      ctx.globalAlpha = particle.life / 36;
+      if (particle.robotPose) {
+        drawRobotPose(particle.robotPose, particle.x, particle.y, 1, { alpha: particle.life / 36, tickOffset: particle.tickOffset });
       } else {
-        ctx.fillStyle = p.color;
-        ctx.fillRect(p.x - 2, p.y - 2, 4, 4);
+        ctx.fillStyle = particle.color;
+        ctx.fillRect(particle.x - particle.size / 2, particle.y - particle.size / 2, particle.size, particle.size);
       }
     }
     ctx.globalAlpha = 1;
 
-    // Explosion texts (similarity scores)
-    for (const et of explosionTexts) {
-      ctx.globalAlpha = et.life / 40;
-      ctx.fillStyle = et.color;
+    for (const explosionText of explosionTexts) {
+      ctx.globalAlpha = explosionText.life / 40;
+      ctx.fillStyle = explosionText.color;
       ctx.font = 'bold 14px monospace';
       ctx.textAlign = 'center';
-      ctx.fillText(et.text, et.x, et.y);
+      ctx.fillText(explosionText.text, explosionText.x, explosionText.y);
     }
     ctx.globalAlpha = 1;
 
-    // HUD
-    ctx.fillStyle = '#E8EDEB';
-    ctx.font = '13px monospace';
+    ctx.fillStyle = robotColors.white;
+    ctx.font = 'bold 11px monospace';
     ctx.textAlign = 'left';
-    ctx.fillText(`SCORE: ${score}`, 12, 20);
-    ctx.fillText(`WAVE: ${wave}`, 12, 38);
+    ctx.fillText('VAI ROBOT DEFENSE', 12, 18);
+    ctx.font = '13px monospace';
+    ctx.fillText(`SCORE: ${score}`, 12, 36);
+    ctx.fillText(`WAVE: ${wave}`, 12, 54);
+    ctx.fillText(`MODE: ${bossMode ? 'BOSS' : 'SWEEP'}`, 12, 72);
 
-    // Lives (leaf icons)
     for (let i = 0; i < lives; i++) {
-      drawLeaf(ctx, W - 20 - (i * 18), 15, 6, '#00D4AA');
+      drawRobotPose(ship.damageUntil > frame ? 'error' : 'idle', W - 22 - (i * 24), 20, 1);
     }
 
-    // Title with Voyage AI branding
-    ctx.fillStyle = '#00D4AA';
+    ctx.fillStyle = robotColors.teal;
     ctx.font = 'bold 10px monospace';
     ctx.textAlign = 'center';
-    ctx.fillText('VECTOR SPACE INVADERS', W / 2, H - 4);
+    ctx.fillText('VECTOR SPACE INVADERS // ROBOT EDITION', W / 2, H - 8);
 
-    // Voyage AI watermark (top right corner)
     ctx.globalAlpha = 0.3;
-    drawLeaf(ctx, W - 25, 25, 8, '#00D4AA');
-    ctx.fillStyle = '#00D4AA';
+    drawRobotPose('wave', W - 42, 26, 1.5);
+    ctx.fillStyle = robotColors.teal;
     ctx.font = 'bold 9px monospace';
     ctx.textAlign = 'right';
-    ctx.fillText('VOYAGE AI', W - 38, 28);
+    ctx.fillText('ROBOT CORE', W - 60, 28);
     ctx.globalAlpha = 1;
 
-    // Game over
+    if (hudNotice.ttl > 0) {
+      ctx.fillStyle = 'rgba(3, 25, 36, 0.82)';
+      ctx.fillRect(W / 2 - 134, 14, 268, 44);
+      ctx.strokeStyle = 'rgba(64, 224, 255, 0.35)';
+      ctx.strokeRect(W / 2 - 134, 14, 268, 44);
+      drawRobotPose(hudNotice.pose, W / 2 - 106, 36, 1.4);
+      ctx.fillStyle = robotColors.white;
+      ctx.font = 'bold 12px monospace';
+      ctx.textAlign = 'left';
+      ctx.fillText(hudNotice.text.toUpperCase(), W / 2 - 76, 40);
+    }
+
     if (gameOver) {
-      ctx.fillStyle = 'rgba(0,30,43,0.8)';
+      ctx.fillStyle = 'rgba(0,30,43,0.82)';
       ctx.fillRect(0, 0, W, H);
-      ctx.fillStyle = '#00D4AA';
-      ctx.font = 'bold 28px monospace';
+      drawGlow(W / 2, H / 2 - 36, 80, '248, 81, 73', 0.18);
+      drawRobotPose('error', W / 2, H / 2 - 60, 5);
+      ctx.fillStyle = robotColors.red;
+      ctx.font = 'bold 24px monospace';
       ctx.textAlign = 'center';
-      ctx.fillText('GAME OVER', W / 2, H / 2 - 30);
-      ctx.fillStyle = '#E8EDEB';
+      ctx.fillText('ROBOT DOWN', W / 2, H / 2 + 26);
+      ctx.fillStyle = robotColors.white;
       ctx.font = '16px monospace';
-      ctx.fillText(`Final Score: ${score}  |  Wave: ${wave}`, W / 2, H / 2 + 10);
+      ctx.fillText(`Final Score: ${score}  |  Wave: ${wave}`, W / 2, H / 2 + 56);
       ctx.fillStyle = '#889397';
       ctx.font = '12px monospace';
-      ctx.fillText('Press SPACE to play again  |  ESC to exit', W / 2, H / 2 + 40);
+      ctx.fillText('Press SPACE to reboot  |  ESC to exit', W / 2, H / 2 + 86);
 
       if (keys[' ']) {
-        // Restart
-        score = 0; wave = 1; lives = 3; gameOver = false; waveQueued = false;
-        enemies = []; bullets.length = 0; particles.length = 0; explosionTexts.length = 0;
-        boss = null; bossMode = false; ship.x = W / 2;
+        score = 0;
+        wave = 1;
+        lives = 3;
+        gameOver = false;
+        waveQueued = false;
+        enemies = [];
+        bullets.length = 0;
+        particles.length = 0;
+        explosionTexts.length = 0;
+        boss = null;
+        bossMode = false;
+        ship.x = W / 2;
+        ship.damageUntil = 0;
         spawnWave();
+        setHudNotice('Robot systems online', 'wave', 120);
       }
     }
   }
@@ -15567,7 +15867,7 @@ init();
 <!-- 🕹️ Vector Space Invaders -->
 <div id="vsiOverlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,30,43,0.92);z-index:99999;align-items:center;justify-content:center;flex-direction:column;gap:12px;">
   <canvas id="vsiCanvas" width="600" height="500" style="border:1px solid #3D4F58;border-radius:8px;image-rendering:pixelated;"></canvas>
-  <div style="color:#889397;font-size:11px;font-family:monospace;text-align:center;">← → move &nbsp;|&nbsp; SPACE shoot &nbsp;|&nbsp; ESC exit</div>
+  <div style="color:#889397;font-size:11px;font-family:monospace;text-align:center;">← → or A/D steer &nbsp;|&nbsp; SPACE pulse &nbsp;|&nbsp; ESC exit</div>
 </div>
 
 <!-- 🐛 Bug Reporter -->
@@ -19854,19 +20154,39 @@ let wfInitialized = false;
   const BUG_API = 'https://vaicli.com/api/bugs';
   const GITHUB_URL = 'https://github.com/mrlynn/voyageai-cli/issues/new';
   
-  function getEnv() {
-    const env = { platform: navigator.platform, source: 'desktop-app' };
-    if (window.electronAPI) {
-      env.appVersion = window.electronAPI.appVersion || 'unknown';
-      env.cliVersion = window.electronAPI.cliVersion || 'unknown';
-      env.electronVersion = window.electronAPI.electronVersion || 'unknown';
+  function isValidEmail(email) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  }
+
+  async function getEnv() {
+    const isElectron = !!(window.vai && window.vai.isElectron);
+    const env = {
+      platform: navigator.platform,
+      source: isElectron ? 'desktop-app' : 'playground',
+      currentScreen: document.querySelector('.tab-btn.active')?.textContent?.trim() || 'unknown',
+      currentUrl: window.location.href,
+      sessionId: window._chatExportData?.sessionId || null,
+    };
+
+    if (window.vai && window.vai.environment) {
+      env.arch = window.vai.environment.arch || null;
+      env.electronVersion = window.vai.environment.electronVersion || null;
+      env.nodeVersion = window.vai.environment.nodeVersion || null;
     }
-    env.currentScreen = document.querySelector('.tab-btn.active')?.textContent || 'unknown';
+
+    if (isElectron && window.vai && window.vai.getVersion) {
+      try {
+        const version = await window.vai.getVersion();
+        env.appVersion = version?.app || null;
+        env.cliVersion = version?.cli || null;
+      } catch {}
+    }
+
     return env;
   }
   
-  function showBugReporter() {
-    const env = getEnv();
+  async function showBugReporter() {
+    const env = await getEnv();
     document.getElementById('bugEnvInfo').textContent = 
       `${env.platform} • App v${env.appVersion || '?'} • ${env.currentScreen}`;
     document.getElementById('bugOverlay').style.display = 'flex';
@@ -19899,13 +20219,18 @@ let wfInitialized = false;
       document.getElementById('bugError').style.display = 'block';
       return;
     }
+    if (email && !isValidEmail(email)) {
+      document.getElementById('bugError').textContent = 'Please provide a valid email address';
+      document.getElementById('bugError').style.display = 'block';
+      return;
+    }
     
     document.getElementById('bugSubmit').disabled = true;
     document.getElementById('bugSubmit').textContent = 'Submitting...';
     document.getElementById('bugError').style.display = 'none';
     
     try {
-      const env = getEnv();
+      const env = await getEnv();
       const res = await fetch(BUG_API, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
