@@ -9880,9 +9880,66 @@ function switchTab(tab) {
   if (tab === 'models') {
     modelsInit();
   }
+  if (tab === 'nano') {
+    nanoInit();
+  }
 }
 // Expose globally so Electron main process can call it
 window.switchTab = switchTab;
+
+// ── Local Inference (Nano) Tab ──
+
+let nanoStatusCache = null;
+
+async function nanoInit() {
+  // Always re-fetch status on tab switch (no caching - status may change)
+  const content = document.getElementById('nanoStatusContent');
+  const banner = document.getElementById('nanoSetupBanner');
+  const embedSection = document.getElementById('nanoEmbedSection');
+
+  content.innerHTML = '<div class="nano-status-loading">Checking nano bridge status...</div>';
+  banner.style.display = 'none';
+
+  try {
+    const res = await fetch('/api/nano/status');
+    const data = await res.json();
+    nanoStatusCache = data;
+
+    // Render status grid
+    const components = data.components;
+    const items = [
+      { key: 'python', label: 'Python', detail: components.python.version || components.python.hint || '' },
+      { key: 'venv', label: 'Virtual Env', detail: components.venv.ok ? 'Installed' : (components.venv.hint || 'Missing') },
+      { key: 'model', label: 'Model', detail: components.model.ok ? 'Downloaded' : (components.model.hint || 'Missing') },
+      { key: 'bridge', label: 'Bridge', detail: components.bridge.ok ? 'Ready' : (components.bridge.hint || 'Not available') },
+    ];
+
+    content.innerHTML = '<div class="nano-status-grid">' + items.map(function(item) {
+      var ok = components[item.key].ok;
+      return '<div class="nano-status-item ' + (ok ? 'ok' : 'fail') + '">' +
+        '<span class="nano-status-dot"></span>' +
+        '<span class="nano-status-label">' + item.label + '</span>' +
+        '<span class="nano-status-detail">' + item.detail + '</span>' +
+      '</div>';
+    }).join('') + '</div>';
+
+    if (data.ready) {
+      // Show ready banner, enable embed section
+      banner.style.display = 'none';
+      var readyEl = document.getElementById('nanoReadyBanner');
+      if (readyEl) readyEl.style.display = 'flex';
+      if (embedSection) embedSection.style.display = 'block';
+    } else {
+      // Show setup required banner, disable embed section
+      banner.style.display = 'flex';
+      if (embedSection) embedSection.style.display = 'none';
+    }
+  } catch (err) {
+    content.innerHTML = '<div class="nano-status-loading" style="color:var(--error,#ff6b6b)">Failed to check nano status: ' + err.message + '</div>';
+    banner.style.display = 'flex';
+    if (embedSection) embedSection.style.display = 'none';
+  }
+}
 
 // ── Home Page ──
 
