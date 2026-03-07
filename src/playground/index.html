@@ -68,8 +68,20 @@
 [data-theme="light"] .cost-summary-card {
   box-shadow: 0 1px 4px rgba(0, 30, 43, 0.08);
 }
+[data-theme="light"] .explore-card {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(255, 255, 255, 0.86)),
+    radial-gradient(circle at top right, rgba(0, 136, 204, 0.10), transparent 42%),
+    var(--bg-card);
+}
+[data-theme="light"] .explore-card::before {
+  opacity: 0.7;
+}
+[data-theme="light"] .explore-card::after {
+  opacity: 0.45;
+}
 [data-theme="light"] .explore-card:hover {
-  box-shadow: 0 4px 16px rgba(0, 158, 128, 0.12);
+  box-shadow: 0 10px 24px rgba(0, 158, 128, 0.14);
 }
 [data-theme="light"] .cost-modal,
 [data-theme="light"] .explore-modal {
@@ -1049,7 +1061,10 @@ select:focus { outline: none; border-color: var(--accent); }
 }
 
 .explore-card {
-  background: var(--bg-card);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0)),
+    radial-gradient(circle at top right, rgba(64, 224, 255, 0.09), transparent 42%),
+    var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 20px;
@@ -1057,11 +1072,48 @@ select:focus { outline: none; border-color: var(--accent); }
   transition: all 0.2s;
   position: relative;
   overflow: hidden;
+  isolation: isolate;
+}
+.explore-card::before {
+  content: '';
+  position: absolute;
+  top: -36px;
+  right: -28px;
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0, 212, 170, 0.16) 0%, rgba(64, 224, 255, 0.10) 38%, rgba(64, 224, 255, 0) 72%);
+  opacity: 0.9;
+  pointer-events: none;
+  transform: translate3d(0, 0, 0);
+  transition: transform 0.2s ease, opacity 0.2s ease;
+  z-index: 0;
+}
+.explore-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 1px solid rgba(64, 224, 255, 0.08);
+  opacity: 0.8;
+  pointer-events: none;
+  z-index: 0;
+}
+.explore-card > * {
+  position: relative;
+  z-index: 1;
 }
 .explore-card:hover {
   border-color: var(--accent);
   transform: translateY(-2px);
-  box-shadow: 0 4px 20px rgba(0, 212, 170, 0.1);
+  box-shadow: 0 10px 26px rgba(0, 212, 170, 0.12);
+}
+.explore-card:hover::before {
+  transform: translate3d(-6px, 4px, 0) scale(1.05);
+  opacity: 1;
+}
+.explore-card:hover::after {
+  border-color: rgba(64, 224, 255, 0.16);
 }
 .explore-card.expanded {
   border-color: var(--accent);
@@ -3986,6 +4038,74 @@ select:focus { outline: none; border-color: var(--accent); }
   color: var(--text-muted);
   margin-top: 8px;
 }
+.nano-xbridge-viz {
+  margin-top: 16px;
+}
+.nano-xbridge-viz-title {
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--accent-text);
+}
+.nano-xbridge-viz-chart {
+  position: relative;
+  height: 200px;
+  background: var(--bg-surface);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  padding: 8px;
+}
+.nano-xbridge-viz-bar {
+  position: absolute;
+  bottom: 0;
+}
+.nano-xbridge-viz-bar.nano-bar {
+  background: var(--accent);
+  opacity: 0.6;
+}
+.nano-xbridge-viz-bar.api-bar {
+  background: var(--purple);
+  opacity: 0.6;
+}
+.nano-xbridge-viz-legend {
+  display: flex;
+  gap: 16px;
+  margin-top: 8px;
+  font-size: 0.85em;
+}
+.nano-xbridge-viz-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.nano-xbridge-viz-legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.nano-xbridge-diff-stats {
+  display: flex;
+  gap: 12px;
+  margin-top: 12px;
+}
+.nano-xbridge-diff-stat {
+  background: var(--bg-surface);
+  padding: 12px;
+  border-radius: var(--radius);
+  text-align: center;
+  flex: 1;
+}
+.nano-xbridge-diff-stat .stat-value {
+  font-size: 1.4em;
+  font-weight: bold;
+  color: var(--accent-text);
+}
+.nano-xbridge-diff-stat .stat-label {
+  font-size: 0.8em;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
 
 /* ── Library Search ── */
 .wf-library-search-wrap {
@@ -5287,15 +5407,6 @@ select:focus { outline: none; border-color: var(--accent); }
 .home-section-divider svg {
   width: 100%;
   height: 100%;
-}
-.explore-card-nebula {
-  position: absolute;
-  top: -40px;
-  right: -40px;
-  width: 160px;
-  height: 160px;
-  pointer-events: none;
-  z-index: 0;
 }
 .wf-store-brand-shapes {
   position: absolute;
@@ -10658,6 +10769,69 @@ window.nanoDoCrossbridge = async function() {
 
       html += '<div class="nano-xbridge-interpretation">' + interp + '</div>';
 
+      // Vector alignment visualization
+      var nanoEmb = data.nano.embedding;
+      var apiEmb = data.api.embedding;
+      var dimCount = nanoEmb.length;
+      var step = Math.max(1, Math.floor(dimCount / 50));
+      var sampledNano = [];
+      var sampledApi = [];
+      var sampledIdx = [];
+      for (var si = 0; si < dimCount; si += step) {
+        sampledNano.push(nanoEmb[si]);
+        sampledApi.push(apiEmb[si]);
+        sampledIdx.push(si);
+      }
+      var allSampled = sampledNano.concat(sampledApi);
+      var vizMin = Math.min.apply(null, allSampled);
+      var vizMax = Math.max.apply(null, allSampled);
+      var vizRange = vizMax - vizMin || 1;
+      var totalBars = sampledNano.length;
+      var barWidth = (100 / totalBars);
+
+      html += '<div class="nano-xbridge-viz">';
+      html += '<div class="nano-xbridge-viz-title">Vector Alignment (sampled dimensions)</div>';
+      html += '<div class="nano-xbridge-viz-chart">';
+      for (var bi = 0; bi < totalBars; bi++) {
+        var nanoH = ((sampledNano[bi] - vizMin) / vizRange) * 100;
+        var apiH = ((sampledApi[bi] - vizMin) / vizRange) * 100;
+        var leftPos = (bi / totalBars) * 100;
+        var halfBar = barWidth * 0.45;
+        html += '<div class="nano-xbridge-viz-bar nano-bar" style="left:' + leftPos + '%;width:' + halfBar + '%;height:' + nanoH + '%"></div>';
+        html += '<div class="nano-xbridge-viz-bar api-bar" style="left:' + (leftPos + halfBar) + '%;width:' + halfBar + '%;height:' + apiH + '%"></div>';
+      }
+      html += '</div>';
+
+      // Legend
+      html += '<div class="nano-xbridge-viz-legend">';
+      html += '<div class="nano-xbridge-viz-legend-item"><span class="nano-xbridge-viz-legend-dot" style="background:var(--accent)"></span> Nano (local)</div>';
+      html += '<div class="nano-xbridge-viz-legend-item"><span class="nano-xbridge-viz-legend-dot" style="background:var(--purple)"></span> API (cloud)</div>';
+      html += '</div>';
+
+      // Diff statistics
+      var diffs = [];
+      for (var di = 0; di < dimCount; di++) {
+        diffs.push(Math.abs(nanoEmb[di] - apiEmb[di]));
+      }
+      var maxDiff = Math.max.apply(null, diffs);
+      var avgDiff = 0;
+      for (var ai = 0; ai < diffs.length; ai++) {
+        avgDiff += diffs[ai];
+      }
+      avgDiff = avgDiff / diffs.length;
+      var matchingDims = 0;
+      for (var mi = 0; mi < diffs.length; mi++) {
+        if (diffs[mi] < 0.01) matchingDims++;
+      }
+      var matchPct = ((matchingDims / dimCount) * 100).toFixed(1);
+
+      html += '<div class="nano-xbridge-diff-stats">';
+      html += '<div class="nano-xbridge-diff-stat"><div class="stat-value">' + maxDiff.toFixed(6) + '</div><div class="stat-label">Max Diff</div></div>';
+      html += '<div class="nano-xbridge-diff-stat"><div class="stat-value">' + avgDiff.toFixed(6) + '</div><div class="stat-label">Avg Diff</div></div>';
+      html += '<div class="nano-xbridge-diff-stat"><div class="stat-value">' + matchingDims + '/' + dimCount + ' (' + matchPct + '%)</div><div class="stat-label">Matching Dims</div></div>';
+      html += '</div>';
+      html += '</div>';
+
       contentEl.innerHTML = html;
     }
 
@@ -11967,7 +12141,6 @@ function buildExploreCards() {
   const grid = document.getElementById('exploreGrid');
   grid.innerHTML = '';
 
-  let cardIdx = 0;
   for (const [key, concept] of Object.entries(exploreConcepts)) {
     const meta = CONCEPT_META[key] || { icon: LI.package, tab: 'embed' };
     const card = document.createElement('div');
@@ -11975,14 +12148,12 @@ function buildExploreCards() {
     card.dataset.key = key;
 
     card.innerHTML = `
-      <div class="explore-card-nebula">${generateNebulaSVG(160, 160, 70 + cardIdx, {variant: 'subtle', opacity: 0.06, sparkles: false})}</div>
       <div class="explore-card-icon">${lucideIcon(meta.icon, 28)}</div>
       <div class="explore-card-title">${escapeHtml(concept.title)}</div>
       <div class="explore-card-summary">${escapeHtml(concept.summary)}</div>
     `;
     card.addEventListener('click', () => openExploreModal(key));
     grid.appendChild(card);
-    cardIdx++;
   }
 
   // Modal close handlers
