@@ -1,96 +1,91 @@
-# Requirements: voyageai-cli Playground Local Inference
+# Requirements: VAI Chat Experience Overhaul
 
 **Defined:** 2026-03-07
 **Core Value:** Zero-API-key path from install to working vector search, with seamless upgrade to Voyage API
 
-## v1.3 Requirements
+## v1.4 Requirements
 
-Requirements for Playground Local Inference tab. Each maps to roadmap phases.
+Requirements for the chat experience overhaul. Each maps to roadmap phases.
 
-### Server Endpoints
+### Embedding Config
 
-- [x] **ENDP-01**: Playground server exposes GET /api/nano/status returning setup state (python, venv, model, bridge)
-- [x] **ENDP-02**: Playground server exposes POST /api/nano/embed accepting text + dimension + quantization, returning vector
-- [x] **ENDP-03**: Playground server exposes POST /api/nano/similarity accepting texts array, returning NxN cosine similarity matrix
-- [x] **ENDP-04**: Playground server exposes POST /api/nano/dimensions accepting text, returning embeddings at multiple MRL dimensions
+- [ ] **EMBD-01**: User can select Voyage embedding model from dropdown in chat config panel
+- [ ] **EMBD-02**: Dropdown shows LOCAL badge on voyage-4-nano and API badge on cloud models
+- [ ] **EMBD-03**: Embedding model auto-defaults to voyage-4-nano when nano is set up and no API key exists
+- [x] **EMBD-04**: Selected embedding model is passed to /api/chat/message and used for retrieval
 
-### Setup & Status
+### Onboarding
 
-- [x] **SETUP-01**: Local Inference tab shows nano setup status (Python, venv, model) on load
-- [x] **SETUP-02**: Tab displays actionable "Run vai nano setup" prompt when setup is incomplete
-- [x] **SETUP-03**: Tab becomes fully functional when nano bridge is available
+- [ ] **ONBD-01**: Chat detects available services on load (Ollama running, Voyage API key, nano bridge ready)
+- [ ] **ONBD-02**: Config panel shows green/red health dots for each detected service
+- [ ] **ONBD-03**: System suggests quickest working config based on detected services
+- [ ] **ONBD-04**: First-run welcome banner shows detected services and recommended config
 
-### Embedding
+### Status Bar
 
-- [x] **EMBED-01**: User can enter text and generate a local embedding via the nano model
-- [x] **EMBED-02**: User can select MRL dimension (256, 512, 1024, 2048) for embedding
-- [x] **EMBED-03**: User can select quantization type (float32, int8, uint8, binary)
-- [x] **EMBED-04**: User can view the raw embedding vector and metadata (dimension count, quantization, latency)
+- [ ] **STAT-01**: Chat header shows active LLM model and embedding model names
+- [ ] **STAT-02**: Embedding model name displays LOCAL/API source badge in header
+- [ ] **STAT-03**: Running token count and estimated cost accumulates as user chats
+- [ ] **STAT-04**: Per-message latency shown for embedding retrieval and LLM response
 
-### Similarity Matrix
+### KB Ingest
 
-- [x] **SIM-01**: User can enter multiple texts (2-10) for similarity comparison
-- [x] **SIM-02**: User can view an NxN cosine similarity heatmap with color-coded values
-- [x] **SIM-03**: Heatmap highlights highest and lowest similarity pairs
-
-### Dimension Comparison
-
-- [x] **DIM-01**: User can enter text and compare embeddings across MRL dimensions side by side
-- [x] **DIM-02**: Comparison shows vector stats (norm, sparsity) per dimension
-- [x] **DIM-03**: Comparison shows similarity preservation vs full 2048-dim baseline
-
-### Cross-Bridge
-
-- [x] **XBRIDGE-01**: When API key is configured, user can compare nano vs API embeddings for same text
-- [x] **XBRIDGE-02**: Cross-bridge shows cosine similarity between nano and API vectors
-- [x] **XBRIDGE-03**: Cross-bridge visualizes shared embedding space proof
+- [ ] **KBIN-01**: User can upload files (text, markdown, PDF) via drag-and-drop or file picker
+- [ ] **KBIN-02**: User can paste text content to be chunked, embedded, and stored
+- [ ] **KBIN-03**: User can enter a URL to fetch, scrape, chunk, embed, and store
+- [ ] **KBIN-04**: Ingest shows progress bar for chunking, embedding, and storage stages
 
 ## Future Requirements
 
-### Benchmark Integration
+### KB Management
 
-- **BENCH-01**: Playground benchmark tab can run nano vs API latency comparison
-- **BENCH-02**: Playground benchmark tab can run dimension vs quality tradeoff analysis
+- **KBMG-01**: User can view documents in active knowledge base
+- **KBMG-02**: User can delete individual documents from knowledge base
+- **KBMG-03**: User can clear entire knowledge base
+
+### Chat History
+
+- **HIST-01**: Chat sessions persist across page reloads
+- **HIST-02**: User can view and resume previous chat sessions
 
 ## Out of Scope
 
 | Feature | Reason |
 |---------|--------|
-| In-browser model inference (WASM/WebGPU) | Model is too large; Python bridge is the validated approach |
-| Nano setup from browser | Security risk; setup requires shell access, keep as CLI-only |
-| Persistent embedding storage in playground | Playground is stateless; use vai pipeline for persistence |
-| Real-time streaming embeddings | Batch approach is sufficient; latency is already ~50-200ms |
+| In-browser embedding inference (WASM/WebGPU) | Model too large; Python bridge is validated approach |
+| Nano setup from browser | Security risk; setup requires shell access, CLI-only |
+| Multi-KB simultaneous search | Complex routing; single active KB is sufficient for v1.4 |
+| Streaming embeddings | Batch embedding is fast enough; streaming adds complexity |
+| Custom chunking strategies | Sensible defaults first; configurability deferred |
 
 ## Traceability
 
+Which phases cover which requirements. Updated during roadmap creation.
+
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ENDP-01 | Phase 12 | Complete |
-| ENDP-02 | Phase 12 | Complete |
-| ENDP-03 | Phase 12 | Complete |
-| ENDP-04 | Phase 12 | Complete |
-| SETUP-01 | Phase 13 | Complete |
-| SETUP-02 | Phase 13 | Complete |
-| SETUP-03 | Phase 13 | Complete |
-| EMBED-01 | Phase 13 | Complete |
-| EMBED-02 | Phase 13 | Complete |
-| EMBED-03 | Phase 13 | Complete |
-| EMBED-04 | Phase 13 | Complete |
-| SIM-01 | Phase 14 | Complete |
-| SIM-02 | Phase 14 | Complete |
-| SIM-03 | Phase 14 | Complete |
-| DIM-01 | Phase 14 | Complete |
-| DIM-02 | Phase 14 | Complete |
-| DIM-03 | Phase 14 | Complete |
-| XBRIDGE-01 | Phase 15 | Complete |
-| XBRIDGE-02 | Phase 15 | Complete |
-| XBRIDGE-03 | Phase 15 | Complete |
+| EMBD-01 | Phase 16 | Pending |
+| EMBD-02 | Phase 16 | Pending |
+| EMBD-03 | Phase 16 | Pending |
+| EMBD-04 | Phase 16 | Complete |
+| ONBD-01 | Phase 17 | Pending |
+| ONBD-02 | Phase 17 | Pending |
+| ONBD-03 | Phase 17 | Pending |
+| ONBD-04 | Phase 17 | Pending |
+| STAT-01 | Phase 18 | Pending |
+| STAT-02 | Phase 18 | Pending |
+| STAT-03 | Phase 18 | Pending |
+| STAT-04 | Phase 18 | Pending |
+| KBIN-01 | Phase 19 | Pending |
+| KBIN-02 | Phase 19 | Pending |
+| KBIN-03 | Phase 19 | Pending |
+| KBIN-04 | Phase 19 | Pending |
 
 **Coverage:**
-- v1.3 requirements: 20 total
-- Mapped to phases: 20
+- v1.4 requirements: 16 total
+- Mapped to phases: 16
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-07*
-*Last updated: 2026-03-07 — traceability updated with phase mappings*
+*Last updated: 2026-03-07 after roadmap creation*
