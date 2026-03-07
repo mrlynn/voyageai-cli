@@ -50,7 +50,7 @@ Full details: [milestones/v1.2-ROADMAP.md](milestones/v1.2-ROADMAP.md)
 
 - [x] **Phase 12: Nano API Server** - Express endpoints for nano status, embed, similarity, and dimensions (completed 2026-03-07)
 - [x] **Phase 13: Setup Status & Embed UI** - Tab skeleton with setup detection, text embedding with dimension/quantization controls (completed 2026-03-07)
-- [ ] **Phase 14: Similarity & Dimensions** - NxN similarity heatmap and MRL dimension comparison panels
+- [x] **Phase 14: Similarity & Dimensions** - NxN similarity heatmap and MRL dimension comparison panels (completed 2026-03-07)
 - [ ] **Phase 15: Cross-Bridge Comparison** - Side-by-side nano vs API embedding comparison when key available
 
 ## Phase Details
@@ -130,5 +130,5 @@ Plans:
 | 11. Chat Visual Polish | v1.2 | 2/2 | Complete | 2026-03-07 |
 | 12. Nano API Server | v1.3 | 2/2 | Complete | 2026-03-07 |
 | 13. Setup Status & Embed UI | v1.3 | 2/2 | Complete | 2026-03-07 |
-| 14. Similarity & Dimensions | 1/2 | In Progress|  | - |
+| 14. Similarity & Dimensions | 2/2 | Complete   | 2026-03-07 | - |
 | 15. Cross-Bridge Comparison | v1.3 | 0/? | Not started | - |

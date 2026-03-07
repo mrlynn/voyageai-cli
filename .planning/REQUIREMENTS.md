@@ -35,9 +35,9 @@ Requirements for Playground Local Inference tab. Each maps to roadmap phases.
 
 ### Dimension Comparison
 
-- [ ] **DIM-01**: User can enter text and compare embeddings across MRL dimensions side by side
-- [ ] **DIM-02**: Comparison shows vector stats (norm, sparsity) per dimension
-- [ ] **DIM-03**: Comparison shows similarity preservation vs full 2048-dim baseline
+- [x] **DIM-01**: User can enter text and compare embeddings across MRL dimensions side by side
+- [x] **DIM-02**: Comparison shows vector stats (norm, sparsity) per dimension
+- [x] **DIM-03**: Comparison shows similarity preservation vs full 2048-dim baseline
 
 ### Cross-Bridge
 
@@ -79,9 +79,9 @@ Requirements for Playground Local Inference tab. Each maps to roadmap phases.
 | SIM-01 | Phase 14 | Complete |
 | SIM-02 | Phase 14 | Complete |
 | SIM-03 | Phase 14 | Complete |
-| DIM-01 | Phase 14 | Pending |
-| DIM-02 | Phase 14 | Pending |
-| DIM-03 | Phase 14 | Pending |
+| DIM-01 | Phase 14 | Complete |
+| DIM-02 | Phase 14 | Complete |
+| DIM-03 | Phase 14 | Complete |
 | XBRIDGE-01 | Phase 15 | Pending |
 | XBRIDGE-02 | Phase 15 | Pending |
 | XBRIDGE-03 | Phase 15 | Pending |
