@@ -15,7 +15,7 @@ const chatUI = require('../lib/chat-ui');
 const pc = require('picocolors');
 const fs = require('fs');
 
-const { createTimedSpinner } = chatUI;
+const { moments } = require('../lib/robot-moments');
 
 /**
  * Register the chat command.
@@ -57,7 +57,9 @@ function registerChat(program) {
 
 async function runChat(opts) {
   // Show startup spinner immediately so the user sees activity
-  const startupSpinner = (!opts.json && !opts.quiet) ? createTimedSpinner('Starting vai chat') : null;
+  const startupAnim = moments.isInteractive({ json: opts.json, plain: opts.quiet })
+    ? moments.startWaving('Starting vai chat')
+    : null;
 
   const { config: proj } = loadProject();
   const chatConf = proj.chat || {};
@@ -78,7 +80,7 @@ async function runChat(opts) {
 
   // Validate DB + collection (required for pipeline, recommended for agent)
   if (!isAgent && (!db || !collection)) {
-    if (startupSpinner) startupSpinner.stop();
+    if (startupAnim) startupAnim.stop();
     console.error(ui.error('Database and collection required for pipeline mode.'));
     console.error('');
     console.error('  Use --db and --collection, or configure .vai.json:');
@@ -95,7 +97,7 @@ async function runChat(opts) {
     const venv = checkVenv();
     const model = checkModel();
     if (!venv.ok || !model.ok) {
-      if (startupSpinner) startupSpinner.stop();
+      if (startupAnim) startupAnim.stop();
       console.error('');
       console.error(pc.red('  voyage-4-nano is not set up.'));
       console.error(`  Run ${pc.cyan('vai nano setup')} to install voyage-4-nano`);
@@ -107,7 +109,7 @@ async function runChat(opts) {
   // Resolve LLM config — run interactive setup if missing
   let llmConfig = resolveLLMConfig(opts);
   if (!llmConfig.provider) {
-    if (startupSpinner) startupSpinner.stop();
+    if (startupAnim) startupAnim.stop();
     if (opts.json) {
       // Non-interactive mode — can't run wizard
       console.error(JSON.stringify({ error: 'No LLM provider configured. Run vai chat interactively to set up.' }));
@@ -141,7 +143,7 @@ async function runChat(opts) {
 
   // --estimate: show per-turn cost breakdown and exit
   if (opts.estimate) {
-    if (startupSpinner) startupSpinner.stop();
+    if (startupAnim) startupAnim.stop();
     const { estimateChatCost, formatChatCostBreakdown } = require('../lib/cost');
     const breakdown = estimateChatCost({
       query: 'How does authentication work?', // sample question
@@ -177,7 +179,6 @@ async function runChat(opts) {
   if (!isAgent && !opts.json) {
     const { runPreflight, formatPreflight, waitForIndex } = require('../lib/preflight');
 
-    if (startupSpinner) startupSpinner.updateText('Checking pipeline');
     const { checks, ready } = await runPreflight({
       db, collection,
       field: proj.field || 'embedding',
@@ -185,7 +186,7 @@ async function runChat(opts) {
       textField,
       local: isLocal,
     });
-    if (startupSpinner) startupSpinner.stop();
+    if (startupAnim) startupAnim.stop();
 
     console.log('');
     console.log(formatPreflight(checks));
@@ -262,7 +263,7 @@ async function runChat(opts) {
   let lastToolCalls = [];
 
   // Stop startup spinner (covers agent mode and any remaining init)
-  if (startupSpinner) startupSpinner.stop();
+  if (startupAnim) startupAnim.stop();
 
   // Print header
   if (!opts.quiet && !opts.json) {
@@ -322,9 +323,13 @@ async function runChat(opts) {
         });
       }
     } catch (err) {
-      console.error('');
-      console.error(ui.error(err.message));
-      console.error('');
+      if (moments.isInteractive({ json: opts.json, plain: opts.quiet })) {
+        moments.error(err.message);
+      } else {
+        console.error('');
+        console.error(ui.error(err.message));
+        console.error('');
+      }
     }
 
     rl.prompt();
@@ -396,14 +401,14 @@ async function handlePipelineTurn(input, ctx) {
     }));
   } else {
     // Interactive mode — stream output with markdown rendering
-    const showSpinners = !opts.quiet;
+    const showAnimations = moments.isInteractive({ json: opts.json, plain: opts.quiet });
     let retrievalShown = false;
     let retrievalSpinner = null;
     let generationSpinner = null;
     let streamRenderer = null;
 
-    if (showSpinners) {
-      retrievalSpinner = createTimedSpinner('Searching knowledge base');
+    if (showAnimations) {
+      retrievalSpinner = moments.startSearching('Searching knowledge base');
     }
 
     try {
@@ -432,8 +437,8 @@ async function handlePipelineTurn(input, ctx) {
             retrievalShown = true;
           }
 
-          if (showSpinners) {
-            generationSpinner = createTimedSpinner('Generating response');
+          if (showAnimations) {
+            generationSpinner = moments.startThinking('Generating response');
           }
         }
 
@@ -463,6 +468,12 @@ async function handlePipelineTurn(input, ctx) {
           if (sources.length > 0 && chatConf.showSources !== false) {
             console.log(chatUI.renderSources(sources));
           }
+
+          // Brief success pose after successful response with sources
+          if (showAnimations && sources.length > 0) {
+            moments.success();
+          }
+
           console.log('');
         }
       }
@@ -510,13 +521,13 @@ async function handleAgentTurn(input, ctx) {
     }));
   } else {
     // Interactive mode with markdown rendering
-    const showSpinners = !opts.quiet;
+    const showAnimations = moments.isInteractive({ json: opts.json, plain: opts.quiet });
     let thinkingSpinner = null;
     let hasShownToolCalls = false;
     let streamRenderer = null;
 
-    if (showSpinners) {
-      thinkingSpinner = createTimedSpinner('Thinking');
+    if (showAnimations) {
+      thinkingSpinner = moments.startThinking('Thinking');
     }
 
     try {
@@ -544,9 +555,9 @@ async function handleAgentTurn(input, ctx) {
             console.log(chatUI.renderToolCall(event.data, showToolCalls));
           }
 
-          // Start spinner for next LLM call (analyzing tool results)
-          if (showSpinners) {
-            thinkingSpinner = createTimedSpinner('Analyzing results');
+          // Start animation for next LLM call (analyzing tool results)
+          if (showAnimations) {
+            thinkingSpinner = moments.startThinking('Analyzing results');
           }
         }
 
