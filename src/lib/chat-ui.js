@@ -1,6 +1,41 @@
 'use strict';
 
 const pc = require('picocolors');
+const { render, COLORS } = require('./robot');
+
+// ── Brand color helpers (matching robot-moments.js) ──────────────────
+const fg = (r, g, b) => `\x1b[38;2;${r};${g};${b}m`;
+const RST = '\x1b[0m';
+
+const teal = (text) => `${fg(...COLORS.teal)}${text}${RST}`;
+const cyan = (text) => `${fg(...COLORS.cyan)}${text}${RST}`;
+const dim  = (text) => pc.dim(text);
+const bold = (text) => pc.bold(text);
+
+const divider = (width = 52) => dim('\u2500'.repeat(width));
+
+// ── Layout helper: robot left, text right (same as robot-moments.js) ─
+function sideBySide(poseName, textLines, gap = 3) {
+  const frame = render(poseName, { indent: 0 });
+  const robotLines = frame.split('\n');
+  const robotWidth = 16 + 1;
+  const gapStr = ' '.repeat(gap);
+  const indent = '  ';
+
+  const totalLines = Math.max(robotLines.length, textLines.length);
+  const textStart = Math.floor((robotLines.length - textLines.length) / 2);
+
+  const output = [];
+  for (let i = 0; i < totalLines; i++) {
+    const robotPart = robotLines[i] ?? ' '.repeat(robotWidth);
+    const textIdx = i - textStart;
+    const textPart = (textIdx >= 0 && textIdx < textLines.length)
+      ? textLines[textIdx]
+      : '';
+    output.push(`${indent}${robotPart}${gapStr}${textPart}`);
+  }
+  return output.join('\n');
+}
 
 // ── Terminal helpers ──────────────────────────────────────────────────
 
@@ -740,6 +775,27 @@ function createTimedSpinner(baseText) {
  * @returns {string}
  */
 function renderHeader(info) {
+  if (info.interactive) {
+    // ── Robot sideBySide layout (interactive TTY mode) ──
+    const modeLabel = info.mode === 'agent' ? 'agent (tool-calling)' : 'pipeline (fixed RAG)';
+    const knowledgeLine = info.mode === 'agent'
+      ? `${dim('Database:')}  ${info.db || 'auto'}`
+      : `${dim('Knowledge:')} ${info.db}.${info.collection}`;
+
+    const textLines = [
+      bold(teal('vai chat')) + dim(` v${info.version}`),
+      '',
+      `${dim('Provider:')}  ${info.provider}` + dim(` (${info.model})`),
+      `${dim('Mode:')}      ${modeLabel}`,
+      knowledgeLine,
+      `${dim('Session:')}   ${dim(info.sessionId)}`,
+      '',
+      dim('Type ') + cyan('/help') + dim(' for commands, ') + cyan('/quit') + dim(' to exit.'),
+    ];
+    return sideBySide('idle', textLines);
+  }
+
+  // ── Plain-text fallback (non-interactive / --json / --quiet) ──
   const lines = [];
   lines.push('');
   lines.push(`${pc.bold('vai chat')} v${info.version}`);
