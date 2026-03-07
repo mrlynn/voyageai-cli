@@ -7403,6 +7403,50 @@ select:focus { outline: none; border-color: var(--accent); }
   box-shadow: 0 0 4px rgba(239, 68, 68, 0.3);
 }
 
+/* ── Onboarding Banner ── */
+.onboarding-banner {
+  margin: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card-bg, var(--surface));
+  padding: 20px;
+  text-align: center;
+}
+.onboarding-banner-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: var(--text);
+}
+.onboarding-banner-services {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.onboarding-service-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.onboarding-service-item .health-dot {
+  margin-left: 0;
+}
+.onboarding-banner-recommendation {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+  font-style: italic;
+}
+.onboarding-banner-actions {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
 /* Instructions textarea compact */
 .kb-instructions-textarea {
   width: 100%;
@@ -8876,6 +8920,17 @@ Reranking models rescore initial search results to improve relevance ordering.</
         </button>
       </div>
     </div>
+    <div id="onboardingBanner" class="onboarding-banner" style="display:none;">
+      <div class="onboarding-banner-inner">
+        <div class="onboarding-banner-title">Welcome to VAI Chat</div>
+        <div class="onboarding-banner-services" id="onboardingServices"></div>
+        <div class="onboarding-banner-recommendation" id="onboardingRecommendation"></div>
+        <div class="onboarding-banner-actions">
+          <button class="btn btn-primary" id="onboardingApply" onclick="applyRecommendedConfig()">Start Chatting</button>
+          <button class="btn btn-secondary" id="onboardingDismiss" onclick="dismissOnboarding()">Configure Manually</button>
+        </div>
+      </div>
+    </div>
     <div class="chat-not-configured" id="chatNotConfigured" style="display:none;">
       <div class="chat-not-configured-icon">💬</div>
       <p>Chat requires an LLM provider and database to be configured.</p>
@@ -9137,7 +9192,7 @@ Reranking models rescore initial search results to improve relevance ordering.</
           </details>
           <details>
             <summary><strong>Recent</strong> — Explore and About page refresh</summary>
-            <p>The Explore experience has been polished with cleaner cards, updated visual styling, and a lightweight robot guide in the header and explainer modal. The About page has also been refreshed to better reflect the current product direction.</p>
+            <p>The Explore experience has been polished with cleaner cards, updated visual styling, and Avi as the lightweight guide in the header and explainer modal. The About page has also been refreshed to better reflect the current product direction.</p>
           </details>
           <details>
             <summary><strong>Recent</strong> — Better bug reporting and diagnostics</summary>
@@ -16326,6 +16381,129 @@ function updateHealthDots(config) {
   }
 }
 
+// ── Onboarding Recommendation Engine ──
+
+function recommendConfig(config) {
+  var ollama = !!config.ollamaAvailable;
+  var nano = !!config.nanoAvailable;
+  var apiKey = !!config.hasApiKey;
+  var llmKey = !!config.hasLLMKey;
+  var services = { ollama: ollama, nano: nano, apiKey: apiKey, llmKey: llmKey };
+
+  // 1. Best case: Ollama + nano (fully local)
+  if (ollama && nano) {
+    return { provider: 'ollama', model: null, embeddingModel: 'voyage-4-nano', label: 'Full Local', description: 'Ollama + voyage-4-nano -- free, fully private', services: services };
+  }
+
+  // 2. Ollama only (no nano, no API key)
+  if (ollama && !nano && !apiKey) {
+    return { provider: 'ollama', model: null, embeddingModel: null, label: 'Ollama Only', description: 'Ollama detected -- add nano or API key for embeddings', services: services };
+  }
+
+  // 3. Nano + API LLM (has LLM key and nano)
+  if (nano && llmKey) {
+    return { provider: config.provider || 'anthropic', model: null, embeddingModel: 'voyage-4-nano', label: 'Hybrid', description: 'Cloud LLM + local embeddings -- low cost', services: services };
+  }
+
+  // 4. Full API (has API key + LLM key, no local)
+  if (apiKey && llmKey) {
+    return { provider: config.provider || 'anthropic', model: null, embeddingModel: 'voyage-4-large', label: 'Cloud', description: 'Cloud LLM + Voyage API embeddings', services: services };
+  }
+
+  // 5. API key only (Voyage key, no LLM)
+  if (apiKey && !llmKey) {
+    return { provider: null, model: null, embeddingModel: 'voyage-4-large', label: 'Embeddings Only', description: 'Voyage API key detected -- add LLM provider to chat', services: services };
+  }
+
+  // Also handle: Ollama available + API key but no LLM key
+  if (ollama && apiKey) {
+    return { provider: 'ollama', model: null, embeddingModel: 'voyage-4-large', label: 'Ollama + API', description: 'Ollama + Voyage API embeddings', services: services };
+  }
+
+  // 6. Nothing detected
+  return { provider: null, model: null, embeddingModel: null, label: 'Setup Required', description: 'Install Ollama or add API keys to get started', services: services };
+}
+
+function showOnboardingBanner(config) {
+  var banner = document.getElementById('onboardingBanner');
+  if (!banner) return;
+
+  // Only show if no provider configured (first-time or unconfigured)
+  if (config.provider) {
+    banner.style.display = 'none';
+    return;
+  }
+
+  var rec = recommendConfig(config);
+
+  // Render service detection status
+  var servicesEl = document.getElementById('onboardingServices');
+  var serviceList = [
+    { name: 'Ollama', available: config.ollamaAvailable },
+    { name: 'Nano Bridge', available: config.nanoAvailable },
+    { name: 'Voyage API', available: config.hasApiKey },
+  ];
+  servicesEl.innerHTML = serviceList.map(function(s) {
+    return '<div class="onboarding-service-item">' +
+      '<span class="health-dot ' + (s.available ? 'available' : 'unavailable') + '"></span>' +
+      '<span>' + s.name + '</span>' +
+      '</div>';
+  }).join('');
+
+  // Render recommendation
+  var recEl = document.getElementById('onboardingRecommendation');
+  recEl.textContent = rec.description;
+
+  // Store recommendation for apply button
+  window._onboardingRec = rec;
+
+  // Show/hide apply button based on whether we have a viable config
+  var applyBtn = document.getElementById('onboardingApply');
+  if (applyBtn) {
+    applyBtn.style.display = rec.provider ? '' : 'none';
+    applyBtn.textContent = rec.provider ? 'Start with ' + rec.label : 'Start Chatting';
+  }
+
+  banner.style.display = '';
+}
+
+async function applyRecommendedConfig() {
+  var rec = window._onboardingRec;
+  if (!rec) return;
+
+  // Set provider
+  if (rec.provider) {
+    document.getElementById('chatProvider').value = rec.provider;
+    await chatProviderChanged(); // populates model dropdown
+
+    // Set model if recommended
+    if (rec.model) {
+      var modelSelect = document.getElementById('chatModel');
+      if (Array.from(modelSelect.options).some(function(o) { return o.value === rec.model; })) {
+        modelSelect.value = rec.model;
+      }
+    }
+  }
+
+  // Set embedding model
+  if (rec.embeddingModel) {
+    var embedSelect = document.getElementById('chatEmbeddingModel');
+    if (embedSelect) {
+      embedSelect.value = rec.embeddingModel;
+      if (typeof updateEmbedBadge === 'function') updateEmbedBadge();
+    }
+  }
+
+  // Save and dismiss
+  saveChatSettings();
+  dismissOnboarding();
+}
+
+function dismissOnboarding() {
+  var banner = document.getElementById('onboardingBanner');
+  if (banner) banner.style.display = 'none';
+}
+
 async function loadChatConfig() {
   try {
     const res = await fetch('/api/chat/config');
@@ -16361,15 +16539,17 @@ async function loadChatConfig() {
     await initEmbeddingDropdown();
     updateHealthDots(data);
     updateChatStatus();
+    showOnboardingBanner(data);
     // Show not-configured banner if incomplete
     const notConfigured = document.getElementById('chatNotConfigured');
     if (notConfigured) {
       notConfigured.style.display = (!data.provider || !data.db) ? 'flex' : 'none';
     }
   } catch {
-    // No config — show not-configured banner
+    // No config — show not-configured banner and onboarding
     const notConfigured = document.getElementById('chatNotConfigured');
     if (notConfigured) notConfigured.style.display = 'flex';
+    showOnboardingBanner({});
   }
 }
 
@@ -17152,6 +17332,8 @@ window.switchSettingsSection = switchSettingsSection;
 window.updateChatStatus = updateChatStatus;
 window.chatInputKeydown = chatInputKeydown;
 window.chatProviderChanged = chatProviderChanged;
+window.applyRecommendedConfig = applyRecommendedConfig;
+window.dismissOnboarding = dismissOnboarding;
 window.loadChatApiKey = loadChatApiKey;
 window.toggleChatApiKeyVisibility = toggleChatApiKeyVisibility;
 window.saveChatApiKey = saveChatApiKey;
