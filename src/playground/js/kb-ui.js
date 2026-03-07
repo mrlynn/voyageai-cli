@@ -391,7 +391,7 @@ class KBUIManager {
     dropZone.addEventListener('drop', (e) => { this.handleWizardFileSelect(e.dataTransfer.files); });
     dropZone.addEventListener('click', () => {
       const input = document.createElement('input');
-      input.type = 'file'; input.multiple = true; input.accept = '.txt,.md';
+      input.type = 'file'; input.multiple = true; input.accept = '.txt,.md,.pdf';
       input.onchange = (e) => this.handleWizardFileSelect(e.target.files);
       input.click();
     });
@@ -403,7 +403,7 @@ class KBUIManager {
     if (!kbName) { alert('No knowledge base selected'); return; }
 
     const validFiles = this.validateFiles(files);
-    if (validFiles.length === 0) { alert('No valid files selected (.txt or .md, max 10MB each)'); return; }
+    if (validFiles.length === 0) { alert('No valid files selected (.txt, .md, or .pdf, max 10MB each)'); return; }
 
     this.closeWizard();
     await this.ingestFiles(validFiles, kbName);
@@ -464,7 +464,7 @@ class KBUIManager {
   validateFiles(files) {
     const validFiles = [];
     for (const file of files) {
-      if (!['text/plain', 'text/markdown', 'application/x-markdown'].includes(file.type)) {
+      if (!['text/plain', 'text/markdown', 'application/x-markdown', 'application/pdf'].includes(file.type)) {
         console.warn(`Skipping invalid file type: ${file.name}`);
         continue;
       }
@@ -483,7 +483,7 @@ class KBUIManager {
     if (!kbName) { alert('No knowledge base selected'); return; }
 
     const validFiles = this.validateFiles(files);
-    if (validFiles.length === 0) { alert('No valid files selected (.txt or .md, max 10MB each)'); return; }
+    if (validFiles.length === 0) { alert('No valid files selected (.txt, .md, or .pdf, max 10MB each)'); return; }
 
     await this.ingestFiles(validFiles, kbName);
   }
@@ -499,9 +499,32 @@ class KBUIManager {
 
       for await (const event of this.kbManager.ingestFiles(files, kbName)) {
         if (event.type === 'progress') {
-          const percent = Math.round((event.current / event.total) * 100);
+          let label = '';
+          let percent = 0;
+
+          if (event.stage === 'reading') {
+            label = `Reading ${event.file}...`;
+            percent = 5;
+          } else if (event.stage === 'chunking') {
+            label = `Chunking ${event.file} (${event.chunks} chunks)`;
+            percent = 15;
+          } else if (event.stage === 'embedding') {
+            label = `Embedding ${event.current}/${event.total} chunks`;
+            percent = 15 + Math.round((event.current / event.total) * 70);
+          } else if (event.stage === 'storing') {
+            label = `Storing ${event.file}...`;
+            percent = 90;
+          } else if (event.stage === 'fetching') {
+            label = 'Fetching URL...';
+            percent = 5;
+          } else {
+            // Fallback for old-style progress (file-level)
+            label = `${event.current}/${event.total} — ${event.file || ''}`;
+            percent = event.total ? Math.round((event.current / event.total) * 100) : 0;
+          }
+
           if (progressBar) progressBar.style.width = `${percent}%`;
-          if (progressLabel) progressLabel.textContent = `${event.current}/${event.total} — ${event.file}`;
+          if (progressLabel) progressLabel.textContent = label;
         } else if (event.type === 'complete') {
           if (progressBar) progressBar.style.width = '100%';
           if (progressLabel) progressLabel.textContent = `✓ Complete: ${event.docCount} docs, ${event.chunkCount} chunks`;
@@ -523,6 +546,123 @@ class KBUIManager {
 
     const fileInput = document.getElementById('kbPanelFileInput');
     if (fileInput) fileInput.value = '';
+  }
+
+  // ── Paste text ingest ──
+
+  async handlePasteIngest() {
+    const textarea = document.getElementById('kbPasteText');
+    const titleInput = document.getElementById('kbPasteTitle');
+    if (!textarea) return;
+
+    const text = textarea.value.trim();
+    if (!text) { alert('Please paste some text content first.'); return; }
+
+    const kbName = this.kbManager.currentKB;
+    if (!kbName) { alert('No knowledge base selected'); return; }
+
+    const title = titleInput ? titleInput.value.trim() : '';
+    await this.ingestText(text, kbName, title);
+
+    // Clear inputs after successful ingest
+    textarea.value = '';
+    if (titleInput) titleInput.value = '';
+  }
+
+  async ingestText(text, kbName, title) {
+    const progressContainer = document.getElementById('kbPanelProgress');
+    const progressBar = document.getElementById('kbPanelProgressBar');
+    const progressLabel = document.getElementById('kbPanelProgressLabel');
+    if (!progressContainer) return;
+
+    try {
+      progressContainer.style.display = 'block';
+
+      for await (const event of this.kbManager.ingestText(text, kbName, title)) {
+        if (event.type === 'progress') {
+          const percent = event.total > 0 ? Math.round((event.current / event.total) * 100) : 0;
+          if (progressBar) progressBar.style.width = `${percent}%`;
+          const stageLabel = event.stage === 'chunking' ? 'Chunking...'
+            : event.stage === 'embedding' ? `Embedding ${event.current}/${event.total} chunks`
+            : 'Processing...';
+          if (progressLabel) progressLabel.textContent = stageLabel;
+        } else if (event.type === 'complete') {
+          if (progressBar) progressBar.style.width = '100%';
+          if (progressLabel) progressLabel.textContent = `Done: ${event.chunkCount} chunks ingested`;
+          setTimeout(() => {
+            this.updatePanelUI();
+            progressContainer.style.display = 'none';
+          }, 1000);
+        } else if (event.type === 'error') {
+          console.error('Text ingestion error:', event.error);
+          alert(`Ingestion error: ${event.error}`);
+          progressContainer.style.display = 'none';
+        }
+      }
+    } catch (err) {
+      console.error('Error ingesting text:', err);
+      alert(`Error: ${err.message}`);
+      progressContainer.style.display = 'none';
+    }
+  }
+
+  // ── URL ingest ──
+
+  async handleURLIngest() {
+    const urlInput = document.getElementById('kbURLInput');
+    if (!urlInput) return;
+
+    const url = urlInput.value.trim();
+    if (!url || !/^https?:\/\//i.test(url)) {
+      alert('Please enter a valid URL starting with http:// or https://');
+      return;
+    }
+
+    const kbName = this.kbManager.currentKB;
+    if (!kbName) { alert('No knowledge base selected'); return; }
+
+    await this.ingestURL(url, kbName);
+
+    // Clear input after successful ingest
+    urlInput.value = '';
+  }
+
+  async ingestURL(url, kbName) {
+    const progressContainer = document.getElementById('kbPanelProgress');
+    const progressBar = document.getElementById('kbPanelProgressBar');
+    const progressLabel = document.getElementById('kbPanelProgressLabel');
+    if (!progressContainer) return;
+
+    try {
+      progressContainer.style.display = 'block';
+
+      for await (const event of this.kbManager.ingestURL(url, kbName)) {
+        if (event.type === 'progress') {
+          const percent = event.total > 0 ? Math.round((event.current / event.total) * 100) : 0;
+          if (progressBar) progressBar.style.width = `${percent}%`;
+          const stageLabel = event.stage === 'fetching' ? 'Fetching URL...'
+            : event.stage === 'chunking' ? 'Chunking...'
+            : event.stage === 'embedding' ? `Embedding ${event.current}/${event.total} chunks`
+            : 'Processing...';
+          if (progressLabel) progressLabel.textContent = stageLabel;
+        } else if (event.type === 'complete') {
+          if (progressBar) progressBar.style.width = '100%';
+          if (progressLabel) progressLabel.textContent = `Done: ${event.chunkCount} chunks ingested`;
+          setTimeout(() => {
+            this.updatePanelUI();
+            progressContainer.style.display = 'none';
+          }, 1000);
+        } else if (event.type === 'error') {
+          console.error('URL ingestion error:', event.error);
+          alert(`Ingestion error: ${event.error}`);
+          progressContainer.style.display = 'none';
+        }
+      }
+    } catch (err) {
+      console.error('Error ingesting URL:', err);
+      alert(`Error: ${err.message}`);
+      progressContainer.style.display = 'none';
+    }
   }
 
   // ── Panel UI updates ──

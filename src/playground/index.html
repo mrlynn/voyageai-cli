@@ -8700,7 +8700,7 @@ Reranking models rescore initial search results to improve relevance ordering.</
       <div id="kbWizardDocsStep" class="kb-wizard-step" style="display: none;">
         <div class="kb-wizard-icon">📤</div>
         <h2 class="kb-wizard-title">Add Documents</h2>
-        <p class="kb-wizard-desc">Upload .txt or .md files (max 10MB each)</p>
+        <p class="kb-wizard-desc">Upload .txt, .md, or .pdf files (max 10MB each)</p>
         
         <div id="kbWizardDropZone" class="kb-wizard-dropzone">
           <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -8709,7 +8709,7 @@ Reranking models rescore initial search results to improve relevance ordering.</
             <line x1="12" y1="3" x2="12" y2="15"/>
           </svg>
           <p style="margin: 12px 0 4px; font-weight: 600; color: var(--text);">Drag files here or click to browse</p>
-          <p style="font-size: 12px; color: var(--text-muted);">.txt, .md files up to 10MB</p>
+          <p style="font-size: 12px; color: var(--text-muted);">.txt, .md, .pdf files up to 10MB</p>
         </div>
         
         <div style="display: flex; gap: 8px; margin-top: 16px;">
@@ -8792,9 +8792,9 @@ Reranking models rescore initial search results to improve relevance ordering.</
                 <line x1="12" y1="3" x2="12" y2="15"/>
               </svg>
               <p style="margin:4px 0 0; font-weight:600; font-size:12px; color:var(--text);">Drop files here</p>
-              <p style="font-size:10px; color:var(--text-muted); margin:2px 0 0;">.txt, .md &mdash; max 10MB</p>
+              <p style="font-size:10px; color:var(--text-muted); margin:2px 0 0;">.txt, .md, .pdf &mdash; max 10MB</p>
             </div>
-            <input type="file" id="kbPanelFileInput" multiple accept=".txt,.md" style="display:none;">
+            <input type="file" id="kbPanelFileInput" multiple accept=".txt,.md,.pdf" style="display:none;">
             <div id="kbPanelProgress" class="kb-panel-progress" style="display:none;">
               <div class="kb-panel-progress-label" id="kbPanelProgressLabel">Ingesting...</div>
               <div class="kb-panel-progress-bar">
