@@ -49,7 +49,7 @@ Full details: [milestones/v1.2-ROADMAP.md](milestones/v1.2-ROADMAP.md)
 **Milestone Goal:** Add a Local Inference tab to the browser playground with nano setup status, text embedding, similarity matrix, MRL dimension comparison, and cross-bridge comparison.
 
 - [x] **Phase 12: Nano API Server** - Express endpoints for nano status, embed, similarity, and dimensions (completed 2026-03-07)
-- [ ] **Phase 13: Setup Status & Embed UI** - Tab skeleton with setup detection, text embedding with dimension/quantization controls
+- [x] **Phase 13: Setup Status & Embed UI** - Tab skeleton with setup detection, text embedding with dimension/quantization controls (completed 2026-03-07)
 - [ ] **Phase 14: Similarity & Dimensions** - NxN similarity heatmap and MRL dimension comparison panels
 - [ ] **Phase 15: Cross-Bridge Comparison** - Side-by-side nano vs API embedding comparison when key available
 
@@ -129,6 +129,6 @@ Plans:
 | 10. Robot Chat Poses | v1.2 | 2/2 | Complete | 2026-03-07 |
 | 11. Chat Visual Polish | v1.2 | 2/2 | Complete | 2026-03-07 |
 | 12. Nano API Server | v1.3 | 2/2 | Complete | 2026-03-07 |
-| 13. Setup Status & Embed UI | 1/2 | In Progress|  | - |
+| 13. Setup Status & Embed UI | 2/2 | Complete   | 2026-03-07 | - |
 | 14. Similarity & Dimensions | v1.3 | 0/? | Not started | - |
 | 15. Cross-Bridge Comparison | v1.3 | 0/? | Not started | - |

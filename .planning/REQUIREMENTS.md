@@ -22,10 +22,10 @@ Requirements for Playground Local Inference tab. Each maps to roadmap phases.
 
 ### Embedding
 
-- [ ] **EMBED-01**: User can enter text and generate a local embedding via the nano model
-- [ ] **EMBED-02**: User can select MRL dimension (256, 512, 1024, 2048) for embedding
-- [ ] **EMBED-03**: User can select quantization type (float32, int8, uint8, binary)
-- [ ] **EMBED-04**: User can view the raw embedding vector and metadata (dimension count, quantization, latency)
+- [x] **EMBED-01**: User can enter text and generate a local embedding via the nano model
+- [x] **EMBED-02**: User can select MRL dimension (256, 512, 1024, 2048) for embedding
+- [x] **EMBED-03**: User can select quantization type (float32, int8, uint8, binary)
+- [x] **EMBED-04**: User can view the raw embedding vector and metadata (dimension count, quantization, latency)
 
 ### Similarity Matrix
 
@@ -72,10 +72,10 @@ Requirements for Playground Local Inference tab. Each maps to roadmap phases.
 | SETUP-01 | Phase 13 | Complete |
 | SETUP-02 | Phase 13 | Complete |
 | SETUP-03 | Phase 13 | Complete |
-| EMBED-01 | Phase 13 | Pending |
-| EMBED-02 | Phase 13 | Pending |
-| EMBED-03 | Phase 13 | Pending |
-| EMBED-04 | Phase 13 | Pending |
+| EMBED-01 | Phase 13 | Complete |
+| EMBED-02 | Phase 13 | Complete |
+| EMBED-03 | Phase 13 | Complete |
+| EMBED-04 | Phase 13 | Complete |
 | SIM-01 | Phase 14 | Pending |
 | SIM-02 | Phase 14 | Pending |
 | SIM-03 | Phase 14 | Pending |
