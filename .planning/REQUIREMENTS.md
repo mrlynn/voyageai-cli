@@ -25,7 +25,7 @@ Requirements for the chat experience overhaul. Each maps to roadmap phases.
 
 - [ ] **STAT-01**: Chat header shows active LLM model and embedding model names
 - [ ] **STAT-02**: Embedding model name displays LOCAL/API source badge in header
-- [ ] **STAT-03**: Running token count and estimated cost accumulates as user chats
+- [x] **STAT-03**: Running token count and estimated cost accumulates as user chats
 - [ ] **STAT-04**: Per-message latency shown for embedding retrieval and LLM response
 
 ### KB Ingest
@@ -74,7 +74,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ONBD-04 | Phase 17 | Complete |
 | STAT-01 | Phase 18 | Pending |
 | STAT-02 | Phase 18 | Pending |
-| STAT-03 | Phase 18 | Pending |
+| STAT-03 | Phase 18 | Complete |
 | STAT-04 | Phase 18 | Pending |
 | KBIN-01 | Phase 19 | Pending |
 | KBIN-02 | Phase 19 | Pending |

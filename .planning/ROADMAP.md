@@ -149,5 +149,5 @@ Plans:
 | 15. Cross-Bridge Comparison | v1.3 | 2/2 | Complete | 2026-03-07 |
 | 16. Embedding Config | v1.4 | 2/2 | Complete | 2026-03-07 |
 | 17. Onboarding & Detection | 3/3 | Complete    | 2026-03-07 | - |
-| 18. Status Bar | v1.4 | 0/2 | Not started | - |
+| 18. Status Bar | 1/2 | In Progress|  | - |
 | 19. KB Ingest | v1.4 | 0/? | Not started | - |
