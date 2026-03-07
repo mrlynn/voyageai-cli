@@ -1673,6 +1673,10 @@ select:focus { outline: none; border-color: var(--accent); }
   padding: 24px 28px 16px;
   border-bottom: 1px solid var(--border);
 }
+.explore-modal-heading {
+  flex: 1;
+  min-width: 0;
+}
 .explore-modal-icon { color: var(--accent, #00D4AA); }
 .explore-modal-title {
   font-size: 18px;
@@ -1681,6 +1685,47 @@ select:focus { outline: none; border-color: var(--accent); }
 }
 .explore-modal-summary {
   font-size: 13px;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+.explore-modal-guide {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(64, 224, 255, 0.14);
+  background: linear-gradient(135deg, rgba(64, 224, 255, 0.08), rgba(0, 212, 170, 0.05));
+  min-width: 170px;
+}
+.explore-modal-guide.is-hidden {
+  display: none;
+}
+.explore-modal-robot-sprite {
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: 10px;
+  background: rgba(0, 30, 43, 0.22);
+  box-shadow: inset 0 0 0 1px rgba(64, 224, 255, 0.08);
+}
+.explore-modal-robot-sprite svg {
+  width: 32px;
+  height: 32px;
+}
+.explore-modal-guide-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent-text);
+}
+.explore-modal-guide-copy {
+  font-size: 12px;
+  line-height: 1.4;
   color: var(--text-dim);
   margin-top: 2px;
 }
@@ -2515,6 +2560,62 @@ select:focus { outline: none; border-color: var(--accent); }
   padding-bottom: 16px;
   border-bottom: 1px solid var(--border);
 }
+.explore-page-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 20px;
+  align-items: end;
+  padding-right: 96px;
+}
+.explore-header-copy {
+  min-width: 0;
+}
+.explore-header-guide {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  align-self: center;
+  padding: 12px 14px;
+  min-width: 220px;
+  border-radius: 14px;
+  border: 1px solid rgba(64, 224, 255, 0.14);
+  background:
+    linear-gradient(135deg, rgba(64, 224, 255, 0.08), rgba(0, 212, 170, 0.05)),
+    var(--bg-card);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+.explore-header-guide.is-hidden {
+  display: none;
+}
+.explore-header-robot {
+  width: 54px;
+  height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: 12px;
+  background: rgba(0, 30, 43, 0.2);
+  box-shadow: inset 0 0 0 1px rgba(64, 224, 255, 0.10);
+}
+.explore-header-robot svg {
+  width: 42px;
+  height: 42px;
+}
+.explore-header-guide-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent-text);
+}
+.explore-header-guide-text {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-dim);
+  margin-top: 2px;
+  max-width: 160px;
+}
 .page-header-title {
   font-size: 22px;
   font-weight: 700;
@@ -2552,6 +2653,44 @@ select:focus { outline: none; border-color: var(--accent); }
 }
 .page-header-docs svg { opacity: 0.6; }
 .page-header-docs:hover svg { opacity: 1; }
+[data-theme="light"] .explore-header-guide,
+[data-theme="light"] .explore-modal-guide {
+  border-color: rgba(0, 136, 204, 0.16);
+  background: linear-gradient(135deg, rgba(0, 136, 204, 0.08), rgba(0, 158, 128, 0.05));
+}
+[data-theme="light"] .explore-header-robot,
+[data-theme="light"] .explore-modal-robot-sprite {
+  background: rgba(255, 255, 255, 0.7);
+  box-shadow: inset 0 0 0 1px rgba(0, 136, 204, 0.10);
+}
+@media (max-width: 900px) {
+  .explore-page-header {
+    grid-template-columns: 1fr;
+    padding-right: 96px;
+  }
+  .explore-header-guide {
+    min-width: 0;
+    width: 100%;
+    max-width: 320px;
+  }
+  .explore-modal-guide {
+    min-width: 0;
+  }
+}
+@media (max-width: 680px) {
+  .explore-page-header {
+    padding-right: 0;
+  }
+  .explore-header-guide {
+    max-width: none;
+  }
+  .explore-modal-header {
+    flex-wrap: wrap;
+  }
+  .explore-modal-guide {
+    width: 100%;
+  }
+}
 .sidebar-docs-link {
   display: inline-flex; align-items: center; gap: 4px;
   font-size: 10px; color: var(--text-muted); text-decoration: none;
@@ -5447,6 +5586,28 @@ select:focus { outline: none; border-color: var(--accent); }
   transition: opacity 0.5s ease-in-out;
 }
 
+.home-announcement-card.has-custom-bg {
+  color: #fff;
+}
+
+.home-announcement-card.has-custom-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0, 30, 43, 0.24), rgba(0, 30, 43, 0.52));
+  border-radius: inherit;
+  z-index: 0;
+}
+
+.home-announcement-card.has-custom-bg > * {
+  position: relative;
+  z-index: 1;
+}
+
+[data-theme="light"] .home-announcement-card.has-custom-bg::before {
+  background: linear-gradient(180deg, rgba(0, 30, 43, 0.34), rgba(0, 30, 43, 0.62));
+}
+
 .home-announcement-card.active {
   position: relative;
   opacity: 1;
@@ -5496,6 +5657,15 @@ select:focus { outline: none; border-color: var(--accent); }
 .home-announcement-card .cta:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 32px rgba(0, 212, 170, 0.3);
+}
+
+.home-announcement-card.has-custom-bg .home-announcement-dismiss {
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.home-announcement-card.has-custom-bg .home-announcement-dismiss:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
 }
 
 .home-announcement-dismiss {
@@ -5569,30 +5739,16 @@ select:focus { outline: none; border-color: var(--accent); }
   align-items: center;
 }
 
-.home-announcement-card.has-bg-image::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  border-radius: inherit;
-  z-index: 0;
-}
-
-.home-announcement-card.has-bg-image > * {
-  position: relative;
-  z-index: 1;
-}
-
-.home-announcement-card.has-bg-image h3,
-.home-announcement-card.has-bg-image p {
+.home-announcement-card.has-custom-bg h3,
+.home-announcement-card.has-custom-bg p {
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
 }
 
-.home-announcement-card.has-bg-image h3 {
+.home-announcement-card.has-custom-bg h3 {
   color: #fff;
 }
 
-.home-announcement-card.has-bg-image p {
+.home-announcement-card.has-custom-bg p {
   color: rgba(255, 255, 255, 0.9);
 }
 
@@ -7208,6 +7364,26 @@ select:focus { outline: none; border-color: var(--accent); }
   justify-content: space-between;
 }
 
+/* ── Embedding Badge Styles ── */
+.embed-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 8px;
+  margin-left: 6px;
+  vertical-align: middle;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+.embed-badge-local { background: #dcfce7; color: #166534; }
+.embed-badge-api { background: #dbeafe; color: #1e40af; }
+.embed-option-price { font-size: 10px; color: var(--text-muted); margin-left: auto; padding-left: 8px; }
+.embed-option-disabled { opacity: 0.45; cursor: not-allowed; }
+[data-theme="light"] .embed-badge-local { background: #dcfce7; color: #166534; }
+[data-theme="light"] .embed-badge-api { background: #dbeafe; color: #1e40af; }
+
 /* Instructions textarea compact */
 .kb-instructions-textarea {
   width: 100%;
@@ -8603,6 +8779,18 @@ Reranking models rescore initial search results to improve relevance ordering.</
                 <option value="">Select provider first</option>
               </select>
             </div>
+            <div class="kb-config-row">
+              <label class="kb-config-label">Embedding</label>
+              <div style="display:flex;align-items:center;gap:4px;flex:1;">
+                <select class="settings-select" id="chatEmbeddingModel" style="flex:1;">
+                  <option value="voyage-4-nano" data-local="true" data-price="Free">voyage-4-nano (Free)</option>
+                  <option value="voyage-4-lite" data-price="$0.02/1M">voyage-4-lite ($0.02/1M)</option>
+                  <option value="voyage-4" data-price="$0.06/1M">voyage-4 ($0.06/1M)</option>
+                  <option value="voyage-4-large" data-price="$0.12/1M">voyage-4-large ($0.12/1M)</option>
+                </select>
+                <span class="embed-badge embed-badge-local" id="chatEmbedBadge">LOCAL</span>
+              </div>
+            </div>
             <div class="kb-config-row" id="chatApiKeyRow" style="display:none">
               <label class="kb-config-label">API Key</label>
               <div style="display:flex;gap:4px;align-items:center">
@@ -8851,7 +9039,7 @@ Reranking models rescore initial search results to improve relevance ordering.</
         <img src="https://avatars.githubusercontent.com/u/192552?v=4" alt="Michael Lynn" class="about-avatar">
         <div>
           <div class="about-name">Michael Lynn</div>
-          <div class="about-role">Principal Staff Developer Advocate · MongoDB</div>
+          <div class="about-role">Founder, Advisor, Engineer, Developer Advocate, MongoDB</div>
           <div class="about-links">
             <a href="https://github.com/mrlynn" target="_blank" rel="noopener"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:3px;"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>GitHub</a>
             <a href="https://mlynn.org" target="_blank" rel="noopener"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:3px;"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>mlynn.org</a>
@@ -8924,36 +9112,32 @@ Reranking models rescore initial search results to improve relevance ordering.</
         <div class="about-section-title">What's New</div>
         <div class="about-changelog">
           <details open>
-            <summary><strong>v1.28</strong> — Lucide icon overhaul</summary>
-            <p>Replaced all emoji and filled LeafyGreen icons with clean, stroke-based Lucide SVGs across the entire app — tabs, workflow nodes, action buttons, benchmark page, explore cards, settings, and more. Added reusable icon helper and path library.</p>
+            <summary><strong>Recent</strong> — Local inference playground expansion</summary>
+            <p>The Nano tab now goes far beyond setup checks: you can compare texts with an NxN similarity heatmap, inspect embedding behavior across 256/512/1024/2048 dimensions, and run cross-bridge comparisons between local <code>voyage-4-nano</code> embeddings and cloud API results.</p>
           </details>
           <details>
-            <summary><strong>v1.27</strong> — Workflow builder improvements</summary>
-            <p>Workflow palette with drag-and-drop node creation, edge drawing, dry-run preview, and builder mode toggle. New workflow node types: query, rerank, search, ingest.</p>
+            <summary><strong>Recent</strong> — Explore and About page refresh</summary>
+            <p>The Explore experience has been polished with cleaner cards, updated visual styling, and a lightweight robot guide in the header and explainer modal. The About page has also been refreshed to better reflect the current product direction.</p>
           </details>
           <details>
-            <summary><strong>v1.26</strong> — Agent workflows</summary>
-            <p>Agent workflows with thinking panel &amp; markdown rendering, multi-step tool orchestration, interactive DAG visualization with execution animation.</p>
+            <summary><strong>Recent</strong> — Better bug reporting and diagnostics</summary>
+            <p>Bug reports from both the CLI and Electron app now include richer environment context, validated contact details, and cleaner GitHub issue handoff. The desktop bridge exposes platform and runtime metadata directly to improve issue triage.</p>
           </details>
           <details>
-            <summary><strong>v1.25</strong> — Code generation &amp; scaffolding</summary>
-            <p>Generate embedding/search code snippets and scaffold full project directories with best-practice structure, ready-to-run RAG pipelines.</p>
+            <summary><strong>Recent</strong> — Expanded explainers for local inference</summary>
+            <p>The learning content now includes a dedicated <code>local-inference</code> explainer covering the Python bridge, shared embedding space, and when to use local versus hosted Voyage models, with new aliases that make the topic easier to discover.</p>
           </details>
           <details>
-            <summary><strong>v1.24</strong> — MCP server management</summary>
-            <p>MCP server install/uninstall/status commands. Electron app v1.5 with signed macOS builds.</p>
+            <summary><strong>Earlier</strong> — Generate, scaffold, and workflow setup</summary>
+            <p>Added <code>vai generate</code> and <code>vai scaffold</code> for production-ready RAG code and starter apps, plus related maintenance workflows like <code>purge</code>, <code>refresh</code>, and evaluation comparisons.</p>
           </details>
           <details>
-            <summary><strong>v1.23</strong> — MCP server</summary>
-            <p>Expose vai tools to AI agents via MCP protocol. HTTP transport, bearer auth, 71+ MCP tests.</p>
+            <summary><strong>Earlier</strong> — Desktop app, multimodal, and auto-update</summary>
+            <p>Introduced the signed and notarized macOS desktop app with auto-update support, secure keychain-backed credentials, a settings cog, the Multimodal tab, telemetry controls, and the hidden Vector Space Invaders easter egg.</p>
           </details>
           <details>
-            <summary><strong>v1.22</strong> — RAG chat</summary>
-            <p>RAG chat with smart source labels, configurable system prompts, streaming responses.</p>
-          </details>
-          <details>
-            <summary><strong>v1.2</strong> — Multimodal &amp; more</summary>
-            <p>Multimodal tab, 4 new Explore concepts, auto-update, hidden easter egg <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/></svg></p>
+            <summary><strong>Earlier</strong> — Benchmarking, evaluation, and retrieval tooling</summary>
+            <p>Built out the benchmark, estimate, eval, query, pipeline, chunk, and explain workflows that power the broader CLI and playground experience for retrieval, ranking, and cost analysis.</p>
           </details>
         </div>
       </div>
@@ -9249,10 +9433,19 @@ Reranking models rescore initial search results to improve relevance ordering.</
 
 <!-- ========== EXPLORE TAB ========== -->
 <div class="tab-panel" id="tab-explore" role="tabpanel" aria-labelledby="tab-btn-explore" tabindex="0">
-  <div class="page-header">
-    <h2 class="page-header-title">Explore</h2>
-    <p class="page-header-subtitle">Learn embedding and vector search concepts</p>
-    <p class="page-header-hint">Browse interactive explanations of key topics, from cosine similarity to quantization to RAG pipelines.</p>
+  <div class="page-header explore-page-header">
+    <div class="explore-header-copy">
+      <h2 class="page-header-title">Explore</h2>
+      <p class="page-header-subtitle">Learn embedding and vector search concepts</p>
+      <p class="page-header-hint">Browse interactive explanations of key topics, from cosine similarity to quantization to RAG pipelines.</p>
+    </div>
+    <div class="explore-header-guide" id="exploreHeaderGuide" aria-hidden="true">
+      <div class="explore-header-robot" id="exploreHeaderRobot"></div>
+      <div>
+        <div class="explore-header-guide-eyebrow">VAI Guide</div>
+        <div class="explore-header-guide-text">Pick a concept, learn the idea, then jump into a live playground demo.</div>
+      </div>
+    </div>
     <a class="page-header-docs" href="https://docs.vaicli.com/docs/commands/tools-and-learning/explain" target="_blank" rel="noopener" title="Explore documentation"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 1h7l3 3v11H3z"/><path d="M10 1v3h3"/></svg>Docs</a>
   </div>
   <div style="margin-bottom:16px;">
@@ -9303,9 +9496,16 @@ Reranking models rescore initial search results to improve relevance ordering.</
     <button class="explore-modal-close" id="exploreModalClose" aria-label="Close modal">&times;</button>
     <div class="explore-modal-header">
       <div class="explore-modal-icon" id="exploreModalIcon" aria-hidden="true"></div>
-      <div>
+      <div class="explore-modal-heading">
         <div class="explore-modal-title" id="exploreModalTitle"></div>
         <div class="explore-modal-summary" id="exploreModalSummary"></div>
+      </div>
+      <div class="explore-modal-guide" id="exploreModalGuide" aria-hidden="true">
+        <div class="explore-modal-robot-sprite" id="exploreModalRobot"></div>
+        <div>
+          <div class="explore-modal-guide-label">Guide</div>
+          <div class="explore-modal-guide-copy" id="exploreModalGuideCopy">Learn the concept here, then try it live in the playground.</div>
+        </div>
       </div>
     </div>
     <div class="explore-modal-body" id="exploreModalBody"></div>
@@ -10246,6 +10446,7 @@ async function init() {
   populateModelSelects();
   enhanceModelSelects();
   buildExploreCards();
+  renderExploreRobotGuides();
 
   // Apply default tab setting
   const settings = JSON.parse(localStorage.getItem('vai-settings') || '{}');
@@ -11052,6 +11253,7 @@ function renderAnnouncements() {
     const bgClasses = [
       'home-announcement-card',
       i === 0 ? 'active' : '',
+      ann.bg_image || ann.bg_color ? 'has-custom-bg' : '',
       ann.bg_image ? 'has-bg-image' : ''
     ].filter(Boolean).join(' ');
     const bgStyle = ann.bg_image
@@ -12137,6 +12339,38 @@ function escapeHtml(str) {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+function renderExploreRobotGuides() {
+  const robot = window.VAIRobotAssets;
+  const headerGuide = document.getElementById('exploreHeaderGuide');
+  const modalGuide = document.getElementById('exploreModalGuide');
+  if (!headerGuide || !modalGuide) return;
+
+  if (!robot || typeof robot.getFrame !== 'function' || typeof robot.renderSvg !== 'function') {
+    headerGuide.classList.add('is-hidden');
+    modalGuide.classList.add('is-hidden');
+    return;
+  }
+
+  const headerRobot = document.getElementById('exploreHeaderRobot');
+  const modalRobot = document.getElementById('exploreModalRobot');
+
+  if (headerRobot) {
+    headerRobot.innerHTML = robot.renderSvg(robot.getFrame('thinking', 1), 3);
+  }
+
+  if (modalRobot) {
+    modalRobot.innerHTML = robot.renderSvg(robot.getFrame('blink', 0), 2);
+  }
+}
+
+function updateExploreModalGuide(meta) {
+  const guideCopy = document.getElementById('exploreModalGuideCopy');
+  if (!guideCopy) return;
+  const target = meta && meta.tab ? String(meta.tab).replace(/-/g, ' ') : 'the playground';
+  const label = target.charAt(0).toUpperCase() + target.slice(1);
+  guideCopy.textContent = `Learn the concept here, then try it live in ${label}.`;
+}
+
 function buildExploreCards() {
   const grid = document.getElementById('exploreGrid');
   grid.innerHTML = '';
@@ -12183,6 +12417,7 @@ function openExploreModal(key) {
   document.getElementById('exploreModalIcon').innerHTML = lucideIcon(meta.icon, 32);
   document.getElementById('exploreModalTitle').textContent = concept.title;
   document.getElementById('exploreModalSummary').textContent = concept.summary;
+  updateExploreModalGuide(meta);
 
   // Build body: content + links + tryIt
   let bodyHtml = escapeHtml(concept.content);
@@ -15873,6 +16108,86 @@ async function loadSettingsOrigins() {
   } catch { /* silently ignore */ }
 }
 
+// ── Embedding Dropdown Logic ──
+
+function updateEmbedBadge() {
+  const sel = document.getElementById('chatEmbeddingModel');
+  const badge = document.getElementById('chatEmbedBadge');
+  if (!sel || !badge) return;
+  const isLocal = sel.value === 'voyage-4-nano';
+  badge.textContent = isLocal ? 'LOCAL' : 'API';
+  badge.className = 'embed-badge ' + (isLocal ? 'embed-badge-local' : 'embed-badge-api');
+  // Handle rerank toggle: disable when nano is selected
+  const rerankBtn = document.getElementById('chatRerank');
+  if (rerankBtn) {
+    if (isLocal) {
+      rerankBtn.classList.remove('active');
+      rerankBtn.disabled = true;
+      rerankBtn.title = 'Reranking disabled with local embeddings';
+      rerankBtn.style.opacity = '0.45';
+      rerankBtn.style.cursor = 'not-allowed';
+    } else {
+      rerankBtn.disabled = false;
+      rerankBtn.title = '';
+      rerankBtn.style.opacity = '';
+      rerankBtn.style.cursor = '';
+    }
+  }
+}
+
+let _embedAvailability = { nanoAvailable: false, hasApiKey: false };
+
+async function initEmbeddingDropdown() {
+  const sel = document.getElementById('chatEmbeddingModel');
+  if (!sel) return;
+
+  // Fetch availability from config endpoint (includes nanoAvailable and hasApiKey)
+  try {
+    const res = await fetch('/api/chat/config');
+    const data = await res.json();
+    _embedAvailability.nanoAvailable = !!data.nanoAvailable;
+    _embedAvailability.hasApiKey = !!data.hasApiKey;
+  } catch { /* ignore */ }
+
+  // Set disabled states on options
+  Array.from(sel.options).forEach(opt => {
+    const isNano = opt.value === 'voyage-4-nano';
+    if (isNano && !_embedAvailability.nanoAvailable) {
+      opt.disabled = true;
+      opt.title = "Run 'vai nano setup' to install";
+    } else if (!isNano && !_embedAvailability.hasApiKey) {
+      opt.disabled = true;
+      opt.title = 'API key required';
+    } else {
+      opt.disabled = false;
+      opt.title = '';
+    }
+  });
+
+  // Auto-default logic (only if no saved value already set)
+  const currentVal = sel.value;
+  const currentOpt = sel.querySelector(`option[value="${currentVal}"]`);
+  if (!currentOpt || currentOpt.disabled) {
+    if (_embedAvailability.nanoAvailable) {
+      sel.value = 'voyage-4-nano';
+    } else if (_embedAvailability.hasApiKey) {
+      sel.value = 'voyage-4-large';
+    }
+    // If neither available, leave first non-disabled or first option
+  }
+
+  updateEmbedBadge();
+
+  // Attach change listener (remove existing first to avoid duplication)
+  sel.removeEventListener('change', _onEmbedChange);
+  sel.addEventListener('change', _onEmbedChange);
+}
+
+function _onEmbedChange() {
+  updateEmbedBadge();
+  saveChatSettingsDebounced();
+}
+
 // ── Save Chat Settings ──
 
 let _chatSaveTimer = null;
@@ -15887,6 +16202,7 @@ function saveChatSettings() {
     rerank: document.getElementById('chatRerank').classList.contains('active'),
     systemPrompt: (document.getElementById('kbSystemPrompt') || document.getElementById('chatSystemPrompt') || {}).value?.trim() || '',
     mode: document.getElementById('chatMode').value,
+    embeddingModel: document.getElementById('chatEmbeddingModel').value,
   };
   fetch('/api/chat/config', {
     method: 'POST',
@@ -15939,6 +16255,14 @@ async function loadChatConfig() {
       if (spEl) spEl.value = data.chat.systemPrompt;
     }
     if (data.mode || data.chat?.mode) document.getElementById('chatMode').value = data.mode || data.chat?.mode || 'pipeline';
+    // Set embedding model from saved config before running init
+    const savedEmbed = data.chat?.embeddingModel || data.embeddingModel;
+    if (savedEmbed) {
+      const embedSel = document.getElementById('chatEmbeddingModel');
+      if (embedSel) embedSel.value = savedEmbed;
+    }
+    // Initialize embedding dropdown (availability, badges, auto-default)
+    await initEmbeddingDropdown();
     updateChatStatus();
     // Show not-configured banner if incomplete
     const notConfigured = document.getElementById('chatNotConfigured');
@@ -16516,7 +16840,7 @@ async function sendChatMessage() {
     const res = await fetch('/api/chat/message', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query, db, collection, provider, model, maxDocs, rerank, systemPrompt, mode, textField: 'content' }),
+      body: JSON.stringify({ query, db, collection, provider, model, maxDocs, rerank, systemPrompt, mode, textField: 'content', embeddingModel: document.getElementById('chatEmbeddingModel').value }),
     });
 
     if (!res.ok) {
