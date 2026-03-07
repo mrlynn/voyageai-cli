@@ -1,77 +1,96 @@
-# Requirements: Robot Chat UX
+# Requirements: voyageai-cli Playground Local Inference
 
 **Defined:** 2026-03-07
-**Core Value:** Zero-API-key path from install to working vector search, with seamless upgrade to Voyage API.
+**Core Value:** Zero-API-key path from install to working vector search, with seamless upgrade to Voyage API
 
-## v1 Requirements
+## v1.3 Requirements
 
-Requirements for this milestone. Each maps to roadmap phases.
+Requirements for Playground Local Inference tab. Each maps to roadmap phases.
 
-### Robot Chat
+### Server Endpoints
 
-- [x] **ROBO-01**: Chat uses animated robot `searching` pose during vector retrieval instead of plain spinner
-- [x] **ROBO-02**: Chat uses animated robot `thinking` pose during LLM response generation instead of plain spinner
-- [x] **ROBO-03**: Chat shows robot `success` pose when a response completes with sources
-- [x] **ROBO-04**: Chat shows robot `error` pose when a chat turn fails
-- [x] **ROBO-05**: Robot animations are skipped in non-TTY, --json, and --quiet modes
+- [x] **ENDP-01**: Playground server exposes GET /api/nano/status returning setup state (python, venv, model, bridge)
+- [x] **ENDP-02**: Playground server exposes POST /api/nano/embed accepting text + dimension + quantization, returning vector
+- [x] **ENDP-03**: Playground server exposes POST /api/nano/similarity accepting texts array, returning NxN cosine similarity matrix
+- [x] **ENDP-04**: Playground server exposes POST /api/nano/dimensions accepting text, returning embeddings at multiple MRL dimensions
 
-### Chat Header
+### Setup & Status
 
-- [x] **HEAD-01**: Chat startup displays robot-branded header with sideBySide layout (like search/explain)
-- [x] **HEAD-02**: Header shows session info: provider, model, mode, knowledge base, session ID
+- [ ] **SETUP-01**: Local Inference tab shows nano setup status (Python, venv, model) on load
+- [ ] **SETUP-02**: Tab displays actionable "Run vai nano setup" prompt when setup is incomplete
+- [ ] **SETUP-03**: Tab becomes fully functional when nano bridge is available
 
-### Turn Polish
+### Embedding
 
-- [x] **TURN-01**: User input is visually styled (prompt prefix or subtle highlight) to distinguish from assistant output
-- [x] **TURN-02**: Assistant response has a visual prefix or label before streaming begins
-- [x] **TURN-03**: Visual divider separates consecutive turns for readability
+- [ ] **EMBED-01**: User can enter text and generate a local embedding via the nano model
+- [ ] **EMBED-02**: User can select MRL dimension (256, 512, 1024, 2048) for embedding
+- [ ] **EMBED-03**: User can select quantization type (float32, int8, uint8, binary)
+- [ ] **EMBED-04**: User can view the raw embedding vector and metadata (dimension count, quantization, latency)
+
+### Similarity Matrix
+
+- [ ] **SIM-01**: User can enter multiple texts (2-10) for similarity comparison
+- [ ] **SIM-02**: User can view an NxN cosine similarity heatmap with color-coded values
+- [ ] **SIM-03**: Heatmap highlights highest and lowest similarity pairs
+
+### Dimension Comparison
+
+- [ ] **DIM-01**: User can enter text and compare embeddings across MRL dimensions side by side
+- [ ] **DIM-02**: Comparison shows vector stats (norm, sparsity) per dimension
+- [ ] **DIM-03**: Comparison shows similarity preservation vs full 2048-dim baseline
+
+### Cross-Bridge
+
+- [ ] **XBRIDGE-01**: When API key is configured, user can compare nano vs API embeddings for same text
+- [ ] **XBRIDGE-02**: Cross-bridge shows cosine similarity between nano and API vectors
+- [ ] **XBRIDGE-03**: Cross-bridge visualizes shared embedding space proof
 
 ## Future Requirements
 
-Deferred to future milestone. Tracked but not in current roadmap.
+### Benchmark Integration
 
-### Extended Robot Integration
-
-- **ROBO-06**: Demo commands use robot moments for loading/processing states
-- **ROBO-07**: Robot blink animation as idle state during REPL wait
-- **ROBO-08**: Robot wave animation on first chat launch (onboarding)
-
-### Chat UX Advanced
-
-- **CHAT-05**: Typing indicator animation while streaming (character-by-character reveal)
-- **CHAT-06**: Chat sidebar with persistent session info panel
+- **BENCH-01**: Playground benchmark tab can run nano vs API latency comparison
+- **BENCH-02**: Playground benchmark tab can run dimension vs quality tradeoff analysis
 
 ## Out of Scope
 
 | Feature | Reason |
 |---------|--------|
-| Ink/blessed TUI framework | Too heavy for this milestone; raw ANSI with existing robot.js is sufficient |
-| Agent mode robot poses | Agent mode has different flow; focus on pipeline mode first |
-| Robot in playground web UI | Playground uses SVG renderer; terminal robot is separate concern |
-| Custom pose creation | Existing 7 poses cover all needed states |
+| In-browser model inference (WASM/WebGPU) | Model is too large; Python bridge is the validated approach |
+| Nano setup from browser | Security risk; setup requires shell access, keep as CLI-only |
+| Persistent embedding storage in playground | Playground is stateless; use vai pipeline for persistence |
+| Real-time streaming embeddings | Batch approach is sufficient; latency is already ~50-200ms |
 
 ## Traceability
 
-Which phases cover which requirements. Updated during roadmap creation.
-
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ROBO-01 | Phase 10 | Complete |
-| ROBO-02 | Phase 10 | Complete |
-| ROBO-03 | Phase 10 | Complete |
-| ROBO-04 | Phase 10 | Complete |
-| ROBO-05 | Phase 10 | Complete |
-| HEAD-01 | Phase 11 | Complete |
-| HEAD-02 | Phase 11 | Complete |
-| TURN-01 | Phase 11 | Complete |
-| TURN-02 | Phase 11 | Complete |
-| TURN-03 | Phase 11 | Complete |
+| ENDP-01 | Phase 12 | Complete |
+| ENDP-02 | Phase 12 | Complete |
+| ENDP-03 | Phase 12 | Complete |
+| ENDP-04 | Phase 12 | Complete |
+| SETUP-01 | Phase 13 | Pending |
+| SETUP-02 | Phase 13 | Pending |
+| SETUP-03 | Phase 13 | Pending |
+| EMBED-01 | Phase 13 | Pending |
+| EMBED-02 | Phase 13 | Pending |
+| EMBED-03 | Phase 13 | Pending |
+| EMBED-04 | Phase 13 | Pending |
+| SIM-01 | Phase 14 | Pending |
+| SIM-02 | Phase 14 | Pending |
+| SIM-03 | Phase 14 | Pending |
+| DIM-01 | Phase 14 | Pending |
+| DIM-02 | Phase 14 | Pending |
+| DIM-03 | Phase 14 | Pending |
+| XBRIDGE-01 | Phase 15 | Pending |
+| XBRIDGE-02 | Phase 15 | Pending |
+| XBRIDGE-03 | Phase 15 | Pending |
 
 **Coverage:**
-- v1 requirements: 10 total
-- Mapped to phases: 10
+- v1.3 requirements: 20 total
+- Mapped to phases: 20
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-07*
-*Last updated: 2026-03-07 after roadmap creation*
+*Last updated: 2026-03-07 — traceability updated with phase mappings*

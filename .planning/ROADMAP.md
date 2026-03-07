@@ -128,7 +128,7 @@ Plans:
 | 9. Phase 6 Verification | v1.1 | 1/1 | Complete | 2026-03-06 |
 | 10. Robot Chat Poses | v1.2 | 2/2 | Complete | 2026-03-07 |
 | 11. Chat Visual Polish | v1.2 | 2/2 | Complete | 2026-03-07 |
-| 12. Nano API Server | v1.3 | 0/2 | Not started | - |
+| 12. Nano API Server | 1/2 | In Progress|  | - |
 | 13. Setup Status & Embed UI | v1.3 | 0/? | Not started | - |
 | 14. Similarity & Dimensions | v1.3 | 0/? | Not started | - |
 | 15. Cross-Bridge Comparison | v1.3 | 0/? | Not started | - |
