@@ -704,6 +704,35 @@ function truncate(str, maxLen) {
   return str.substring(0, maxLen - 1) + '…';
 }
 
+// ── Turn styling helpers ──────────────────────────────────────────────
+
+/**
+ * Styled user prompt for the readline interface (TURN-01).
+ * Bold green chevron distinguishes user input from assistant output.
+ * @returns {string}
+ */
+function renderUserPrompt() {
+  return pc.bold(pc.green('\u276F '));
+}
+
+/**
+ * Styled assistant label printed before streaming response (TURN-02).
+ * Compact `── vai ──` label in dim/cyan styling.
+ * @returns {string}
+ */
+function renderAssistantLabel() {
+  return pc.dim('\u2500\u2500 ') + pc.bold(pc.cyan('vai')) + pc.dim(' \u2500\u2500');
+}
+
+/**
+ * Visual divider between conversation turns (TURN-03).
+ * Dim horizontal line for clear turn separation.
+ * @returns {string}
+ */
+function renderTurnDivider() {
+  return pc.dim('\u2500'.repeat(40));
+}
+
 // ── Timed spinner (moved from chat.js) ───────────────────────────────
 
 const SPINNER_FRAMES = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
@@ -850,6 +879,11 @@ module.exports = {
 
   // Streaming
   createStreamRenderer,
+
+  // Turn styling
+  renderUserPrompt,
+  renderAssistantLabel,
+  renderTurnDivider,
 
   // Spinner
   createTimedSpinner,
