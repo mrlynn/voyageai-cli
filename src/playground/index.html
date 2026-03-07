@@ -8784,7 +8784,7 @@ Reranking models rescore initial search results to improve relevance ordering.</
         <div class="kb-section-body" data-kb-section="config" style="max-height:0px;">
           <div class="kb-section-body-inner">
             <div class="kb-config-row">
-              <label class="kb-config-label">LLM Provider</label>
+              <label class="kb-config-label">LLM Provider<span class="health-dot" id="healthDotOllama" title="Ollama status"></span></label>
               <select class="settings-select" id="chatProvider" onchange="chatProviderChanged()">
                 <option value="">Not configured</option>
                 <option value="anthropic">Anthropic</option>
@@ -8808,10 +8808,11 @@ Reranking models rescore initial search results to improve relevance ordering.</
                   <option value="voyage-4-large" data-price="$0.12/1M">voyage-4-large ($0.12/1M)</option>
                 </select>
                 <span class="embed-badge embed-badge-local" id="chatEmbedBadge">LOCAL</span>
+                <span class="health-dot" id="healthDotNano" title="Nano bridge status"></span>
               </div>
             </div>
             <div class="kb-config-row" id="chatApiKeyRow" style="display:none">
-              <label class="kb-config-label">API Key</label>
+              <label class="kb-config-label">API Key<span class="health-dot" id="healthDotApiKey" title="Voyage API key status"></span></label>
               <div style="display:flex;gap:4px;align-items:center">
                 <input type="password" class="settings-input" id="chatApiKey" placeholder="API key" style="flex:1;font-size:12px;">
                 <button class="kb-panel-btn kb-panel-btn-secondary" id="chatApiKeyToggle" onclick="toggleChatApiKeyVisibility()" title="Show/hide" style="padding:4px 6px;min-width:auto;font-size:11px;">
@@ -16303,6 +16304,28 @@ function saveChatSettingsDebounced() {
 // ── Chat Tab ──
 let chatSessionId = null;
 
+function updateHealthDots(config) {
+  var dots = [
+    { id: 'healthDotOllama', available: config.ollamaAvailable },
+    { id: 'healthDotNano', available: config.nanoAvailable },
+    { id: 'healthDotApiKey', available: config.hasApiKey },
+  ];
+  dots.forEach(function(d) {
+    var el = document.getElementById(d.id);
+    if (el) {
+      el.className = 'health-dot ' + (d.available ? 'available' : 'unavailable');
+      el.title = d.available
+        ? el.id.replace('healthDot', '') + ': available'
+        : el.id.replace('healthDot', '') + ': not detected';
+    }
+  });
+  // Show API key row if no API key (so user sees the red dot and knows to add one)
+  var apiKeyRow = document.getElementById('chatApiKeyRow');
+  if (apiKeyRow && !config.hasApiKey) {
+    apiKeyRow.style.display = '';
+  }
+}
+
 async function loadChatConfig() {
   try {
     const res = await fetch('/api/chat/config');
@@ -16336,6 +16359,7 @@ async function loadChatConfig() {
     }
     // Initialize embedding dropdown (availability, badges, auto-default)
     await initEmbeddingDropdown();
+    updateHealthDots(data);
     updateChatStatus();
     // Show not-configured banner if incomplete
     const notConfigured = document.getElementById('chatNotConfigured');
