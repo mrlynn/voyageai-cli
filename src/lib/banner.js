@@ -66,6 +66,7 @@ function showQuickStart() {
   console.log(`    ${pc.cyan('$ vai embed "hello world"')}     Generate embeddings`);
   console.log(`    ${pc.cyan('$ vai models')}                  List available models`);
   console.log(`    ${pc.cyan('$ vai demo')}                    Interactive walkthrough`);
+  console.log(`    ${pc.cyan('$ vai nano setup')}              Enable free local embeddings`);
   console.log('');
   console.log(`  Run ${pc.cyan('vai <command> --help')} for detailed usage.`);
   console.log('');

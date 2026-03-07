@@ -23,6 +23,7 @@ const CHECKS = {
   llmConnection: { name: 'LLM API Connection', required: false },
   mongodb: { name: 'MongoDB Connection', required: false },
   pdfParse: { name: 'PDF Support (pdf-parse)', required: false },
+  nano: { name: 'Local Inference (voyage-4-nano)', required: false },
   config: { name: 'Configuration Files', required: false },
 };
 
@@ -441,6 +442,31 @@ async function fixPdfParse() {
   }
 }
 
+function checkNano() {
+  try {
+    const { checkPython, checkVenv, checkDeps, checkModel } = require('../nano/nano-health');
+    const python = checkPython();
+    if (!python.ok) {
+      return { ok: null, message: 'Python 3.10+ not found', hint: 'Run: vai nano setup' };
+    }
+    const venv = checkVenv();
+    if (!venv.ok) {
+      return { ok: null, message: 'Not set up', hint: 'Run: vai nano setup (one-time install — enables free local embeddings)' };
+    }
+    const deps = checkDeps();
+    if (!deps.ok) {
+      return { ok: null, message: 'Dependencies missing', hint: 'Run: vai nano setup' };
+    }
+    const model = checkModel();
+    if (!model.ok) {
+      return { ok: null, message: 'Model not downloaded', hint: 'Run: vai nano setup' };
+    }
+    return { ok: true, message: 'Ready (free local embeddings via voyage-4-nano)' };
+  } catch {
+    return { ok: null, message: 'Not set up', hint: 'Run: vai nano setup (one-time install — enables free local embeddings)' };
+  }
+}
+
 async function runDoctor(options = {}) {
   const { json, verbose, fix } = options;
 
@@ -460,6 +486,7 @@ async function runDoctor(options = {}) {
     { key: 'llmConnection', fn: checkLLMConnection },
     { key: 'mongodb', fn: checkMongoDB },
     { key: 'pdfParse', fn: checkPdfParse },
+    { key: 'nano', fn: checkNano },
     { key: 'config', fn: checkConfig },
   ];
 

@@ -96,7 +96,7 @@ async function runWelcome(opts = {}) {
   console.log(pc.bold('  What to do next:\n'));
   console.log(`    ${pc.cyan('vai quickstart')}     Zero-to-search tutorial (2 min)`);
   console.log(`    ${pc.cyan('vai doctor')}         Verify your full setup`);
-  console.log(`    ${pc.cyan('vai init')}           Initialize a project config`);
+  console.log(`    ${pc.cyan('vai nano setup')}     Enable free local embeddings`);
   console.log(`    ${pc.cyan('vai embed "hello"')}  Generate your first embedding`);
   console.log('');
   console.log(pc.dim('  Run vai --help to see all commands.\n'));

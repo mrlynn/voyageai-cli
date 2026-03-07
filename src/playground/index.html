@@ -16388,19 +16388,37 @@ let chatSessionId = null;
 
 function updateHealthDots(config) {
   var dots = [
-    { id: 'healthDotOllama', available: config.ollamaAvailable },
-    { id: 'healthDotNano', available: config.nanoAvailable },
-    { id: 'healthDotApiKey', available: config.hasApiKey },
+    { id: 'healthDotOllama', available: config.ollamaAvailable,
+      tipAvail: 'Ollama: running', tipMissing: 'Ollama: not detected' },
+    { id: 'healthDotNano', available: config.nanoAvailable,
+      tipAvail: 'voyage-4-nano: ready',
+      tipMissing: 'voyage-4-nano: not set up — run "vai nano setup" in your terminal' },
+    { id: 'healthDotApiKey', available: config.hasApiKey,
+      tipAvail: 'API key: configured', tipMissing: 'API key: not set' },
   ];
   dots.forEach(function(d) {
     var el = document.getElementById(d.id);
     if (el) {
       el.className = 'health-dot ' + (d.available ? 'available' : 'unavailable');
-      el.title = d.available
-        ? el.id.replace('healthDot', '') + ': available'
-        : el.id.replace('healthDot', '') + ': not detected';
+      el.title = d.available ? d.tipAvail : d.tipMissing;
+      el.style.cursor = d.available ? '' : 'help';
     }
   });
+  // Show nano setup hint below embedding dropdown when nano is unavailable
+  var nanoHint = document.getElementById('nanoSetupHint');
+  if (!nanoHint) {
+    var embedRow = document.getElementById('healthDotNano');
+    if (embedRow && embedRow.parentElement) {
+      nanoHint = document.createElement('div');
+      nanoHint.id = 'nanoSetupHint';
+      nanoHint.style.cssText = 'font-size:11px;margin-top:4px;padding:6px 8px;border-radius:6px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.15);';
+      nanoHint.innerHTML = '<span style="opacity:0.9">Free local embeddings available!</span> Run <code style="background:rgba(0,212,170,0.15);padding:1px 5px;border-radius:3px;font-size:10px;">vai nano setup</code> in your terminal to enable.';
+      embedRow.parentElement.parentElement.appendChild(nanoHint);
+    }
+  }
+  if (nanoHint) {
+    nanoHint.style.display = config.nanoAvailable ? 'none' : 'block';
+  }
   // Show API key row if no API key (so user sees the red dot and knows to add one)
   var apiKeyRow = document.getElementById('chatApiKeyRow');
   if (apiKeyRow && !config.hasApiKey) {
