@@ -1,13 +1,14 @@
 {
   "version": 1,
   "db": "vai_rag",
-  "collection": "kb_vai-kb-1771499247940_docs",
+  "collection": "kb_coral-vault-3660_docs",
   "chat": {
     "provider": "ollama",
     "model": "qwen3.5:latest",
     "maxContextDocs": 5,
-    "rerank": true,
+    "rerank": false,
     "systemPrompt": "you're an expert on voyage ai, and vai and you answer questions about the vai cli package",
-    "mode": "agent"
+    "mode": "pipeline",
+    "embeddingModel": "voyage-4-nano"
   }
 }

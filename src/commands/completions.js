@@ -1,6 +1,9 @@
 'use strict';
 
 const pc = require('picocolors');
+const { listConcepts } = require('../lib/explanations');
+
+const EXPLAIN_TOPICS = listConcepts().join(' ');
 
 /**
  * Generate bash completion script for vai CLI.
@@ -91,7 +94,7 @@ _vai_completions() {
       return 0
       ;;
     explain)
-      COMPREPLY=( \$(compgen -W "embeddings reranking vector-search rag cosine-similarity two-stage-retrieval input-type models api-keys api-access batch-processing quantization benchmarking mixture-of-experts shared-embedding-space rteb-benchmarks voyage-4-nano rerank-eval --help" -- "\$cur") )
+      COMPREPLY=( \$(compgen -W "${EXPLAIN_TOPICS} --help" -- "\$cur") )
       return 0
       ;;
     similarity)
@@ -215,7 +218,7 @@ _vai() {
   models=(voyage-4-large voyage-4 voyage-4-lite voyage-code-3 voyage-finance-2 voyage-law-2 voyage-multimodal-3.5 rerank-2.5 rerank-2.5-lite)
 
   local -a explain_topics
-  explain_topics=(embeddings reranking vector-search rag cosine-similarity two-stage-retrieval input-type models api-keys api-access batch-processing quantization benchmarking mixture-of-experts shared-embedding-space rteb-benchmarks voyage-4-nano rerank-eval)
+  explain_topics=(${EXPLAIN_TOPICS})
 
   _arguments -C \\
     '(-V --version)'{-V,--version}'[output the version number]' \\

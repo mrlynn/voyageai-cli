@@ -2,40 +2,53 @@
  * BugReporter Component
  * 
  * Floating bug report button + modal for the Vai desktop app.
- * Captures environment info automatically and submits to vai.mlynn.org/api/bugs
+ * Captures environment info automatically and submits to vaicli.com/api/bugs
  */
 
-const BUG_API_URL = 'https://vai.mlynn.org/api/bugs';
+const BUG_API_URL = 'https://vaicli.com/api/bugs';
 const GITHUB_ISSUES_URL = 'https://github.com/mrlynn/voyageai-cli/issues/new';
 
+function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
 /**
- * Get environment info from Electron
+ * Get the sync environment snapshot exposed by preload
  */
-function getEnvironmentInfo() {
+function getEnvironmentSnapshot() {
+  const bridge = window.vai || {};
+  const env = bridge.environment || {};
+
+  return {
+    appVersion: window.APP_VERSION || 'unknown',
+    cliVersion: 'unknown',
+    platform: env.platform || navigator.platform,
+    arch: env.arch || 'unknown',
+    electronVersion: env.electronVersion || 'unknown',
+    nodeVersion: env.nodeVersion || 'unknown',
+  };
+}
+
+async function loadEnvironmentInfo() {
+  const env = getEnvironmentSnapshot();
+
   try {
-    const remote = window.electronAPI || {};
-    return {
-      appVersion: remote.appVersion || window.APP_VERSION || 'unknown',
-      cliVersion: remote.cliVersion || 'unknown',
-      platform: remote.platform || navigator.platform,
-      arch: remote.arch || 'unknown',
-      electronVersion: remote.electronVersion || process.versions?.electron || 'unknown',
-      nodeVersion: remote.nodeVersion || process.versions?.node || 'unknown',
-    };
-  } catch {
-    return {
-      appVersion: 'unknown',
-      platform: navigator.platform,
-    };
-  }
+    if (window.vai && window.vai.getVersion) {
+      const version = await window.vai.getVersion();
+      env.appVersion = version?.app || env.appVersion;
+      env.cliVersion = version?.cli || env.cliVersion;
+    }
+  } catch {}
+
+  return env;
 }
 
 /**
  * Generate GitHub issue URL with pre-filled template
  */
-function generateGitHubUrl(bug) {
+async function generateGitHubUrl(bug, envOverride) {
   const title = encodeURIComponent(`[Bug] ${bug.title}`);
-  const env = getEnvironmentInfo();
+  const env = envOverride || await loadEnvironmentInfo();
   
   const body = encodeURIComponent(`## Description
 ${bug.description}
@@ -70,7 +83,7 @@ Add any other context here.
  * Submit bug report to API
  */
 async function submitBugReport(data) {
-  const env = getEnvironmentInfo();
+  const env = await loadEnvironmentInfo();
   
   const response = await fetch(BUG_API_URL, {
     method: 'POST',
@@ -78,6 +91,7 @@ async function submitBugReport(data) {
     body: JSON.stringify({
       ...data,
       source: 'desktop-app',
+      currentUrl: window.location.href,
       ...env,
     }),
   });
@@ -98,6 +112,7 @@ function BugReporter({ currentScreen, onClose, isOpen, recentError }) {
   const [description, setDescription] = React.useState('');
   const [steps, setSteps] = React.useState('');
   const [email, setEmail] = React.useState('');
+  const [env, setEnv] = React.useState(getEnvironmentSnapshot());
   const [includeError, setIncludeError] = React.useState(true);
   const [submitting, setSubmitting] = React.useState(false);
   const [submitted, setSubmitted] = React.useState(false);
@@ -114,12 +129,17 @@ function BugReporter({ currentScreen, onClose, isOpen, recentError }) {
       setSubmitted(false);
       setError(null);
       setResult(null);
+      loadEnvironmentInfo().then(setEnv).catch(() => {});
     }
   }, [isOpen]);
 
   const handleSubmit = async (alsoOpenGithub = false) => {
     if (!title.trim() || !description.trim()) {
       setError('Please provide a title and description');
+      return;
+    }
+    if (email.trim() && !isValidEmail(email.trim())) {
+      setError('Please provide a valid email address');
       return;
     }
 
@@ -142,7 +162,8 @@ function BugReporter({ currentScreen, onClose, isOpen, recentError }) {
       setSubmitted(true);
 
       if (alsoOpenGithub) {
-        window.open(generateGitHubUrl(bugData), '_blank');
+        const githubUrl = await generateGitHubUrl(bugData, env);
+        window.open(githubUrl, '_blank');
       }
     } catch (err) {
       setError(err.message);
@@ -151,7 +172,7 @@ function BugReporter({ currentScreen, onClose, isOpen, recentError }) {
     }
   };
 
-  const handleOpenGithub = () => {
+  const handleOpenGithub = async () => {
     const bugData = {
       title: title.trim() || 'Bug Report',
       description: description.trim(),
@@ -159,12 +180,11 @@ function BugReporter({ currentScreen, onClose, isOpen, recentError }) {
       currentScreen,
       errorMessage: includeError && recentError ? recentError.message : null,
     };
-    window.open(generateGitHubUrl(bugData), '_blank');
+    const githubUrl = await generateGitHubUrl(bugData, env);
+    window.open(githubUrl, '_blank');
   };
 
   if (!isOpen) return null;
-
-  const env = getEnvironmentInfo();
 
   return (
     <div className="bug-reporter-overlay" onClick={onClose}>

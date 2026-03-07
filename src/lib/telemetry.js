@@ -114,7 +114,81 @@ function isEnabled() {
   return getTelemetryPolicy().enabled;
 }
 
+function uniqueStrings(values) {
+  return Array.from(new Set(values.filter((value) => typeof value === 'string' && value.trim())));
+}
+
+function inferModelRole(event, primaryField, extra = {}) {
+  if (typeof extra.modelRole === 'string' && extra.modelRole.trim()) {
+    return extra.modelRole;
+  }
+
+  const explicitRoleMap = {
+    embeddingModel: 'embedding',
+    rerankModel: 'rerank',
+    llmModel: 'llm',
+    queryModel: 'query',
+    docModel: 'document',
+  };
+  if (explicitRoleMap[primaryField]) {
+    return explicitRoleMap[primaryField];
+  }
+
+  if (typeof event !== 'string') return undefined;
+  if (event.includes('rerank')) return 'rerank';
+  if (
+    event.includes('embed')
+    || event.includes('search')
+    || event.includes('query')
+    || event.includes('similarity')
+    || event.includes('store')
+    || event.includes('ingest')
+    || event.includes('pipeline')
+  ) {
+    return 'embedding';
+  }
+  return undefined;
+}
+
+function normalizeModelTelemetry(event, extra = {}) {
+  const modelEntries = [
+    ['model', extra.model],
+    ['embeddingModel', extra.embeddingModel],
+    ['rerankModel', extra.rerankModel],
+    ['llmModel', extra.llmModel],
+    ['queryModel', extra.queryModel],
+    ['docModel', extra.docModel],
+  ].filter(([, value]) => typeof value === 'string' && value.trim());
+
+  if (modelEntries.length === 0) {
+    return {};
+  }
+
+  const [primaryField, primaryModel] = modelEntries[0];
+  const models = uniqueStrings(modelEntries.map(([, value]) => value));
+  const normalized = {
+    models,
+    modelCount: models.length,
+  };
+
+  if (!extra.model) {
+    normalized.model = primaryModel;
+  }
+
+  const modelRole = inferModelRole(event, primaryField, extra);
+  if (!extra.modelRole && modelRole) {
+    normalized.modelRole = modelRole;
+  }
+
+  if (extra.local === undefined && models.includes('voyage-4-nano')) {
+    normalized.local = true;
+  }
+
+  return normalized;
+}
+
 function buildPayload(event, extra = {}) {
+  const normalizedModelTelemetry = normalizeModelTelemetry(event, extra);
   return {
     event,
     version: getVersion(),
@@ -122,6 +196,7 @@ function buildPayload(event, extra = {}) {
     platform: `${process.platform}-${process.arch}`,
     locale: Intl.DateTimeFormat().resolvedOptions().locale || undefined,
     ...extra,
+    ...normalizedModelTelemetry,
   };
 }
 
@@ -246,6 +321,7 @@ module.exports = {
   hasNoticeBeenShown,
   isEnabled,
   markNoticeShown,
+  normalizeModelTelemetry,
   preview,
   resetNoticeState,
   send,

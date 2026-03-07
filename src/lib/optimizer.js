@@ -53,7 +53,7 @@ class Optimizer {
       const queries = [];
       for (let i = 0; i < Math.min(count, docs.length); i++) {
         const doc = docs[i];
-        const content = doc.content || '';
+        const content = doc.content || doc.text || doc.body || '';
 
         // Extract a sentence or phrase as a query
         const sentences = content.split(/[.!?]+/).filter(s => s.trim().length > 10);
@@ -64,7 +64,15 @@ class Optimizer {
         }
       }
 
-      return queries.slice(0, count);
+      const finalQueries = queries.slice(0, count);
+      if (finalQueries.length === 0) {
+        throw new Error(
+          `Could not generate sample queries from ${this.db}.${this.collection}. ` +
+          'Add test queries manually or use a collection with text/content fields.'
+        );
+      }
+
+      return finalQueries;
     } finally {
       await client.close();
     }

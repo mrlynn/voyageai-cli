@@ -74,15 +74,41 @@ describe('telemetry command', () => {
     assert.match(output.join('\n'), /Telemetry enabled\./);
   });
 
-  it('telemetry status prints a sample payload', async () => {
+  it('telemetry status prints richer sample payloads', async () => {
     const program = setupProgram();
 
     await program.parseAsync(['node', 'test', 'telemetry', 'status']);
 
     const combined = output.join('\n');
-    assert.match(combined, /Next telemetry payload/);
+    assert.match(combined, /Sample telemetry payloads/);
     assert.match(combined, /"event": "cli_command"/);
+    assert.match(combined, /"event": "cli_chat"/);
+    assert.match(combined, /vai telemetry status cli_chat/);
     assert.match(combined, /VAI_TELEMETRY_DEBUG=1/);
+  });
+
+  it('telemetry status accepts an event name for focused preview', async () => {
+    const program = setupProgram();
+
+    await program.parseAsync(['node', 'test', 'telemetry', 'status', 'cli_ingest']);
+
+    const combined = output.join('\n');
+    assert.match(combined, /Sample payload for/);
+    assert.match(combined, /cli_ingest/);
+    assert.match(combined, /"model": "voyage-4-nano"/);
+    assert.match(combined, /Source: src\/commands\/ingest\.js/);
+  });
+
+  it('telemetry overview prints coverage summary and model reporting fields', async () => {
+    const program = setupProgram();
+
+    await program.parseAsync(['node', 'test', 'telemetry']);
+
+    const combined = output.join('\n');
+    assert.match(combined, /Coverage summary/);
+    assert.match(combined, /Model reporting fields/);
+    assert.match(combined, /Model-bearing events/);
+    assert.match(combined, /cli_chat/);
   });
 
   it('telemetry reset clears notice state only', async () => {

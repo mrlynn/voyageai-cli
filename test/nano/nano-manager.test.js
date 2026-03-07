@@ -163,6 +163,26 @@ describe('NanoBridgeManager', () => {
       });
     });
 
+    it('preserves non-nano bridge error messages', async () => {
+      const mgr = mod.getBridgeManager();
+
+      mockProc.stdin.write = mock.fn((data) => {
+        const req = JSON.parse(data);
+        sendError(mockProc, req.id, 'BRIDGE_ERROR');
+        return true;
+      });
+
+      const embedPromise = mgr.embed(['test']);
+      sendReady(mockProc);
+
+      await assert.rejects(embedPromise, (err) => {
+        assert.equal(err.code, 'BRIDGE_ERROR');
+        assert.equal(err.message, 'Model not found');
+        assert.equal(err.fix, 'Run: vai nano status to diagnose');
+        return true;
+      });
+    });
+
     it('wraps single string text into array', async () => {
       const mgr = mod.getBridgeManager();
       let writtenReq = null;

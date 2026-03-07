@@ -211,7 +211,13 @@ function registerIngest(program) {
     .option('-q, --quiet', 'Suppress progress, show only final summary')
     .action(async (opts) => {
       const telemetry = require('../lib/telemetry');
-      const done = telemetry.timer('cli_ingest');
+      const ingestModel = opts.local ? 'voyage-4-nano' : opts.model;
+      const done = telemetry.timer('cli_ingest', {
+        model: ingestModel,
+        local: !!opts.local,
+        inputType: opts.inputType,
+        batchSize: opts.batchSize,
+      });
       const startTime = Date.now();
 
       // Validate file exists

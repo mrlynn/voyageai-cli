@@ -23,13 +23,13 @@ describe('banner', () => {
     assert.ok(/^\d+\.\d+\.\d+/.test(version), `Expected semver, got: ${version}`);
   });
 
-  it('showBanner prints box with vai and Voyage AI CLI', () => {
+  it('showBanner prints box with vai and Voyage AI', () => {
     showBanner();
     const combined = output.join('\n');
     assert.ok(combined.includes('vai'), 'Should include "vai"');
-    assert.ok(combined.includes('Voyage AI CLI'), 'Should include "Voyage AI CLI"');
-    assert.ok(combined.includes('╭'), 'Should include top border');
-    assert.ok(combined.includes('╰'), 'Should include bottom border');
+    assert.ok(combined.includes('Voyage AI'), 'Should include "Voyage AI"');
+    // Non-TTY fallback uses ASCII borders
+    assert.ok(combined.includes('+') || combined.includes('\u256D'), 'Should include border');
   });
 
   it('showQuickStart prints quick start commands', () => {

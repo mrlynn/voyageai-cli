@@ -157,6 +157,8 @@ describe('generateZshCompletions', () => {
     assert.ok(script.includes('embeddings'), 'should include embeddings topic');
     assert.ok(script.includes('cosine-similarity'), 'should include cosine-similarity topic');
     assert.ok(script.includes('batch-processing'), 'should include batch-processing topic');
+    assert.ok(script.includes('local-inference'), 'should include local-inference topic');
+    assert.ok(script.includes('workflow-publishing'), 'should include workflow-publishing topic');
   });
 
   it('includes file completion for --file flags', () => {

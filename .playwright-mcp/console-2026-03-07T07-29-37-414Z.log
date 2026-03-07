@@ -1,0 +1,69 @@
+[     377ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://127.0.0.1:3333/api/rag/kbs:0
+[     377ms] [ERROR] Error listing KBs: Error: Failed to fetch KBs
+    at KBManager.listKBs (http://127.0.0.1:3333/js/kb-manager.js:42:26)
+    at async KBUIManager.populateKBDropdown (http://127.0.0.1:3333/js/kb-ui.js:414:19) @ http://127.0.0.1:3333/js/kb-manager.js:46
+[     382ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://127.0.0.1:3333/api/rag/kbs:0
+[     382ms] [ERROR] Error listing KBs: Error: Failed to fetch KBs
+    at KBManager.listKBs (http://127.0.0.1:3333/js/kb-manager.js:42:26)
+    at async KBUIManager.populateKBDropdown (http://127.0.0.1:3333/js/kb-ui.js:414:19) @ http://127.0.0.1:3333/js/kb-manager.js:46
+[   74018ms] [ERROR] Failed to load resource: the server responded with a status of 400 () @ https://vaicli.com/api/telemetry:0
+[  106366ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://127.0.0.1:3333/api/rag/kbs:0
+[  106366ms] [ERROR] Error listing KBs: Error: Failed to fetch KBs
+    at KBManager.listKBs (http://127.0.0.1:3333/js/kb-manager.js:42:26)
+    at async KBUIManager.populateKBDropdown (http://127.0.0.1:3333/js/kb-ui.js:414:19) @ http://127.0.0.1:3333/js/kb-manager.js:46
+[  106367ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://127.0.0.1:3333/api/rag/kbs:0
+[  106367ms] [ERROR] Error listing KBs: Error: Failed to fetch KBs
+    at KBManager.listKBs (http://127.0.0.1:3333/js/kb-manager.js:42:26)
+    at async KBUIManager.populateKBDropdown (http://127.0.0.1:3333/js/kb-ui.js:414:19) @ http://127.0.0.1:3333/js/kb-manager.js:46
+[  238565ms] [ERROR] Failed to load resource: the server responded with a status of 400 () @ https://vaicli.com/api/telemetry:0
+[  671334ms] [ERROR] Failed to load resource: the server responded with a status of 400 () @ https://vaicli.com/api/telemetry:0
+[ 1016297ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://127.0.0.1:3333/api/rag/kbs:0
+[ 1016297ms] [ERROR] Error listing KBs: Error: Failed to fetch KBs
+    at KBManager.listKBs (http://127.0.0.1:3333/js/kb-manager.js:42:26)
+    at async KBUIManager.populateKBDropdown (http://127.0.0.1:3333/js/kb-ui.js:414:19) @ http://127.0.0.1:3333/js/kb-manager.js:46
+[ 1016299ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://127.0.0.1:3333/api/rag/kbs:0
+[ 1016299ms] [ERROR] Error listing KBs: Error: Failed to fetch KBs
+    at KBManager.listKBs (http://127.0.0.1:3333/js/kb-manager.js:42:26)
+    at async KBUIManager.populateKBDropdown (http://127.0.0.1:3333/js/kb-ui.js:414:19) @ http://127.0.0.1:3333/js/kb-manager.js:46
+[ 1031044ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://127.0.0.1:3333/api/rag/kbs:0
+[ 1031044ms] [ERROR] Error listing KBs: Error: Failed to fetch KBs
+    at KBManager.listKBs (http://127.0.0.1:3333/js/kb-manager.js:42:26)
+    at async KBUIManager.populateKBDropdown (http://127.0.0.1:3333/js/kb-ui.js:414:19) @ http://127.0.0.1:3333/js/kb-manager.js:46
+[ 1031044ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://127.0.0.1:3333/api/rag/kbs:0
+[ 1031044ms] [ERROR] Error listing KBs: Error: Failed to fetch KBs
+    at KBManager.listKBs (http://127.0.0.1:3333/js/kb-manager.js:42:26)
+    at async KBUIManager.populateKBDropdown (http://127.0.0.1:3333/js/kb-ui.js:414:19) @ http://127.0.0.1:3333/js/kb-manager.js:46
+[ 1046597ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://127.0.0.1:3333/api/rag/kbs:0
+[ 1046597ms] [ERROR] Error listing KBs: Error: Failed to fetch KBs
+    at KBManager.listKBs (http://127.0.0.1:3333/js/kb-manager.js:42:26)
+    at async KBUIManager.populateKBDropdown (http://127.0.0.1:3333/js/kb-ui.js:414:19) @ http://127.0.0.1:3333/js/kb-manager.js:46
+[ 1046599ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://127.0.0.1:3333/api/rag/kbs:0
+[ 1046599ms] [ERROR] Error listing KBs: Error: Failed to fetch KBs
+    at KBManager.listKBs (http://127.0.0.1:3333/js/kb-manager.js:42:26)
+    at async KBUIManager.populateKBDropdown (http://127.0.0.1:3333/js/kb-ui.js:414:19) @ http://127.0.0.1:3333/js/kb-manager.js:46
+[ 1052998ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://127.0.0.1:3333/api/rag/kbs:0
+[ 1052998ms] [ERROR] Error listing KBs: Error: Failed to fetch KBs
+    at KBManager.listKBs (http://127.0.0.1:3333/js/kb-manager.js:42:26)
+    at async KBUIManager.populateKBDropdown (http://127.0.0.1:3333/js/kb-ui.js:414:19) @ http://127.0.0.1:3333/js/kb-manager.js:46
+[ 1052998ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://127.0.0.1:3333/api/rag/kbs:0
+[ 1052998ms] [ERROR] Error listing KBs: Error: Failed to fetch KBs
+    at KBManager.listKBs (http://127.0.0.1:3333/js/kb-manager.js:42:26)
+    at async KBUIManager.populateKBDropdown (http://127.0.0.1:3333/js/kb-ui.js:414:19) @ http://127.0.0.1:3333/js/kb-manager.js:46
+[ 1061722ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://127.0.0.1:3333/api/rag/kbs:0
+[ 1061722ms] [ERROR] Error listing KBs: Error: Failed to fetch KBs
+    at KBManager.listKBs (http://127.0.0.1:3333/js/kb-manager.js:42:26)
+    at async KBUIManager.populateKBDropdown (http://127.0.0.1:3333/js/kb-ui.js:414:19) @ http://127.0.0.1:3333/js/kb-manager.js:46
+[ 1061722ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://127.0.0.1:3333/api/rag/kbs:0
+[ 1061722ms] [ERROR] Error listing KBs: Error: Failed to fetch KBs
+    at KBManager.listKBs (http://127.0.0.1:3333/js/kb-manager.js:42:26)
+    at async KBUIManager.populateKBDropdown (http://127.0.0.1:3333/js/kb-ui.js:414:19) @ http://127.0.0.1:3333/js/kb-manager.js:46
+[ 1075003ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://127.0.0.1:3333/api/rag/kbs:0
+[ 1075004ms] [ERROR] Error listing KBs: Error: Failed to fetch KBs
+    at KBManager.listKBs (http://127.0.0.1:3333/js/kb-manager.js:42:26)
+    at async KBUIManager.populateKBDropdown (http://127.0.0.1:3333/js/kb-ui.js:414:19) @ http://127.0.0.1:3333/js/kb-manager.js:46
+[ 1075006ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://127.0.0.1:3333/api/rag/kbs:0
+[ 1075007ms] [ERROR] Error listing KBs: Error: Failed to fetch KBs
+    at KBManager.listKBs (http://127.0.0.1:3333/js/kb-manager.js:42:26)
+    at async KBUIManager.populateKBDropdown (http://127.0.0.1:3333/js/kb-ui.js:414:19) @ http://127.0.0.1:3333/js/kb-manager.js:46
+[ 1134810ms] [ERROR] Failed to load resource: the server responded with a status of 400 () @ https://vaicli.com/api/telemetry:0
+[ 1136637ms] [ERROR] Failed to load resource: the server responded with a status of 400 () @ https://vaicli.com/api/telemetry:0

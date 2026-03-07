@@ -20,6 +20,22 @@ MODEL_NAME = "voyageai/voyage-4-nano"
 # Lazy-loaded on first embed request
 _model = None
 _device = None
+_calibration_cache = {}
+
+CALIBRATION_TEXTS = [
+    "MongoDB Atlas supports vector search for semantic retrieval.",
+    "JavaScript powers interactive command line tools and browser apps.",
+    "A retrieval system should balance recall, latency, and precision.",
+    "Dogs are friendly household pets that enjoy daily walks.",
+    "The stock market closed higher after a volatile trading session.",
+    "Machine learning models can run efficiently on modern CPUs.",
+    "Astronauts train for complex missions in simulated environments.",
+    "I enjoy cooking pasta with garlic, basil, and olive oil.",
+    "Rain is expected across the Pacific Northwest this weekend.",
+    "Vector embeddings help match related text by meaning, not keywords.",
+    "The museum opened a new exhibit focused on modern sculpture.",
+    "A healthy debugging workflow uses logs, repro steps, and tests.",
+]
 
 
 def detect_device():
@@ -60,6 +76,29 @@ def load_model(device):
         }
 
 
+def get_calibration_embeddings(model, input_type, truncate_dim):
+    """Return cached float32 calibration embeddings for stable int8 buckets."""
+    cache_key = f"{input_type}:{truncate_dim}"
+    if cache_key in _calibration_cache:
+        return _calibration_cache[cache_key]
+
+    if input_type == "query":
+        calibration = model.encode_query(
+            CALIBRATION_TEXTS,
+            truncate_dim=truncate_dim,
+            precision="float32",
+        )
+    else:
+        calibration = model.encode(
+            CALIBRATION_TEXTS,
+            truncate_dim=truncate_dim,
+            precision="float32",
+        )
+
+    _calibration_cache[cache_key] = calibration
+    return calibration
+
+
 def handle_embed(model, request):
     """Process an embed request and return a result envelope.
 
@@ -84,14 +123,27 @@ def handle_embed(model, request):
         embeddings = model.encode_query(
             texts,
             truncate_dim=truncate_dim,
-            precision=precision,
+            precision="float32",
         )
     else:
         embeddings = model.encode(
             texts,
             truncate_dim=truncate_dim,
-            precision=precision,
+            precision="float32",
         )
+
+    if precision != "float32":
+        from sentence_transformers.quantization import quantize_embeddings
+
+        if precision == "int8" or precision == "uint8":
+            calibration = get_calibration_embeddings(model, input_type, truncate_dim)
+            embeddings = quantize_embeddings(
+                embeddings,
+                precision=precision,
+                calibration_embeddings=calibration,
+            )
+        else:
+            embeddings = quantize_embeddings(embeddings, precision=precision)
 
     # Rough token count estimation
     total_tokens = sum(len(t.split()) for t in texts)

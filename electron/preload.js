@@ -65,5 +65,11 @@ contextBridge.exposeInMainWorld('vai', {
   },
   // App info — returns { app, cli }
   getVersion: () => ipcRenderer.invoke('app:version'),
+  environment: {
+    platform: process.platform,
+    arch: process.arch,
+    electronVersion: process.versions.electron,
+    nodeVersion: process.versions.node,
+  },
   isElectron: true,
 });

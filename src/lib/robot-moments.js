@@ -2,9 +2,9 @@
 
 /**
  * @file src/lib/robot-moments.js
- * @description VAI Robot Moments — maps CLI lifecycle events to robot poses.
+ * @description Avi Moments — maps CLI lifecycle events to Avi's poses.
  *
- * Integration layer between the robot asset library and CLI commands.
+ * Integration layer between Avi's asset library and CLI commands.
  * Commands import specific moments rather than importing robot.js directly.
  *
  * Usage:

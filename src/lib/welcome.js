@@ -1,6 +1,7 @@
 'use strict';
 
 const pc = require('picocolors');
+const ui = require('./ui');
 const { identifyKey } = require('./api');
 const { showBanner } = require('./banner');
 const { loadConfig, isFirstRun, isWelcomeSuppressed, saveConfig } = require('./config');
@@ -86,10 +87,10 @@ async function runWelcome(opts = {}) {
   console.log('');
   if (apiKey) {
     const keyInfo = identifyKey(apiKey);
-    console.log(`  ${pc.green('\u2713')} API key saved (${pc.dim(keyInfo.label)} endpoint)`);
+    console.log(`  ${ui.green('\u2713')} API key saved (${pc.dim(keyInfo.label)} endpoint)`);
   }
   if (answers.mongodbUri) {
-    console.log(`  ${pc.green('\u2713')} MongoDB URI saved`);
+    console.log(`  ${ui.green('\u2713')} MongoDB URI saved`);
   }
   console.log('');
   console.log(pc.bold('  What to do next:\n'));

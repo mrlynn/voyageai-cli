@@ -99,6 +99,7 @@ function registerPipeline(program) {
 
         const done = telemetry.timer('cli_pipeline', {
           model,
+          local: !!opts.local,
           chunkStrategy: strategy,
           chunkSize,
           createIndex: !!opts.createIndex,

@@ -2,6 +2,7 @@
 
 const pc = require('picocolors');
 const { resolveConcept, listConcepts, getConcept } = require('../lib/explanations');
+const { moments } = require('../lib/robot-moments');
 
 const DISCLAIMER = pc.dim('  This tool is not affiliated with MongoDB, Inc. or Voyage AI.');
 
@@ -9,9 +10,13 @@ const DISCLAIMER = pc.dim('  This tool is not affiliated with MongoDB, Inc. or V
  * Show the list of available topics.
  */
 function showTopicList() {
-  console.log('');
-  console.log(`  🧭 ${pc.bold('Voyage AI Concepts')}`);
-  console.log('');
+  if (moments.isInteractive()) {
+    moments.explain('Voyage AI Concepts');
+  } else {
+    console.log('');
+    console.log(`  ${pc.bold('Voyage AI Concepts')}`);
+    console.log('');
+  }
   console.log('  Available topics:');
 
   const concepts = listConcepts();
@@ -36,10 +41,14 @@ function showExplanation(key) {
   const concept = getConcept(key);
   if (!concept) return;
 
-  console.log('');
-  console.log(`  🧭 ${pc.bold(concept.title)}`);
-  console.log(`  ${pc.dim('━'.repeat(concept.title.length + 2))}`);
-  console.log('');
+  if (moments.isInteractive()) {
+    moments.explain(concept.title);
+  } else {
+    console.log('');
+    console.log(`  ${pc.bold(concept.title)}`);
+    console.log(`  ${pc.dim('\u2501'.repeat(concept.title.length + 2))}`);
+    console.log('');
+  }
 
   // Indent the content
   const lines = concept.content.split('\n');

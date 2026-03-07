@@ -1,0 +1,36 @@
+[   74112ms] [ERROR] In HTML, %s cannot be a descendant of <%s>.
+This will cause a hydration error.%s <p> p 
+
+  ...
+    <Head>
+    <DocItemMetadata>
+    <DocItemLayout>
+      <div className="row">
+        <div className="col docIte...">
+          <ContentVisibility>
+          <DocVersionBanner>
+          <div className="docItemCon...">
+            <article>
+              <DocBreadcrumbs>
+              <DocVersionBadge>
+              <DocItemTOCMobile>
+              <DocItemContent>
+                <div className="theme-doc-...">
+                  <MDXContent>
+                    <MDXProvider components={{...}}>
+                      <MDXContent>
+                        <header>
+                        <p>
+                        <p>
+                        <div className="robot-doc-...">
+                          <img>
+                          <div>
+                            <p>
+                            <h2>
+>                           <p className="robot-doc-callout__body">
+>                             <p>
+                        ...
+              ...
+            ...
+        ...
+ @ webpack-internal:///./node_modules/react-dom/cjs/react-dom-client.development.js:2603

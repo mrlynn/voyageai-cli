@@ -69,7 +69,7 @@ async function handleVaiTopics(input) {
   // Group by category for better browsing
   const categories = {
     'Core Concepts': ['embeddings', 'vector-search', 'rag', 'cosine-similarity', 'input-type', 'two-stage-retrieval'],
-    'Models & Pricing': ['models', 'mixture-of-experts', 'voyage-4-nano', 'shared-embedding-space', 'quantization', 'benchmarking', 'rteb-benchmarks', 'provider-comparison'],
+    'Models & Pricing': ['models', 'mixture-of-experts', 'voyage-4-nano', 'local-inference', 'shared-embedding-space', 'quantization', 'benchmarking', 'rteb-benchmarks', 'provider-comparison'],
     'Multimodal': ['multimodal-embeddings', 'cross-modal-search', 'modality-gap', 'multimodal-rag'],
     'API & Configuration': ['api-keys', 'api-access', 'batch-processing', 'auto-embedding', 'vai-vs-auto-embedding'],
     'Reranking & Evaluation': ['reranking', 'rerank-eval', 'eval-comparison'],

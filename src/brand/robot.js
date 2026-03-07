@@ -1,20 +1,22 @@
-'use strict';
-
 /**
  * @file src/lib/robot.js
  * @description Avi — canonical brand mascot and terminal renderer.
  *
- * Single source of truth for all robot poses, animations, and terminal rendering.
- * Uses raw ANSI 24-bit escape codes for half-block pixel rendering (no chalk dependency).
+ * This is the single source of truth for all robot poses, animations, and
+ * terminal rendering. Every interface (CLI, TUI chat, web playground) imports
+ * from here — the web playground uses renderSvg(), the terminal uses render().
  *
  * Rendering technique: half-block characters (▀ ▄ █) pack two pixel rows into
  * one terminal row, giving the correct ~1:1 aspect ratio in monospace terminals.
+ * 24-bit ANSI color via chalk.rgb() for teal/cyan body colors.
  *
  * @module robot
  */
 
+import chalk from 'chalk';
+
 // ─── Brand color values (RGB triples) ────────────────────────────────────────
-const COLORS = {
+export const COLORS = {
   teal:   [0,   212, 170],   // #00D4AA — primary body
   cyan:   [64,  224, 255],   // #40E0FF — eyes, V chest, accents
   bg:     [13,  17,  23],    // #0D1117 — cutouts / transparent
@@ -28,8 +30,9 @@ const COLORS = {
 /**
  * Pixel color key — maps single characters in grid strings to RGB triples.
  * '_' maps to null (transparent — no character rendered).
+ * @type {Object.<string, number[]|null>}
  */
-const PALETTE = {
+export const PALETTE = {
   T: COLORS.teal,
   C: COLORS.cyan,
   B: COLORS.bg,
@@ -41,24 +44,21 @@ const PALETTE = {
   _: null,
 };
 
-// ─── Raw ANSI 24-bit color helpers ───────────────────────────────────────────
-const fg = (r, g, b) => `\x1b[38;2;${r};${g};${b}m`;
-const bg24 = (r, g, b) => `\x1b[48;2;${r};${g};${b}m`;
-const RESET = '\x1b[0m';
-
-/**
- * Wrap text in 24-bit foreground color.
- * @param {number[]} rgb
- * @param {string} text
- * @returns {string}
- */
-function colorize(rgb, text) {
-  return `${fg(rgb[0], rgb[1], rgb[2])}${text}${RESET}`;
-}
-
 // ─── Pose definitions ─────────────────────────────────────────────────────────
-const POSES = {
+/**
+ * Each pose is an object with:
+ *   label    {string}    Human-readable name
+ *   desc     {string}    Usage context
+ *   gridSize {number}    Width/height of the pixel grid (default 16)
+ *   frames   {string[][]} Array of frames, each frame is an array of row strings
+ *   fps      {number}    Animation speed (frames per second)
+ *   sequence {number[]}  Optional: frame index sequence for non-linear animation
+ *
+ * @type {Object.<string, PoseDef>}
+ */
+export const POSES = {
 
+  // ── idle ────────────────────────────────────────────────────────────────────
   idle: {
     label: 'Idle',
     desc: 'Default resting state — startup, config display, help header',
@@ -84,6 +84,7 @@ const POSES = {
     ]],
   },
 
+  // ── blink ───────────────────────────────────────────────────────────────────
   blink: {
     label: 'Blink',
     desc: 'Idle with periodic eye blink — long-running waits, screensaver',
@@ -91,6 +92,7 @@ const POSES = {
     fps: 4,
     sequence: [0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0],
     frames: [
+      // open
       [
         '________________',
         '________________',
@@ -109,6 +111,7 @@ const POSES = {
         '____TTTT_TTTT___',
         '________________',
       ],
+      // closed
       [
         '________________',
         '________________',
@@ -130,6 +133,7 @@ const POSES = {
     ],
   },
 
+  // ── thinking ─────────────────────────────────────────────────────────────
   thinking: {
     label: 'Thinking',
     desc: 'Processing — embedding, vector search, reranking, LLM call',
@@ -137,6 +141,7 @@ const POSES = {
     fps: 3,
     sequence: [0, 1, 2, 1],
     frames: [
+      // look left
       [
         '________________',
         '________________',
@@ -155,6 +160,7 @@ const POSES = {
         '____TTTT_TTTT___',
         '________________',
       ],
+      // center
       [
         '________________',
         '________________',
@@ -173,6 +179,7 @@ const POSES = {
         '____TTTT_TTTT___',
         '________________',
       ],
+      // look right
       [
         '________________',
         '________________',
@@ -194,6 +201,7 @@ const POSES = {
     ],
   },
 
+  // ── success ──────────────────────────────────────────────────────────────
   success: {
     label: 'Success',
     desc: 'Task complete — results found, pipeline finished, export done',
@@ -219,6 +227,7 @@ const POSES = {
     ]],
   },
 
+  // ── error ────────────────────────────────────────────────────────────────
   error: {
     label: 'Error',
     desc: 'Something went wrong — connection failure, API error, no results',
@@ -265,6 +274,7 @@ const POSES = {
     ],
   },
 
+  // ── wave ─────────────────────────────────────────────────────────────────
   wave: {
     label: 'Wave',
     desc: 'Greeting — CLI startup, --help header, onboarding, first launch',
@@ -311,6 +321,7 @@ const POSES = {
     ],
   },
 
+  // ── search ───────────────────────────────────────────────────────────────
   search: {
     label: 'Searching',
     desc: 'Vector search executing — scanning collection, top-k in progress',
@@ -377,12 +388,18 @@ const POSES = {
 };
 
 // ─── Half-block terminal renderer ─────────────────────────────────────────────
-
 /**
  * Converts a pixel row pair into a string of half-block characters with ANSI
  * 24-bit color. Uses ▀ (upper half) with fg=topPixel, bg=bottomPixel.
+ *
+ * This packs two pixel rows into one terminal row, giving correct aspect ratio.
+ *
+ * @param {string} topRow    - Row string from pixel grid (top of pair)
+ * @param {string} botRow    - Row string from pixel grid (bottom of pair)
+ * @param {number} [indent]  - Leading spaces before each line
+ * @returns {string}         - Colored terminal string for one output line
  */
-function renderRowPair(topRow, botRow, indent) {
+function renderRowPair(topRow, botRow, indent = 0) {
   const pad = ' '.repeat(indent);
   let line = pad;
 
@@ -394,13 +411,17 @@ function renderRowPair(topRow, botRow, indent) {
     const botRgb = PALETTE[botKey];
 
     if (!topRgb && !botRgb) {
+      // both transparent — just a space
       line += ' ';
     } else if (topRgb && !botRgb) {
-      line += `${fg(topRgb[0], topRgb[1], topRgb[2])}▀${RESET}`;
+      // only top pixel — upper half block, bg = terminal default
+      line += chalk.rgb(...topRgb)('▀');
     } else if (!topRgb && botRgb) {
-      line += `${fg(botRgb[0], botRgb[1], botRgb[2])}▄${RESET}`;
+      // only bottom pixel — lower half block
+      line += chalk.rgb(...botRgb)('▄');
     } else {
-      line += `${fg(topRgb[0], topRgb[1], topRgb[2])}${bg24(botRgb[0], botRgb[1], botRgb[2])}▀${RESET}`;
+      // both pixels — upper half block with fg=top, bg=bottom
+      line += chalk.rgb(...topRgb).bgRgb(...botRgb)('▀');
     }
   }
   return line;
@@ -408,14 +429,18 @@ function renderRowPair(topRow, botRow, indent) {
 
 /**
  * Renders a single pixel grid frame to a terminal string using half-blocks.
- * @param {string[]} grid
- * @param {Object} [opts]
- * @param {number} [opts.indent=2]
- * @param {boolean} [opts.color=true]
- * @returns {string}
+ *
+ * @param {string[]} grid    - Array of row strings (the pixel grid)
+ * @param {Object}  [opts]
+ * @param {number}  [opts.indent=2]    - Leading spaces per line
+ * @param {boolean} [opts.color=true]  - Use 24-bit color (false = grayscale)
+ * @returns {string}  Ready to console.log() or process.stdout.write()
  */
-function renderFrame(grid, { indent = 2, color = true } = {}) {
-  if (!color) return renderAscii(grid, indent);
+export function renderFrame(grid, { indent = 2, color = true } = {}) {
+  if (!color) {
+    // Graceful fallback: ASCII block art
+    return renderAscii(grid, indent);
+  }
 
   const lines = [];
   for (let y = 0; y < grid.length; y += 2) {
@@ -426,29 +451,44 @@ function renderFrame(grid, { indent = 2, color = true } = {}) {
 
 /**
  * Renders a pose's first frame as a static terminal string.
- * @param {string} poseName
- * @param {Object} [opts]
+ *
+ * @param {string} poseName  - Key from POSES
+ * @param {Object} [opts]    - Passed to renderFrame
  * @returns {string}
  */
-function render(poseName, opts = {}) {
+export function render(poseName, opts = {}) {
   const pose = POSES[poseName];
   if (!pose) throw new Error(`Unknown pose: ${poseName}`);
   return renderFrame(pose.frames[0], opts);
 }
 
 // ─── ASCII fallback renderer ──────────────────────────────────────────────────
-
-function renderAscii(grid, indent = 2) {
-  const ASCII = { T: '\u2588', C: '\u2593', B: '\u2591', D: '\u2592', W: '\u2588', R: '\u2588', Y: '\u2588', G: '\u2588', _: ' ' };
+/**
+ * Renders a grid as ASCII/Unicode block characters without ANSI color.
+ * Safe for terminals without color support or for piped output.
+ *
+ * @param {string[]} grid
+ * @param {number} [indent=2]
+ * @returns {string}
+ */
+export function renderAscii(grid, indent = 2) {
+  const ASCII = { T: '█', C: '▓', B: '░', D: '▒', W: '█', R: '█', Y: '█', G: '█', _: ' ' };
   const pad = ' '.repeat(indent);
   return grid.map(row =>
     pad + [...row].map(ch => ASCII[ch] ?? ' ').join('')
   ).join('\n');
 }
 
-// ─── SVG renderer (for web playground) ────────────────────────────────────────
-
-function renderSvg(grid, pixelSize = 4) {
+// ─── SVG renderer (for web playground + Electron) ────────────────────────────
+/**
+ * Renders a pixel grid frame as an SVG string.
+ * Used by the web playground and Electron app — NOT used in the terminal.
+ *
+ * @param {string[]} grid
+ * @param {number}   [pixelSize=4]   Pixels per grid cell
+ * @returns {string}  SVG markup string
+ */
+export function renderSvg(grid, pixelSize = 4) {
   const gridSize = grid.length;
   const size = gridSize * pixelSize;
   const rects = [];
@@ -457,7 +497,7 @@ function renderSvg(grid, pixelSize = 4) {
     [...row].forEach((ch, x) => {
       const rgb = PALETTE[ch];
       if (rgb) {
-        const hex = `#${rgb.map(v => v.toString(16).padStart(2, '0')).join('')}`;
+        const hex = `#${rgb.map(v => v.toString(16).padStart(2,'0')).join('')}`;
         rects.push(
           `  <rect x="${x * pixelSize}" y="${y * pixelSize}" ` +
           `width="${pixelSize}" height="${pixelSize}" fill="${hex}"/>`
@@ -477,18 +517,22 @@ function renderSvg(grid, pixelSize = 4) {
 }
 
 // ─── Animated renderer for terminal ──────────────────────────────────────────
-
 /**
  * Starts an animated robot in the terminal using in-place line overwriting.
  * Returns a stop() function — call it when the async operation completes.
  *
- * @param {string} poseName
- * @param {Object} [opts]
- * @param {number} [opts.indent=2]
- * @param {string} [opts.label='']
+ * @param {string}   poseName          - Key from POSES
+ * @param {Object}  [opts]
+ * @param {number}  [opts.indent=2]    - Leading spaces
+ * @param {string}  [opts.label='']    - Text shown to the right of the robot
  * @returns {{ stop: (finalPose?: string) => void }}
+ *
+ * @example
+ * const anim = animateRobot('thinking', { label: 'Searching vai-docs…' });
+ * await doExpensiveWork();
+ * anim.stop('success');
  */
-function animateRobot(poseName, { indent = 2, label = '', showElapsed = false } = {}) {
+export function animateRobot(poseName, { indent = 2, label = '' } = {}) {
   const pose = POSES[poseName];
   if (!pose) throw new Error(`Unknown pose: ${poseName}`);
 
@@ -499,24 +543,21 @@ function animateRobot(poseName, { indent = 2, label = '', showElapsed = false } 
 
   let seqIdx = 0;
   let stopped = false;
-  const startTime = Date.now();
 
+  // Move cursor up N lines utility
   const moveUp = (n) => process.stdout.write(`\x1b[${n}A`);
   const clearLine = () => process.stdout.write('\x1b[2K\r');
 
+  // Initial render
   const draw = () => {
     const frame = frames[seq[seqIdx % seq.length]];
     const rendered = renderFrame(frame, { indent });
     const lines = rendered.split('\n');
 
+    // Add label to the right of the robot's middle line
     const midLine = Math.floor(lines.length / 2);
-    if (label || showElapsed) {
-      let labelText = label ? `  ${colorize(COLORS.teal, label)}` : '';
-      if (showElapsed) {
-        const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-        labelText += `  \x1b[2m${elapsed}s\x1b[0m`;
-      }
-      lines[midLine] += labelText;
+    if (label) {
+      lines[midLine] += `  ${chalk.rgb(...COLORS.teal)(label)}`;
     }
 
     process.stdout.write(lines.join('\n') + '\n');
@@ -530,6 +571,7 @@ function animateRobot(poseName, { indent = 2, label = '', showElapsed = false } 
   const timer = setInterval(() => {
     if (stopped) return;
     moveUp(frameLines);
+    // clear each line before redraw
     for (let i = 0; i < frameLines; i++) {
       clearLine();
       if (i < frameLines - 1) process.stdout.write('\n');
@@ -539,55 +581,51 @@ function animateRobot(poseName, { indent = 2, label = '', showElapsed = false } 
   }, intervalMs);
 
   return {
+    /**
+     * Stop the animation and optionally show a final static pose.
+     * @param {string} [finalPose] - Optional pose name to show when stopped
+     */
     stop(finalPose) {
       stopped = true;
       clearInterval(timer);
       // Restore cursor
       process.stdout.write('\x1b[?25h');
-
-      // Erase all robot frame lines
-      moveUp(frameLines);
-      for (let i = 0; i < frameLines; i++) {
-        clearLine();
-        if (i < frameLines - 1) process.stdout.write('\n');
-      }
-      moveUp(frameLines - 1);
-
       if (finalPose) {
-        // Draw a replacement pose in place
+        moveUp(frameLines);
+        for (let i = 0; i < frameLines; i++) {
+          clearLine();
+          if (i < frameLines - 1) process.stdout.write('\n');
+        }
+        moveUp(frameLines - 1);
         const frame = render(finalPose, { indent });
         process.stdout.write(frame + '\n');
-      } else {
-        // Collapse to a compact one-liner summary
-        const rawLabel = (label || '').replace(/\x1b\[[0-9;]*m/g, '');
-        let summary = `  \x1b[32m\u2713\x1b[0m ${rawLabel}`;
-        if (showElapsed) {
-          const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-          summary += `  \x1b[2m${elapsed}s\x1b[0m`;
-        }
-        clearLine();
-        process.stdout.write(summary + '\n');
       }
     },
   };
 }
 
 // ─── Utility: print a static pose with optional message ──────────────────────
-
-function printRobot(poseName, message = '', opts = {}) {
+/**
+ * Print a static robot pose to stdout with an optional message beside/below it.
+ *
+ * @param {string} poseName
+ * @param {string} [message]
+ * @param {Object} [opts]
+ * @param {number} [opts.indent=2]
+ */
+export function printRobot(poseName, message = '', opts = {}) {
   const rendered = render(poseName, opts);
   process.stdout.write(rendered + '\n');
   if (message) {
-    const pad = ' '.repeat(opts.indent ?? 2);
-    process.stdout.write(`${pad}${message}\n`);
+    const indent = ' '.repeat(opts.indent ?? 2);
+    process.stdout.write(`${indent}${message}\n`);
   }
 }
 
-module.exports = {
+export default {
   POSES,
   COLORS,
   PALETTE,
-  colorize,
   render,
   renderFrame,
   renderAscii,

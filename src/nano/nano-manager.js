@@ -192,12 +192,22 @@ class NanoBridgeManager {
         if (entry) {
           clearTimeout(entry.timer);
           this.#pending.delete(msg.id);
-          const errCode = msg.code && msg.code.startsWith('NANO_') ? msg.code : 'NANO_PROCESS_CRASH';
-          entry.reject(createNanoError(errCode));
+          entry.reject(this.#createBridgeError(msg));
         }
         continue;
       }
     }
+  }
+
+  #createBridgeError(msg) {
+    if (msg.code && msg.code.startsWith('NANO_')) {
+      return createNanoError(msg.code);
+    }
+
+    const err = new Error(msg.message || 'Python bridge returned an error');
+    err.code = msg.code || 'NANO_BRIDGE_ERROR';
+    err.fix = 'Run: vai nano status to diagnose';
+    return err;
   }
 
   #handleClose(code, _signal) {

@@ -5,6 +5,7 @@ const { generateEmbeddings } = require('../lib/api');
 const { getMongoCollection } = require('../lib/mongo');
 const ui = require('../lib/ui');
 const { showCostSummary } = require('../lib/cost-display');
+const { moments } = require('../lib/robot-moments');
 
 /**
  * Register the search command on a Commander program.
@@ -30,17 +31,20 @@ function registerSearch(program) {
     .option('-q, --quiet', 'Suppress non-essential output')
     .action(async (opts) => {
       let client;
+      let anim;
       const telemetry = require('../lib/telemetry');
+      const useColor = !opts.json;
+      const useRobot = useColor && !opts.quiet && moments.isInteractive(opts);
       try {
         const done = telemetry.timer('cli_search', {
           model: opts.model,
           limit: opts.limit,
         });
 
-        const useColor = !opts.json;
-        const useSpinner = useColor && !opts.quiet;
         let spin;
-        if (useSpinner) {
+        if (useRobot) {
+          anim = moments.startSearching(`Searching ${opts.collection}...`);
+        } else if (useColor && !opts.quiet) {
           spin = ui.spinner('Searching...');
           spin.start();
         }
@@ -70,6 +74,7 @@ function registerSearch(program) {
           try {
             vectorSearchStage.filter = JSON.parse(opts.filter);
           } catch (e) {
+            if (anim) anim.stop();
             if (spin) spin.stop();
             console.error(ui.error('Invalid filter JSON. Ensure it is valid JSON.'));
             process.exit(1);
@@ -82,8 +87,11 @@ function registerSearch(program) {
           ...(opts.minScore ? [{ $match: { score: { $gte: opts.minScore } } }] : []),
         ];
 
+        const searchStart = Date.now();
         const results = await collection.aggregate(pipeline).toArray();
+        const searchMs = Date.now() - searchStart;
 
+        if (anim) anim.stop(results.length > 0 ? 'success' : undefined);
         if (spin) spin.stop();
 
         const cleanResults = results.map(doc => {
@@ -107,7 +115,11 @@ function registerSearch(program) {
         done({ resultCount: cleanResults.length });
 
         if (cleanResults.length === 0) {
-          console.log(ui.yellow('No results found.'));
+          if (useRobot) {
+            moments.noResults(opts.collection, 'Try a broader query or check that documents are ingested');
+          } else {
+            console.log(ui.yellow('No results found.'));
+          }
           return;
         }
 
@@ -123,8 +135,13 @@ function registerSearch(program) {
           console.log('');
         }
       } catch (err) {
+        if (anim) anim.stop('error');
         telemetry.send('cli_error', { command: 'search', errorType: err.constructor.name });
-        console.error(ui.error(err.message));
+        if (useRobot) {
+          moments.error(err.message, 'Check your MongoDB URI and Voyage AI key');
+        } else {
+          console.error(ui.error(err.message));
+        }
         process.exit(1);
       } finally {
         if (client) await client.close();

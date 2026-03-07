@@ -1,6 +1,11 @@
 'use strict';
 
 const pc = require('picocolors');
+const { COLORS } = require('./robot');
+
+const fg = (r, g, b) => `\x1b[38;2;${r};${g};${b}m`;
+const RST = '\x1b[0m';
+const brandGreen = (text) => `${fg(...COLORS.green)}${text}${RST}`;
 
 // ora v9 is ESM-only. Use dynamic import with a sync fallback for environments
 // that don't support top-level require() of ESM (Node 18).
@@ -41,7 +46,7 @@ function getOra() {
 // Semantic color helpers
 const ui = {
   // Status indicators
-  success: (msg) => `${pc.green('✓')} ${msg}`,
+  success: (msg) => `${brandGreen('✓')} ${msg}`,
   error: (msg) => `${pc.red('✗')} ${msg}`,
   warn: (msg) => `${pc.yellow('⚠')} ${msg}`,
   info: (msg) => `${pc.cyan('ℹ')} ${msg}`,
@@ -49,7 +54,7 @@ const ui = {
   // Text styling
   bold: pc.bold,
   dim: pc.dim,
-  green: pc.green,
+  green: brandGreen,
   red: pc.red,
   cyan: pc.cyan,
   yellow: pc.yellow,
@@ -60,7 +65,7 @@ const ui = {
   // Score formatting (0-1 scale: green > 0.7, yellow > 0.4, red otherwise)
   score: (val) => {
     const formatted = val.toFixed(6);
-    if (val >= 0.7) return pc.green(formatted);
+    if (val >= 0.7) return brandGreen(formatted);
     if (val >= 0.4) return pc.yellow(formatted);
     return pc.red(formatted);
   },
@@ -68,7 +73,7 @@ const ui = {
   // Index status coloring
   status: (s) => {
     const upper = (s || '').toUpperCase();
-    if (upper === 'READY') return pc.green(s);
+    if (upper === 'READY') return brandGreen(s);
     if (upper === 'BUILDING') return pc.yellow(s);
     if (upper === 'FAILED') return pc.red(s);
     return s;
