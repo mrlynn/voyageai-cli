@@ -544,15 +544,29 @@ function animateRobot(poseName, { indent = 2, label = '', showElapsed = false } 
       clearInterval(timer);
       // Restore cursor
       process.stdout.write('\x1b[?25h');
+
+      // Erase all robot frame lines
+      moveUp(frameLines);
+      for (let i = 0; i < frameLines; i++) {
+        clearLine();
+        if (i < frameLines - 1) process.stdout.write('\n');
+      }
+      moveUp(frameLines - 1);
+
       if (finalPose) {
-        moveUp(frameLines);
-        for (let i = 0; i < frameLines; i++) {
-          clearLine();
-          if (i < frameLines - 1) process.stdout.write('\n');
-        }
-        moveUp(frameLines - 1);
+        // Draw a replacement pose in place
         const frame = render(finalPose, { indent });
         process.stdout.write(frame + '\n');
+      } else {
+        // Collapse to a compact one-liner summary
+        const rawLabel = (label || '').replace(/\x1b\[[0-9;]*m/g, '');
+        let summary = `  \x1b[32m\u2713\x1b[0m ${rawLabel}`;
+        if (showElapsed) {
+          const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+          summary += `  \x1b[2m${elapsed}s\x1b[0m`;
+        }
+        clearLine();
+        process.stdout.write(summary + '\n');
       }
     },
   };
