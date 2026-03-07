@@ -36,7 +36,7 @@ Full details: [milestones/v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md)
 ### v1.2 Robot Chat UX (In Progress)
 
 - [x] **Phase 10: Robot Chat Poses** - Replace plain spinners with animated robot poses during chat processing
-- [ ] **Phase 11: Chat Visual Polish** - Robot-branded header and styled turn separation
+- [x] **Phase 11: Chat Visual Polish** - Robot-branded header and styled turn separation (completed 2026-03-07)
 
 ## Phase Details
 
@@ -65,7 +65,7 @@ Plans:
   3. User input lines are visually distinct from assistant output (styled prompt prefix or highlight)
   4. Assistant responses begin with a visible label or prefix before streaming starts
   5. Consecutive turns are separated by a visual divider for readability
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 Plans:
 - [ ] 11-01-PLAN.md -- Robot-branded chat header with sideBySide layout and session context
 - [ ] 11-02-PLAN.md -- Styled user prompt, assistant label, and turn dividers
@@ -84,4 +84,4 @@ Plans:
 | 8. Chat Local Embeddings | v1.1 | 2/2 | Complete | 2026-03-06 |
 | 9. Phase 6 Verification | v1.1 | 1/1 | Complete | 2026-03-06 |
 | 10. Robot Chat Poses | v1.2 | Complete    | 2026-03-07 | 2026-03-07 |
-| 11. Chat Visual Polish | 1/2 | In Progress|  | - |
+| 11. Chat Visual Polish | 2/2 | Complete   | 2026-03-07 | - |

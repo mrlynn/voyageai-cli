@@ -22,9 +22,9 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Turn Polish
 
-- [ ] **TURN-01**: User input is visually styled (prompt prefix or subtle highlight) to distinguish from assistant output
-- [ ] **TURN-02**: Assistant response has a visual prefix or label before streaming begins
-- [ ] **TURN-03**: Visual divider separates consecutive turns for readability
+- [x] **TURN-01**: User input is visually styled (prompt prefix or subtle highlight) to distinguish from assistant output
+- [x] **TURN-02**: Assistant response has a visual prefix or label before streaming begins
+- [x] **TURN-03**: Visual divider separates consecutive turns for readability
 
 ## Future Requirements
 
@@ -63,9 +63,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ROBO-05 | Phase 10 | Complete |
 | HEAD-01 | Phase 11 | Complete |
 | HEAD-02 | Phase 11 | Complete |
-| TURN-01 | Phase 11 | Pending |
-| TURN-02 | Phase 11 | Pending |
-| TURN-03 | Phase 11 | Pending |
+| TURN-01 | Phase 11 | Complete |
+| TURN-02 | Phase 11 | Complete |
+| TURN-03 | Phase 11 | Complete |
 
 **Coverage:**
 - v1 requirements: 10 total
