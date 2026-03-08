@@ -479,7 +479,7 @@ function checkForUpdates() {
       currentVersion: APP_VERSION,
       latestVersion: info.version,
       releaseName: info.releaseName || `v${info.version}`,
-      releaseUrl: `https://github.com/mrlynn/voyageai-cli/releases/tag/app-v${info.version}`,
+      releaseUrl: `https://github.com/mrlynn/voyageai-cli/releases/tag/v${info.version}`,
     };
   }).catch(() => {
     return { hasUpdate: false, currentVersion: APP_VERSION, error: 'check_failed' };
@@ -527,15 +527,14 @@ function checkForUpdatesManual() {
       res.on('end', () => {
         try {
           const releases = JSON.parse(data);
-          const appRelease = Array.isArray(releases)
-            ? releases.find(r => r.tag_name && r.tag_name.startsWith('app-v'))
+          const release = Array.isArray(releases)
+            ? releases.find(r => r.tag_name && r.tag_name.startsWith('v') && !r.tag_name.startsWith('v0') && !r.draft && !r.prerelease)
             : null;
-          const release = appRelease || (releases && releases.tag_name ? releases : null);
           if (!release) {
-            resolve({ hasUpdate: false, currentVersion: APP_VERSION, error: 'no_app_release' });
+            resolve({ hasUpdate: false, currentVersion: APP_VERSION, error: 'no_release' });
             return;
           }
-          const latestTag = (release.tag_name || '').replace(/^app-v/, '');
+          const latestTag = (release.tag_name || '').replace(/^v/, '');
           if (latestTag && compareVersions(latestTag, APP_VERSION) > 0) {
             resolve({
               hasUpdate: true,
@@ -1135,6 +1134,10 @@ app.whenReady().then(async () => {
     await startPlaygroundServer();
     createWindow();
     maybeShowTelemetryNotice();
+    // Check for updates after launch (silent — notification via renderer)
+    setTimeout(() => {
+      checkForUpdates().catch(() => {});
+    }, 5000);
     // Desktop telemetry
     try {
       const telemetry = require('../src/lib/telemetry');
