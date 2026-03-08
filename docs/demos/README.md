@@ -1,110 +1,72 @@
-# Demo Library
+# VAI Demo Tapes
 
-This directory is the source of truth for public `vai` demos.
+Animated terminal demos built with [VHS](https://github.com/charmbracelet/vhs).
+Each tape tells one focused story about how vai works and what Voyage AI API
+calls it makes under the hood.
 
-Each published demo should be a small, self-contained bundle:
+## Tapes
 
-- One tape file: `docs/demos/<name>.tape`
-- One manifest file: `docs/demos/<name>.demo.json`
-- Optional supporting files: sample data, notes, or speaker docs
+| # | File | Story | API Calls |
+|---|------|-------|-----------|
+| 01 | `01-what-is-an-embedding.tape` | What a 1024-dim vector looks like; Matryoshka dimensions | `POST /v1/embeddings` |
+| 02 | `02-document-vs-query.tape` | Why `input_type` matters; document vs query vectors | `POST /v1/embeddings` ×2 |
+| 03 | `03-chunking-strategies.tape` | 5 chunking strategies before any API call | *(local only)* |
+| 04 | `04-pipeline-end-to-end.tape` | Full files → Atlas pipeline in one command | `POST /v1/embeddings` (batched) + MongoDB |
+| 05 | `05-two-stage-retrieval.tape` | Embed → $vectorSearch → rerank; two API calls per query | `POST /v1/embeddings` + `POST /v1/rerank` |
+| 06 | `06-shared-embedding-space.tape` | The 83% cost reduction via asymmetric retrieval | `POST /v1/embeddings` ×2 + cost estimate |
+| 07 | `07-reranking.tape` | Standalone reranking; relevance scores vs similarity scores | `POST /v1/rerank` |
+| 08 | `08-models-and-benchmarks.tape` | RTEB scores, domain models, latency benchmarks | `POST /v1/embeddings` (benchmark) |
 
-The tape captures the exact terminal flow. The manifest captures the metadata
-needed to publish the demo in a public gallery, including prerequisites, exact
-commands, preview asset paths, docs links, and the source tape URL.
+## Recording All Tapes
 
-## Source Of Truth
-
-`voyageai-cli` is the canonical home for demo content.
-
-For now, `vai-site` is a consumer of this content:
-
-1. Record or update a tape here.
-2. Generate the GIF locally with `./scripts/record-demo.sh`.
-3. Copy the selected preview asset into `vai-site/public/demos/`.
-4. Copy the published demo metadata into `vai-site/src/data/demos.ts`.
-
-## Required Manifest Fields
-
-Every public demo manifest should include:
-
-- `slug`: Stable public identifier used by the website
-- `title`: Public-facing title
-- `summary`: One-sentence learning outcome
-- `categories`: Flat editorial tags such as `Embeddings` or `Local Inference`
-- `published`: Whether the demo should appear publicly
-- `featured`: Whether the demo should be highlighted in the gallery
-- `prerequisites`: Human-readable setup requirements
-- `environment`: Runtime requirements and portability notes
-- `commands`: Exact commands shown in the tape
-- `assets`: Recorded output and public preview paths
-- `source`: Local tape path and public repository URL
-- `links`: Docs and related references
-- `social`: Share-ready copy for LinkedIn, X, and other community posts
-- `underTheHood`: The command/API/database anatomy rendered by the demo gallery
-
-## Conventions
-
-- Keep the tape and manifest side by side.
-- Keep the `commands` array in sync with the tape.
-- Use the manifest `slug` as the public URL and site asset naming source.
-- Legacy tape filenames are allowed. The manifest `slug` is the canonical
-  public identifier.
-- Prefer reproducible demos over polished-but-incomplete demos. If a demo needs
-  Ollama, MongoDB Atlas, or a local setup step, say so explicitly.
-
-## Running Demos
-
-Use the demo runner to list or record demos by public slug:
-
-```bash
-npm run demos:list
-npm run demos:run -- cli-quickstart
-npm run demos:run -- local-inference --method vhs
-npm run demos:run:all
+```zsh
+for tape in *.tape; do
+  vhs "$tape"
+done
 ```
 
-The runner reads the per-demo manifests in this directory and forwards the
-resolved tape path to `scripts/record-demo.sh`.
+## Watermarking Rendered GIFs
 
-## Example
+```zsh
+# Apply the VAI logo watermark to all rendered GIFs
+python3 watermark-demos.py ./ --style logo --opacity 0.20
 
-```json
-{
-  "slug": "local-inference",
-  "title": "Local Inference With Ollama",
-  "summary": "Run a local CLI workflow with Ollama generation and local embeddings.",
-  "categories": ["Getting Started", "Local Inference", "Embeddings"],
-  "published": true,
-  "featured": true,
-  "prerequisites": [
-    "Ollama installed",
-    "llama3.2:3b pulled locally",
-    "`vai nano setup` completed"
-  ],
-  "environment": {
-    "requiresApiKey": false,
-    "requiresMongoDbAtlas": false,
-    "requiresOllama": true,
-    "worksOffline": true,
-    "platformNotes": []
-  },
-  "commands": [
-    "vai --version",
-    "ollama list"
-  ],
-  "assets": {
-    "recordingOutput": "local-inference.gif",
-    "sitePreviewPath": "/demos/local-inference.gif"
-  },
-  "source": {
-    "tapePath": "docs/demos/local-inference.tape",
-    "repoUrl": "https://github.com/mrlynn/voyageai-cli/blob/main/docs/demos/local-inference.tape"
-  },
-  "links": {
-    "docs": [
-      "https://docs.vaicli.com"
-    ],
-    "related": []
-  }
-}
+# Or use the pixel robot
+python3 watermark-demos.py ./ --style robot --opacity 0.25
+```
+
+### First-time setup (macOS)
+
+```zsh
+python3 watermark-demos.py --setup
+```
+
+## Assets
+
+- `logo.png`  — VAI logo (black artwork, converted to white-on-transparent at render time)
+- `robot.svg` — VAI pixel robot (brand teal/cyan, renders at any size)
+- `.venv/`    — Python virtualenv for watermark script *(gitignored)*
+
+## Adding a New Tape
+
+1. Copy an existing `.tape` as a template
+2. Add the API call comment header — this is the educational value
+3. Set `Output` to match your filename
+4. Record with `vhs your-tape.tape`
+5. Watermark with `python3 watermark-demos.py your-tape.gif`
+
+## Narrative Arc
+
+The tapes are designed to be watched in order, building understanding from
+first principles to production patterns:
+
+```
+Concept         → 01 (what is a vector?)
+API detail      → 02 (why inputType matters)
+Pre-processing  → 03 (chunking before embedding)
+Full pipeline   → 04 (files → Atlas)
+Query pipeline  → 05 (two-stage retrieval)
+Cost insight    → 06 (shared embedding space)
+Precision       → 07 (reranking standalone)
+Model selection → 08 (which model, when)
 ```
