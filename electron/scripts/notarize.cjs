@@ -10,7 +10,7 @@ module.exports = async function notarizing(context) {
     appPath,
     appleId: process.env.APPLE_ID,
     appleIdPassword: process.env.APPLE_APP_SPECIFIC_PASSWORD,
-    teamId: 'YZ36Z8GSEN',
+    teamId: process.env.APPLE_TEAM_ID || 'YZ36Z8GSEN',
   });
   console.log('  ✓ Done');
 };

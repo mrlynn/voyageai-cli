@@ -5,7 +5,7 @@ set -euo pipefail
 # vai release script
 #
 # Usage:
-#   ./scripts/release.sh patch|minor|major [--dry-run] [--skip-npm] [--skip-mac]
+#   ./scripts/release.sh patch|minor|major [--dry-run] [--skip-npm]
 #
 # What it does:
 #   1. Ensures clean git state on main branch
@@ -14,30 +14,25 @@ set -euo pipefail
 #   4. Syncs electron/package.json to same version
 #   5. Commits, tags (v* only), pushes
 #   6. Publishes to npm (unless --skip-npm)
-#   7. v* tag push triggers CI → builds Linux + Windows
-#   8. Builds + signs + notarizes macOS locally (unless --skip-mac)
-#   9. Promotes draft release to Latest
-#
-# IMPORTANT: macOS build must happen AFTER CI creates the draft
-# release, so all platform assets land on the same release.
+#   7. CI handles everything else:
+#      - Builds macOS (signed + notarized), Linux, Windows
+#      - Publishes all assets to GitHub Releases
+#      - Promotes the draft release to Latest
 # ─────────────────────────────────────────────────────────
 
 BUMP="${1:-}"
 DRY_RUN=false
 SKIP_NPM=false
-SKIP_MAC=false
 
 for arg in "$@"; do
   case "$arg" in
     --dry-run)   DRY_RUN=true ;;
     --skip-npm)  SKIP_NPM=true ;;
-    --skip-mac)  SKIP_MAC=true ;;
-    --skip-app)  SKIP_MAC=true ;;  # legacy alias
   esac
 done
 
 if [[ -z "$BUMP" || "$BUMP" == --* ]]; then
-  echo "Usage: ./scripts/release.sh <patch|minor|major> [--dry-run] [--skip-npm] [--skip-mac]"
+  echo "Usage: ./scripts/release.sh <patch|minor|major> [--dry-run] [--skip-npm]"
   exit 1
 fi
 
@@ -104,10 +99,14 @@ if $DRY_RUN; then
   step "DRY RUN — would do"
   echo "  git commit  → release: v$VERSION_NEW"
   echo "  git tag     → v$VERSION_NEW"
-  echo "  git push    → origin + tags (triggers CI for Linux/Windows)"
+  echo "  git push    → origin + tags (triggers CI for all platforms)"
   [[ "$SKIP_NPM" == false ]] && echo "  npm publish → voyageai-cli@$VERSION_NEW"
-  [[ "$SKIP_MAC" == false ]] && echo "  build:mac   → sign, notarize, upload macOS DMG + ZIP"
-  echo "  gh release  → promote draft to Latest"
+  echo ""
+  echo "  CI will then:"
+  echo "    → Build + sign + notarize macOS"
+  echo "    → Build Linux AppImage"
+  echo "    → Build Windows NSIS installer"
+  echo "    → Promote release to Latest"
   echo ""
   # Revert version bumps
   git checkout -- package.json package-lock.json electron/package.json electron/package-lock.json src/nano/nano-bridge.py 2>/dev/null || true
@@ -130,7 +129,7 @@ ok "Tagged"
 step "Pushing to origin"
 git push
 git push --tags
-ok "Pushed (CI will now build Linux + Windows)"
+ok "Pushed (CI will build all platforms)"
 
 # ── Publish to npm ──
 if [[ "$SKIP_NPM" == false ]]; then
@@ -141,80 +140,15 @@ else
   step "Skipping npm publish (--skip-npm)"
 fi
 
-# ── Wait for CI to create the draft release ──
-if [[ "$SKIP_MAC" == false ]]; then
-  step "Waiting for CI to create draft release"
-  echo "  CI builds Linux + Windows and publishes to GitHub Releases."
-  echo "  Waiting for the release to appear (this may take a few minutes)..."
-
-  RELEASE_READY=false
-  for i in $(seq 1 30); do
-    if gh release view "v${VERSION_NEW}" --json isDraft &>/dev/null; then
-      RELEASE_READY=true
-      ok "Release v${VERSION_NEW} found on GitHub"
-      break
-    fi
-    printf "  Waiting... (%d/30)\r" "$i"
-    sleep 10
-  done
-
-  if [[ "$RELEASE_READY" == false ]]; then
-    warn "Release not found after 5 minutes."
-    echo "  CI may still be running. You can build macOS manually later:"
-    echo "    cd electron && npm run build:mac"
-    echo "    gh release edit v${VERSION_NEW} --draft=false --latest"
-    echo ""
-    echo "  Monitor CI: https://github.com/mrlynn/voyageai-cli/actions"
-    exit 1
-  fi
-
-  # ── Build macOS locally ──
-  step "Building macOS (sign + notarize + publish)"
-  echo "  This will sign with your Apple Developer cert,"
-  echo "  notarize via notarytool, and upload to the release."
-  cd electron
-  npm run build:mac
-  cd "$ROOT"
-  ok "macOS DMG + ZIP published to release"
-fi
-
-# ── Promote draft → Latest ──
-step "Promoting release to Latest"
-gh release edit "v${VERSION_NEW}" \
-  --draft=false \
-  --latest \
-  --title "Vai v${VERSION_NEW}"
-ok "Release v${VERSION_NEW} is now Latest"
-
-# ── Verify update manifest ──
-step "Verifying auto-update manifests"
-MANIFEST_OK=true
-for MANIFEST in latest-mac.yml latest.yml latest-linux.yml; do
-  URL="https://github.com/mrlynn/voyageai-cli/releases/download/v${VERSION_NEW}/${MANIFEST}"
-  if curl -sfL "$URL" | grep -q "version: ${VERSION_NEW}" 2>/dev/null; then
-    ok "$MANIFEST → v${VERSION_NEW}"
-  else
-    warn "$MANIFEST not found or version mismatch (may need a moment to propagate)"
-    MANIFEST_OK=false
-  fi
-done
-
 # ── Summary ──
-step "Release complete: v${VERSION_NEW}"
+step "Release v${VERSION_NEW} initiated"
 echo ""
-echo "  ┌─────────────────────────────────────────────┐"
-echo "  │  npm:      $([ "$SKIP_NPM" == false ] && printf "✓ published" || printf "— skipped")                        │"
-echo "  │  macOS:    $([ "$SKIP_MAC" == false ] && printf "✓ signed + notarized" || printf "— skipped")               │"
-echo "  │  Linux:    ✓ built via CI                    │"
-echo "  │  Windows:  ✓ built via CI                    │"
-echo "  │  Release:  ✓ promoted to Latest              │"
-echo "  └─────────────────────────────────────────────┘"
+echo "  ┌──────────────────────────────────────────────────┐"
+echo "  │  npm:     $([ "$SKIP_NPM" == false ] && printf "✓ published" || printf "— skipped")                             │"
+echo "  │  CI:      building macOS + Linux + Windows...     │"
+echo "  │  Release: will auto-promote to Latest when done   │"
+echo "  └──────────────────────────────────────────────────┘"
 echo ""
+echo "  Monitor: https://github.com/mrlynn/voyageai-cli/actions"
 echo "  Release: https://github.com/mrlynn/voyageai-cli/releases/tag/v${VERSION_NEW}"
-echo "  Actions: https://github.com/mrlynn/voyageai-cli/actions"
-if [[ "$MANIFEST_OK" == false ]]; then
-  echo ""
-  warn "Some update manifests may not be ready yet."
-  echo "  Re-check: curl -sL https://github.com/mrlynn/voyageai-cli/releases/download/v${VERSION_NEW}/latest-mac.yml"
-fi
 echo ""
