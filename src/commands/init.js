@@ -128,6 +128,24 @@ function registerInit(program) {
       const filePath = saveProject(config);
       const relPath = path.relative(process.cwd(), filePath);
 
+      // Warn if nano selected but bridge is not set up
+      if (config.model === 'voyage-4-nano') {
+        try {
+          const { checkVenv, checkModel } = require('../nano/nano-health');
+          const venv = checkVenv();
+          const model = checkModel();
+          if (!venv.ok || !model.ok) {
+            console.log('');
+            console.log(pc.yellow('⚠ voyage-4-nano requires local setup before use.'));
+            if (!venv.ok) console.log(pc.dim('  • Python venv: not found'));
+            if (!model.ok) console.log(pc.dim('  • Model weights: not downloaded'));
+            console.log(pc.yellow('  Run: vai nano setup'));
+          }
+        } catch (_) {
+          // nano module not available — skip check
+        }
+      }
+
       if (!opts.quiet) {
         console.log('');
         console.log(ui.dim('  Next steps:'));

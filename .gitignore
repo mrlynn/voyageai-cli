@@ -18,6 +18,8 @@ VaiSite-Marketing-Assessment.md
 .claude/*
 .mcp.json
 /docs/*
+!/docs/demos/
+!/docs/demos/**
 !/docs/linkedin-posts.md
 .env.local.planning/
 AGENTS.md
@@ -35,3 +37,6 @@ USER.md
 .cursor/
 .openclaw/
 .planning/
+.venv/
+
+docs/demos/.venv/

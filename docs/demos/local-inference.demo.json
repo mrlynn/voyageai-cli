@@ -1,0 +1,82 @@
+{
+  "slug": "local-inference",
+  "title": "Local Inference With Ollama",
+  "summary": "Run a local CLI workflow with Ollama generation and local embeddings, without a Voyage API key.",
+  "categories": [
+    "Getting Started",
+    "Local Inference",
+    "Embeddings"
+  ],
+  "published": true,
+  "featured": true,
+  "prerequisites": [
+    "Ollama is installed and running locally.",
+    "The `llama3.2:3b` model is already pulled in Ollama.",
+    "`vai nano setup` has already completed successfully."
+  ],
+  "environment": {
+    "requiresApiKey": false,
+    "requiresMongoDbAtlas": false,
+    "requiresOllama": true,
+    "worksOffline": true,
+    "platformNotes": []
+  },
+  "commands": [
+    "vai --version",
+    "ollama list",
+    "export VAI_LLM_PROVIDER=ollama",
+    "export VAI_LLM_MODEL=llama3.2:3b",
+    "export VAI_LLM_BASE_URL=http://localhost:11434",
+    "vai nano status",
+    "ollama run llama3.2:3b \"In 4 short lines, explain why pairing a local LLM with local embeddings is useful for CLI demos.\"",
+    "vai embed \"Local inference keeps retrieval private, fast, and API-key free.\" --local --dimensions 256",
+    "vai explain local inference"
+  ],
+  "assets": {
+    "recordingOutput": "local-inference.gif",
+    "sitePreviewPath": "/demos/local-inference.gif"
+  },
+  "source": {
+    "tapePath": "docs/demos/local-inference.tape",
+    "repoUrl": "https://github.com/mrlynn/voyageai-cli/blob/main/docs/demos/local-inference.tape"
+  },
+  "links": {
+    "docs": [
+      "https://docs.vaicli.com",
+      "https://github.com/mrlynn/voyageai-cli#local-inference"
+    ],
+    "related": [
+      "ollama-nano-chat",
+      "cli-quickstart"
+    ]
+  },
+  "social": {
+    "headline": "Local inference with Ollama and local embeddings, no Voyage API key required.",
+    "linkedinText": "This VAI demo is a great example of a reproducible local workflow: Ollama for generation, local embeddings for retrieval, and no Voyage API key required. The gallery page includes the exact commands plus the original source tape.",
+    "xText": "Local inference demo with VAI: Ollama for generation, local embeddings for retrieval, no Voyage API key required. Commands + source tape included.",
+    "hashtags": [
+      "vai",
+      "ollama",
+      "localinference",
+      "embeddings"
+    ],
+    "callToAction": "Try the local workflow yourself and share the source tape."
+  },
+  "underTheHood": {
+    "vaiCommand": "vai embed \"Local inference keeps retrieval private, fast, and API-key free.\" --local --dimensions 256",
+    "voyageApi": {
+      "node": "// No remote Voyage AI API call.\\n// --local routes this command through the local voyage-4-nano bridge instead.",
+      "python": "# No remote Voyage AI API call.\\n# --local routes this command through the local voyage-4-nano bridge instead.",
+      "curl": "# No remote Voyage AI API call.\\n# --local routes this command through the local voyage-4-nano bridge instead."
+    },
+    "mongoQuery": {
+      "node": "// No MongoDB query in this demo.\\n// The command computes the embedding locally and prints it to stdout.",
+      "python": "# No MongoDB query in this demo.\\n# The command computes the embedding locally and prints it to stdout."
+    },
+    "explanations": {
+      "vaiCommand": "The --local flag switches the command from hosted embeddings to the local voyage-4-nano bridge so the workflow stays private and API-key free.",
+      "voyageApi": "Because this flow is intentionally local, there is no outgoing Voyage AI API request. The transparency here is making that absence explicit.",
+      "mongoQuery": "There is no MongoDB write or search in this demo. It is focused on proving that local embeddings work before any storage layer is introduced."
+    }
+  }
+}
