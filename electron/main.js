@@ -734,7 +734,7 @@ async function startPlaygroundServer() {
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Voyage AI Playground - Error</title>
+  <title>VAI - Error</title>
   <style>
     body { 
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; 
@@ -976,7 +976,7 @@ function createWindow() {
     height: WINDOW_HEIGHT,
     minWidth: 960,
     minHeight: 600,
-    title: 'Voyage AI Playground',
+    title: 'VAI',
     icon: getIconPath(isDark),
     titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
     trafficLightPosition: { x: 14, y: 14 },

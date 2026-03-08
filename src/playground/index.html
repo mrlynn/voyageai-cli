@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Voyage AI Playground</title>
+<title>VAI Playground</title>
 <link rel="icon" type="image/png" sizes="32x32" href="/icons/dark/32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="/icons/dark/16.png">
 <style>
@@ -354,8 +354,8 @@ body {
 
 /* ── Sidebar ── */
 .sidebar {
-  width: 220px;
-  min-width: 220px;
+  width: 316px;
+  min-width: 316px;
   background: var(--bg-surface);
   border-right: 1px solid var(--border);
   display: flex;
@@ -365,34 +365,26 @@ body {
   transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1), min-width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .sidebar.collapsed {
-  width: 56px;
-  min-width: 56px;
+  width: 72px;
+  min-width: 72px;
 }
-.sidebar.collapsed .sidebar-title,
-.sidebar.collapsed .sidebar-nav-label,
-.sidebar.collapsed .sidebar-nav-divider,
+.sidebar.collapsed .sidebar-brand-copy,
+.sidebar.collapsed .sidebar-panel,
 .sidebar.collapsed .status-label,
 .sidebar.collapsed .sidebar-bug-label,
 .sidebar.collapsed .sidebar-docs-link span,
-.sidebar.collapsed .sidebar-model-group,
+.sidebar.collapsed #appVersionLabel,
+.sidebar.collapsed .theme-toggle,
+.sidebar.collapsed .sidebar-search-btn,
 .sidebar.collapsed .sidebar-footer > div:last-child { display: none; }
-.sidebar.collapsed .sidebar-footer { overflow: hidden; padding: 8px 0; align-items: center; border-top: none; }
-.sidebar.collapsed .sidebar-footer > div:first-child { justify-content: center; }
-.sidebar.collapsed .sidebar-footer .theme-toggle { display: none; }
-.sidebar.collapsed #appVersionLabel { display: none; }
-.sidebar.collapsed .sidebar-docs-link { display: none; }
-.sidebar.collapsed .tab-btn {
-  justify-content: center;
-  padding: 10px;
-  border-left-width: 2px;
-}
-.sidebar.collapsed .tab-btn span:not(.tab-btn-icon) { display: none; }
-.sidebar.collapsed .sidebar-settings-btn { display: none; }
+.sidebar.collapsed .sidebar-footer { overflow: hidden; padding: 12px 0 56px; align-items: center; border-top: none; }
+.sidebar.collapsed .sidebar-footer > div:first-child { justify-content: center; width: 100%; }
 .sidebar.collapsed .sidebar-drag-region { justify-content: center; padding: 0; padding-top: 52px; }
 body:not(.is-electron) .sidebar.collapsed .sidebar-drag-region { padding-top: 16px; padding-bottom: 12px; }
 
 /* Sidebar collapse toggle */
-.sidebar-collapse-btn {
+.sidebar-collapse-btn,
+.sidebar-search-btn {
   -webkit-app-region: no-drag;
   background: none;
   border: none;
@@ -408,15 +400,19 @@ body:not(.is-electron) .sidebar.collapsed .sidebar-drag-region { padding-top: 16
   font-size: 14px;
   line-height: 1;
 }
-.sidebar-collapse-btn:hover { color: var(--text); background: rgba(255,255,255,0.06); }
-[data-theme="light"] .sidebar-collapse-btn:hover { background: rgba(0,0,0,0.04); }
+.sidebar-collapse-btn:hover,
+.sidebar-search-btn:hover,
+.sidebar-brand:hover { color: var(--text); background: rgba(255,255,255,0.06); }
+[data-theme="light"] .sidebar-collapse-btn:hover,
+[data-theme="light"] .sidebar-search-btn:hover,
+[data-theme="light"] .sidebar-brand:hover { background: rgba(0,0,0,0.04); }
 .sidebar.collapsed .sidebar-collapse-btn { transform: rotate(180deg); }
 
 /* Sidebar tooltip for collapsed mode */
-.sidebar.collapsed .tab-btn {
+.sidebar.collapsed .sidebar-rail-btn {
   position: relative;
 }
-.sidebar.collapsed .tab-btn::after {
+.sidebar.collapsed .sidebar-rail-btn::after {
   content: attr(data-tooltip);
   position: absolute;
   left: calc(100% + 8px);
@@ -433,19 +429,19 @@ body:not(.is-electron) .sidebar.collapsed .sidebar-drag-region { padding-top: 16
   transition: opacity 0.15s 0.15s;
   z-index: 1000;
 }
-.sidebar.collapsed .tab-btn:hover::after {
+.sidebar.collapsed .sidebar-rail-btn:hover::after {
   opacity: 1;
 }
 
 .sidebar-drag-region {
   -webkit-app-region: drag;
-  height: 78px;
-  min-height: 78px;
-  padding: 0 16px;
+  min-height: 82px;
+  padding: 0 12px;
   padding-top: 52px; /* Clear macOS traffic lights fully */
   display: flex;
   align-items: center;
-  gap: 10px;
+  justify-content: space-between;
+  gap: 12px;
 }
 body:not(.is-electron) .sidebar-drag-region {
   height: auto;
@@ -462,60 +458,197 @@ body:not(.is-electron) .sidebar-drag-region {
   object-fit: contain;
 }
 
+.sidebar-brand {
+  -webkit-app-region: no-drag;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: inherit;
+  padding: 8px 10px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.sidebar-brand-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  align-items: flex-start;
+}
+
 .sidebar-title {
   font-size: 14px;
   font-weight: 700;
   color: var(--accent-text);
   white-space: nowrap;
   letter-spacing: -0.2px;
-  flex: 1;
 }
 
-.sidebar-settings-btn {
-  -webkit-app-region: no-drag;
-  background: none;
-  border: none;
-  cursor: pointer;
+.sidebar-subtitle {
+  font-size: 11px;
   color: var(--text-muted);
-  padding: 4px;
-  border-radius: 4px;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  -webkit-app-region: no-drag;
+}
+
+.sidebar-nav-shell {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  overflow: hidden;
+}
+
+.sidebar-rail {
+  width: 84px;
+  min-width: 84px;
+  border-right: 1px solid var(--border);
+  padding: 10px 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow-y: auto;
+}
+
+.sidebar.collapsed .sidebar-rail {
+  width: 100%;
+  min-width: 0;
+  border-right: none;
+  padding-inline: 6px;
+}
+
+.sidebar-rail-btn {
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  color: var(--text-muted);
+  padding: 10px 6px 8px;
+  min-height: 60px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: var(--font);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.sidebar-rail-btn:hover {
+  color: var(--text);
+  background: rgba(255,255,255,0.04);
+}
+
+.sidebar-rail-btn.active {
+  color: var(--accent-text);
+  background: var(--accent-glow);
+  border-color: rgba(0,212,170,0.14);
+}
+
+[data-theme="light"] .sidebar-rail-btn:hover { background: rgba(0,30,43,0.04); }
+[data-theme="light"] .sidebar-rail-btn.active { background: rgba(0,158,128,0.08); }
+
+.sidebar-rail-btn-icon {
+  width: 18px;
+  height: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.15s;
-  flex-shrink: 0;
 }
-.sidebar-settings-btn:hover { color: var(--text); background: rgba(255,255,255,0.06); }
-.sidebar-settings-btn.active { color: var(--accent); }
-[data-theme="light"] .sidebar-settings-btn:hover { background: rgba(0,0,0,0.04); }
+
+.sidebar-rail-btn-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.sidebar-rail-btn-label {
+  display: block;
+  width: 100%;
+  text-align: center;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.sidebar.collapsed .sidebar-rail-btn {
+  padding: 10px 0;
+  min-height: 44px;
+}
+
+.sidebar.collapsed .sidebar-rail-btn-label {
+  display: none;
+}
+
+.sidebar-panel {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-panel-header {
+  padding: 14px 16px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.sidebar-panel-eyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.sidebar-panel-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.02em;
+}
 
 .sidebar-nav {
   flex: 1;
   overflow-y: auto;
-  padding: 8px;
+  padding: 10px 8px 12px;
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 12px;
 }
 
 .sidebar-nav-group {
-  display: flex;
+  display: none;
   flex-direction: column;
-  gap: 1px;
+  gap: 2px;
 }
-.sidebar-nav-divider {
-  height: 1px;
-  background: var(--border);
-  margin: 8px 12px;
-  opacity: 0.5;
+
+.sidebar-nav-group.active {
+  display: flex;
 }
-.sidebar-nav-label {
+
+.sidebar-nav-section {
   font-size: 10px;
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.8px;
+  letter-spacing: 0.08em;
   color: var(--text-muted);
-  padding: 10px 12px 4px;
+  padding: 0 8px 8px;
 }
 
 .tab-btn {
@@ -524,9 +657,8 @@ body:not(.is-electron) .sidebar-drag-region {
   gap: 10px;
   width: 100%;
   background: none;
-  border: none;
-  border-left: 3px solid transparent;
-  border-radius: 0 6px 6px 0;
+  border: 1px solid transparent;
+  border-radius: 10px;
   color: var(--text-dim);
   padding: 10px 12px;
   font-size: 13px;
@@ -541,6 +673,7 @@ body:not(.is-electron) .sidebar-drag-region {
 .tab-btn:hover {
   color: var(--text);
   background: rgba(255,255,255,0.05);
+  border-color: rgba(255,255,255,0.05);
 }
 .tab-btn:hover .tab-btn-icon {
   transform: scale(1.1);
@@ -548,7 +681,7 @@ body:not(.is-electron) .sidebar-drag-region {
 .tab-btn.active {
   color: var(--accent);
   background: var(--accent-glow);
-  border-left-color: var(--accent);
+  border-color: rgba(0,212,170,0.18);
   font-weight: 600;
 }
 .tab-btn-icon {
@@ -564,7 +697,7 @@ body:not(.is-electron) .sidebar-drag-region {
   width: 16px;
   height: 16px;
 }
-[data-theme="light"] .tab-btn:hover { background: rgba(0,30,43,0.04); }
+[data-theme="light"] .tab-btn:hover { background: rgba(0,30,43,0.04); border-color: rgba(0,30,43,0.06); }
 [data-theme="light"] .tab-btn.active { background: rgba(0,158,128,0.08); }
 
 .sidebar-footer {
@@ -574,30 +707,6 @@ body:not(.is-electron) .sidebar-drag-region {
   display: flex;
   flex-direction: column;
   gap: 8px;
-}
-
-.sidebar-model-group {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.sidebar-model-label {
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--text-muted);
-}
-.nav-model-select {
-  background: var(--bg-input);
-  border: 1px solid var(--border);
-  color: var(--text);
-  padding: 6px 10px;
-  border-radius: var(--radius);
-  font-size: 12px;
-  font-family: var(--mono);
-  cursor: pointer;
-  width: 100%;
 }
 
 .sidebar-controls {
@@ -1176,16 +1285,33 @@ select:focus { outline: none; border-color: var(--accent); }
 .models-hero {
   position: relative;
   overflow: hidden;
-  background: linear-gradient(135deg, rgba(0, 212, 170, 0.06), rgba(64, 224, 255, 0.06));
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0)),
+    radial-gradient(circle at top right, rgba(64, 224, 255, 0.10), transparent 34%),
+    linear-gradient(135deg, rgba(0, 212, 170, 0.06), rgba(64, 224, 255, 0.05)),
+    var(--bg-card);
   border: 1px solid rgba(0, 212, 170, 0.2);
   margin-bottom: 24px;
+  isolation: isolate;
 }
-.models-hero-shape {
+.models-hero::before {
+  content: '';
   position: absolute;
   top: -30px;
   right: -30px;
   width: 200px;
   height: 200px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0, 212, 170, 0.18) 0%, rgba(64, 224, 255, 0.10) 38%, rgba(64, 224, 255, 0) 72%);
+  pointer-events: none;
+  z-index: 0;
+}
+.models-hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 1px solid rgba(64, 224, 255, 0.08);
   pointer-events: none;
   z-index: 0;
 }
@@ -1222,6 +1348,94 @@ select:focus { outline: none; border-color: var(--accent); }
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+}
+.models-hero-spotlight {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 16px;
+  padding: 16px 18px;
+  border-radius: 14px;
+  border: 1px solid rgba(64, 224, 255, 0.16);
+  background:
+    linear-gradient(135deg, rgba(64, 224, 255, 0.10), rgba(0, 212, 170, 0.06)),
+    rgba(0, 30, 43, 0.24);
+}
+.models-hero-spotlight-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent-text);
+}
+.models-hero-spotlight-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+.models-hero-spotlight-copy {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-dim);
+  max-width: 720px;
+}
+.models-hero-spotlight-note {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 8px;
+}
+.models-hero-spotlight-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.models-hero-spotlight-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--text);
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.models-hero-spotlight-link:hover {
+  border-color: var(--accent);
+  color: var(--accent-text);
+  background: rgba(0, 212, 170, 0.08);
+}
+.models-hero-spotlight-link.primary {
+  background: linear-gradient(135deg, rgba(0, 212, 170, 0.20), rgba(64, 224, 255, 0.12));
+  border-color: rgba(0, 212, 170, 0.28);
+}
+[data-theme="light"] .models-hero-spotlight {
+  background:
+    linear-gradient(135deg, rgba(0, 136, 204, 0.08), rgba(0, 158, 128, 0.05)),
+    rgba(255, 255, 255, 0.85);
+  border-color: rgba(0, 136, 204, 0.16);
+}
+[data-theme="light"] .models-hero-spotlight-link {
+  background: rgba(255, 255, 255, 0.7);
+}
+@media (max-width: 860px) {
+  .models-hero-spotlight {
+    grid-template-columns: 1fr;
+  }
+  .models-hero-spotlight-actions {
+    justify-content: flex-start;
+  }
 }
 .model-chip {
   display: inline-flex;
@@ -1277,7 +1491,10 @@ select:focus { outline: none; border-color: var(--accent); }
   gap: 14px;
 }
 .model-card {
-  background: var(--bg-card);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0)),
+    radial-gradient(circle at top right, rgba(64, 224, 255, 0.08), transparent 38%),
+    var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 18px;
@@ -1285,26 +1502,52 @@ select:focus { outline: none; border-color: var(--accent); }
   transition: all 0.2s;
   position: relative;
   overflow: hidden;
+  isolation: isolate;
+}
+.model-card::before {
+  content: '';
+  position: absolute;
+  top: -34px;
+  right: -24px;
+  width: 132px;
+  height: 132px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0, 212, 170, 0.14) 0%, rgba(64, 224, 255, 0.08) 40%, rgba(64, 224, 255, 0) 72%);
+  opacity: 0.9;
+  pointer-events: none;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+  z-index: 0;
+}
+.model-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 1px solid rgba(64, 224, 255, 0.06);
+  pointer-events: none;
+  z-index: 0;
+}
+.model-card > * {
+  position: relative;
+  z-index: 1;
 }
 .model-card:hover {
   border-color: var(--accent);
   transform: translateY(-2px);
-  box-shadow: 0 4px 20px rgba(0, 212, 170, 0.1);
+  box-shadow: 0 10px 26px rgba(0, 212, 170, 0.12);
+}
+.model-card:hover::before {
+  transform: translate3d(-6px, 4px, 0) scale(1.04);
+  opacity: 1;
+}
+.model-card:hover::after {
+  border-color: rgba(64, 224, 255, 0.14);
 }
 .model-card.legacy {
   opacity: 0.5;
 }
 .model-card.legacy:hover {
   opacity: 0.7;
-}
-.model-card-nebula {
-  position: absolute;
-  top: -40px;
-  right: -40px;
-  width: 140px;
-  height: 140px;
-  pointer-events: none;
-  z-index: 0;
 }
 .model-card-header {
   display: flex;
@@ -1626,7 +1869,28 @@ select:focus { outline: none; border-color: var(--accent); }
   border-color: var(--accent);
 }
 [data-theme="light"] .model-card:hover {
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.09);
+}
+[data-theme="light"] .models-hero {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(255, 255, 255, 0.86)),
+    radial-gradient(circle at top right, rgba(0, 136, 204, 0.10), transparent 34%),
+    linear-gradient(135deg, rgba(0, 212, 170, 0.06), rgba(64, 224, 255, 0.04)),
+    var(--bg-card);
+}
+[data-theme="light"] .models-hero::before,
+[data-theme="light"] .model-card::before {
+  opacity: 0.7;
+}
+[data-theme="light"] .models-hero::after,
+[data-theme="light"] .model-card::after {
+  border-color: rgba(0, 136, 204, 0.08);
+}
+[data-theme="light"] .model-card {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(255, 255, 255, 0.86)),
+    radial-gradient(circle at top right, rgba(0, 136, 204, 0.08), transparent 38%),
+    var(--bg-card);
 }
 
 /* Explore modal */
@@ -3830,10 +4094,14 @@ select:focus { outline: none; border-color: var(--accent); }
   .mm-grid { grid-template-columns: 1fr; }
   .mm-gallery-grid { grid-template-columns: repeat(3, 1fr); }
   .compare-grid, .search-results { grid-template-columns: 1fr; }
-  .sidebar { width: 56px; min-width: 56px; }
-  .sidebar-title, .status-label, .sidebar-bug-label { display: none; }
-  .tab-btn { justify-content: center; padding: 10px; }
-  .tab-btn span:not(.tab-btn-icon) { display: none; }
+  .sidebar { width: 72px; min-width: 72px; }
+  .sidebar-brand-copy, .sidebar-search-btn, .sidebar-panel, .status-label, .sidebar-bug-label { display: none; }
+  .sidebar-drag-region { justify-content: center; padding: 16px 0 12px; min-height: auto; }
+  .sidebar-rail { width: 100%; min-width: 0; border-right: none; padding: 8px 6px; }
+  .sidebar-rail-btn { padding: 10px 0; }
+  .sidebar-rail-btn-label { display: none; }
+  .sidebar-footer { padding: 12px 0 56px; align-items: center; border-top: none; }
+  .sidebar-footer > div:last-child, .theme-toggle { display: none; }
   .main { padding: 16px; }
   .settings-row { flex-direction: column; align-items: flex-start; gap: 8px; }
   .settings-select, .settings-input { min-width: 100%; }
@@ -6267,6 +6535,496 @@ select:focus { outline: none; border-color: var(--accent); }
   font-size: 11px;
 }
 
+/* Simplified Home Dashboard */
+.home-hero-panel,
+.home-overview-card {
+  background: linear-gradient(145deg, var(--bg-card) 0%, var(--bg-surface) 100%);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .home-hero-panel,
+[data-theme="light"] .home-overview-card {
+  box-shadow: 0 8px 24px rgba(0, 30, 43, 0.05);
+}
+
+.home-hero-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: 24px;
+  padding: 28px;
+  margin-bottom: 32px;
+  position: relative;
+  overflow: hidden;
+}
+
+.home-hero-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at top right, rgba(64, 224, 255, 0.12), transparent 32%),
+    radial-gradient(circle at bottom left, rgba(0, 212, 170, 0.09), transparent 28%);
+  pointer-events: none;
+}
+
+.home-hero-copy,
+.home-hero-side,
+.home-hero-actions,
+.home-footer-links,
+.home-footer-branding {
+  position: relative;
+  z-index: 1;
+}
+
+.home-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 212, 170, 0.25);
+  background: rgba(0, 212, 170, 0.08);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.home-kicker::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.75;
+}
+
+.home-hero-title {
+  margin: 0 0 12px 0;
+  font-size: 34px;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  color: var(--accent-text);
+}
+
+.home-hero-description {
+  margin: 0;
+  max-width: 620px;
+  color: var(--text-dim);
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+.home-hero-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.home-hero-side {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: stretch;
+}
+
+.home-hero-robot-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 18px 20px;
+  border: 1px solid rgba(0, 212, 170, 0.16);
+  border-radius: 16px;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.03), rgba(0, 212, 170, 0.04));
+}
+
+.home-hero-robot-copy {
+  min-width: 0;
+}
+
+.home-hero-robot-kicker {
+  display: inline-block;
+  margin-bottom: 8px;
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.home-hero-robot-copy p {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 13px;
+  line-height: 1.55;
+  max-width: 220px;
+}
+
+.home-hero-robot {
+  flex-shrink: 0;
+  width: 112px;
+  height: 112px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  background: radial-gradient(circle at 50% 50%, rgba(64, 224, 255, 0.12), transparent 68%);
+}
+
+.home-hero-robot svg {
+  display: block;
+  width: 96px;
+  height: 96px;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 8px 24px rgba(0, 212, 170, 0.16));
+}
+
+.home-link-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text-dim);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.home-link-button:hover {
+  color: var(--text);
+  border-color: var(--accent);
+  background: var(--bg-card);
+}
+
+.home-hero-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  align-content: start;
+}
+
+.home-primary-action {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.home-primary-action:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+  background: var(--bg-card);
+  box-shadow: 0 10px 24px rgba(0, 212, 170, 0.08);
+}
+
+.home-primary-action-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: rgba(0, 212, 170, 0.12);
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.home-primary-action-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.home-primary-action-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.home-primary-action-body strong {
+  font-size: 14px;
+  line-height: 1.3;
+  color: var(--accent-text);
+}
+
+.home-primary-action-body span {
+  color: var(--text-dim);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.home-overview-grid,
+.home-main-grid {
+  display: grid;
+  gap: 24px;
+}
+
+.home-overview-grid {
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  margin-bottom: 24px;
+}
+
+.home-main-grid {
+  grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+}
+
+.home-overview-card {
+  padding: 24px;
+  margin-bottom: 0;
+}
+
+.home-overview-card .home-section-header {
+  margin-bottom: 18px;
+}
+
+.home-overview-card .home-section-header h3 {
+  font-size: 18px;
+}
+
+.home-status-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.home-status-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 152px;
+  padding: 16px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+}
+
+.home-status-card.is-ok {
+  border-color: rgba(0, 212, 170, 0.28);
+}
+
+.home-status-card.is-warning {
+  border-color: rgba(255, 201, 16, 0.32);
+}
+
+.home-status-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.home-status-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--accent-text);
+  letter-spacing: -0.02em;
+}
+
+.home-status-description {
+  color: var(--text-dim);
+  font-size: 13px;
+  line-height: 1.5;
+  flex: 1;
+}
+
+.home-status-action {
+  align-self: flex-start;
+}
+
+.home-resume-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 18px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  margin-bottom: 16px;
+}
+
+.home-resume-label {
+  display: block;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+}
+
+.home-resume-title {
+  display: block;
+  color: var(--accent-text);
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.home-resume-description {
+  color: var(--text-dim);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.home-recent-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.home-recent-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 16px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.home-recent-item-main {
+  min-width: 0;
+}
+
+.home-recent-item-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+
+.home-recent-item-meta {
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.home-empty-state {
+  padding: 20px;
+  border: 1px dashed var(--border);
+  border-radius: 14px;
+  background: var(--bg);
+  color: var(--text-dim);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.home-update-card {
+  padding: 20px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.home-update-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.home-update-title {
+  margin: 0 0 6px 0;
+  color: var(--accent-text);
+  font-size: 22px;
+}
+
+.home-update-date {
+  color: var(--text-muted);
+  font-size: 12px;
+  margin-bottom: 16px;
+}
+
+.home-update-summary {
+  color: var(--text-dim);
+  line-height: 1.6;
+}
+
+.home-update-highlights {
+  margin: 16px 0 0 0;
+  padding-left: 18px;
+  color: var(--text-dim);
+}
+
+.home-update-highlights li + li {
+  margin-top: 8px;
+}
+
+.home-workflow-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.home-workflow-spotlight {
+  padding: 16px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.home-workflow-spotlight h4 {
+  margin: 0 0 8px 0;
+  font-size: 15px;
+  color: var(--accent-text);
+}
+
+.home-workflow-spotlight p {
+  margin: 0 0 12px 0;
+  color: var(--text-dim);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.home-workflow-spotlight-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.home-workflow-spotlight .home-workflow-domain {
+  background: rgba(0, 212, 170, 0.1);
+  color: var(--accent);
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.home-workflow-spotlight .home-workflow-author {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
 /* Animations */
 @keyframes fadeIn {
   from { opacity: 0; }
@@ -6300,6 +7058,20 @@ select:focus { outline: none; border-color: var(--accent); }
   .home-content {
     padding: 24px;
   }
+
+  .home-hero-panel,
+  .home-overview-grid,
+  .home-main-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .home-hero-robot-copy p {
+    max-width: none;
+  }
+
+  .home-status-grid {
+    grid-template-columns: 1fr;
+  }
   
   .home-quick-actions {
     grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
@@ -6317,6 +7089,34 @@ select:focus { outline: none; border-color: var(--accent); }
   
   .home-content {
     padding: 16px;
+  }
+
+  .home-hero-panel,
+  .home-overview-card {
+    padding: 20px;
+  }
+
+  .home-hero-title {
+    font-size: 28px;
+  }
+
+  .home-hero-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .home-hero-robot-wrap {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .home-hero-robot {
+    align-self: center;
+  }
+
+  .home-resume-main,
+  .home-recent-item {
+    flex-direction: column;
+    align-items: flex-start;
   }
   
   .home-section-header {
@@ -7612,39 +8412,73 @@ select:focus { outline: none; border-color: var(--accent); }
 <!-- Sidebar -->
 <aside class="sidebar">
   <div class="sidebar-drag-region">
-    <img class="sidebar-logo" id="sidebarLogo" src="/icons/dark/64.png" alt="Vai">
-    <span class="sidebar-title">Vai</span>
-    <button class="sidebar-collapse-btn" id="sidebarCollapseBtn" onclick="toggleSidebarCollapse()" title="Toggle sidebar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
-    <button class="sidebar-search-btn" onclick="toggleCommandPalette()" title="Search commands (⌘K)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></button>
-    <button class="sidebar-settings-btn" data-tab="settings" title="Settings"><svg width="16" height="16" viewBox="0 0 24 24"><use href="#lg-config"/></svg></button>
+    <button class="sidebar-brand" id="sidebarHomeBtn" type="button" title="Overview">
+      <img class="sidebar-logo" id="sidebarLogo" src="/icons/dark/64.png" alt="Vai">
+      <span class="sidebar-brand-copy">
+        <span class="sidebar-title">Vai</span>
+        <span class="sidebar-subtitle">Overview dashboard</span>
+      </span>
+    </button>
+    <div class="sidebar-header-actions">
+      <button class="sidebar-search-btn" onclick="toggleCommandPalette()" title="Search commands (⌘K)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></button>
+      <button class="sidebar-collapse-btn" id="sidebarCollapseBtn" onclick="toggleSidebarCollapse()" title="Toggle sidebar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+    </div>
   </div>
-  <nav class="sidebar-nav">
-    <div class="sidebar-nav-group" role="tablist" aria-label="Build">
-      <div class="sidebar-nav-label" id="nav-build-label">Build</div>
-      <button class="tab-btn active" data-tab="home" data-tooltip="Home" role="tab" aria-selected="true" aria-controls="tab-home" id="tab-btn-home"><span class="tab-btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span><span>Home</span></button>
-      <button class="tab-btn" data-tab="embed" data-tooltip="Embed" role="tab" aria-selected="false" aria-controls="tab-embed" id="tab-btn-embed"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-lightning"/></svg></span><span>Embed</span></button>
-      <button class="tab-btn" data-tab="compare" data-tooltip="Compare" role="tab" aria-selected="false" aria-controls="tab-compare" id="tab-btn-compare"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-arrows"/></svg></span><span>Compare</span></button>
-      <button class="tab-btn" data-tab="search" data-tooltip="Search" role="tab" aria-selected="false" aria-controls="tab-search" id="tab-btn-search"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-search"/></svg></span><span>Search</span></button>
-      <button class="tab-btn" data-tab="multimodal" data-tooltip="Multimodal" role="tab" aria-selected="false" aria-controls="tab-multimodal" id="tab-btn-multimodal"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-image"/></svg></span><span>Multimodal</span></button>
-      <button class="tab-btn" data-tab="generate" data-tooltip="Generate" role="tab" aria-selected="false" aria-controls="tab-generate" id="tab-btn-generate"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-code"/></svg></span><span>Generate</span></button>
-      <button class="tab-btn" data-tab="chat" data-tooltip="Chat" role="tab" aria-selected="false" aria-controls="tab-chat" id="tab-btn-chat"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-chat"/></svg></span><span>Chat</span></button>
-      <button class="tab-btn" data-tab="workflows" data-tooltip="Workflows" role="tab" aria-selected="false" aria-controls="tab-workflows" id="tab-btn-workflows"><span class="tab-btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="3"/><circle cx="19" cy="6" r="3"/><circle cx="19" cy="18" r="3"/><line x1="7.7" y1="10.7" x2="16.3" y2="7.3"/><line x1="7.7" y1="13.3" x2="16.3" y2="16.7"/></svg></span><span>Workflows</span></button>
+  <div class="sidebar-nav-shell">
+    <nav class="sidebar-rail" aria-label="Primary navigation">
+      <button class="sidebar-rail-btn active" data-section="build" data-default-tab="embed" data-tooltip="Build" type="button">
+        <span class="sidebar-rail-btn-icon" aria-hidden="true"><svg><use href="#lg-lightning"/></svg></span>
+        <span class="sidebar-rail-btn-label">Build</span>
+      </button>
+      <button class="sidebar-rail-btn" data-section="evaluate" data-default-tab="compare" data-tooltip="Evaluate" type="button">
+        <span class="sidebar-rail-btn-icon" aria-hidden="true"><svg><use href="#lg-gauge"/></svg></span>
+        <span class="sidebar-rail-btn-label">Evaluate</span>
+      </button>
+      <button class="sidebar-rail-btn" data-section="reference" data-default-tab="models" data-tooltip="Reference" type="button">
+        <span class="sidebar-rail-btn-icon" aria-hidden="true"><svg><use href="#lg-bot"/></svg></span>
+        <span class="sidebar-rail-btn-label">Reference</span>
+      </button>
+      <button class="sidebar-rail-btn" data-section="settings" data-default-tab="settings" data-tooltip="Settings" type="button">
+        <span class="sidebar-rail-btn-icon" aria-hidden="true"><svg><use href="#lg-config"/></svg></span>
+        <span class="sidebar-rail-btn-label">Settings</span>
+      </button>
+    </nav>
+    <div class="sidebar-panel">
+      <div class="sidebar-panel-header">
+        <div class="sidebar-panel-eyebrow" id="sidebarPanelEyebrow">Build</div>
+        <div class="sidebar-panel-title" id="sidebarPanelTitle">Create and run core workflows</div>
+      </div>
+      <nav class="sidebar-nav" aria-label="Section navigation">
+        <div class="sidebar-nav-group active" data-section="build" role="tablist" aria-label="Build tools">
+          <div class="sidebar-nav-section">Core tools</div>
+          <button class="tab-btn" data-tab="embed" data-tooltip="Embed" role="tab" aria-selected="false" aria-controls="tab-embed" id="tab-btn-embed"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-lightning"/></svg></span><span>Embed</span></button>
+          <button class="tab-btn" data-tab="search" data-tooltip="Rerank" role="tab" aria-selected="false" aria-controls="tab-search" id="tab-btn-search"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-search"/></svg></span><span>Rerank</span></button>
+          <button class="tab-btn" data-tab="multimodal" data-tooltip="Multimodal" role="tab" aria-selected="false" aria-controls="tab-multimodal" id="tab-btn-multimodal"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-image"/></svg></span><span>Multimodal</span></button>
+          <div class="sidebar-nav-section">Advanced tools</div>
+          <button class="tab-btn" data-tab="generate" data-tooltip="Generate" role="tab" aria-selected="false" aria-controls="tab-generate" id="tab-btn-generate"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-code"/></svg></span><span>Generate</span></button>
+          <button class="tab-btn" data-tab="chat" data-tooltip="Chat" role="tab" aria-selected="false" aria-controls="tab-chat" id="tab-btn-chat"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-chat"/></svg></span><span>Chat</span></button>
+          <button class="tab-btn" data-tab="workflows" data-tooltip="Workflows" role="tab" aria-selected="false" aria-controls="tab-workflows" id="tab-btn-workflows"><span class="tab-btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="3"/><circle cx="19" cy="6" r="3"/><circle cx="19" cy="18" r="3"/><line x1="7.7" y1="10.7" x2="16.3" y2="7.3"/><line x1="7.7" y1="13.3" x2="16.3" y2="16.7"/></svg></span><span>Workflows</span></button>
+        </div>
+        <div class="sidebar-nav-group" data-section="evaluate" role="tablist" aria-label="Evaluate tools" hidden>
+          <div class="sidebar-nav-section">Inspect and compare</div>
+          <button class="tab-btn" data-tab="compare" data-tooltip="Compare" role="tab" aria-selected="false" aria-controls="tab-compare" id="tab-btn-compare"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-arrows"/></svg></span><span>Compare</span></button>
+          <button class="tab-btn" data-tab="benchmark" data-tooltip="Benchmark" role="tab" aria-selected="false" aria-controls="tab-benchmark" id="tab-btn-benchmark"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-gauge"/></svg></span><span>Benchmark</span></button>
+          <button class="tab-btn" data-tab="optimize" data-tooltip="Optimize" role="tab" aria-selected="false" aria-controls="tab-optimize" id="tab-btn-optimize"><span class="tab-btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v8m4-4H8"/><circle cx="12" cy="12" r="10"/></svg></span><span>Optimize</span></button>
+          <button class="tab-btn" data-tab="explore" data-tooltip="Explore" role="tab" aria-selected="false" aria-controls="tab-explore" id="tab-btn-explore"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-bulb"/></svg></span><span>Explore</span></button>
+          <button class="tab-btn" data-tab="nano" data-tooltip="Local Inference" role="tab" aria-selected="false" aria-controls="tab-nano" id="tab-btn-nano"><span class="tab-btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg></span><span>Local Inference</span></button>
+        </div>
+        <div class="sidebar-nav-group" data-section="reference" role="tablist" aria-label="Reference tools" hidden>
+          <div class="sidebar-nav-section">Library</div>
+          <button class="tab-btn" data-tab="models" data-tooltip="Models" role="tab" aria-selected="false" aria-controls="tab-models" id="tab-btn-models"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-bot"/></svg></span><span>Models</span></button>
+          <button class="tab-btn" data-tab="about" data-tooltip="About" role="tab" aria-selected="false" aria-controls="tab-about" id="tab-btn-about"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-info"/></svg></span><span>About</span></button>
+        </div>
+        <div class="sidebar-nav-group" data-section="settings" role="tablist" aria-label="Settings" hidden>
+          <div class="sidebar-nav-section">Preferences</div>
+          <button class="tab-btn" data-tab="settings" data-tooltip="Settings" role="tab" aria-selected="false" aria-controls="tab-settings" id="tab-btn-settings"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-config"/></svg></span><span>Settings</span></button>
+        </div>
+      </nav>
     </div>
-    <div class="sidebar-nav-divider"></div>
-    <div class="sidebar-nav-group" role="tablist" aria-label="Analyze">
-      <div class="sidebar-nav-label" id="nav-analyze-label">Analyze</div>
-      <button class="tab-btn" data-tab="benchmark" data-tooltip="Benchmark" role="tab" aria-selected="false" aria-controls="tab-benchmark" id="tab-btn-benchmark"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-gauge"/></svg></span><span>Benchmark</span></button>
-      <button class="tab-btn" data-tab="optimize" data-tooltip="Optimize" role="tab" aria-selected="false" aria-controls="tab-optimize" id="tab-btn-optimize"><span class="tab-btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v8m4-4H8"/><circle cx="12" cy="12" r="10"/></svg></span><span>Optimize</span></button>
-      <button class="tab-btn" data-tab="explore" data-tooltip="Explore" role="tab" aria-selected="false" aria-controls="tab-explore" id="tab-btn-explore"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-bulb"/></svg></span><span>Explore</span></button>
-      <button class="tab-btn" data-tab="nano" data-tooltip="Local Inference" role="tab" aria-selected="false" aria-controls="tab-nano" id="tab-btn-nano"><span class="tab-btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg></span><span>Local Inference</span></button>
-    </div>
-    <div class="sidebar-nav-divider"></div>
-    <div class="sidebar-nav-group" role="tablist" aria-label="Reference">
-      <div class="sidebar-nav-label" id="nav-reference-label">Reference</div>
-      <button class="tab-btn" data-tab="models" data-tooltip="Models" role="tab" aria-selected="false" aria-controls="tab-models" id="tab-btn-models"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-bot"/></svg></span><span>Models</span></button>
-      <button class="tab-btn" data-tab="about" data-tooltip="About" role="tab" aria-selected="false" aria-controls="tab-about" id="tab-btn-about"><span class="tab-btn-icon" aria-hidden="true"><svg><use href="#lg-info"/></svg></span><span>About</span></button>
-    </div>
-  </nav>
+  </div>
   <div class="sidebar-footer">
     <div style="display:flex;align-items:center;gap:8px;justify-content:space-between;">
       <div style="display:flex;align-items:center;gap:5px;">
@@ -7689,7 +8523,7 @@ select:focus { outline: none; border-color: var(--accent); }
   <div class="main">
 
 <!-- ========== HOME TAB ========== -->
-<div class="tab-panel active" id="tab-home" role="tabpanel" aria-labelledby="tab-btn-home" tabindex="0">
+<div class="tab-panel active" id="tab-home" role="tabpanel" aria-labelledby="sidebarHomeBtn" tabindex="0">
   <!-- Header Bar -->
   <div class="home-header">
     <div class="home-header-left">
@@ -7704,158 +8538,241 @@ select:focus { outline: none; border-color: var(--accent); }
     </div>
   </div>
 
-  <!-- API Key Warning Banner (hidden by default) -->
-  <div class="home-api-warning" id="homeApiWarning" style="display: none;">
-    <div class="home-api-warning-content">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
-        <triangle cx="12" cy="12" r="10"/>
-        <line x1="12" y1="8" x2="12" y2="12"/>
-        <line x1="12" y1="16" x2="12.01" y2="16"/>
-      </svg>
-      <span>Set up your Voyage AI API key to get started</span>
-      <button onclick="switchTab('settings')">Settings →</button>
-    </div>
-  </div>
-
   <div class="home-content">
-    <!-- Announcements Banner -->
-    <div class="home-announcements" id="homeAnnouncements" style="display: none;">
-      <div class="home-announcements-carousel" id="announcementsCarousel">
-        <!-- Cards will be inserted here -->
-      </div>
-      <div class="home-announcements-dots" id="announcementsDots">
-        <!-- Dots will be inserted here -->
-      </div>
-      <div class="home-announcements-restore" id="announcementsRestore" style="display: none;">
-        <button onclick="restoreAnnouncements()">Show dismissed announcements</button>
-      </div>
-    </div>
-
-    <div class="home-section-divider" id="divider1"></div>
-
-    <!-- What's New (Release Notes) -->
-    <div class="home-section" id="homeReleases">
-      <div class="home-section-header">
-        <h3>What's New</h3>
-        <a href="https://github.com/mrlynn/voyageai-cli/releases" target="_blank" rel="noopener">View All →</a>
-      </div>
-      <div class="home-releases-timeline" id="releasesTimeline">
-        <!-- Release items will be inserted here -->
-      </div>
-    </div>
-
-    <div class="home-section-divider" id="divider2"></div>
-
-    <!-- Marketplace Spotlight -->
-    <div class="home-section">
-      <div class="home-section-header">
-        <h3>Marketplace Spotlight</h3>
-        <button class="home-marketplace-cta" onclick="switchTab('workflows')">
-          Explore the Marketplace →
-        </button>
-      </div>
-      
-      <!-- Featured Workflows -->
-      <div class="home-subsection">
-        <h4>Featured Workflows</h4>
-        <div class="home-workflows-carousel" id="featuredWorkflows">
-          <!-- Workflow cards will be inserted here -->
+    <section class="home-hero-panel">
+      <div class="home-hero-copy">
+        <span class="home-kicker">Desktop workspace</span>
+        <h2 class="home-hero-title">Build, test, and ship with Voyage AI</h2>
+        <p class="home-hero-description">Use one focused desktop app to generate embeddings, compare models, rerank results, and run production-friendly workflows without bouncing between docs, scripts, and browser tabs.</p>
+        <div class="home-hero-links">
+          <button class="home-link-button" onclick="switchTab('settings')">Open settings</button>
+          <button class="home-link-button" onclick="toggleCommandPalette()">Command palette</button>
+          <a class="home-link-button" href="https://docs.vaicli.com" target="_blank" rel="noopener">Documentation</a>
         </div>
       </div>
-
-      <!-- Browse by Domain -->
-      <div class="home-subsection">
-        <h4>Browse by Domain</h4>
-        <div class="home-domain-pills">
-          <button class="home-domain-pill" onclick="filterAndSwitchWorkflows('Healthcare')">Healthcare</button>
-          <button class="home-domain-pill" onclick="filterAndSwitchWorkflows('Finance')">Finance</button>
-          <button class="home-domain-pill" onclick="filterAndSwitchWorkflows('Legal')">Legal</button>
-          <button class="home-domain-pill" onclick="filterAndSwitchWorkflows('DevOps')">DevOps</button>
-          <button class="home-domain-pill" onclick="filterAndSwitchWorkflows('Education')">Education</button>
-          <button class="home-domain-pill" onclick="filterAndSwitchWorkflows('E-Commerce')">E-Commerce</button>
-          <button class="home-domain-pill" onclick="filterAndSwitchWorkflows('Marketing')">Marketing</button>
-        </div>
-      </div>
-
-      <!-- Community Workflows -->
-      <div class="home-subsection">
-        <div class="home-subsection-header">
-          <h4>Community Workflows</h4>
-          <div class="home-sort-tabs">
-            <button class="home-sort-tab active" data-sort="trending" onclick="sortCommunityWorkflows('trending')">Trending</button>
-            <button class="home-sort-tab" data-sort="newest" onclick="sortCommunityWorkflows('newest')">Newest</button>
-            <button class="home-sort-tab" data-sort="installs" onclick="sortCommunityWorkflows('installs')">Most Installed</button>
+      <div class="home-hero-side">
+        <div class="home-hero-robot-wrap">
+          <div class="home-hero-robot-copy">
+            <span class="home-hero-robot-kicker">Workspace guide</span>
+            <p>Your pixel robot lives in the corner now, adding personality without turning the screen into another promo panel.</p>
+          </div>
+          <div class="home-hero-robot" aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" shape-rendering="crispEdges">
+              <rect x="40" y="20" width="10" height="10" fill="#00d4aa"/>
+              <rect x="50" y="20" width="10" height="10" fill="#00d4aa"/>
+              <rect x="60" y="20" width="10" height="10" fill="#00d4aa"/>
+              <rect x="70" y="20" width="10" height="10" fill="#00d4aa"/>
+              <rect x="80" y="20" width="10" height="10" fill="#00d4aa"/>
+              <rect x="90" y="20" width="10" height="10" fill="#00d4aa"/>
+              <rect x="100" y="20" width="10" height="10" fill="#00d4aa"/>
+              <rect x="110" y="20" width="10" height="10" fill="#00d4aa"/>
+              <rect x="30" y="30" width="10" height="10" fill="#00d4aa"/>
+              <rect x="40" y="30" width="10" height="10" fill="#00d4aa"/>
+              <rect x="50" y="30" width="10" height="10" fill="#00d4aa"/>
+              <rect x="60" y="30" width="10" height="10" fill="#00d4aa"/>
+              <rect x="70" y="30" width="10" height="10" fill="#00d4aa"/>
+              <rect x="80" y="30" width="10" height="10" fill="#00d4aa"/>
+              <rect x="90" y="30" width="10" height="10" fill="#00d4aa"/>
+              <rect x="100" y="30" width="10" height="10" fill="#00d4aa"/>
+              <rect x="110" y="30" width="10" height="10" fill="#00d4aa"/>
+              <rect x="120" y="30" width="10" height="10" fill="#00d4aa"/>
+              <rect x="30" y="40" width="10" height="10" fill="#00d4aa"/>
+              <rect x="40" y="40" width="10" height="10" fill="#00d4aa"/>
+              <rect x="60" y="40" width="10" height="10" fill="#0d1117"/>
+              <rect x="70" y="40" width="10" height="10" fill="#0d1117"/>
+              <rect x="100" y="40" width="10" height="10" fill="#0d1117"/>
+              <rect x="110" y="40" width="10" height="10" fill="#0d1117"/>
+              <rect x="130" y="40" width="10" height="10" fill="#00d4aa"/>
+              <rect x="140" y="40" width="10" height="10" fill="#00d4aa"/>
+              <rect x="30" y="50" width="10" height="10" fill="#00d4aa"/>
+              <rect x="40" y="50" width="10" height="10" fill="#00d4aa"/>
+              <rect x="60" y="50" width="10" height="10" fill="#0d1117"/>
+              <rect x="70" y="50" width="10" height="10" fill="#40e0ff"/>
+              <rect x="100" y="50" width="10" height="10" fill="#0d1117"/>
+              <rect x="110" y="50" width="10" height="10" fill="#40e0ff"/>
+              <rect x="130" y="50" width="10" height="10" fill="#00d4aa"/>
+              <rect x="140" y="50" width="10" height="10" fill="#00d4aa"/>
+              <rect x="30" y="60" width="10" height="10" fill="#00d4aa"/>
+              <rect x="40" y="60" width="10" height="10" fill="#00d4aa"/>
+              <rect x="50" y="60" width="10" height="10" fill="#00d4aa"/>
+              <rect x="60" y="60" width="10" height="10" fill="#00d4aa"/>
+              <rect x="70" y="60" width="10" height="10" fill="#00d4aa"/>
+              <rect x="80" y="60" width="10" height="10" fill="#00d4aa"/>
+              <rect x="90" y="60" width="10" height="10" fill="#00d4aa"/>
+              <rect x="100" y="60" width="10" height="10" fill="#00d4aa"/>
+              <rect x="110" y="60" width="10" height="10" fill="#00d4aa"/>
+              <rect x="120" y="60" width="10" height="10" fill="#00d4aa"/>
+              <rect x="30" y="70" width="10" height="10" fill="#00d4aa"/>
+              <rect x="40" y="70" width="10" height="10" fill="#00d4aa"/>
+              <rect x="50" y="70" width="10" height="10" fill="#00d4aa"/>
+              <rect x="60" y="70" width="10" height="10" fill="#00d4aa"/>
+              <rect x="70" y="70" width="10" height="10" fill="#00d4aa"/>
+              <rect x="80" y="70" width="10" height="10" fill="#00d4aa"/>
+              <rect x="90" y="70" width="10" height="10" fill="#00d4aa"/>
+              <rect x="100" y="70" width="10" height="10" fill="#00d4aa"/>
+              <rect x="110" y="70" width="10" height="10" fill="#00d4aa"/>
+              <rect x="120" y="70" width="10" height="10" fill="#00d4aa"/>
+              <rect x="20" y="80" width="10" height="10" fill="#00d4aa"/>
+              <rect x="30" y="80" width="10" height="10" fill="#00d4aa"/>
+              <rect x="40" y="80" width="10" height="10" fill="#00d4aa"/>
+              <rect x="50" y="80" width="10" height="10" fill="#00d4aa"/>
+              <rect x="60" y="80" width="10" height="10" fill="#00d4aa"/>
+              <rect x="70" y="80" width="10" height="10" fill="#00d4aa"/>
+              <rect x="80" y="80" width="10" height="10" fill="#00d4aa"/>
+              <rect x="90" y="80" width="10" height="10" fill="#00d4aa"/>
+              <rect x="100" y="80" width="10" height="10" fill="#00d4aa"/>
+              <rect x="110" y="80" width="10" height="10" fill="#00d4aa"/>
+              <rect x="120" y="80" width="10" height="10" fill="#00d4aa"/>
+              <rect x="130" y="80" width="10" height="10" fill="#00d4aa"/>
+              <rect x="20" y="90" width="10" height="10" fill="#00d4aa"/>
+              <rect x="30" y="90" width="10" height="10" fill="#00d4aa"/>
+              <rect x="60" y="90" width="10" height="10" fill="#0d1117"/>
+              <rect x="70" y="90" width="10" height="10" fill="#0d1117"/>
+              <rect x="80" y="90" width="10" height="10" fill="#0d1117"/>
+              <rect x="90" y="90" width="10" height="10" fill="#0d1117"/>
+              <rect x="100" y="90" width="10" height="10" fill="#0d1117"/>
+              <rect x="110" y="90" width="10" height="10" fill="#0d1117"/>
+              <rect x="130" y="90" width="10" height="10" fill="#00d4aa"/>
+              <rect x="140" y="90" width="10" height="10" fill="#00d4aa"/>
+              <rect x="20" y="100" width="10" height="10" fill="#00d4aa"/>
+              <rect x="30" y="100" width="10" height="10" fill="#00d4aa"/>
+              <rect x="60" y="100" width="10" height="10" fill="#0d1117"/>
+              <rect x="70" y="100" width="10" height="10" fill="#00d4aa"/>
+              <rect x="80" y="100" width="10" height="10" fill="#40e0ff"/>
+              <rect x="90" y="100" width="10" height="10" fill="#0d1117"/>
+              <rect x="100" y="100" width="10" height="10" fill="#00d4aa"/>
+              <rect x="130" y="100" width="10" height="10" fill="#00d4aa"/>
+              <rect x="140" y="100" width="10" height="10" fill="#00d4aa"/>
+              <rect x="20" y="110" width="10" height="10" fill="#00d4aa"/>
+              <rect x="30" y="110" width="10" height="10" fill="#00d4aa"/>
+              <rect x="60" y="110" width="10" height="10" fill="#0d1117"/>
+              <rect x="70" y="110" width="10" height="10" fill="#0d1117"/>
+              <rect x="80" y="110" width="10" height="10" fill="#00d4aa"/>
+              <rect x="90" y="110" width="10" height="10" fill="#0d1117"/>
+              <rect x="100" y="110" width="10" height="10" fill="#0d1117"/>
+              <rect x="130" y="110" width="10" height="10" fill="#00d4aa"/>
+              <rect x="140" y="110" width="10" height="10" fill="#00d4aa"/>
+              <rect x="20" y="120" width="10" height="10" fill="#00d4aa"/>
+              <rect x="30" y="120" width="10" height="10" fill="#00d4aa"/>
+              <rect x="40" y="120" width="10" height="10" fill="#00d4aa"/>
+              <rect x="50" y="120" width="10" height="10" fill="#00d4aa"/>
+              <rect x="60" y="120" width="10" height="10" fill="#00d4aa"/>
+              <rect x="70" y="120" width="10" height="10" fill="#00d4aa"/>
+              <rect x="80" y="120" width="10" height="10" fill="#00d4aa"/>
+              <rect x="90" y="120" width="10" height="10" fill="#00d4aa"/>
+              <rect x="100" y="120" width="10" height="10" fill="#00d4aa"/>
+              <rect x="110" y="120" width="10" height="10" fill="#00d4aa"/>
+              <rect x="120" y="120" width="10" height="10" fill="#00d4aa"/>
+              <rect x="130" y="120" width="10" height="10" fill="#00d4aa"/>
+              <rect x="40" y="130" width="10" height="10" fill="#00d4aa"/>
+              <rect x="50" y="130" width="10" height="10" fill="#00d4aa"/>
+              <rect x="60" y="130" width="10" height="10" fill="#00d4aa"/>
+              <rect x="70" y="130" width="10" height="10" fill="#00d4aa"/>
+              <rect x="90" y="130" width="10" height="10" fill="#00d4aa"/>
+              <rect x="100" y="130" width="10" height="10" fill="#00d4aa"/>
+              <rect x="110" y="130" width="10" height="10" fill="#00d4aa"/>
+              <rect x="120" y="130" width="10" height="10" fill="#00d4aa"/>
+              <rect x="40" y="140" width="10" height="10" fill="#00d4aa"/>
+              <rect x="50" y="140" width="10" height="10" fill="#00d4aa"/>
+              <rect x="60" y="140" width="10" height="10" fill="#00d4aa"/>
+              <rect x="70" y="140" width="10" height="10" fill="#00d4aa"/>
+              <rect x="90" y="140" width="10" height="10" fill="#00d4aa"/>
+              <rect x="100" y="140" width="10" height="10" fill="#00d4aa"/>
+              <rect x="110" y="140" width="10" height="10" fill="#00d4aa"/>
+              <rect x="120" y="140" width="10" height="10" fill="#00d4aa"/>
+            </svg>
           </div>
         </div>
-        <div class="home-community-grid" id="communityWorkflows">
-          <!-- Community workflow cards will be inserted here -->
+        <div class="home-hero-actions">
+        <button class="home-primary-action" onclick="switchTab('embed')" title="Generate embeddings for text">
+          <span class="home-primary-action-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+          </span>
+          <span class="home-primary-action-body">
+            <strong>New embedding</strong>
+            <span>Generate vectors and inspect dimensions, usage, and heatmaps.</span>
+          </span>
+        </button>
+        <button class="home-primary-action" onclick="switchTab('compare')" title="Compare model similarities">
+          <span class="home-primary-action-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M8 3 4 7l4 4M4 7h16M16 21l4-4-4-4M20 17H4"/></svg>
+          </span>
+          <span class="home-primary-action-body">
+            <strong>Compare text</strong>
+            <span>Check semantic similarity between two inputs side by side.</span>
+          </span>
+        </button>
+        <button class="home-primary-action" onclick="switchTab('search')" title="Rerank documents">
+          <span class="home-primary-action-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          </span>
+          <span class="home-primary-action-body">
+            <strong>Rerank results</strong>
+            <span>Score and reorder candidate documents against a query.</span>
+          </span>
+        </button>
+        <button class="home-primary-action" onclick="switchTab('workflows')" title="Open workflows">
+          <span class="home-primary-action-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="5" cy="12" r="3"/><circle cx="19" cy="6" r="3"/><circle cx="19" cy="18" r="3"/><line x1="7.7" y1="10.7" x2="16.3" y2="7.3"/><line x1="7.7" y1="13.3" x2="16.3" y2="16.7"/></svg>
+          </span>
+          <span class="home-primary-action-body">
+            <strong>Run workflows</strong>
+            <span>Open the canvas, inspect installed flows, and execute them quickly.</span>
+          </span>
+        </button>
+        <button class="home-primary-action" onclick="switchTab('benchmark')" title="Benchmark models">
+          <span class="home-primary-action-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>
+          </span>
+          <span class="home-primary-action-body">
+            <strong>Benchmark models</strong>
+            <span>Compare latency, ranking quality, and cost from the same workspace.</span>
+          </span>
+        </button>
         </div>
       </div>
+    </section>
+
+    <div class="home-overview-grid">
+      <section class="home-section home-overview-card">
+        <div class="home-section-header">
+          <h3>Workspace status</h3>
+        </div>
+        <div class="home-status-grid" id="homeStatusGrid">
+          <div class="home-empty-state">Loading workspace status...</div>
+        </div>
+      </section>
+
+      <section class="home-section home-overview-card">
+        <div class="home-section-header">
+          <h3>Continue where you left off</h3>
+        </div>
+        <div id="homeRecentActivity">
+          <div class="home-empty-state">Open a tool and your recent session activity will appear here.</div>
+        </div>
+      </section>
     </div>
 
-    <div class="home-section-divider" id="divider3"></div>
+    <div class="home-main-grid">
+      <section class="home-section home-overview-card">
+        <div class="home-section-header">
+          <h3>Latest update</h3>
+          <a href="https://github.com/mrlynn/voyageai-cli/releases" target="_blank" rel="noopener">All releases →</a>
+        </div>
+        <div id="homeUpdateContent">
+          <div class="home-empty-state">Loading the latest release notes...</div>
+        </div>
+      </section>
 
-    <!-- Quick Actions -->
-    <div class="home-section">
-      <div class="home-section-header">
-        <h3>Quick Actions</h3>
-      </div>
-      <div class="home-quick-actions">
-        <button class="home-quick-action" onclick="switchTab('embed')" title="Generate embeddings for text">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
-            <path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/>
-          </svg>
-          <span>New Embedding</span>
-        </button>
-        <button class="home-quick-action" onclick="switchTab('compare')" title="Compare model similarities">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
-            <path d="M21 12c0 1.2-4.03 6-9 6s-9-4.8-9-6c0-1.2 4.03-6 9-6s9 4.8 9 6"/>
-            <circle cx="12" cy="12" r="3"/>
-          </svg>
-          <span>Compare Models</span>
-        </button>
-        <button class="home-quick-action" onclick="switchTab('search')" title="Search through vectors">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
-            <circle cx="11" cy="11" r="8"/>
-            <path d="m21 21-4.35-4.35"/>
-          </svg>
-          <span>Search Vectors</span>
-        </button>
-        <button class="home-quick-action" onclick="switchTab('workflows')" title="View installed workflows">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
-            <circle cx="5" cy="12" r="3"/>
-            <circle cx="19" cy="6" r="3"/>
-            <circle cx="19" cy="18" r="3"/>
-            <line x1="7.7" y1="10.7" x2="16.3" y2="7.3"/>
-            <line x1="7.7" y1="13.3" x2="16.3" y2="16.7"/>
-          </svg>
-          <span>My Workflows</span>
-        </button>
-        <button class="home-quick-action" onclick="publishWorkflow()" title="Publish a new workflow">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-            <polyline points="17,8 12,3 7,8"/>
-            <line x1="12" y1="3" x2="12" y2="15"/>
-          </svg>
-          <span>Publish Workflow</span>
-        </button>
-      </div>
-    </div>
-
-    <!-- Newsletter CTA -->
-    <div class="home-section">
-      <div class="home-newsletter-cta">
-        <span class="home-newsletter-cta-badge">Newsletter</span>
-        <h3 class="home-newsletter-cta-title">Ship smarter. Get the field notes.</h3>
-        <p class="home-newsletter-cta-desc">Practical updates on the VAI CLI, embedding workflows, and real-world AI engineering—written by a forward-deployed engineer. No fluff, no spam.</p>
-        <ul class="home-newsletter-cta-benefits" aria-hidden="true">
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg> New features and release notes</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg> Guides and best practices</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg> Field notes from production</li>
-        </ul>
-        <a href="https://vaicli.com/newsletter/subscribe" target="_blank" rel="noopener" class="home-newsletter-cta-button">Subscribe free<svg class="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
-        <p class="home-newsletter-cta-note">One email when it matters. Unsubscribe anytime.</p>
-      </div>
+      <section class="home-section home-overview-card">
+        <div class="home-section-header">
+          <h3>Workflow spotlight</h3>
+          <button class="home-link-button" onclick="switchTab('workflows')">Open workflows</button>
+        </div>
+        <div class="home-workflow-stack" id="homeWorkflowSpotlight">
+          <div class="home-empty-state">Loading featured workflows...</div>
+        </div>
+      </section>
     </div>
 
     <!-- Footer -->
@@ -9174,7 +10091,7 @@ Reranking models rescore initial search results to improve relevance ordering.</
         <div class="about-text">
           <strong>⚡ Embed</strong> — Generate vector embeddings for any text<br>
           <strong>⚖️ Compare</strong> — Measure similarity with cosine, dot product &amp; euclidean distance<br>
-          <strong>🔍 Search</strong> — Semantic search with optional reranking<br>
+          <strong>🔍 Rerank</strong> — Semantic search with optional reranking<br>
           <strong>🔮 Multimodal</strong> — Compare images and text in the same vector space with voyage-multimodal-3.5<br>
           <strong>🛠️ Generate</strong> — Generate code snippets and scaffold full projects with templates<br>
           <strong>💬 Chat</strong> — RAG-powered chat with your documents, configurable system prompts<br>
@@ -9454,6 +10371,23 @@ Reranking models rescore initial search results to improve relevance ordering.</
         voyage-4-large, voyage-4, and voyage-4-lite produce compatible embeddings in the same vector space.
         Index documents with the large model for best quality, then query with the lite model at a fraction of the cost.
         No re-indexing required.
+      </div>
+      <div class="models-hero-spotlight">
+        <div>
+          <div class="models-hero-spotlight-badge">Major Announcement</div>
+          <div class="models-hero-spotlight-title">voyage-4-nano is open-weight and local-capable</div>
+          <div class="models-hero-spotlight-copy">
+            The Voyage 4 family now includes <code>voyage-4-nano</code>, an open-weight model for local development and prototyping. It lives in the same shared embedding space as voyage-4-large, voyage-4, and voyage-4-lite, so you can prototype locally and move into asymmetric retrieval workflows without rebuilding your index.
+          </div>
+          <div class="models-hero-spotlight-note">
+            Run locally and compare local vs cloud vectors, and use it as a zero-query-cost option in hybrid retrieval workflows.
+          </div>
+        </div>
+        <div class="models-hero-spotlight-actions">
+          <button class="models-hero-spotlight-link primary" onclick="switchTab('nano')">Try Local Nano</button>
+          <button class="models-hero-spotlight-link" onclick="scrollToModelCard('voyage-4-nano')">View Model Card</button>
+          <a class="models-hero-spotlight-link" href="https://blog.voyageai.com/2026/01/15/voyage-4/" target="_blank" rel="noopener">Read Announcement</a>
+        </div>
       </div>
       <div class="models-hero-models" id="modelsHeroModels"></div>
     </div>
@@ -9820,7 +10754,7 @@ Retrieval augmented generation combines search with LLMs</textarea>
 </div>
 
 <!-- ========== SETTINGS TAB ========== -->
-<div class="tab-panel" id="tab-settings">
+<div class="tab-panel" id="tab-settings" role="tabpanel" aria-labelledby="tab-btn-settings" tabindex="0">
   <div class="settings-layout">
     <!-- Settings left nav -->
     <nav class="settings-nav">
@@ -9920,16 +10854,20 @@ Retrieval augmented generation combines search with LLMs</textarea>
             </div>
             <div class="settings-control">
               <select class="settings-select" id="settingsDefaultTab">
-                <option value="home" selected>Home</option>
+                <option value="home" selected>Overview</option>
                 <option value="embed">Embed</option>
                 <option value="compare">Compare</option>
-                <option value="search">Search</option>
+                <option value="search">Rerank</option>
                 <option value="multimodal">Multimodal</option>
                 <option value="generate">Generate</option>
                 <option value="chat">Chat</option>
                 <option value="workflows">Workflows</option>
                 <option value="benchmark">Benchmark</option>
                 <option value="explore">Explore</option>
+                <option value="nano">Local Inference</option>
+                <option value="models">Models</option>
+                <option value="about">About</option>
+                <option value="settings">Settings</option>
               </select>
             </div>
           </div>
@@ -10607,9 +11545,106 @@ async function init() {
 }
 
 // ── Tabs ──
+const NAV_SECTION_CONFIG = {
+  build: {
+    label: 'Build',
+    title: 'Create and run core workflows',
+    defaultTab: 'embed'
+  },
+  evaluate: {
+    label: 'Evaluate',
+    title: 'Inspect, compare, and tune results',
+    defaultTab: 'compare'
+  },
+  reference: {
+    label: 'Reference',
+    title: 'Browse models and product context',
+    defaultTab: 'models'
+  },
+  settings: {
+    label: 'Settings',
+    title: 'Configure the app and environment',
+    defaultTab: 'settings'
+  }
+};
+
+const NAV_TAB_TO_SECTION = {
+  embed: 'build',
+  search: 'build',
+  multimodal: 'build',
+  generate: 'build',
+  chat: 'build',
+  workflows: 'build',
+  compare: 'evaluate',
+  benchmark: 'evaluate',
+  optimize: 'evaluate',
+  explore: 'evaluate',
+  nano: 'evaluate',
+  models: 'reference',
+  about: 'reference',
+  settings: 'settings'
+};
+
+let activeNavSection = 'build';
+const navLastTabBySection = {
+  build: 'embed',
+  evaluate: 'compare',
+  reference: 'models',
+  settings: 'settings'
+};
+
+function setActiveNavSection(section) {
+  const meta = NAV_SECTION_CONFIG[section];
+  if (!meta) return;
+  activeNavSection = section;
+
+  document.querySelectorAll('.sidebar-rail-btn').forEach(btn => {
+    const isActive = btn.dataset.section === section;
+    btn.classList.toggle('active', isActive);
+    btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+  });
+
+  document.querySelectorAll('.sidebar-nav-group').forEach(group => {
+    const isActive = group.dataset.section === section;
+    group.classList.toggle('active', isActive);
+    group.hidden = !isActive;
+  });
+
+  const eyebrow = document.getElementById('sidebarPanelEyebrow');
+  const title = document.getElementById('sidebarPanelTitle');
+  if (eyebrow) eyebrow.textContent = meta.label;
+  if (title) title.textContent = meta.title;
+}
+
+function syncNavSectionForTab(tab) {
+  const section = NAV_TAB_TO_SECTION[tab];
+  if (section) {
+    navLastTabBySection[section] = tab;
+    setActiveNavSection(section);
+    return;
+  }
+
+  setActiveNavSection(activeNavSection || 'build');
+}
+
+function navigateToNavSection(section) {
+  const meta = NAV_SECTION_CONFIG[section];
+  if (!meta) return;
+  setActiveNavSection(section);
+  switchTab(navLastTabBySection[section] || meta.defaultTab);
+}
+
+function getActiveTabId() {
+  return document.querySelector('.tab-btn.active')?.dataset?.tab || 'home';
+}
+
+function getActiveTabLabel() {
+  if (getActiveTabId() === 'home') return 'Overview';
+  return document.querySelector('.tab-btn.active span:last-child')?.textContent?.trim() || 'Overview';
+}
+
 function setupTabs() {
   const tabBtns = document.querySelectorAll('.tab-btn');
-  const tabList = Array.from(tabBtns);
   
   tabBtns.forEach(btn => {
     btn.addEventListener('click', () => {
@@ -10618,40 +11653,79 @@ function setupTabs() {
     
     // Keyboard navigation for accessibility
     btn.addEventListener('keydown', (e) => {
-      const currentIndex = tabList.indexOf(btn);
+      const visibleTabList = Array.from(btn.closest('.sidebar-nav-group')?.querySelectorAll('.tab-btn') || []);
+      const currentIndex = visibleTabList.indexOf(btn);
       let nextIndex = -1;
       
       if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
         e.preventDefault();
-        nextIndex = (currentIndex + 1) % tabList.length;
+        nextIndex = (currentIndex + 1) % visibleTabList.length;
       } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
         e.preventDefault();
-        nextIndex = (currentIndex - 1 + tabList.length) % tabList.length;
+        nextIndex = (currentIndex - 1 + visibleTabList.length) % visibleTabList.length;
       } else if (e.key === 'Home') {
         e.preventDefault();
         nextIndex = 0;
       } else if (e.key === 'End') {
         e.preventDefault();
-        nextIndex = tabList.length - 1;
+        nextIndex = visibleTabList.length - 1;
       }
       
       if (nextIndex >= 0) {
-        tabList[nextIndex].focus();
-        switchTab(tabList[nextIndex].dataset.tab);
+        visibleTabList[nextIndex].focus();
+        switchTab(visibleTabList[nextIndex].dataset.tab);
       }
     });
   });
 
-  // Settings cog in header
-  const settingsCog = document.querySelector('.sidebar-settings-btn');
-  if (settingsCog) {
-    settingsCog.addEventListener('click', () => {
-      switchTab(settingsCog.dataset.tab);
+  const homeBtn = document.getElementById('sidebarHomeBtn');
+  if (homeBtn) {
+    homeBtn.addEventListener('click', () => {
+      switchTab('home');
     });
   }
+
+  const railBtns = Array.from(document.querySelectorAll('.sidebar-rail-btn'));
+  railBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      navigateToNavSection(btn.dataset.section);
+    });
+
+    btn.addEventListener('keydown', (e) => {
+      const currentIndex = railBtns.indexOf(btn);
+      let nextIndex = -1;
+
+      if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+        e.preventDefault();
+        nextIndex = (currentIndex + 1) % railBtns.length;
+      } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+        e.preventDefault();
+        nextIndex = (currentIndex - 1 + railBtns.length) % railBtns.length;
+      } else if (e.key === 'Home') {
+        e.preventDefault();
+        nextIndex = 0;
+      } else if (e.key === 'End') {
+        e.preventDefault();
+        nextIndex = railBtns.length - 1;
+      }
+
+      if (nextIndex >= 0) {
+        railBtns[nextIndex].focus();
+      }
+    });
+  });
+
+  setActiveNavSection(activeNavSection);
 }
 
 function switchTab(tab) {
+  if (!document.getElementById('tab-' + tab)) {
+    tab = 'home';
+  }
+
+  if (tab !== 'home') {
+    localStorage.setItem('vai-last-active-tab', tab);
+  }
   document.querySelectorAll('.tab-btn').forEach(b => {
     const isActive = b.dataset.tab === tab;
     b.classList.toggle('active', isActive);
@@ -10665,9 +11739,7 @@ function switchTab(tab) {
     // Hide inactive panels from screen readers
     p.setAttribute('aria-hidden', isActive ? 'false' : 'true');
   });
-  // Sync settings cog highlight
-  const settingsBtn = document.querySelector('.sidebar-settings-btn');
-  if (settingsBtn) settingsBtn.classList.toggle('active', tab === 'settings');
+  syncNavSectionForTab(tab);
   // Track tab views
   sendTelemetry('tab_view', { tab });
   sendTelemetry('playground_tab', { tab });
@@ -10675,6 +11747,7 @@ function switchTab(tab) {
   // Initialize Home page if switching to it
   if (tab === 'home') {
     homeInit();
+    renderHomeRecentActivity();
   }
   if (tab === 'models') {
     modelsInit();
@@ -11199,50 +12272,36 @@ let homeData = {
   featuredWorkflows: null,
   communityWorkflows: null,
   currentAnnouncementIndex: 0,
-  sortMode: 'trending'
+  sortMode: 'trending',
+  hasApiKey: false
 };
 
 async function homeInit() {
-  // Only initialize once per session
-  if (homeData.announcements !== null) return;
-  
   try {
-    // Load version info
     await updateHomeVersionInfo();
+    await checkApiKeyStatus();
+    renderHomeStatusGrid();
+    renderHomeRecentActivity();
+    renderHomeUpdate();
+    renderHomeWorkflowSpotlight();
 
-    // Check API key status and show warning if needed
-    checkApiKeyStatus();
-    
-    // Load announcements and releases first (fast, local data)
-    await Promise.all([
-      loadAnnouncements(),
-      loadReleases(),
-    ]);
-    
-    // Render available sections immediately
-    renderAnnouncements();
-    renderReleases();
-
-    // Populate section dividers with flowing particle fields
-    [['divider1', 440], ['divider2', 441], ['divider3', 442]].forEach(([id, seed]) => {
-      const el = document.getElementById(id);
-      if (el && !el.innerHTML) {
-        el.innerHTML = generateParticleFieldSVG(el.offsetWidth || 900, 40, seed, {variant: 'flowing', opacity: 0.4});
-      }
-    });
-
-    // Populate footer lattice background
     const footerLattice = document.getElementById('footerLattice');
     if (footerLattice && !footerLattice.innerHTML) {
       footerLattice.innerHTML = generateLatticeSVG(footerLattice.parentElement.offsetWidth || 900, 80, 780, {variant: 'dense', opacity: 0.05});
     }
 
-    // Load marketplace data in background (slower, network-dependent)
-    loadMarketplaceData().then(() => {
-      renderFeaturedWorkflows();
-      renderCommunityWorkflows();
-    }).catch(() => {});
-    
+    if (homeData.releases === null) {
+      await loadReleases();
+      renderHomeUpdate();
+    }
+
+    if (homeData.featuredWorkflows === null) {
+      loadMarketplaceData().then(() => {
+        renderHomeWorkflowSpotlight();
+      }).catch(() => {
+        renderHomeWorkflowSpotlight();
+      });
+    }
   } catch (err) {
     console.error('Failed to initialize Home page:', err);
   }
@@ -11285,20 +12344,217 @@ async function updateHomeVersionInfo() {
 }
 
 async function checkApiKeyStatus() {
+  const warningEl = document.getElementById('homeApiWarning');
+  if (warningEl) warningEl.style.display = 'none';
+
   try {
     const res = await fetch('/api/config');
     const data = await res.json();
-    const warningEl = document.getElementById('homeApiWarning');
-    
-    if (!data.hasKey) {
-      warningEl.style.display = 'block';
-    } else {
-      warningEl.style.display = 'none';
-    }
+    homeData.hasApiKey = Boolean(data.hasKey);
   } catch {
-    // If config check fails, assume no API key
-    document.getElementById('homeApiWarning').style.display = 'block';
+    homeData.hasApiKey = false;
   }
+
+  renderHomeStatusGrid();
+  return homeData.hasApiKey;
+}
+
+function getHomeLastActiveTab() {
+  const lastTab = localStorage.getItem('vai-last-active-tab');
+  return lastTab && lastTab !== 'home' ? lastTab : 'embed';
+}
+
+function formatHomeTabLabel(tab) {
+  const labels = {
+    embed: 'Embed',
+    compare: 'Compare',
+    search: 'Rerank',
+    workflows: 'Workflows',
+    benchmark: 'Benchmark',
+    multimodal: 'Multimodal',
+    generate: 'Generate',
+    chat: 'Chat',
+    explore: 'Explore',
+    optimize: 'Optimize',
+    nano: 'Local Inference',
+    models: 'Models',
+    settings: 'Settings',
+    about: 'About'
+  };
+  return labels[tab] || (tab ? tab.charAt(0).toUpperCase() + tab.slice(1) : 'Embed');
+}
+
+function formatHomeRelativeTime(timestamp) {
+  if (!timestamp) return 'Just now';
+  const minutes = Math.max(1, Math.round((Date.now() - timestamp) / 60000));
+  if (minutes < 60) return `${minutes} min ago`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `${hours} hr ago`;
+  const days = Math.round(hours / 24);
+  return `${days} day${days === 1 ? '' : 's'} ago`;
+}
+
+function resumeLastHomeAction() {
+  switchTab(getHomeLastActiveTab());
+}
+
+function renderHomeStatusGrid() {
+  const container = document.getElementById('homeStatusGrid');
+  if (!container) return;
+
+  const lastTab = getHomeLastActiveTab();
+  const latestRelease = Array.isArray(homeData.releases) && homeData.releases.length ? homeData.releases[0] : null;
+  const version = window.appVersion || 'dev';
+
+  const cards = [
+    {
+      label: 'API key',
+      value: homeData.hasApiKey ? 'Connected' : 'Needs setup',
+      description: homeData.hasApiKey
+        ? 'Your Voyage AI key is configured and ready for requests.'
+        : 'Add your API key to start embedding, reranking, and workflows.',
+      statusClass: homeData.hasApiKey ? 'is-ok' : 'is-warning',
+      actionLabel: homeData.hasApiKey ? 'View settings' : 'Add key',
+      action: "switchTab('settings')"
+    },
+    {
+      label: 'Next action',
+      value: `Resume ${formatHomeTabLabel(lastTab)}`,
+      description: 'Jump back into the tool you used most recently in this desktop session.',
+      statusClass: 'is-ok',
+      actionLabel: 'Resume',
+      action: 'resumeLastHomeAction()'
+    },
+    {
+      label: 'App version',
+      value: `v${version}`,
+      description: latestRelease
+        ? `Latest release loaded: ${latestRelease.version}`
+        : 'Checking the latest release notes for this build.',
+      statusClass: 'is-ok',
+      actionLabel: 'View updates',
+      action: "document.getElementById('homeUpdateContent')?.scrollIntoView({ behavior: 'smooth', block: 'start' })"
+    },
+    {
+      label: 'Command palette',
+      value: 'Cmd+K',
+      description: 'Search commands, recent actions, and workflow shortcuts from anywhere in the app.',
+      statusClass: 'is-ok',
+      actionLabel: 'Open palette',
+      action: 'toggleCommandPalette()'
+    }
+  ];
+
+  container.innerHTML = cards.map(card => `
+    <div class="home-status-card ${card.statusClass}">
+      <div class="home-status-label">${card.label}</div>
+      <div class="home-status-value">${card.value}</div>
+      <div class="home-status-description">${card.description}</div>
+      <button class="home-link-button home-status-action" onclick="${card.action}">${card.actionLabel}</button>
+    </div>
+  `).join('');
+}
+
+function renderHomeRecentActivity() {
+  const container = document.getElementById('homeRecentActivity');
+  if (!container) return;
+
+  const lastTab = getHomeLastActiveTab();
+  const trackerItems = typeof recentItemsTracker !== 'undefined' && Array.isArray(recentItemsTracker.items)
+    ? recentItemsTracker.items
+    : [];
+  const recentItems = trackerItems
+    .filter(item => item.id !== 'nav-home')
+    .slice(0, 3);
+
+  const recentMarkup = recentItems.length ? `
+    <div class="home-recent-list">
+      ${recentItems.map(item => `
+        <div class="home-recent-item">
+          <div class="home-recent-item-main">
+            <div class="home-recent-item-title">${escapeHtml(item.action || 'Recent activity')}</div>
+            <div class="home-recent-item-meta">${escapeHtml(formatHomeRelativeTime(item.timestamp))}</div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  ` : `
+    <div class="home-empty-state">Use a few tools and this section will keep your most recent in-app activity visible.</div>
+  `;
+
+  container.innerHTML = `
+    <div class="home-resume-main">
+      <div>
+        <span class="home-resume-label">Last active tool</span>
+        <span class="home-resume-title">${escapeHtml(formatHomeTabLabel(lastTab))}</span>
+        <div class="home-resume-description">Return to the last workspace you opened instead of hunting through the sidebar.</div>
+      </div>
+      <button class="btn" onclick="resumeLastHomeAction()">Resume</button>
+    </div>
+    ${recentMarkup}
+  `;
+}
+
+function renderHomeUpdate() {
+  const container = document.getElementById('homeUpdateContent');
+  if (!container) return;
+
+  if (homeData.releases === null) {
+    container.innerHTML = '<div class="home-empty-state">Loading the latest release notes...</div>';
+    return;
+  }
+
+  const release = homeData.releases[0];
+  if (!release) {
+    container.innerHTML = '<div class="home-empty-state">Release notes are not available right now. You can still open the full releases page from GitHub.</div>';
+    return;
+  }
+
+  const highlights = Array.isArray(release.highlights) ? release.highlights.slice(0, 3) : [];
+  container.innerHTML = `
+    <div class="home-update-card">
+      <div class="home-update-kicker">Latest release</div>
+      <h4 class="home-update-title">${escapeHtml(release.version || 'Current release')}</h4>
+      <div class="home-update-date">${escapeHtml(new Date(release.date).toLocaleDateString())}</div>
+      <div class="home-update-summary">A focused snapshot of what changed most recently, so returning users can orient quickly without wading through a feed.</div>
+      ${highlights.length ? `
+        <ul class="home-update-highlights">
+          ${highlights.map(highlight => `<li>${escapeHtml(highlight)}</li>`).join('')}
+        </ul>
+      ` : ''}
+    </div>
+  `;
+}
+
+function renderHomeWorkflowSpotlight() {
+  const container = document.getElementById('homeWorkflowSpotlight');
+  if (!container) return;
+
+  if (homeData.featuredWorkflows === null) {
+    container.innerHTML = '<div class="home-empty-state">Loading featured workflows...</div>';
+    return;
+  }
+
+  const workflows = (homeData.featuredWorkflows || []).slice(0, 2);
+  if (!workflows.length) {
+    container.innerHTML = '<div class="home-empty-state">Featured workflow suggestions are not available right now. Open the workflows tab to browse your library or install from the store.</div>';
+    return;
+  }
+
+  container.innerHTML = workflows.map(workflow => `
+    <div class="home-workflow-spotlight">
+      <h4>${escapeHtml(workflow.name || 'Untitled workflow')}</h4>
+      <p>${escapeHtml(workflow.description || 'No description available.')}</p>
+      <div class="home-workflow-spotlight-meta">
+        <span class="home-workflow-domain">${escapeHtml(workflow.category || 'utility')}</span>
+        <span class="home-workflow-author">by ${escapeHtml(workflow.author?.name || 'unknown')}</span>
+      </div>
+      <div class="home-workflow-actions">
+        <button class="home-workflow-btn" onclick="wfStoreInstall('${workflow.packageName}', this)">Install</button>
+        <button class="home-workflow-btn" onclick="viewWorkflowDetails('${workflow.packageName}')">Details</button>
+      </div>
+    </div>
+  `).join('');
 }
 
 async function loadAnnouncements() {
@@ -12677,11 +13933,6 @@ function renderModelsHero() {
       '<span class="model-chip-price">' + escapeHtml(m.price) + '</span>' +
     '</div>'
   ).join('');
-
-  const shapeEl = document.getElementById('modelsHeroShape');
-  if (shapeEl && !shapeEl.innerHTML) {
-    shapeEl.innerHTML = generateNebulaSVG(200, 200, 900, {variant: 'rich', opacity: 0.08});
-  }
 }
 
 function getModelGroups(models) {
@@ -12764,14 +14015,13 @@ function renderModelCard(model, seedOffset) {
   if (model.multimodal) {
     tryActions = '<button class="model-card-action" onclick="event.stopPropagation(); switchTab(\'multimodal\')">Try in Multimodal</button>';
   } else if (model.type === 'reranking') {
-    tryActions = '<button class="model-card-action" onclick="event.stopPropagation(); switchTab(\'search\')">Try in Search</button>';
+    tryActions = '<button class="model-card-action" onclick="event.stopPropagation(); switchTab(\'search\')">Try in Rerank</button>';
   } else if (!model.legacy) {
     tryActions = '<button class="model-card-action" onclick="event.stopPropagation(); switchTab(\'embed\')">Try in Embed</button>' +
-                 '<button class="model-card-action" onclick="event.stopPropagation(); switchTab(\'search\')">Try in Search</button>';
+                 '<button class="model-card-action" onclick="event.stopPropagation(); switchTab(\'search\')">Try in Rerank</button>';
   }
 
   return '<div class="model-card ' + (model.legacy ? 'legacy' : '') + '" data-model="' + model.name + '" data-type="' + typeClass + '" id="model-card-' + model.name + '">' +
-    '<div class="model-card-nebula">' + generateNebulaSVG(140, 140, 500 + seedOffset, {variant: 'subtle', opacity: 0.05, sparkles: false}) + '</div>' +
     rtebBadge +
     '<div class="model-card-header">' +
       '<span class="model-card-name">' + escapeHtml(model.name) + '</span>' +
@@ -21121,8 +22371,7 @@ const DOCS_URLS = {
 document.addEventListener('keydown', (e) => {
   if (e.key === 'F1') {
     e.preventDefault();
-    const activeTab = document.querySelector('.tab-btn.active');
-    const tabName = activeTab ? activeTab.dataset.tab : '';
+    const tabName = getActiveTabId();
     const url = DOCS_URLS[tabName] || 'https://docs.vaicli.com';
     window.open(url, '_blank', 'noopener');
   }
@@ -21130,8 +22379,7 @@ document.addEventListener('keydown', (e) => {
 
 // Keyboard shortcuts (when workflows tab is active)
 document.addEventListener('keydown', (e) => {
-  const activeTab = document.querySelector('.tab-btn.active');
-  if (!activeTab || activeTab.dataset.tab !== 'workflows') return;
+  if (getActiveTabId() !== 'workflows') return;
 
   // Ctrl/Cmd+S to save/export in builder mode (works even in inputs)
   if ((e.ctrlKey || e.metaKey) && e.key === 's' && wfState.builderMode) {
@@ -21781,7 +23029,7 @@ let wfInitialized = false;
     const env = {
       platform: navigator.platform,
       source: isElectron ? 'desktop-app' : 'playground',
-      currentScreen: document.querySelector('.tab-btn.active')?.textContent?.trim() || 'unknown',
+      currentScreen: getActiveTabLabel(),
       currentUrl: window.location.href,
       sessionId: window._chatExportData?.sessionId || null,
     };
@@ -22914,8 +24162,7 @@ document.addEventListener('keydown', (e) => {
       closeExportDialog();
     } else {
       // Detect current tab context
-      const activeTab = document.querySelector('.tab-btn.active');
-      const tab = activeTab?.dataset?.tab;
+      const tab = getActiveTabId();
       const contextMap = {
         workflows: 'workflow', search: 'search', chat: 'chat',
         benchmark: 'benchmark', explore: 'explore',
@@ -22931,8 +24178,7 @@ document.addEventListener('keydown', (e) => {
 // ── Electron menu trigger ──
 if (window.vai && window.vai.export && window.vai.export.onTrigger) {
   window.vai.export.onTrigger(() => {
-    const activeTab = document.querySelector('.tab-btn.active');
-    const tab = activeTab?.dataset?.tab;
+    const tab = getActiveTabId();
     const contextMap = {
       workflows: 'workflow', search: 'search', chat: 'chat',
       benchmark: 'benchmark', explore: 'explore',
@@ -23144,10 +24390,10 @@ function generateContextualCommands() {
 // Static command registry
 const staticCommandRegistry = [
   // Navigation Commands
-  { id: 'nav-home', label: 'Home', description: 'Dashboard, announcements, marketplace', category: 'navigation', keywords: ['dashboard', 'landing', 'start'], icon: '🏠', shortcut: '⌘1', priority: 1, execute: () => switchTab('home') },
+  { id: 'nav-home', label: 'Overview', description: 'Dashboard, status, and recent activity', category: 'navigation', keywords: ['dashboard', 'landing', 'start', 'home'], icon: '🏠', shortcut: '⌘1', priority: 1, execute: () => switchTab('home') },
   { id: 'nav-embed', label: 'Embed', description: 'Generate and inspect embeddings', category: 'navigation', keywords: ['embedding', 'generate', 'vector'], icon: '⚡', shortcut: '⌘2', priority: 1, execute: () => switchTab('embed') },
-  { id: 'nav-compare', label: 'Compare', description: 'Similarity comparison with scores', category: 'navigation', keywords: ['similarity', 'cosine', 'compare'], icon: '🔗', shortcut: '⌘3', priority: 1, execute: () => switchTab('compare') },
-  { id: 'nav-search', label: 'Search', description: 'Vector search with filters', category: 'navigation', keywords: ['find', 'query', 'vector', 'lookup'], icon: '🔍', shortcut: '⌘4', priority: 1, execute: () => switchTab('search') },
+  { id: 'nav-compare', label: 'Compare', description: 'Inspect similarity between inputs and scores', category: 'navigation', keywords: ['similarity', 'cosine', 'compare', 'evaluate'], icon: '🔗', shortcut: '⌘3', priority: 1, execute: () => switchTab('compare') },
+  { id: 'nav-search', label: 'Rerank', description: 'Re-order candidate documents by relevance', category: 'navigation', keywords: ['find', 'query', 'vector', 'lookup', 'rerank', 'search'], icon: '🔍', shortcut: '⌘4', priority: 1, execute: () => switchTab('search') },
   { id: 'nav-multimodal', label: 'Multimodal', description: 'Cross-modal search with images and text', category: 'navigation', keywords: ['image', 'text', 'cross-modal', 'vision'], icon: '🖼️', shortcut: '⌘5', priority: 1, execute: () => switchTab('multimodal') },
   { id: 'nav-generate', label: 'Generate', description: 'Code generation and templates', category: 'navigation', keywords: ['code', 'template', 'scaffold'], icon: '💻', shortcut: '⌘6', priority: 1, execute: () => switchTab('generate') },
   { id: 'nav-chat', label: 'Chat', description: 'Chat with your knowledge base', category: 'navigation', keywords: ['conversation', 'ask', 'rag', 'talk'], icon: '💬', shortcut: '⌘7', priority: 1, execute: () => switchTab('chat') },
