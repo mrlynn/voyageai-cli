@@ -14,7 +14,7 @@ Really wrestled with this... if you have better ideas, please let me know.
 import json
 import sys
 
-BRIDGE_VERSION = "1.33.3"
+BRIDGE_VERSION = "1.33.4"
 MODEL_NAME = "voyageai/voyage-4-nano"
 
 # Lazy-loaded on first embed request
