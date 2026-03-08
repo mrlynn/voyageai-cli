@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# Pre-push hook: warns when pushing v* tags
+# Install: git config core.hooksPath scripts/hooks
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+  # Check if we're pushing a version tag
+  if [[ "$local_ref" == refs/tags/v[0-9]* ]]; then
+    TAG="${local_ref#refs/tags/}"
+    echo ""
+    echo "╔═══════════════════════════════════════════════╗"
+    echo "║  Pushing release tag: $TAG"
+    echo "║"
+    echo "║  This will trigger CI to build Linux + Windows."
+    echo "║  Make sure you've:"
+    echo "║    ✓ Run npm test"
+    echo "║    ✓ Bumped version in package.json"
+    echo "║    ✓ Synced electron/package.json"
+    echo "║"
+    echo "║  Prefer using: npm run release -- patch|minor|major"
+    echo "╚═══════════════════════════════════════════════╝"
+    echo ""
+    read -r -p "  Continue pushing $TAG? [y/N] " CONFIRM < /dev/tty
+    if [[ "$CONFIRM" != "y" && "$CONFIRM" != "Y" ]]; then
+      echo "  Push aborted."
+      exit 1
+    fi
+  fi
+
+  # Block app-v* tags entirely
+  if [[ "$local_ref" == refs/tags/app-v* ]]; then
+    echo ""
+    echo "  ✗ Blocked: app-v* tags are deprecated and will create broken releases."
+    echo "    Use v* tags instead (via npm run release)."
+    echo ""
+    exit 1
+  fi
+done
+
+exit 0

@@ -127,7 +127,7 @@
   "devDependencies": {
     "@electron/notarize": "^3.1.1",
     "electron": "^33.0.0",
-    "electron-builder": "^24.13.3"
+    "electron-builder": "24.13.3"
   },
   "dependencies": {
     "@vaicli/vai-workflow-asymmetric-search": "^1.0.0",
