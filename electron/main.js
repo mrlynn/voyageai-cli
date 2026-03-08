@@ -6,6 +6,22 @@ const fs = require('fs');
 const http = require('http');
 const Module = require('module');
 
+function inferVoyageApiBaseFromKey(key) {
+  if (typeof key !== 'string' || !key) return null;
+  if (key.startsWith('al-')) return 'https://ai.mongodb.com/v1';
+  if (key.startsWith('pa-')) return 'https://api.voyageai.com/v1';
+  return null;
+}
+
+function applyApiKeyToEnv(key) {
+  if (!key) return;
+  process.env.VOYAGE_API_KEY = key;
+  const inferredBase = inferVoyageApiBaseFromKey(key);
+  if (inferredBase) {
+    process.env.VOYAGE_API_BASE = inferredBase;
+  }
+}
+
 // ── Module Resolution for Bundled CLI Dependencies ──
 // When packaged, CLI source files in Resources/src need to find their
 // dependencies in Resources/node_modules (copied via extraResources)
@@ -93,14 +109,16 @@ function registerApiKeyHandlers() {
 
   ipcMain.handle('api-key:set', (_event, key) => {
     saveApiKey(key);
-    // Also inject into process.env so the playground server picks it up
-    process.env.VOYAGE_API_KEY = key;
+    // Also inject into process.env so the playground server picks it up.
+    // Keep the endpoint aligned with the stored key type.
+    applyApiKeyToEnv(key);
     return true;
   });
 
   ipcMain.handle('api-key:delete', () => {
     deleteApiKey();
     delete process.env.VOYAGE_API_KEY;
+    delete process.env.VOYAGE_API_BASE;
     return true;
   });
 
@@ -1075,7 +1093,7 @@ app.whenReady().then(async () => {
   if (!process.env.VOYAGE_API_KEY) {
     const stored = await loadStoredApiKeyWithRetry();
     if (stored) {
-      process.env.VOYAGE_API_KEY = stored;
+      applyApiKeyToEnv(stored);
     }
   }
 
@@ -1101,7 +1119,7 @@ app.whenReady().then(async () => {
       if (fs.existsSync(cliConfigPath)) {
         const cliConfig = JSON.parse(fs.readFileSync(cliConfigPath, 'utf8'));
         if (cliConfig.apiKey && !process.env.VOYAGE_API_KEY) {
-          process.env.VOYAGE_API_KEY = cliConfig.apiKey;
+          applyApiKeyToEnv(cliConfig.apiKey);
         }
         if (cliConfig.llmApiKey && !process.env.VAI_LLM_API_KEY) {
           process.env.VAI_LLM_API_KEY = cliConfig.llmApiKey;

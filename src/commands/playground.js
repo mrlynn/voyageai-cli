@@ -316,7 +316,10 @@ function createPlaygroundServer() {
 
       // Handle RAG API requests
       if (req.url.startsWith('/api/rag/')) {
-        const handled = await handleRAGRequest(req, res, { generateEmbeddings });
+        const handled = await handleRAGRequest(req, res, {
+          generateEmbeddings,
+          generateLocalEmbeddings: require('../nano/nano-local.js').generateLocalEmbeddings,
+        });
         if (handled) return;
       }
 

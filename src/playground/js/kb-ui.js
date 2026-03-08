@@ -499,6 +499,7 @@ class KBUIManager {
     const progressBar = document.getElementById('kbPanelProgressBar');
     const progressLabel = document.getElementById('kbPanelProgressLabel');
     if (!progressContainer) return;
+    const warnings = [];
 
     try {
       progressContainer.style.display = 'block';
@@ -531,12 +532,27 @@ class KBUIManager {
 
           if (progressBar) progressBar.style.width = `${percent}%`;
           if (progressLabel) progressLabel.textContent = label;
+        } else if (event.type === 'warning') {
+          if (event.warning) warnings.push(event.warning);
+          if (progressLabel) progressLabel.textContent = event.warning || 'Upload completed with warnings';
         } else if (event.type === 'complete') {
           if (progressBar) progressBar.style.width = '100%';
-          if (progressLabel) progressLabel.textContent = `✓ Complete: ${event.docCount} docs, ${event.chunkCount} chunks`;
+          const hasWarnings = warnings.length > 0 || event.docCount === 0;
+          if (progressLabel) {
+            progressLabel.textContent = hasWarnings
+              ? `Complete with warnings: ${event.docCount} docs, ${event.chunkCount} chunks`
+              : `✓ Complete: ${event.docCount} docs, ${event.chunkCount} chunks`;
+          }
           setTimeout(() => {
             this.updatePanelUI();
             progressContainer.style.display = 'none';
+            const messages = [...warnings];
+            if (event.docCount === 0) {
+              messages.unshift('No documents were stored from that upload.');
+            }
+            if (messages.length > 0) {
+              alert(messages.join('\n'));
+            }
           }, 1000);
         } else if (event.type === 'error') {
           console.error('Ingestion error:', event.error);

@@ -25,6 +25,34 @@ async function extractTextFromPDF(buffer) {
 const RAG_DB = 'vai_rag';
 const KBS_COLLECTION = 'knowledge_bases';
 
+async function computeKBStatsFromCollection(docsCollection) {
+  const stats = await docsCollection.aggregate([
+    { $group: {
+      _id: null,
+      totalSize: { $sum: { $strLenBytes: { $ifNull: ['$content', ''] } } },
+      chunkCount: { $sum: 1 },
+      files: { $addToSet: '$fileName' }
+    } }
+  ]).toArray();
+
+  const liveStats = stats[0] || { totalSize: 0, chunkCount: 0, files: [] };
+  return {
+    size: liveStats.totalSize,
+    chunkCount: liveStats.chunkCount,
+    docCount: liveStats.files.filter(Boolean).length
+  };
+}
+
+async function computeKBStats(db, kbName) {
+  return computeKBStatsFromCollection(db.collection(`kb_${kbName}_docs`));
+}
+
+function normalizeChunks(content) {
+  return chunkText(content)
+    .map(chunk => typeof chunk === 'string' ? chunk.trim() : '')
+    .filter(Boolean);
+}
+
 // ── Friendly KB name generator ──
 const KB_ADJECTIVES = [
   'swift', 'bright', 'calm', 'bold', 'keen',
@@ -77,25 +105,85 @@ function generateKBName() {
 }
 
 /**
+ * Resolve the correct embedding function based on the selected model.
+ * When embeddingModel is 'voyage-4-nano', uses local nano embeddings.
+ * Otherwise, uses the remote Voyage API.
+ *
+ * @param {string} embeddingModel - Selected embedding model name
+ * @param {Function} remoteEmbed - Remote generateEmbeddings function
+ * @param {Function} localEmbed - Local generateLocalEmbeddings function
+ * @returns {{ embedFn: Function, model: string, isLocal: boolean }}
+ */
+function resolveEmbedFn(embeddingModel, remoteEmbed, localEmbed) {
+  if (embeddingModel === 'voyage-4-nano' && localEmbed) {
+    return {
+      embedFn: (texts, opts) => localEmbed(texts, {
+        inputType: opts.inputType || 'document',
+        dimensions: 1024,
+      }),
+      model: 'voyage-4-nano',
+      isLocal: true,
+    };
+  }
+  return {
+    embedFn: (texts, opts) => remoteEmbed(texts, {
+      model: embeddingModel || 'voyage-4-large',
+      inputType: opts.inputType || 'document',
+    }),
+    model: embeddingModel || 'voyage-4-large',
+    isLocal: false,
+  };
+}
+
+/**
  * Handle RAG API requests
  * Returns true if handled, false otherwise
  * @param {http.IncomingMessage} req
  * @param {http.ServerResponse} res
- * @param {Object} context - API context (generateEmbeddings, etc.)
+ * @param {Object} context - API context (generateEmbeddings, generateLocalEmbeddings)
  */
 async function handleRAGRequest(req, res, context) {
-  const { generateEmbeddings } = context;
+  const { generateEmbeddings, generateLocalEmbeddings } = context;
 
   // GET /api/rag/kbs - List all knowledge bases
   if (req.method === 'GET' && req.url === '/api/rag/kbs') {
     try {
       const { client, collection: kbsCollection } = await getMongoCollection(RAG_DB, KBS_COLLECTION);
+      const db = client.db(RAG_DB);
       const kbs = await kbsCollection.find({}).toArray();
+      const metadataFixes = [];
+      const hydratedKbs = await Promise.all(kbs.map(async (kb) => {
+        const liveStats = await computeKBStats(db, kb.name);
+        if (
+          (kb.docCount || 0) !== liveStats.docCount ||
+          (kb.chunkCount || 0) !== liveStats.chunkCount ||
+          (kb.size || 0) !== liveStats.size
+        ) {
+          metadataFixes.push({
+            updateOne: {
+              filter: { _id: kb._id },
+              update: {
+                $set: {
+                  docCount: liveStats.docCount,
+                  chunkCount: liveStats.chunkCount,
+                  size: liveStats.size
+                }
+              }
+            }
+          });
+        }
+        return { ...kb, ...liveStats };
+      }));
+
+      if (metadataFixes.length > 0) {
+        await kbsCollection.bulkWrite(metadataFixes, { ordered: false });
+      }
+
       client.close();
 
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({
-        kbs: kbs.map(kb => ({
+        kbs: hydratedKbs.map(kb => ({
           name: kb.name,
           displayName: kb.displayName || kb.name,
           docCount: kb.docCount || 0,
@@ -223,6 +311,7 @@ async function handleRAGRequest(req, res, context) {
           const headerSep = Buffer.from('\r\n\r\n');
           const crlf = Buffer.from('\r\n');
           let kbName = null;
+          let embeddingModel = null;
 
           // Find all boundary positions in the raw Buffer
           let searchStart = 0;
@@ -267,6 +356,8 @@ async function handleRAGRequest(req, res, context) {
               files.push({ name: filename, path: filepath });
             } else if (nameMatch && nameMatch[1] === 'kbName') {
               kbName = body.slice(contentStart, contentEnd).toString('utf8').trim();
+            } else if (nameMatch && nameMatch[1] === 'embeddingModel') {
+              embeddingModel = body.slice(contentStart, contentEnd).toString('utf8').trim();
             }
           }
 
@@ -323,6 +414,9 @@ async function handleRAGRequest(req, res, context) {
             }
           }
 
+          // Resolve embedding function (local nano vs remote API)
+          const { embedFn } = resolveEmbedFn(embeddingModel, generateEmbeddings, generateLocalEmbeddings);
+
           // Ingest files
           res.writeHead(200, {
             'Content-Type': 'application/x-ndjson',
@@ -355,10 +449,10 @@ async function handleRAGRequest(req, res, context) {
             } else {
               content = fs.readFileSync(file.path, 'utf8');
             }
-            totalSize += Buffer.byteLength(content, 'utf8');
+            const contentSize = Buffer.byteLength(content, 'utf8');
 
             // Stage: chunking
-            const chunks = chunkText(content);
+            const chunks = normalizeChunks(content);
             res.write(JSON.stringify({
               type: 'progress',
               stage: 'chunking',
@@ -368,7 +462,18 @@ async function handleRAGRequest(req, res, context) {
               fileCount: files.length
             }) + '\n');
 
+            if (chunks.length === 0) {
+              res.write(JSON.stringify({
+                type: 'warning',
+                file: file.name,
+                warning: `No text content could be extracted from ${file.name}.`
+              }) + '\n');
+              continue;
+            }
+
             // Stage: embedding (per-chunk progress)
+            let persistedChunks = 0;
+            let lastEmbedError = null;
             for (let c = 0; c < chunks.length; c++) {
               try {
                 res.write(JSON.stringify({
@@ -381,7 +486,7 @@ async function handleRAGRequest(req, res, context) {
                   fileCount: files.length
                 }) + '\n');
 
-                const embedding = await generateEmbeddings(chunks[c], 'voyage-4-large');
+                const embedding = await embedFn([chunks[c]], { inputType: 'document' });
                 const doc = {
                   _id: crypto.randomUUID(),
                   kbName,
@@ -391,8 +496,10 @@ async function handleRAGRequest(req, res, context) {
                   createdAt: new Date()
                 };
                 await docsCollection.insertOne(doc);
+                persistedChunks++;
                 totalChunks++;
               } catch (embedErr) {
+                lastEmbedError = embedErr;
                 console.warn(`Failed to embed chunk from ${file.name}:`, embedErr.message);
               }
             }
@@ -406,7 +513,26 @@ async function handleRAGRequest(req, res, context) {
               fileCount: files.length
             }) + '\n');
 
-            totalDocs++;
+            if (persistedChunks > 0) {
+              totalDocs++;
+              totalSize += contentSize;
+            } else {
+              const detail = lastEmbedError?.message ? ` ${lastEmbedError.message}` : '';
+              res.write(JSON.stringify({
+                type: 'warning',
+                file: file.name,
+                warning: `No chunks were stored for ${file.name}.${detail}`.trim()
+              }) + '\n');
+            }
+
+            if (persistedChunks > 0 && persistedChunks < chunks.length) {
+              res.write(JSON.stringify({
+                type: 'warning',
+                file: file.name,
+                warning: `Only ${persistedChunks}/${chunks.length} chunks were stored for ${file.name}.`
+              }) + '\n');
+            }
+
             try {
               fs.unlinkSync(file.path);
             } catch (e) {
@@ -414,18 +540,13 @@ async function handleRAGRequest(req, res, context) {
             }
           }
 
-          // Update KB metadata (use $inc so size accumulates across uploads)
+          // Recompute live stats so counters stay accurate even when some files
+          // produce zero persisted chunks or partial embeddings succeed.
+          const liveStats = await computeKBStatsFromCollection(docsCollection);
           await kbsCollection.updateOne(
             { name: kbName },
             {
-              $inc: {
-                docCount: totalDocs,
-                chunkCount: totalChunks,
-                size: totalSize
-              },
-              $set: {
-                updatedAt: new Date()
-              }
+              $set: { ...liveStats, updatedAt: new Date() }
             }
           );
 
@@ -510,20 +631,8 @@ async function handleRAGRequest(req, res, context) {
       }
 
       // Compute live stats from docs collection (more accurate than stored metadata)
-      const { collection: docsCollection } = await getMongoCollection(RAG_DB, `kb_${kbName}_docs`);
-      const stats = await docsCollection.aggregate([
-        { $group: {
-          _id: null,
-          totalSize: { $sum: { $strLenBytes: { $ifNull: ['$content', ''] } } },
-          chunkCount: { $sum: 1 },
-          files: { $addToSet: '$fileName' }
-        }}
-      ]).toArray();
-
-      const liveStats = stats[0] || { totalSize: 0, chunkCount: 0, files: [] };
-      kb.size = liveStats.totalSize;
-      kb.chunkCount = liveStats.chunkCount;
-      kb.docCount = liveStats.files.length;
+      const db = client.db(RAG_DB);
+      Object.assign(kb, await computeKBStats(db, kbName));
 
       client.close();
       res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -645,11 +754,10 @@ async function handleRAGRequest(req, res, context) {
 
       await docsCollection.deleteOne({ _id: docId });
 
-      // Update KB doc count
-      const docCount = await docsCollection.countDocuments();
+      const liveStats = await computeKBStatsFromCollection(docsCollection);
       await kbsCollection.updateOne(
         { name: kbName },
-        { $set: { chunkCount: docCount, updatedAt: new Date() } }
+        { $set: { ...liveStats, updatedAt: new Date() } }
       );
 
       kbClient.close();
@@ -670,7 +778,7 @@ async function handleRAGRequest(req, res, context) {
     req.on('data', chunk => { body += chunk; });
     req.on('end', async () => {
       try {
-        const { text, kbName, title } = JSON.parse(body);
+        const { text, kbName, title, embeddingModel } = JSON.parse(body);
 
         if (!text || typeof text !== 'string' || !text.trim()) {
           res.writeHead(400, { 'Content-Type': 'application/json' });
@@ -700,17 +808,28 @@ async function handleRAGRequest(req, res, context) {
           'Cache-Control': 'no-cache'
         });
 
-        const chunks = chunkText(text.trim());
+        const chunks = normalizeChunks(text.trim());
         const fileName = title && title.trim() ? title.trim().slice(0, 80) : `pasted-text-${Date.now()}`;
         const totalSize = Buffer.byteLength(text, 'utf8');
 
+        // Resolve embedding function (local nano vs remote API)
+        const { embedFn } = resolveEmbedFn(embeddingModel, generateEmbeddings, generateLocalEmbeddings);
+
         res.write(JSON.stringify({ type: 'progress', stage: 'chunking', current: chunks.length, total: chunks.length }) + '\n');
 
+        if (chunks.length === 0) {
+          res.write(JSON.stringify({ type: 'error', error: 'No text content could be chunked from the pasted text.' }) + '\n');
+          res.end();
+          kbClient.close();
+          return;
+        }
+
         let totalChunks = 0;
+        let lastEmbedError = null;
         for (let i = 0; i < chunks.length; i++) {
           res.write(JSON.stringify({ type: 'progress', stage: 'embedding', current: i + 1, total: chunks.length }) + '\n');
           try {
-            const embedding = await generateEmbeddings(chunks[i], 'voyage-4-large');
+            const embedding = await embedFn([chunks[i]], { inputType: 'document' });
             const doc = {
               _id: crypto.randomUUID(),
               kbName,
@@ -722,15 +841,24 @@ async function handleRAGRequest(req, res, context) {
             await docsCollection.insertOne(doc);
             totalChunks++;
           } catch (embedErr) {
+            lastEmbedError = embedErr;
             console.warn(`Failed to embed chunk from pasted text:`, embedErr.message);
           }
         }
 
+        if (totalChunks === 0) {
+          const detail = lastEmbedError?.message ? ` ${lastEmbedError.message}` : '';
+          res.write(JSON.stringify({ type: 'error', error: `No chunks were stored for the pasted text.${detail}`.trim() }) + '\n');
+          res.end();
+          kbClient.close();
+          return;
+        }
+
+        const liveStats = await computeKBStatsFromCollection(docsCollection);
         await kbsCollection.updateOne(
           { name: kbName },
           {
-            $inc: { docCount: 1, chunkCount: totalChunks, size: totalSize },
-            $set: { updatedAt: new Date() }
+            $set: { ...liveStats, updatedAt: new Date() }
           }
         );
 
@@ -752,7 +880,7 @@ async function handleRAGRequest(req, res, context) {
     req.on('data', chunk => { body += chunk; });
     req.on('end', async () => {
       try {
-        const { url, kbName } = JSON.parse(body);
+        const { url, kbName, embeddingModel } = JSON.parse(body);
 
         if (!url || typeof url !== 'string' || !/^https?:\/\//i.test(url)) {
           res.writeHead(400, { 'Content-Type': 'application/json' });
@@ -826,20 +954,31 @@ async function handleRAGRequest(req, res, context) {
           return;
         }
 
-        const chunks = chunkText(content);
+        const chunks = normalizeChunks(content);
         // Build fileName from URL hostname + path, truncated to 80 chars
         let parsedUrl;
         try { parsedUrl = new URL(url); } catch { parsedUrl = { hostname: 'unknown', pathname: '' }; }
         const fileName = (parsedUrl.hostname + parsedUrl.pathname).slice(0, 80);
         const totalSize = Buffer.byteLength(content, 'utf8');
 
+        // Resolve embedding function (local nano vs remote API)
+        const { embedFn } = resolveEmbedFn(embeddingModel, generateEmbeddings, generateLocalEmbeddings);
+
         res.write(JSON.stringify({ type: 'progress', stage: 'chunking', current: chunks.length, total: chunks.length }) + '\n');
 
+        if (chunks.length === 0) {
+          res.write(JSON.stringify({ type: 'error', error: 'No text content could be chunked from the fetched URL.' }) + '\n');
+          res.end();
+          kbClient.close();
+          return;
+        }
+
         let totalChunks = 0;
+        let lastEmbedError = null;
         for (let i = 0; i < chunks.length; i++) {
           res.write(JSON.stringify({ type: 'progress', stage: 'embedding', current: i + 1, total: chunks.length }) + '\n');
           try {
-            const embedding = await generateEmbeddings(chunks[i], 'voyage-4-large');
+            const embedding = await embedFn([chunks[i]], { inputType: 'document' });
             const doc = {
               _id: crypto.randomUUID(),
               kbName,
@@ -851,15 +990,24 @@ async function handleRAGRequest(req, res, context) {
             await docsCollection.insertOne(doc);
             totalChunks++;
           } catch (embedErr) {
+            lastEmbedError = embedErr;
             console.warn(`Failed to embed chunk from URL ${url}:`, embedErr.message);
           }
         }
 
+        if (totalChunks === 0) {
+          const detail = lastEmbedError?.message ? ` ${lastEmbedError.message}` : '';
+          res.write(JSON.stringify({ type: 'error', error: `No chunks were stored for the fetched URL.${detail}`.trim() }) + '\n');
+          res.end();
+          kbClient.close();
+          return;
+        }
+
+        const liveStats = await computeKBStatsFromCollection(docsCollection);
         await kbsCollection.updateOne(
           { name: kbName },
           {
-            $inc: { docCount: 1, chunkCount: totalChunks, size: totalSize },
-            $set: { updatedAt: new Date() }
+            $set: { ...liveStats, updatedAt: new Date() }
           }
         );
 

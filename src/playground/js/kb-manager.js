@@ -9,9 +9,18 @@ class KBManager {
     this.kbs = [];
     this.isIngesting = false;
     this.ingestionProgress = { current: 0, total: 0, currentFile: '' };
-    
+
     // Local state
     this.loadLastKB();
+  }
+
+  /**
+   * Get the currently selected embedding model from the chat config UI.
+   * Falls back to 'voyage-4-large' if the element is missing.
+   */
+  getEmbeddingModel() {
+    const sel = document.getElementById('chatEmbeddingModel');
+    return sel ? sel.value : 'voyage-4-large';
   }
 
   /**
@@ -97,6 +106,7 @@ class KBManager {
     if (kbName) {
       formData.append('kbName', kbName);
     }
+    formData.append('embeddingModel', this.getEmbeddingModel());
 
     try {
       this.isIngesting = true;
@@ -175,7 +185,7 @@ class KBManager {
       const res = await fetch('/api/rag/ingest-text', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, kbName, title })
+        body: JSON.stringify({ text, kbName, title, embeddingModel: this.getEmbeddingModel() })
       });
 
       if (!res.ok) {
@@ -239,7 +249,7 @@ class KBManager {
       const res = await fetch('/api/rag/ingest-url', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url, kbName })
+        body: JSON.stringify({ url, kbName, embeddingModel: this.getEmbeddingModel() })
       });
 
       if (!res.ok) {
