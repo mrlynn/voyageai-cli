@@ -13,10 +13,10 @@
     "build:win": "electron-builder --win --publish=always",
     "build:linux": "electron-builder --linux --publish=always",
     "build": "electron-builder --publish=always",
-    "package:mac": "electron-builder --mac",
-    "package:win": "electron-builder --win",
-    "package:linux": "electron-builder --linux",
-    "package": "electron-builder"
+    "package:mac": "electron-builder --mac --publish=never",
+    "package:win": "electron-builder --win --publish=never",
+    "package:linux": "electron-builder --linux --publish=never",
+    "package": "electron-builder --publish=never"
   },
   "build": {
     "appId": "com.voyageai.playground",
@@ -81,6 +81,12 @@
     },
     "mac": {
       "category": "public.app-category.developer-tools",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist",
+      "identity": "Michael Lynn (YZ36Z8GSEN)",
+      "notarize": false,
       "target": [
         "dmg",
         "zip"
@@ -103,6 +109,7 @@
     "dmg": {
       "title": "Vai Playground",
       "icon": "icons/dark/icon.icns",
+      "sign": false,
       "contents": [
         {
           "x": 130,
@@ -118,8 +125,9 @@
     }
   },
   "devDependencies": {
+    "@electron/notarize": "^3.1.1",
     "electron": "^33.0.0",
-    "electron-builder": "^25.0.0"
+    "electron-builder": "^24.13.3"
   },
   "dependencies": {
     "@vaicli/vai-workflow-asymmetric-search": "^1.0.0",

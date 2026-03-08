@@ -4,7 +4,7 @@
   "collection": "kb_coral-vault-3660_docs",
   "chat": {
     "provider": "ollama",
-    "model": "qwen3.5:latest",
+    "model": "qwen3.5:35b",
     "maxContextDocs": 5,
     "rerank": false,
     "systemPrompt": "you're an expert on voyage ai, and vai and you answer questions about the vai cli package",
