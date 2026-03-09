@@ -1,0 +1,90 @@
+---
+title: Chat Sessions
+description: Start, resume, and manage persistent chat sessions with vai chat.
+sidebar_position: 1
+---
+
+# Chat Sessions
+
+Sessions give `vai chat` a memory that persists across invocations. Every conversation is assigned a unique session ID and stored in MongoDB so you can pick up exactly where you left off.
+
+## Starting a Session
+
+A session is created automatically the first time you run `vai chat` with a MongoDB connection available:
+
+```bash
+vai chat --db mydb --collection docs
+```
+
+The session ID is displayed in the startup banner. You only need the first eight characters to reference it later.
+
+## Resuming a Session
+
+Pass a session ID (or its first eight characters) to `--session` to resume:
+
+```bash
+vai chat --session abc12345
+```
+
+VAI reloads the conversation history and displays the turn count so you know where you left off. All previous context -- retrieved documents, summaries, and turns -- is available immediately.
+
+## Listing Sessions
+
+View your recent sessions without entering the chat:
+
+```bash
+vai chat --list
+```
+
+Each row shows the session ID prefix, lifecycle status, turn count, and last-updated date.
+
+By default, archived sessions are hidden. Include them with `--all`:
+
+```bash
+vai chat --list --all
+```
+
+You can also list sessions from inside the chat with the `/history` slash command.
+
+## Session Lifecycle
+
+Every session moves through a series of states:
+
+| State | Meaning |
+|-------|---------|
+| `initializing` | Session document created, waiting for first turn |
+| `active` | Conversation in progress |
+| `paused` | User exited; session can be resumed |
+| `archived` | Session is closed and eligible for cross-session recall |
+
+State transitions follow strict rules:
+
+- `initializing` can only move to `active`
+- `active` can move to `paused` or `archived`
+- `paused` can move back to `active` (resume) or to `archived`
+
+When you exit a chat, the session transitions to `paused`. Archived sessions are read-only but their summaries can be surfaced by the [hierarchical memory strategy](/docs/guides/memory-strategies).
+
+## MongoDB Fallback
+
+If MongoDB is unavailable at startup, VAI falls back to in-memory storage. The session works normally during the current invocation but **nothing is persisted**. You will see a warning in the startup banner.
+
+You can also force in-memory mode with `--no-history`:
+
+```bash
+vai chat --no-history
+```
+
+This is useful for one-off queries where persistence is unnecessary.
+
+## Tips
+
+- **Short IDs work.** You only need the first eight characters of a session ID when using `--session`.
+- **Combine with memory strategies.** Pair `--session` with `--memory-strategy summarization` for long-running research sessions, or `--memory-strategy hierarchical` to pull in context from past sessions automatically.
+- **TTL.** Turn documents expire after 90 days by default via a MongoDB TTL index.
+
+## See Also
+
+- [Memory Strategies](/docs/guides/memory-strategies) -- control how conversation history fits into the LLM context window
+- [Cross-Session Recall](/docs/guides/cross-session-recall) -- surface past conversation context in new sessions
+- [`vai chat` Command Reference](/docs/commands/chat) -- full flag and option listing

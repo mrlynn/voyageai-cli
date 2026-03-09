@@ -1,0 +1,76 @@
+---
+title: Cross-Session Recall
+description: Surface relevant context from past conversations using asymmetric Voyage AI embeddings.
+sidebar_position: 3
+---
+
+# Cross-Session Recall
+
+Cross-session recall lets VAI pull relevant context from your previous conversations into a new chat session. If you discussed database indexing strategies last week and start a new session about query performance today, the earlier context surfaces automatically.
+
+## How It Works
+
+The recall pipeline has three stages:
+
+1. **Summarize** -- When a session is archived, its conversation turns are summarized into a concise paragraph capturing key facts, decisions, and context.
+2. **Embed** -- The summary is embedded using Voyage AI and stored alongside the session in MongoDB (`vai_session_summaries` collection).
+3. **Retrieve** -- When a new session uses the hierarchical memory strategy, the current user query is embedded and compared against stored summaries via vector search. The most relevant past session summaries are injected into the prompt as context.
+
+## Asymmetric Embedding
+
+Recall uses **asymmetric embedding** -- different models for indexing and querying:
+
+| Role | Model | Why |
+|------|-------|-----|
+| Indexing (summaries) | `voyage-4-large` | Higher accuracy for stored representations |
+| Querying (live searches) | `voyage-4-lite` | Faster and cheaper for real-time lookups |
+
+Both models produce vectors in the **same embedding space**, so a query embedded with `voyage-4-lite` can accurately match documents embedded with `voyage-4-large`. This gives you the best of both worlds: high-quality stored embeddings with low-latency retrieval.
+
+## When It Activates
+
+Cross-session recall activates **automatically** when you use the hierarchical memory strategy:
+
+```bash
+vai chat --memory-strategy hierarchical
+```
+
+No additional configuration is required. If recall data is unavailable (no archived sessions, MongoDB down, or no matching summaries), the hierarchical strategy degrades gracefully and proceeds without past context.
+
+## Practical Example
+
+Imagine this workflow:
+
+**Session 1** -- You discuss MongoDB aggregation pipelines with your embedded documentation. The session covers `$lookup`, `$unwind`, and performance considerations. You exit the chat; the session is archived and its summary is embedded.
+
+**Session 2** -- A week later, you start a new chat about slow query performance. With `--memory-strategy hierarchical`, VAI embeds your first question, finds Session 1's summary about aggregation pipelines is relevant, and injects it as context.
+
+The LLM now has background on your aggregation pipeline work even though it is a brand-new session. It can reference the `$lookup` patterns you discussed previously without you re-explaining them.
+
+## Budget Allocation
+
+The hierarchical strategy allocates its token budget across three layers:
+
+| Layer | Budget share | Source |
+|-------|-------------|--------|
+| Cross-session recall | 20% | Past session summaries via vector search |
+| Summarized older turns | 20% | LLM-compressed history from current session |
+| Recent verbatim turns | 60% | Most recent turns, kept word-for-word |
+
+If recall returns no results, its budget share is reclaimed by the other layers.
+
+## Requirements
+
+Cross-session recall requires:
+
+- **MongoDB** -- Sessions and summaries must be persisted (not running with `--no-history`)
+- **Hierarchical memory strategy** -- Set via `--memory-strategy hierarchical`
+- **At least one archived session** -- Recall searches over summaries from previously archived sessions
+
+If any requirement is not met, the hierarchical strategy still works -- it just omits the cross-session context layer.
+
+## See Also
+
+- [Memory Strategies](/docs/guides/memory-strategies) -- compare sliding window, summarization, and hierarchical approaches
+- [Chat Sessions](/docs/guides/chat-sessions) -- session lifecycle and archiving
+- [`vai chat` Command Reference](/docs/commands/chat) -- all flags and options

@@ -21,6 +21,10 @@ VaiSite-Marketing-Assessment.md
 !/docs/demos/
 !/docs/demos/**
 !/docs/linkedin-posts.md
+!/docs/guides/
+!/docs/guides/**
+!/docs/commands/
+!/docs/commands/**
 .env.local.planning/
 AGENTS.md
 BOOTSTRAP.md

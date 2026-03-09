@@ -1,0 +1,132 @@
+---
+title: Memory Strategies
+description: Choose between sliding window, summarization, and hierarchical memory to manage conversation context.
+sidebar_position: 2
+---
+
+# Memory Strategies
+
+LLM context windows are finite. As a conversation grows, older turns must be managed so the model always receives the most relevant context without exceeding its token limit. VAI ships with three memory strategies that control how conversation history is selected and compressed.
+
+## Token Budget
+
+Before selecting history, VAI computes a **token budget** -- the number of tokens available for conversation turns after reserving space for:
+
+| Slot | Description |
+|------|-------------|
+| System prompt | Instructions sent to the LLM |
+| Context documents | Retrieved documents from vector search |
+| Current message | The user's latest input |
+| Response reserve | Tokens reserved for the model's reply (default 4,096) |
+
+The remaining tokens form the **history budget**. The memory strategy decides which turns fill that budget.
+
+Use the `/memory` slash command during a chat to see the live budget breakdown and current utilization.
+
+## Sliding Window (Default)
+
+```bash
+vai chat --memory-strategy sliding_window
+```
+
+The simplest strategy. Scans backwards from the most recent turn and includes as many turns as fit within the history budget. Older turns are dropped entirely.
+
+**How it works:** Walk backwards through turns, accumulating token costs. Stop when the next turn would exceed the budget. Return the selected turns in chronological order.
+
+**Best for:** Short conversations (under ~20 turns) where recent context is most important.
+
+| Trait | Value |
+|-------|-------|
+| Speed | Fastest -- no LLM calls |
+| Cost | Zero additional cost |
+| Context preservation | Recent turns only |
+| Cross-session | No |
+
+## Summarization
+
+```bash
+vai chat --memory-strategy summarization
+```
+
+When conversation history exceeds 80% of the token budget, older turns are compressed into an LLM-generated summary. Recent turns are kept verbatim.
+
+**How it works:** Split turns into two segments -- 60% of the budget for recent verbatim turns, the remainder for older turns. Send older turns to the LLM with a summarization prompt. The summary replaces the original turns as a single system message.
+
+**Falls back to sliding window** when the LLM is unavailable, when utilization is below the 80% threshold, or when summarization fails.
+
+**Best for:** Long conversations where early context (decisions, facts, requirements) matters but exact wording does not.
+
+| Trait | Value |
+|-------|-------|
+| Speed | Slower -- one extra LLM call per summarization |
+| Cost | Additional LLM tokens for summary generation |
+| Context preservation | Recent turns verbatim + compressed older context |
+| Cross-session | No |
+
+## Hierarchical
+
+```bash
+vai chat --memory-strategy hierarchical
+```
+
+The most capable strategy. Layers three sources of context:
+
+1. **Cross-session recall** (20% of budget) -- relevant summaries from past sessions, retrieved via vector search
+2. **Summarized older turns** (20% of budget) -- LLM-compressed history from earlier in the current session
+3. **Recent verbatim turns** (60% of budget) -- the most recent turns, kept word-for-word
+
+**Degrades gracefully:**
+- No recall store available: skips cross-session context
+- No LLM available: falls back entirely to sliding window
+- Summarization fails: proceeds with recent turns and recall only
+
+**Best for:** Multi-session workflows where you return to the same topic across multiple chat sessions. Past context surfaces automatically.
+
+| Trait | Value |
+|-------|-------|
+| Speed | Slowest -- recall query + summarization call |
+| Cost | Embedding query + LLM summarization tokens |
+| Context preservation | Recent + summarized + cross-session |
+| Cross-session | Yes |
+
+See [Cross-Session Recall](/docs/guides/cross-session-recall) for details on how past sessions are indexed and retrieved.
+
+## Decision Matrix
+
+| | Sliding Window | Summarization | Hierarchical |
+|---|---|---|---|
+| **Speed** | Fastest | Moderate | Slowest |
+| **Additional cost** | None | LLM summarization | Embedding + LLM |
+| **Early context preserved** | No | Yes (compressed) | Yes (compressed) |
+| **Cross-session context** | No | No | Yes |
+| **Best turn count** | < 20 | 20 - 100+ | Any (multi-session) |
+| **Requires LLM** | No | Yes (for summarization) | Yes (for full features) |
+| **Requires MongoDB** | No | No | Yes (for recall storage) |
+
+## Selecting a Strategy
+
+Set the strategy at startup:
+
+```bash
+vai chat --memory-strategy hierarchical
+```
+
+Or check and monitor the active strategy during a chat session:
+
+```
+> /memory
+Strategy: hierarchical
+Budget: 128,000 tokens (model limit)
+  System prompt:    1,200 tokens
+  Context docs:     8,400 tokens
+  Response reserve: 4,096 tokens
+  History budget:   114,304 tokens (62% utilized)
+```
+
+The default strategy is `sliding_window`. You can change it for any session without affecting stored data -- strategies only control how history is *selected*, not how it is *stored*.
+
+## See Also
+
+- [Cross-Session Recall](/docs/guides/cross-session-recall) -- how past session context is indexed and retrieved
+- [Chat Sessions](/docs/guides/chat-sessions) -- session lifecycle and persistence
+- [`vai chat` Command Reference](/docs/commands/chat) -- all flags and options
