@@ -25,7 +25,7 @@ See: .planning/PROJECT.md (updated 2026-03-09)
 Phase: 23 of 25 (Observability Integration)
 Plan: 02 of 03 complete
 Status: In Progress
-Last activity: 2026-03-09 -- Completed 23-02 Session Replay
+Last activity: 2026-03-09 -- Completed 23-01 CLI Observability (spinners, /memory, diagnostics, explain harness)
 
 Progress: [████████████████████] ~80%
 
@@ -50,6 +50,7 @@ Progress: [████████████████████] ~80%
 | 22-02 P02 | 3min | 2 | 6 |
 | Phase 24-01 P01 | 6min | 2 tasks | 4 files |
 | Phase 24-02 P02 | 2min | 2 tasks | 2 files |
+| Phase 23-01 P01 | 6min | 2 tasks | 3 files |
 | Phase 23-02 P02 | 2min | 2 tasks | 2 files |
 
 ## Accumulated Context
@@ -86,6 +87,9 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [23-02] Replay uses existing SessionStore getSession/getTurns -- no new data layer needed
 - [23-02] Turn content adapts to both request/response shape and legacy role/content shape
 - [23-02] Quiet mode suppresses header/footer but still shows turns
+- [23-01] State-driven spinners replace static spinner text with LABELS-mapped labels from stateChange events
+- [23-01] removeAllListeners('stateChange') called in finally blocks to prevent listener accumulation
+- [23-01] diagnostics object added alongside existing JSON fields rather than nested inside metadata
 
 ### Pending Todos
 
@@ -98,5 +102,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-09
-Stopped at: Completed 23-02-PLAN.md (Session Replay)
+Stopped at: Completed 23-01-PLAN.md (CLI Observability)
 Resume file: None

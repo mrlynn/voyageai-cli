@@ -37,11 +37,11 @@ Requirements for milestone v1.5. Each maps to roadmap phases.
 
 ### Observability
 
-- [ ] **OBS-01**: CLI displays state labels during turn execution (replaces simple spinner)
-- [ ] **OBS-02**: `/memory` slash command shows strategy, budget, utilization, turns in window, compression stats
+- [x] **OBS-01**: CLI displays state labels during turn execution (replaces simple spinner)
+- [x] **OBS-02**: `/memory` slash command shows strategy, budget, utilization, turns in window, compression stats
 - [ ] **OBS-03**: Web playground shows turn state indicator and memory usage bar
-- [ ] **OBS-04**: `vai explain harness` topic (#19) covers state machine, memory, and harness architecture
-- [ ] **OBS-05**: `--json` output enriched with per-turn harness diagnostics
+- [x] **OBS-04**: `vai explain harness` topic (#19) covers state machine, memory, and harness architecture
+- [x] **OBS-05**: `--json` output enriched with per-turn harness diagnostics
 - [x] **OBS-06**: `vai chat --replay <session-id>` replays stored turns for debugging
 - [ ] **OBS-07**: Memory strategy selector in web playground settings panel
 
@@ -94,11 +94,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SES-04 | Phase 21 | Complete |
 | SES-05 | Phase 21 | Complete |
 | SES-06 | Phase 21 | Complete |
-| OBS-01 | Phase 23 | Pending |
-| OBS-02 | Phase 23 | Pending |
+| OBS-01 | Phase 23 | Complete |
+| OBS-02 | Phase 23 | Complete |
 | OBS-03 | Phase 23 | Pending |
-| OBS-04 | Phase 23 | Pending |
-| OBS-05 | Phase 23 | Pending |
+| OBS-04 | Phase 23 | Complete |
+| OBS-05 | Phase 23 | Complete |
 | OBS-06 | Phase 23 | Complete |
 | OBS-07 | Phase 23 | Pending |
 

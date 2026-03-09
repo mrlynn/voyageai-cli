@@ -193,5 +193,5 @@ Phases execute in numeric order: 20 → 21 → 22 → 23 → 24
 | 20. Turn State Machine | v1.5 | 2/2 | Complete | 2026-03-09 |
 | 21. Session Persistence | v1.5 | 2/2 | Complete | 2026-03-09 |
 | 22. Memory Management | v1.5 | 2/2 | Complete | 2026-03-09 |
-| 23. Observability & Integration | 1/3 | In Progress|  | - |
+| 23. Observability & Integration | 2/3 | In Progress|  | - |
 | 24. Wire Memory into Chat Pipeline | 2/2 | Complete    | 2026-03-09 | - |
