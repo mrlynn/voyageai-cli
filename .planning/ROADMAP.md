@@ -175,12 +175,15 @@ Plans:
   2. User-selected `memoryStrategy` from the playground settings panel controls which strategy is active (sliding_window, summarization, or hierarchical)
   3. `/api/chat/memory` endpoint reports the actual active strategy instead of hardcoded `'sliding_window'`
   4. E2E flow "Playground Strategy Selection" passes — selecting a strategy in the UI changes backend behavior
-**Plans**: TBD
+**Plans**: 1 plan
+
+Plans:
+- [ ] 25-01-PLAN.md — Wire createFullMemoryManager into playground chat handler, fix /api/chat/memory, add E2E test
 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 20 → 21 → 22 → 23 → 24
+Phases execute in numeric order: 20 → 21 → 22 → 23 → 24 → 25
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -206,6 +209,6 @@ Phases execute in numeric order: 20 → 21 → 22 → 23 → 24
 | 20. Turn State Machine | v1.5 | 2/2 | Complete | 2026-03-09 |
 | 21. Session Persistence | v1.5 | 2/2 | Complete | 2026-03-09 |
 | 22. Memory Management | v1.5 | 2/2 | Complete | 2026-03-09 |
-| 23. Observability & Integration | 3/3 | Complete    | 2026-03-09 | - |
-| 24. Wire Memory into Chat Pipeline | 2/2 | Complete    | 2026-03-09 | - |
-| 25. Wire MemoryManager into Playground | v1.5 | 0/0 | Pending | - |
+| 23. Observability & Integration | v1.5 | 3/3 | Complete | 2026-03-09 |
+| 24. Wire Memory into Chat Pipeline | v1.5 | 2/2 | Complete | 2026-03-09 |
+| 25. Wire MemoryManager into Playground | v1.5 | 0/1 | Pending | - |

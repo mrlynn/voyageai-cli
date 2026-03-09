@@ -218,6 +218,9 @@ function createPlaygroundServer() {
   // Chat history — scoped to the server lifetime (in-memory, no persistence)
   let _chatHistory = null;
 
+  // MemoryManager — tracks the active strategy for /api/chat/memory reporting
+  let _playgroundMemoryManager = null;
+
   // Workflow store catalog cache (15 min TTL)
   let _catalogCache = null;
   let _catalogCacheTime = 0;
@@ -735,7 +738,7 @@ function createPlaygroundServer() {
 
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({
-          strategy: 'sliding_window',
+          strategy: _playgroundMemoryManager ? _playgroundMemoryManager._defaultStrategy : 'sliding_window',
           availableStrategies: ['sliding_window', 'summarization', 'hierarchical'],
           budget: {
             modelLimit: breakdown.modelLimit || 128000,
@@ -1712,6 +1715,13 @@ function createPlaygroundServer() {
           // Create orchestrator for state tracking
           const orchestrator = new TurnOrchestrator({ sessionId: 'playground', mode: isAgent ? 'agent' : 'pipeline' });
 
+          // Create MemoryManager with user-selected strategy
+          const { createFullMemoryManager } = require('../lib/memory-strategy');
+          _playgroundMemoryManager = createFullMemoryManager({
+            defaultStrategy: memoryStrategy || 'sliding_window',
+          });
+          _playgroundMemoryManager.setOpts({ llm, query });
+
           // Stream state changes as SSE events
           orchestrator.on('stateChange', ({ from, to }) => {
             if (!res.writableEnded) {
@@ -1731,6 +1741,7 @@ function createPlaygroundServer() {
                   systemPrompt,
                   textField: textField || 'content',
                   ...embedOpts,
+                  memoryManager: _playgroundMemoryManager,
                   memoryStrategy: memoryStrategy || undefined,
                 },
               }),
@@ -1752,7 +1763,7 @@ function createPlaygroundServer() {
                 for await (const event of orchestrator.executeAgentTurn({
                   generatorFn: () => agentChatTurn({
                     query, llm, history,
-                    opts: { systemPrompt, db: db || undefined, collection: collection || undefined },
+                    opts: { systemPrompt, db: db || undefined, collection: collection || undefined, memoryManager: _playgroundMemoryManager, memoryStrategy: memoryStrategy || undefined },
                   }),
                 })) {
                   if (event.type === 'tool_call') {
