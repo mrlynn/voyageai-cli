@@ -18,6 +18,7 @@ const fs = require('fs');
 
 const { moments } = require('../lib/robot-moments');
 const { ChatSessionStats } = require('../lib/chat-session-stats');
+const { LABELS } = require('../lib/turn-state');
 
 /**
  * Register the chat command.
@@ -455,7 +456,7 @@ async function runChat(opts) {
     if (input.startsWith('/')) {
       const handled = await handleSlashCommand(input, {
         history, opts, db, collection, llm, rl, historyMongo,
-        isAgent, lastToolCalls, sessionStore, sessionId,
+        isAgent, lastToolCalls, sessionStore, sessionId, memoryManager,
       });
       if (handled === 'quit') {
         await cleanup(historyMongo, sessionStore, summaryStoreInstance);
@@ -557,6 +558,12 @@ async function handlePipelineTurn(input, ctx) {
     let sources = [];
     let metadata = {};
 
+    // Track state transitions for --json diagnostics
+    const stateLog = [];
+    orchestrator.on('stateChange', ({ from, to, timestamp }) => {
+      stateLog.push({ from, to, timestamp });
+    });
+
     for await (const event of orchestrator.executePipelineTurn({
       generatorFn: (args) => chatTurn({ query: input, db, collection, llm, history, opts: { maxDocs, rerank: doRerank, stream: false, systemPrompt, textField, filter: opts.filter, ...localOpts, memoryManager, memoryStrategy } }),
     })) {
@@ -570,7 +577,15 @@ async function handlePipelineTurn(input, ctx) {
       }
     }
 
+    // Clean up listener to prevent leaks
+    orchestrator.getStateMachine().removeAllListeners('stateChange');
+
     sessionStats.recordTurn({ tokens: metadata.tokens });
+    const diagnostics = {
+      stateTransitions: stateLog,
+      memoryStrategy: memoryManager ? memoryManager._defaultStrategy : 'sliding_window',
+      turnIndex: orchestrator.turnIndex,
+    };
     console.log(JSON.stringify({
       sessionId: history.sessionId,
       turn: turnNum,
@@ -578,6 +593,7 @@ async function handlePipelineTurn(input, ctx) {
       response: fullResponse,
       sources,
       metadata,
+      diagnostics,
       latency: {
         retrievalMs: metadata.retrievalTimeMs || null,
         generationMs: metadata.generationTimeMs || null,
@@ -589,12 +605,21 @@ async function handlePipelineTurn(input, ctx) {
     // Interactive mode — stream output with markdown rendering
     const showAnimations = moments.isInteractive({ json: opts.json, plain: opts.quiet });
     let retrievalShown = false;
-    let retrievalSpinner = null;
-    let generationSpinner = null;
+    let activeSpinner = null;
     let streamRenderer = null;
 
+    // State-driven spinners: subscribe to state changes from the orchestrator
     if (showAnimations) {
-      retrievalSpinner = moments.startSearching('Searching knowledge base');
+      orchestrator.on('stateChange', ({ to }) => {
+        const label = LABELS[to];
+        if (!label || to === 'IDLE' || to === 'STREAMING') return;
+        if (activeSpinner) { activeSpinner.stop(); activeSpinner = null; }
+        if (to === 'EMBEDDING' || to === 'RETRIEVING' || to === 'RERANKING') {
+          activeSpinner = moments.startSearching(label);
+        } else if (to === 'GENERATING' || to === 'BUILDING_PROMPT' || to === 'VALIDATING' || to === 'PERSISTING' || to === 'TOOL_CALLING') {
+          activeSpinner = moments.startThinking(label);
+        }
+      });
     }
 
     try {
@@ -602,7 +627,7 @@ async function handlePipelineTurn(input, ctx) {
         generatorFn: (args) => chatTurn({ query: input, db, collection, llm, history, opts: { maxDocs, rerank: doRerank, stream: doStream, systemPrompt, textField, filter: opts.filter, ...localOpts, memoryManager, memoryStrategy } }),
       })) {
         if (event.type === 'interrupted') {
-          if (generationSpinner) { generationSpinner.stop(); generationSpinner = null; }
+          if (activeSpinner) { activeSpinner.stop(); activeSpinner = null; }
           if (streamRenderer) { streamRenderer.flush(); streamRenderer = null; }
           if (event.data.partialResponse) {
             console.log(pc.dim(' [interrupted]'));
@@ -612,8 +637,7 @@ async function handlePipelineTurn(input, ctx) {
         }
 
         if (event.type === 'error') {
-          if (generationSpinner) { generationSpinner.stop(); generationSpinner = null; }
-          if (retrievalSpinner) { retrievalSpinner.stop(); retrievalSpinner = null; }
+          if (activeSpinner) { activeSpinner.stop(); activeSpinner = null; }
           if (showAnimations) {
             moments.error(event.data.message);
           } else {
@@ -632,29 +656,18 @@ async function handlePipelineTurn(input, ctx) {
         }
 
         if (event.type === 'retrieval') {
-          if (retrievalSpinner) {
-            retrievalSpinner.stop();
-            retrievalSpinner = null;
-          }
-
           if (!opts.quiet && !retrievalShown) {
+            if (activeSpinner) { activeSpinner.stop(); activeSpinner = null; }
             const { docs, timeMs } = event.data;
             const rerankNote = isLocal ? ', reranking skipped' : '';
             console.log(pc.dim(`  [${docs.length} docs retrieved in ${timeMs}ms${rerankNote}]`));
             console.log('');
             retrievalShown = true;
           }
-
-          if (showAnimations) {
-            generationSpinner = moments.startThinking('Generating response');
-          }
         }
 
         if (event.type === 'chunk') {
-          if (generationSpinner) {
-            generationSpinner.stop();
-            generationSpinner = null;
-          }
+          if (activeSpinner) { activeSpinner.stop(); activeSpinner = null; }
           // Initialize streaming markdown renderer on first chunk
           if (!streamRenderer) {
             if (showAnimations) {
@@ -707,9 +720,9 @@ async function handlePipelineTurn(input, ctx) {
         }
       }
     } finally {
-      if (retrievalSpinner) retrievalSpinner.stop();
-      if (generationSpinner) generationSpinner.stop();
+      if (activeSpinner) activeSpinner.stop();
       if (streamRenderer) streamRenderer.flush();
+      orchestrator.getStateMachine().removeAllListeners('stateChange');
     }
   }
 }
@@ -734,6 +747,12 @@ async function handleAgentTurn(input, ctx) {
     let fullResponse = '';
     let metadata = {};
 
+    // Track state transitions for --json diagnostics
+    const stateLog = [];
+    orchestrator.on('stateChange', ({ from, to, timestamp }) => {
+      stateLog.push({ from, to, timestamp });
+    });
+
     for await (const event of orchestrator.executeAgentTurn({
       generatorFn: (args) => agentChatTurn({ query: input, llm, history, opts: { systemPrompt, db, collection, memoryManager, memoryStrategy } }),
     })) {
@@ -749,13 +768,22 @@ async function handleAgentTurn(input, ctx) {
       }
     }
 
+    // Clean up listener to prevent leaks
+    orchestrator.getStateMachine().removeAllListeners('stateChange');
+
     sessionStats.recordTurn({ tokens: metadata.tokens });
+    const diagnostics = {
+      stateTransitions: stateLog,
+      memoryStrategy: memoryManager ? memoryManager._defaultStrategy : 'sliding_window',
+      turnIndex: orchestrator.turnIndex,
+    };
     console.log(JSON.stringify({
       sessionId: history.sessionId,
       query: input,
       response: fullResponse,
       toolCalls,
       metadata,
+      diagnostics,
       latency: {
         retrievalMs: metadata.retrievalTimeMs || null,
         generationMs: metadata.generationTimeMs || null,
@@ -766,12 +794,22 @@ async function handleAgentTurn(input, ctx) {
   } else {
     // Interactive mode with markdown rendering
     const showAnimations = moments.isInteractive({ json: opts.json, plain: opts.quiet });
-    let thinkingSpinner = null;
+    let activeSpinner = null;
     let hasShownToolCalls = false;
     let streamRenderer = null;
 
+    // State-driven spinners: subscribe to state changes from the orchestrator
     if (showAnimations) {
-      thinkingSpinner = moments.startThinking('Thinking');
+      orchestrator.on('stateChange', ({ to }) => {
+        const label = LABELS[to];
+        if (!label || to === 'IDLE' || to === 'STREAMING') return;
+        if (activeSpinner) { activeSpinner.stop(); activeSpinner = null; }
+        if (to === 'EMBEDDING' || to === 'RETRIEVING' || to === 'RERANKING') {
+          activeSpinner = moments.startSearching(label);
+        } else if (to === 'GENERATING' || to === 'BUILDING_PROMPT' || to === 'VALIDATING' || to === 'PERSISTING' || to === 'TOOL_CALLING') {
+          activeSpinner = moments.startThinking(label);
+        }
+      });
     }
 
     try {
@@ -779,7 +817,7 @@ async function handleAgentTurn(input, ctx) {
         generatorFn: (args) => agentChatTurn({ query: input, llm, history, opts: { systemPrompt, db, collection, memoryManager, memoryStrategy } }),
       })) {
         if (event.type === 'interrupted') {
-          if (thinkingSpinner) { thinkingSpinner.stop(); thinkingSpinner = null; }
+          if (activeSpinner) { activeSpinner.stop(); activeSpinner = null; }
           if (streamRenderer) { streamRenderer.flush(); streamRenderer = null; }
           if (event.data.partialResponse) {
             console.log(pc.dim(' [interrupted]'));
@@ -789,7 +827,7 @@ async function handleAgentTurn(input, ctx) {
         }
 
         if (event.type === 'error') {
-          if (thinkingSpinner) { thinkingSpinner.stop(); thinkingSpinner = null; }
+          if (activeSpinner) { activeSpinner.stop(); activeSpinner = null; }
           if (showAnimations) {
             moments.error(event.data.message);
           } else {
@@ -808,10 +846,7 @@ async function handleAgentTurn(input, ctx) {
         }
 
         if (event.type === 'tool_call') {
-          if (thinkingSpinner) {
-            thinkingSpinner.stop();
-            thinkingSpinner = null;
-          }
+          if (activeSpinner) { activeSpinner.stop(); activeSpinner = null; }
 
           toolCalls.push(event.data);
           hasShownToolCalls = true;
@@ -819,18 +854,10 @@ async function handleAgentTurn(input, ctx) {
           if (showToolCalls) {
             console.log(chatUI.renderToolCall(event.data, showToolCalls));
           }
-
-          // Start animation for next LLM call (analyzing tool results)
-          if (showAnimations) {
-            thinkingSpinner = moments.startThinking('Analyzing results');
-          }
         }
 
         if (event.type === 'chunk') {
-          if (thinkingSpinner) {
-            thinkingSpinner.stop();
-            thinkingSpinner = null;
-          }
+          if (activeSpinner) { activeSpinner.stop(); activeSpinner = null; }
           if (hasShownToolCalls && !opts.quiet) {
             console.log(''); // Visual separator after tool calls
             hasShownToolCalls = false;
@@ -874,8 +901,9 @@ async function handleAgentTurn(input, ctx) {
         }
       }
     } finally {
-      if (thinkingSpinner) thinkingSpinner.stop();
+      if (activeSpinner) activeSpinner.stop();
       if (streamRenderer) streamRenderer.flush();
+      orchestrator.getStateMachine().removeAllListeners('stateChange');
     }
   }
 
@@ -887,7 +915,7 @@ async function handleAgentTurn(input, ctx) {
  * @returns {'quit'|true|false} - 'quit' to exit, true if handled, false if unknown
  */
 async function handleSlashCommand(input, ctx) {
-  const { history, opts, db, collection, llm, rl, isAgent, lastToolCalls, sessionStore, sessionId } = ctx;
+  const { history, opts, db, collection, llm, rl, isAgent, lastToolCalls, sessionStore, sessionId, memoryManager } = ctx;
   const parts = input.split(/\s+/);
   const cmd = parts[0].toLowerCase();
 
@@ -907,6 +935,7 @@ async function handleSlashCommand(input, ctx) {
       console.log('  /clear      Clear conversation history');
       console.log('  /model      Show or switch LLM model (/model <name>)');
       console.log('  /sessions   List recent sessions');
+      console.log('  /memory     Show memory strategy and utilization');
       console.log('  /archive    Archive current session');
       console.log('  /export [format] [file]  Export conversation (markdown, json, pdf)');
       if (isAgent) {
@@ -1204,6 +1233,59 @@ async function handleSlashCommand(input, ctx) {
       } catch (err) {
         console.log(pc.dim(`  Error listing sessions: ${err.message}`));
       }
+      return true;
+    }
+
+    case '/memory': {
+      // Active strategy
+      const strategyName = memoryManager ? memoryManager._defaultStrategy : 'sliding_window';
+      const availableStrategies = memoryManager ? memoryManager.getStrategyNames() : ['sliding_window'];
+
+      console.log('');
+      console.log(pc.bold('  Memory Status'));
+      console.log('');
+      console.log(`  Strategy:     ${pc.cyan(strategyName)}`);
+      console.log(`  Available:    ${availableStrategies.join(', ')}`);
+
+      // Token budget breakdown
+      const { MemoryBudget } = require('../lib/memory-budget');
+      const budget = new MemoryBudget();
+      const historyBudget = budget.estimateSlotTokens({
+        systemPrompt: opts.systemPrompt || '',
+        contextDocs: [],
+        currentMessage: '',
+      });
+      const breakdown = budget.getBreakdown();
+
+      if (breakdown) {
+        console.log('');
+        console.log(pc.bold('  Token Budget'));
+        console.log(`  Model limit:  ${breakdown.modelLimit.toLocaleString()}`);
+        console.log(`  Reserved:     ${breakdown.reservedResponse.toLocaleString()} (response)`);
+        console.log(`  System:       ${breakdown.systemPrompt.toLocaleString()}`);
+        console.log(`  History:      ${pc.cyan(breakdown.historyBudget.toLocaleString())} available`);
+      }
+
+      // Current utilization
+      const allTurns = history.getMessages();
+      const turnCount = Math.floor(allTurns.length / 2);
+      const { estimateTokens } = require('../lib/turn-state');
+      const usedTokens = allTurns.reduce((sum, t) => sum + estimateTokens(t.content || ''), 0);
+      const utilization = historyBudget > 0 ? Math.min(100, Math.round((usedTokens / historyBudget) * 100)) : 0;
+
+      console.log('');
+      console.log(pc.bold('  Utilization'));
+      console.log(`  Turns:        ${turnCount}`);
+      console.log(`  Tokens used:  ${usedTokens.toLocaleString()} / ${historyBudget.toLocaleString()}`);
+      console.log(`  Utilization:  ${utilization}%`);
+
+      // Visual bar
+      const barWidth = 30;
+      const filled = Math.round((utilization / 100) * barWidth);
+      const bar = pc.green('\u2588'.repeat(filled)) + pc.dim('\u2591'.repeat(barWidth - filled));
+      console.log(`  [${bar}]`);
+
+      console.log('');
       return true;
     }
 
