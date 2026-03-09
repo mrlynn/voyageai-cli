@@ -2,7 +2,7 @@
 
 const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
-const { SlidingWindowStrategy, MemoryManager } = require('../../src/lib/memory-strategy.js');
+const { SlidingWindowStrategy, MemoryManager, HierarchicalStrategy, createFullMemoryManager } = require('../../src/lib/memory-strategy.js');
 
 // Helper: create turns with predictable token counts
 // estimateTokens uses ceil(text.length / 4), so 'xxxx' = 1 token
@@ -118,5 +118,102 @@ describe('MemoryManager', () => {
       strategy: 'custom',
     });
     assert.equal(result.length, 1);
+  });
+});
+
+// Helper for HierarchicalStrategy tests
+function mockLlm(response = 'Summary of conversation') {
+  return {
+    chat: async function* (_msgs) {
+      yield response;
+    },
+  };
+}
+
+function mockRecall(results = []) {
+  return {
+    recall: async (_query, _currentSessionId) => results,
+  };
+}
+
+describe('HierarchicalStrategy', () => {
+  it('select with all components returns [recall_context, summary, ...recent]', async () => {
+    const turns = [];
+    for (let i = 0; i < 10; i++) {
+      turns.push(makeTurn(i % 2 === 0 ? 'user' : 'assistant', 40)); // 10 tokens each
+    }
+    const recallResults = [
+      { sessionId: 's1', summary: 'Past discussion about vectors', score: 0.9 },
+    ];
+    const result = await HierarchicalStrategy.select({
+      turns,
+      budgetTokens: 100,
+      llm: mockLlm('Old turns summary'),
+      recall: mockRecall(recallResults),
+      currentSessionId: 'current',
+      query: 'How do vectors work?',
+    });
+    assert.ok(result.length >= 2);
+    // First should be cross-session context
+    assert.equal(result[0].role, 'system');
+    assert.ok(result[0].content.includes('Past Session Context'));
+  });
+
+  it('select without recall skips cross-session context', async () => {
+    const turns = [];
+    for (let i = 0; i < 10; i++) {
+      turns.push(makeTurn(i % 2 === 0 ? 'user' : 'assistant', 40));
+    }
+    const result = await HierarchicalStrategy.select({
+      turns,
+      budgetTokens: 100,
+      llm: mockLlm('Summary'),
+      recall: null,
+      currentSessionId: 'current',
+      query: 'test',
+    });
+    // No cross-session context message
+    const hasContext = result.some((m) => m.content.includes('Past Session Context'));
+    assert.equal(hasContext, false);
+  });
+
+  it('select without llm skips summarization, uses sliding window for old turns', async () => {
+    const turns = [];
+    for (let i = 0; i < 10; i++) {
+      turns.push(makeTurn(i % 2 === 0 ? 'user' : 'assistant', 40));
+    }
+    const result = await HierarchicalStrategy.select({
+      turns,
+      budgetTokens: 100,
+      llm: null,
+      recall: null,
+      currentSessionId: 'current',
+      query: 'test',
+    });
+    // Should return sliding window result (no summary message)
+    assert.ok(Array.isArray(result));
+    assert.ok(result.every((m) => m.role === 'user' || m.role === 'assistant'));
+  });
+});
+
+describe('createFullMemoryManager', () => {
+  it('getStrategyNames includes hierarchical and summarization', () => {
+    const mm = createFullMemoryManager();
+    const names = mm.getStrategyNames();
+    assert.ok(names.includes('sliding_window'));
+    assert.ok(names.includes('summarization'));
+    assert.ok(names.includes('hierarchical'));
+  });
+
+  it('buildHistory with strategy=hierarchical dispatches correctly', async () => {
+    const mm = createFullMemoryManager();
+    const turns = [makeTurn('user', 40), makeTurn('assistant', 40)];
+    // HierarchicalStrategy.select is async, buildHistory returns its result
+    const result = await mm.buildHistory({
+      turns,
+      budget: 1000,
+      strategy: 'hierarchical',
+    });
+    assert.ok(Array.isArray(result));
   });
 });
