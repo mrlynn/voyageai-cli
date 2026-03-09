@@ -6,9 +6,9 @@
     "provider": "ollama",
     "model": "qwen3.5:35b",
     "maxContextDocs": 5,
-    "rerank": false,
+    "rerank": true,
     "systemPrompt": "you're an expert on voyage ai, and vai and you answer questions about the vai cli package",
-    "mode": "pipeline",
-    "embeddingModel": "voyage-4-nano"
+    "mode": "agent",
+    "embeddingModel": "voyage-4-lite"
   }
 }
