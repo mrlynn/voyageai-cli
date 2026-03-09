@@ -352,6 +352,26 @@ async function runChat(opts) {
     await history.load();
   }
 
+  // Initialize cross-session recall for resumed sessions
+  let summaryStoreInstance = null;
+  let crossSessionRecall = null;
+  if (opts.session && sessionStore && !sessionStore.isFallbackMode) {
+    try {
+      const { SessionSummaryStore } = require('../lib/session-summary-store');
+      const { CrossSessionRecall } = require('../lib/cross-session-recall');
+      const { generateEmbeddings: embedForRecall } = require('../lib/api');
+
+      summaryStoreInstance = new SessionSummaryStore({ db: db || 'vai' });
+      await summaryStoreInstance._connect();
+      crossSessionRecall = new CrossSessionRecall({
+        summaryStore: summaryStoreInstance,
+        embedFn: embedForRecall,
+      });
+    } catch {
+      // Cross-session recall init failure is non-fatal
+    }
+  }
+
   // Telemetry: track session
   const telemetry = require('../lib/telemetry');
   const chatStartTime = Date.now();
@@ -375,6 +395,11 @@ async function runChat(opts) {
   const memoryManager = createFullMemoryManager({
     defaultStrategy: opts.memoryStrategy || chatConf.memoryStrategy || 'sliding_window',
   });
+
+  // Attach cross-session recall to memory manager if available
+  if (crossSessionRecall) {
+    memoryManager.setOpts({ recall: crossSessionRecall, currentSessionId: sessionId });
+  }
 
   // Track whether a turn is currently in progress (for SIGINT handling)
   let turnInProgress = false;
@@ -425,7 +450,7 @@ async function runChat(opts) {
         isAgent, lastToolCalls, sessionStore, sessionId,
       });
       if (handled === 'quit') {
-        await cleanup(historyMongo, sessionStore);
+        await cleanup(historyMongo, sessionStore, summaryStoreInstance);
         process.exit(0);
       }
       rl.prompt();
@@ -478,7 +503,7 @@ async function runChat(opts) {
 
   rl.on('close', async () => {
     sendChatTelemetry();
-    await cleanup(historyMongo, sessionStore);
+    await cleanup(historyMongo, sessionStore, summaryStoreInstance);
     process.exit(0);
   });
 
@@ -490,7 +515,7 @@ async function runChat(opts) {
     } else {
       sendChatTelemetry();
       console.log('');
-      await cleanup(historyMongo, sessionStore);
+      await cleanup(historyMongo, sessionStore, summaryStoreInstance);
       process.exit(0);
     }
   });
@@ -1105,6 +1130,36 @@ async function handleSlashCommand(input, ctx) {
       try {
         await sessionStore.transitionLifecycle(sessionId, 'archived');
         console.log(pc.dim('  Session archived.'));
+
+        // Generate session summary for cross-session recall
+        try {
+          const { summarizeTurns } = require('../lib/memory-summarizer');
+          const { SessionSummaryStore } = require('../lib/session-summary-store');
+          const { generateEmbeddings } = require('../lib/api');
+
+          const allTurns = history.getMessages();
+          if (allTurns.length >= 2) {
+            const summary = await summarizeTurns(allTurns, llm);
+            if (summary) {
+              const summaryStore = new SessionSummaryStore({ db: db || 'vai' });
+              try {
+                const embedResult = await generateEmbeddings([summary], {
+                  model: 'voyage-4-large',
+                  inputType: 'document',
+                });
+                const embedding = embedResult.data[0].embedding;
+                await summaryStore.storeSummary({ sessionId, summary, embedding });
+                if (!opts.quiet && !opts.json) {
+                  console.log(pc.dim('  Session summary saved for cross-session recall.'));
+                }
+              } finally {
+                await summaryStore.close();
+              }
+            }
+          }
+        } catch {
+          // Summary generation is non-fatal — session is already archived
+        }
       } catch (err) {
         console.log(pc.dim(`  Archive failed: ${err.message}`));
       }
@@ -1150,12 +1205,15 @@ async function handleSlashCommand(input, ctx) {
   }
 }
 
-async function cleanup(mongo, store) {
+async function cleanup(mongo, store, summaryStore) {
   if (mongo?.client) {
     try { await mongo.client.close(); } catch { /* ignore */ }
   }
   if (store) {
     try { await store.close(); } catch { /* ignore */ }
+  }
+  if (summaryStore) {
+    try { await summaryStore.close(); } catch { /* ignore */ }
   }
 }
 
