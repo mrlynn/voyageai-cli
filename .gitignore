@@ -27,6 +27,8 @@ VaiSite-Marketing-Assessment.md
 !/docs/commands/**
 !/docs/playground/
 !/docs/playground/**
+!/docs/reference/
+!/docs/reference/**
 .env.local.planning/
 AGENTS.md
 BOOTSTRAP.md
