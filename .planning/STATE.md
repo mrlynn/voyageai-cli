@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Chat Harness
 status: in-progress
-last_updated: "2026-03-09T07:40:45.374Z"
+last_updated: "2026-03-09T07:46:04.000Z"
 progress:
   total_phases: 3
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 6
-  completed_plans: 5
+  completed_plans: 6
 ---
 
 # Project State
@@ -23,11 +23,11 @@ See: .planning/PROJECT.md (updated 2026-03-09)
 ## Current Position
 
 Phase: 22 of 23 (Memory Management)
-Plan: 01 of 02 complete
-Status: In Progress
-Last activity: 2026-03-09 -- Completed 22-01 Token Budget & Sliding Window
+Plan: 02 of 02 complete
+Status: Phase Complete
+Last activity: 2026-03-09 -- Completed 22-02 Summarization, Hierarchical Memory & Cross-Session Recall
 
-Progress: [██████████] ~55%
+Progress: [██████████] ~60%
 
 ## Performance Metrics
 
@@ -47,6 +47,7 @@ Progress: [██████████] ~55%
 
 | Phase | Duration | Tasks | Files |
 | 22-01 P01 | 2min | 2 | 4 |
+| 22-02 P02 | 3min | 2 | 6 |
 
 ## Accumulated Context
 
@@ -69,6 +70,10 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [22-01] Zero budget returns empty array (not single turn) for predictable behavior
 - [22-01] Strategy registry uses Map for O(1) lookup and extensibility
 - [22-01] contextDocs modeled as array of {text} objects matching existing retrieval format
+- [22-02] SummarizationStrategy uses 60/40 recent/old split with configurable threshold (default 80%)
+- [22-02] CrossSessionRecall uses voyage-4-lite for queries (asymmetric with large model at index time)
+- [22-02] HierarchicalStrategy budget allocation: 20% recall, 20% summaries, 60% recent verbatim
+- [22-02] All strategies degrade gracefully returning sliding-window results on component failure
 
 ### Pending Todos
 
@@ -81,5 +86,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-09
-Stopped at: Completed 22-01-PLAN.md (Token Budget & Sliding Window)
+Stopped at: Completed 22-02-PLAN.md (Summarization, Hierarchical Memory & Cross-Session Recall)
 Resume file: None
