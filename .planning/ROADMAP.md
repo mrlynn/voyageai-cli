@@ -140,11 +140,12 @@ Plans:
   3. The web playground shows a turn state indicator and memory usage bar that update in real time
   4. `vai explain harness` teaches users about the state machine, memory strategies, and session architecture
   5. `vai chat --replay <session-id>` replays a stored session's turns for debugging, and `--json` output includes per-turn harness diagnostics
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 23-01: TBD
-- [ ] 23-02: TBD
+- [ ] 23-01-PLAN.md — CLI Observability: state-label spinners, /memory command, --json diagnostics, explain harness topic (OBS-01, OBS-02, OBS-04, OBS-05)
+- [ ] 23-02-PLAN.md — Session Replay: --replay <session-id> with formatted and JSON output (OBS-06)
+- [ ] 23-03-PLAN.md — Playground Integration: turn state indicator, memory usage bar, strategy selector (OBS-03, OBS-07)
 
 ### Phase 24: Wire Memory into Chat Pipeline
 **Goal**: Phase 22's memory management classes become the active runtime path — replacing the hardcoded `getMessagesWithBudget(4000)` in chat.js
@@ -192,5 +193,5 @@ Phases execute in numeric order: 20 → 21 → 22 → 23 → 24
 | 20. Turn State Machine | v1.5 | 2/2 | Complete | 2026-03-09 |
 | 21. Session Persistence | v1.5 | 2/2 | Complete | 2026-03-09 |
 | 22. Memory Management | v1.5 | 2/2 | Complete | 2026-03-09 |
-| 23. Observability & Integration | v1.5 | 0/? | Not started | - |
-| 24. Wire Memory into Chat Pipeline | 2/2 | Complete   | 2026-03-09 | - |
+| 23. Observability & Integration | 1/3 | In Progress|  | - |
+| 24. Wire Memory into Chat Pipeline | 2/2 | Complete    | 2026-03-09 | - |

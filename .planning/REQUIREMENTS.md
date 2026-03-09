@@ -42,7 +42,7 @@ Requirements for milestone v1.5. Each maps to roadmap phases.
 - [ ] **OBS-03**: Web playground shows turn state indicator and memory usage bar
 - [ ] **OBS-04**: `vai explain harness` topic (#19) covers state machine, memory, and harness architecture
 - [ ] **OBS-05**: `--json` output enriched with per-turn harness diagnostics
-- [ ] **OBS-06**: `vai chat --replay <session-id>` replays stored turns for debugging
+- [x] **OBS-06**: `vai chat --replay <session-id>` replays stored turns for debugging
 - [ ] **OBS-07**: Memory strategy selector in web playground settings panel
 
 ## v2 Requirements
@@ -99,7 +99,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | OBS-03 | Phase 23 | Pending |
 | OBS-04 | Phase 23 | Pending |
 | OBS-05 | Phase 23 | Pending |
-| OBS-06 | Phase 23 | Pending |
+| OBS-06 | Phase 23 | Complete |
 | OBS-07 | Phase 23 | Pending |
 
 **Coverage:**

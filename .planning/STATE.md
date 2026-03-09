@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Chat Harness
 status: in-progress
-last_updated: "2026-03-09T08:22:00Z"
+last_updated: "2026-03-09T10:01:31.000Z"
 progress:
   total_phases: 4
   completed_phases: 4
   total_plans: 8
-  completed_plans: 8
+  completed_plans: 9
 ---
 
 # Project State
@@ -18,14 +18,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-09)
 
 **Core value:** Zero-API-key path from install to working vector search, with seamless upgrade to Voyage API
-**Current focus:** Phase 24 - Wire Memory into Chat Pipeline
+**Current focus:** Phase 23 - Observability Integration
 
 ## Current Position
 
-Phase: 24 of 25 (Wire Memory into Chat Pipeline)
-Plan: 02 of 02 complete
-Status: Phase Complete
-Last activity: 2026-03-09 -- Completed 24-02 Wire Session Summary + Cross-Session Recall
+Phase: 23 of 25 (Observability Integration)
+Plan: 02 of 03 complete
+Status: In Progress
+Last activity: 2026-03-09 -- Completed 23-02 Session Replay
 
 Progress: [████████████████████] ~80%
 
@@ -50,6 +50,7 @@ Progress: [████████████████████] ~80%
 | 22-02 P02 | 3min | 2 | 6 |
 | Phase 24-01 P01 | 6min | 2 tasks | 4 files |
 | Phase 24-02 P02 | 2min | 2 tasks | 2 files |
+| Phase 23-02 P02 | 2min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -82,6 +83,9 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [Phase 24-02]: Summary generation on archive is non-fatal -- session is already archived even if summary fails
 - [Phase 24-02]: CrossSessionRecall initialization on resume is non-fatal -- chat works without recall
 - [Phase 24-02]: Uses voyage-4-large for document embedding (asymmetric with voyage-4-lite for queries)
+- [23-02] Replay uses existing SessionStore getSession/getTurns -- no new data layer needed
+- [23-02] Turn content adapts to both request/response shape and legacy role/content shape
+- [23-02] Quiet mode suppresses header/footer but still shows turns
 
 ### Pending Todos
 
@@ -94,5 +98,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-09
-Stopped at: Completed 24-02-PLAN.md (Wire Session Summary + Cross-Session Recall)
+Stopped at: Completed 23-02-PLAN.md (Session Replay)
 Resume file: None
