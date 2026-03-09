@@ -167,6 +167,6 @@ Plans:
 | 23. Observability & Integration | v1.5 | 3/3 | Complete | 2026-03-09 |
 | 24. Wire Memory into Chat Pipeline | v1.5 | 2/2 | Complete | 2026-03-09 |
 | 25. Wire MemoryManager into Playground | v1.5 | 1/1 | Complete | 2026-03-09 |
-| 26. Session & Memory Guides | 2/2 | Complete   | 2026-03-09 | - |
+| 26. Session & Memory Guides | 2/2 | Complete    | 2026-03-09 | - |
 | 27. Playground Documentation | v1.6 | 0/? | Not started | - |
 | 28. Config Reference & Cross-Links | v1.6 | 0/? | Not started | - |

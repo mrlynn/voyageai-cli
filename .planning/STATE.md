@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.6
 milestone_name: Docs Refresh
 status: unknown
-last_updated: "2026-03-09T12:13:14.295Z"
+last_updated: "2026-03-09T12:14:39.766Z"
 progress:
   total_phases: 1
   completed_phases: 1
