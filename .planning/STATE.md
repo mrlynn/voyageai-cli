@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.6
 milestone_name: Docs Refresh
 status: unknown
-last_updated: "2026-03-09T16:54:19.081Z"
+last_updated: "2026-03-09T16:56:53.635Z"
 progress:
   total_phases: 4
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 7
-  completed_plans: 6
+  completed_plans: 7
 ---
 
 # Project State
@@ -22,10 +22,10 @@ See: .planning/PROJECT.md (updated 2026-03-09)
 
 ## Current Position
 
-Phase: 27 of 29 (Playground Documentation)
-Plan: 1 of 1 complete
+Phase: 28 of 29 (Config Reference and Cross-Links)
+Plan: 2 of 2 complete
 Status: Phase complete
-Last activity: 2026-03-09 — Completed 27-01 (playground overview + chat tab reference docs)
+Last activity: 2026-03-09 — Completed 28-02 (guide and playground cross-references to vai explain harness)
 
 Progress: [██████████] 100%
 
@@ -49,6 +49,7 @@ Progress: [██████████] 100%
 | Phase 27-playground-documentation P02 | 3 | 2 tasks | 1 files |
 | Phase 27-playground-documentation P01 | 2 | 2 tasks | 3 files |
 | Phase 28-config-reference-cross-links P01 | 3 | 2 tasks | 3 files |
+| Phase 28-config-reference-cross-links P02 | 56s | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -68,6 +69,9 @@ Decisions are logged in PROJECT.md Key Decisions tables (v1.0 through v1.5).
 - [Phase 28-01]: Session/Memory/Observability section in env vars page points to CLI flags and .vai.json chat block -- no fabricated env vars
 - [Phase 28-01]: docs/reference/ added to .gitignore whitelist (same pattern as guides/commands/playground)
 - [Phase 28-01]: showSources and showToolCalls documented as config-only fields with no CLI equivalent
+- [Phase 28-02]: Appended harness cross-ref to existing See Also sections without restructuring any page
+- [Phase 28-02]: memory-strategies.mdx also links to .vai.json Schema for memoryStrategy project default
+- [Phase 28-02]: chat-sessions.mdx also links to Environment Variables for MONGODB_URI and VAI_CONFIG_PATH
 
 ### Pending Todos
 
@@ -80,5 +84,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-09
-Stopped at: Completed 27-02-PLAN.md — Local Inference tab reference page
+Stopped at: Completed 28-02-PLAN.md — Guide and playground cross-references to vai explain harness
 Resume file: None

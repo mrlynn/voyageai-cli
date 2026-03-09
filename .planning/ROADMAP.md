@@ -91,7 +91,7 @@ Full details: [milestones/v1.5-ROADMAP.md](milestones/v1.5-ROADMAP.md)
 
 - [x] **Phase 26: Session & Memory Guides** - Usage docs for chat sessions, memory strategies, cross-session recall, and chat command reference (completed 2026-03-09)
 - [x] **Phase 27: Playground Documentation** - Fix stale claims, document chat tab, memory UI, and local inference tab (completed 2026-03-09)
-- [ ] **Phase 28: Config Reference & Cross-Links** - Environment variables, .vai.json schema updates, and vai explain harness cross-references
+- [x] **Phase 28: Config Reference & Cross-Links** - Environment variables, .vai.json schema updates, and vai explain harness cross-references (completed 2026-03-09)
 - [x] **Phase 29: Phase 26 Tech Debt Fix** - Fix SESS-01/SESS-04 content accuracy issues (lifecycle state, slash commands table) (completed 2026-03-09)
 
 ## Phase Details
@@ -185,5 +185,5 @@ Plans:
 | 25. Wire MemoryManager into Playground | v1.5 | 1/1 | Complete | 2026-03-09 |
 | 26. Session & Memory Guides | 2/2 | Complete    | 2026-03-09 | - |
 | 27. Playground Documentation | 2/2 | Complete    | 2026-03-09 | - |
-| 28. Config Reference & Cross-Links | 1/2 | In Progress|  | - |
+| 28. Config Reference & Cross-Links | 2/2 | Complete   | 2026-03-09 | - |
 | 29. Phase 26 Tech Debt Fix | v1.6 | 1/1 | Complete | 2026-03-09 |

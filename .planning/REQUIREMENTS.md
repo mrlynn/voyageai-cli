@@ -28,7 +28,7 @@ Requirements for v1.6. Each maps to roadmap phases.
 
 ### Cross-References
 
-- [ ] **XREF-01**: Docs site includes links to `vai explain harness` CLI topic for deeper architectural detail
+- [x] **XREF-01**: Docs site includes links to `vai explain harness` CLI topic for deeper architectural detail
 
 ## v2 Requirements
 
@@ -63,7 +63,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PLAY-04 | Phase 27 | Complete |
 | CONF-01 | Phase 28 | Complete |
 | CONF-02 | Phase 28 | Complete |
-| XREF-01 | Phase 28 | Pending |
+| XREF-01 | Phase 28 | Complete |
 
 **Coverage:**
 - v1 requirements: 11 total
