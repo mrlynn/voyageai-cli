@@ -13,7 +13,7 @@ Requirements for milestone v1.5. Each maps to roadmap phases.
 - [x] **SM-02**: State machine enforces valid transitions and rejects invalid ones
 - [x] **SM-03**: TurnOrchestrator emits `stateChange` events with from/to/sessionId/timestamp
 - [x] **SM-04**: Each state has a human-readable label for UI rendering
-- [ ] **SM-05**: Interrupt (Ctrl+C/abort) transitions to INTERRUPTED; partial response saved if during GENERATING/STREAMING
+- [x] **SM-05**: Interrupt (Ctrl+C/abort) transitions to INTERRUPTED; partial response saved if during GENERATING/STREAMING
 - [x] **SM-06**: ERROR_TURN state is recoverable; session continues after turn-level errors
 - [ ] **SM-07**: Session lifecycle states (INITIALIZING/ACTIVE/PAUSED/ARCHIVED) with persistence
 
@@ -79,7 +79,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SM-02 | Phase 20 | Complete |
 | SM-03 | Phase 20 | Complete |
 | SM-04 | Phase 20 | Complete |
-| SM-05 | Phase 20 | Pending |
+| SM-05 | Phase 20 | Complete |
 | SM-06 | Phase 20 | Complete |
 | SM-07 | Phase 21 | Pending |
 | MEM-01 | Phase 22 | Pending |
