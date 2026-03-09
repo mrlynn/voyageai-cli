@@ -89,7 +89,7 @@ Full details: [milestones/v1.5-ROADMAP.md](milestones/v1.5-ROADMAP.md)
 
 **Milestone Goal:** Bring Docusaurus documentation site up to date with all user-facing features shipped in v1.2-v1.5, focusing on chat harness capabilities.
 
-- [ ] **Phase 26: Session & Memory Guides** - Usage docs for chat sessions, memory strategies, cross-session recall, and chat command reference
+- [x] **Phase 26: Session & Memory Guides** - Usage docs for chat sessions, memory strategies, cross-session recall, and chat command reference (completed 2026-03-09)
 - [ ] **Phase 27: Playground Documentation** - Fix stale claims, document chat tab, memory UI, and local inference tab
 - [ ] **Phase 28: Config Reference & Cross-Links** - Environment variables, .vai.json schema updates, and vai explain harness cross-references
 
@@ -167,6 +167,6 @@ Plans:
 | 23. Observability & Integration | v1.5 | 3/3 | Complete | 2026-03-09 |
 | 24. Wire Memory into Chat Pipeline | v1.5 | 2/2 | Complete | 2026-03-09 |
 | 25. Wire MemoryManager into Playground | v1.5 | 1/1 | Complete | 2026-03-09 |
-| 26. Session & Memory Guides | v1.6 | 1/2 | In progress | - |
+| 26. Session & Memory Guides | 2/2 | Complete   | 2026-03-09 | - |
 | 27. Playground Documentation | v1.6 | 0/? | Not started | - |
 | 28. Config Reference & Cross-Links | v1.6 | 0/? | Not started | - |
