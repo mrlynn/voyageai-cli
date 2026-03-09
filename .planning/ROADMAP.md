@@ -77,7 +77,7 @@ Full details: [milestones/v1.4-ROADMAP.md](milestones/v1.4-ROADMAP.md)
 - [x] **Phase 20: Turn State Machine** - Pure state machine module with named states, valid transitions, interrupt handling, and token estimation (completed 2026-03-09)
 - [x] **Phase 21: Session Persistence** - MongoDB session/turn CRUD, session lifecycle states, graceful in-memory fallback (completed 2026-03-09)
 - [x] **Phase 22: Memory Management** - Token-budgeted sliding window, LLM summarization, hierarchical memory, cross-session recall (completed 2026-03-09)
-- [ ] **Phase 23: Observability & Integration** - CLI state labels, /memory command, playground integration, explain topic, replay, --json diagnostics
+- [x] **Phase 23: Observability & Integration** - CLI state labels, /memory command, playground integration, explain topic, replay, --json diagnostics (completed 2026-03-09)
 - [x] **Phase 24: Wire Memory into Chat Pipeline** - Replace hardcoded history with MemoryManager, wire strategies, populate session summaries, enable cross-session recall (completed 2026-03-09)
 
 ## Phase Details
@@ -193,5 +193,5 @@ Phases execute in numeric order: 20 → 21 → 22 → 23 → 24
 | 20. Turn State Machine | v1.5 | 2/2 | Complete | 2026-03-09 |
 | 21. Session Persistence | v1.5 | 2/2 | Complete | 2026-03-09 |
 | 22. Memory Management | v1.5 | 2/2 | Complete | 2026-03-09 |
-| 23. Observability & Integration | 2/3 | In Progress|  | - |
+| 23. Observability & Integration | 3/3 | Complete   | 2026-03-09 | - |
 | 24. Wire Memory into Chat Pipeline | 2/2 | Complete    | 2026-03-09 | - |
