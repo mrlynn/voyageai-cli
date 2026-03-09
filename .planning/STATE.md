@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.6
 milestone_name: Docs Refresh
 status: unknown
-last_updated: "2026-03-09T12:14:39.766Z"
+last_updated: "2026-03-09T12:54:45Z"
 progress:
-  total_phases: 1
-  completed_phases: 1
-  total_plans: 2
-  completed_plans: 2
+  total_phases: 2
+  completed_phases: 2
+  total_plans: 3
+  completed_plans: 3
 ---
 
 # Project State
@@ -18,14 +18,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-09)
 
 **Core value:** Zero-API-key path from install to working vector search, with seamless upgrade to Voyage API
-**Current focus:** v1.6 Docs Refresh -- Phase 26 executing
+**Current focus:** v1.6 Docs Refresh -- Phase 29 complete
 
 ## Current Position
 
-Phase: 26 of 28 (Session & Memory Guides)
-Plan: 2 of 2 complete
+Phase: 29 of 29 (Phase 26 Tech Debt Fix)
+Plan: 1 of 1 complete
 Status: Phase complete
-Last activity: 2026-03-09 — Completed 26-02 (session & memory MDX docs + chat command reference)
+Last activity: 2026-03-09 — Completed 29-01 (gap closure: session lifecycle + slash commands)
 
 Progress: [██████████] 100%
 
@@ -45,6 +45,7 @@ Progress: [██████████] 100%
 | v1.4 | 4 | 9 | 21 (+3,136/-290) |
 | v1.5 | 6 | 12 | 44 (+7,028/-101) |
 | Phase 26 P02 | 3min | 2 tasks | 5 files |
+| Phase 29 P01 | 2min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -55,6 +56,8 @@ Decisions are logged in PROJECT.md Key Decisions tables (v1.0 through v1.5).
 - [26-01] Removed stale harness aliases (sessions, session-persistence) that conflicted with new dedicated sessions topic
 - [26-01] No changes needed to chat.js -- all flags and slash commands already accurate
 - [Phase 26]: Organized chat docs into 7-category flag reference and 3 cross-linked guide pages
+- [29-01] Aligned lifecycle state descriptions with SESSION_STATES enum rather than paraphrasing
+- [29-01] Consolidated /exit and /q as aliases in /quit row instead of separate rows
 
 ### Pending Todos
 
@@ -67,5 +70,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-09
-Stopped at: Completed 26-02-PLAN.md — Phase 26 complete
+Stopped at: Completed 29-01-PLAN.md — Phase 29 complete
 Resume file: None

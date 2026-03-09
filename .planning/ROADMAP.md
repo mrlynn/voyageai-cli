@@ -92,7 +92,7 @@ Full details: [milestones/v1.5-ROADMAP.md](milestones/v1.5-ROADMAP.md)
 - [x] **Phase 26: Session & Memory Guides** - Usage docs for chat sessions, memory strategies, cross-session recall, and chat command reference (completed 2026-03-09)
 - [ ] **Phase 27: Playground Documentation** - Fix stale claims, document chat tab, memory UI, and local inference tab
 - [ ] **Phase 28: Config Reference & Cross-Links** - Environment variables, .vai.json schema updates, and vai explain harness cross-references
-- [ ] **Phase 29: Phase 26 Tech Debt Fix** - Fix SESS-01/SESS-04 content accuracy issues (lifecycle state, slash commands table)
+- [x] **Phase 29: Phase 26 Tech Debt Fix** - Fix SESS-01/SESS-04 content accuracy issues (lifecycle state, slash commands table) (completed 2026-03-09)
 
 ## Phase Details
 
@@ -120,11 +120,11 @@ Plans:
   2. User can find documentation for the playground chat tab covering model selector, provider badges, welcome banner, and KB ingest
   3. User can find documentation for playground memory/observability UI covering the memory bar, strategy selector, and turn state indicator
   4. User can find documentation for the local inference tab covering embed UI, similarity heatmap, MRL comparison, and cross-bridge visualization
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 27-01: TBD
-- [ ] 27-02: TBD
+- [ ] 27-01-PLAN.md — Playground overview page (accurate tab list, no stale claims) + Chat tab reference (model selector, provider badges, KB ingest, memory bar, turn state indicator, memory strategy selector)
+- [ ] 27-02-PLAN.md — Local Inference tab reference (embed UI, similarity heatmap, MRL comparison, cross-bridge visualization)
 
 ### Phase 28: Config Reference & Cross-Links
 **Goal**: Users can find a complete reference for all configuration options and discover the vai explain harness topic from the docs site
@@ -148,10 +148,10 @@ Plans:
   1. Explain topic `sessions` documents all 4 lifecycle states including INITIALIZING
   2. `chat.mdx` slash commands table lists all real commands (/sources, /session, /context, /model, /sessions, /archive, /export) and removes phantom /stats
   3. E2E flow "User looks up slash commands in docs" works end-to-end
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 29-01: TBD
+- [x] 29-01-PLAN.md — Fix sessions explain topic lifecycle states and chat.mdx slash commands table
 
 ## Progress
 
@@ -183,6 +183,6 @@ Plans:
 | 24. Wire Memory into Chat Pipeline | v1.5 | 2/2 | Complete | 2026-03-09 |
 | 25. Wire MemoryManager into Playground | v1.5 | 1/1 | Complete | 2026-03-09 |
 | 26. Session & Memory Guides | 2/2 | Complete    | 2026-03-09 | - |
-| 27. Playground Documentation | v1.6 | 0/? | Not started | - |
+| 27. Playground Documentation | v1.6 | 0/2 | Not started | - |
 | 28. Config Reference & Cross-Links | v1.6 | 0/? | Not started | - |
-| 29. Phase 26 Tech Debt Fix | v1.6 | 0/? | Not started | - |
+| 29. Phase 26 Tech Debt Fix | v1.6 | 1/1 | Complete | 2026-03-09 |
