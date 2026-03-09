@@ -1623,6 +1623,57 @@ const concepts = {
       'vai workflow install vai-workflow-legal-research',
     ],
   },
+
+  harness: {
+    title: 'Chat Harness Architecture',
+    summary: 'How the state machine, memory, and sessions work together',
+    content: [
+      `The VAI ${pc.cyan('chat harness')} is the runtime engine behind ${pc.cyan('vai chat')}. It manages`,
+      `three interconnected systems: the turn state machine, memory management,`,
+      `and session persistence.`,
+      ``,
+      `${pc.bold('Turn State Machine')}`,
+      `Every chat turn progresses through deterministic states:`,
+      `  ${pc.cyan('IDLE')} \u2192 ${pc.cyan('VALIDATING')} \u2192 ${pc.cyan('EMBEDDING')} \u2192 ${pc.cyan('RETRIEVING')} \u2192 ${pc.cyan('RERANKING')} \u2192 ${pc.cyan('BUILDING_PROMPT')} \u2192 ${pc.cyan('GENERATING')} \u2192 ${pc.cyan('STREAMING')} \u2192 ${pc.cyan('PERSISTING')} \u2192 ${pc.cyan('IDLE')}`,
+      ``,
+      `Agent mode skips EMBEDDING/RETRIEVING/RERANKING and may loop through`,
+      `${pc.cyan('TOOL_CALLING')} \u2194 ${pc.cyan('GENERATING')} for multi-step reasoning.`,
+      ``,
+      `Invalid transitions throw errors rather than silently corrupting state.`,
+      `Pressing Ctrl+C transitions to ${pc.cyan('INTERRUPTED')} and preserves partial responses.`,
+      `Errors transition to ${pc.cyan('ERROR_TURN')} but don't kill the session.`,
+      ``,
+      `${pc.bold('Memory Management')}`,
+      `The memory system controls how conversation history fits within the LLM's`,
+      `context window. A ${pc.cyan('MemoryBudget')} allocates tokens after reserving space for the`,
+      `system prompt, retrieved context, current message, and expected response.`,
+      ``,
+      `Three strategies are available:`,
+      `  ${pc.cyan('sliding_window')}   Most recent turns that fit (default, fastest)`,
+      `  ${pc.cyan('summarization')}    Compresses older turns into LLM summaries`,
+      `  ${pc.cyan('hierarchical')}     Combines recent turns + summaries + cross-session recall`,
+      ``,
+      `Select a strategy with ${pc.cyan('--memory-strategy <name>')} or check current status`,
+      `with the ${pc.cyan('/memory')} command during chat.`,
+      ``,
+      `${pc.bold('Session Persistence')}`,
+      `Sessions are stored in MongoDB with full turn history. Each turn records`,
+      `request/response pairs, token counts, and timing. Sessions can be listed,`,
+      `resumed, and archived. When MongoDB is unavailable, sessions run in-memory.`,
+      ``,
+      `Archived sessions generate summaries that power ${pc.cyan('cross-session recall')} \u2014`,
+      `relevant context from past conversations is surfaced when you resume or`,
+      `start new sessions using Voyage AI asymmetric embedding.`,
+    ].join('\n'),
+    links: [
+      'https://docs.voyageai.com/',
+    ],
+    tryIt: [
+      'vai chat --memory-strategy sliding_window',
+      'vai chat --memory-strategy summarization',
+      'vai chat   (then type /memory to see status)',
+    ],
+  },
 };
 
 /**
@@ -1810,6 +1861,14 @@ const aliases = {
   'community-workflows': 'workflow-publishing',
   'share-workflow': 'workflow-publishing',
   'npm-workflow': 'workflow-publishing',
+  // Harness aliases
+  harness: 'harness',
+  'chat-harness': 'harness',
+  'state-machine': 'harness',
+  'state machine': 'harness',
+  'turn-state': 'harness',
+  sessions: 'harness',
+  'session-persistence': 'harness',
 };
 
 /**
