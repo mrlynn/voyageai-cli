@@ -1,0 +1,131 @@
+---
+title: Chat Tab
+description: Reference for the playground Chat tab — RAG chat with a knowledge base, model selection, memory management, and observability UI.
+sidebar_position: 2
+---
+
+# Chat Tab
+
+The Chat tab provides an interactive RAG chat interface. You can ingest documents into a knowledge base, select your LLM provider and embedding model, and chat with your data using vector search retrieval.
+
+## Welcome Banner
+
+When you open the Chat tab for the first time and no provider is configured, a welcome banner (`#onboardingBanner`) appears:
+
+- Displays **"Welcome to VAI Chat"**
+- Auto-detects available services — Anthropic, OpenAI, Ollama, and the local nano bridge
+- Shows a recommended configuration based on what was detected
+- Provides a **Start Chatting** button to apply the recommended config automatically, or **Configure Manually** to set all options yourself
+
+Once a provider and database are configured, the banner does not reappear.
+
+## Model Selector and Provider Badges
+
+The Configuration section inside the KB panel exposes model selection:
+
+- **LLM Provider** — choose from Anthropic, OpenAI, or Ollama. An Ollama health indicator dot shows whether the local Ollama service is reachable.
+- **Model** — select the specific LLM model for the chosen provider. Available models update automatically when you change the provider.
+- **Embedding model** — choose from:
+
+  | Model | Cost |
+  |-------|------|
+  | `voyage-4-nano` | Free (runs on device) |
+  | `voyage-4-lite` | $0.02 / 1M tokens |
+  | `voyage-4` | $0.06 / 1M tokens |
+  | `voyage-4-large` | $0.12 / 1M tokens |
+
+- **Provider badge** — a badge next to the embedding selector shows `LOCAL` (green) when `voyage-4-nano` is selected (runs on-device via the nano bridge, no API key required) or `API` (blue) when a cloud model is selected.
+- **Nano bridge health dot** — an indicator dot shows whether the local inference bridge is running and healthy.
+
+## Knowledge Base Panel
+
+The collapsible KB panel on the left side of the Chat tab organizes all knowledge base operations:
+
+### KB Info
+
+Shows document count, chunk count, and storage size for the active knowledge base. Click the KB name to rename it inline.
+
+### Files
+
+Lists all documents currently ingested into the active knowledge base, with filenames and ingest status.
+
+### Upload
+
+Three ingest methods are available:
+
+- **Files** — drag-and-drop or click to browse. Accepts `.txt`, `.md`, and `.pdf` files up to 10 MB each.
+- **Paste** — paste raw text directly with an optional title field.
+- **URL** — enter a web URL to fetch and ingest the page content automatically.
+
+### Instructions
+
+An optional custom system prompt field. Any text entered here is appended to every request sent to the LLM, allowing you to set persona, output format, or domain constraints for the KB.
+
+### Configuration
+
+All provider, model, database, and memory settings are under the Configuration section.
+
+<details>
+<summary>Configuration field reference</summary>
+
+| Field | Options | Default |
+|-------|---------|---------|
+| LLM Provider | Anthropic, OpenAI, Ollama | None |
+| Model | Provider-dependent | Provider default |
+| Embedding | voyage-4-nano (Free), voyage-4-lite, voyage-4, voyage-4-large | voyage-4-nano |
+| Database | Any MongoDB database name | Project config |
+| Collection | Any collection name | Project config |
+| Max Context Docs | 1–20 | 5 |
+| Rerank Results | On / Off | On |
+| Chat Mode | Pipeline (fixed RAG), Agent (tool-calling) | Pipeline |
+| Memory Strategy | sliding_window, summarization, hierarchical | sliding_window |
+
+</details>
+
+## Memory Bar
+
+The memory bar (`#chatMemoryBar`) is a horizontal progress bar displayed above the chat input:
+
+- Shows **"Memory: [bar] X%"** where X is the percentage of the token budget currently occupied by conversation history
+- As the conversation grows, the bar fills left-to-right
+- When the bar approaches 100%, the active memory strategy takes effect — trimming or summarizing older turns to reclaim budget
+- The bar resets visually when a summarization or trim occurs
+
+## Turn State Indicator
+
+The turn state indicator (`#chatStateIndicator`) is a colored dot and label displayed below the messages area:
+
+| State | Meaning |
+|-------|---------|
+| Ready | Idle — waiting for user input |
+| Thinking | LLM is processing the request |
+| Streaming | Response is being streamed to the UI |
+| Error | An error occurred during the last turn |
+
+The indicator matches the session turn states managed by the chat harness internally.
+
+## Memory Strategy Selector
+
+The memory strategy selector (`#chatMemoryStrategy`) in the Configuration section controls how conversation history is managed when the token budget fills:
+
+- **Sliding Window** (default) — keeps the most recent N turns and drops the oldest turns when the budget is full. Simple and predictable.
+- **Summarization** — periodically summarizes older turns into a compressed block, preserving context without consuming the full token budget.
+- **Hierarchical** — maintains both a rolling summary of older turns and a detailed recent window, providing the best context retention at higher computational cost.
+
+See [Memory Strategies](../guides/memory-strategies.mdx) for detailed guidance on choosing a strategy.
+
+## KB Setup Wizard
+
+A setup wizard modal appears on first use (or when no knowledge base is connected):
+
+- **Step 1: Select KB Source** — use an existing knowledge base from the dropdown, or create a new one by entering a name.
+- **Step 2: Add Documents** — drag-and-drop files or skip to start with an empty KB. Supports `.txt`, `.md`, and `.pdf` files up to 10 MB each.
+
+After completing the wizard, the Chat tab connects to the selected KB and the configuration panel is pre-populated with your settings.
+
+## See Also
+
+- [Playground Overview](./playground.mdx)
+- [Memory Strategies Guide](../guides/memory-strategies.mdx)
+- [Chat Sessions Guide](../guides/chat-sessions.mdx)
+- [vai chat command reference](../commands/chat.mdx)
