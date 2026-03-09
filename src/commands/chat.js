@@ -4,6 +4,7 @@ const readline = require('readline');
 const { createLLMProvider, resolveLLMConfig } = require('../lib/llm');
 const { ChatHistory } = require('../lib/history');
 const { chatTurn, agentChatTurn } = require('../lib/chat');
+const { TurnOrchestrator } = require('../lib/turn-orchestrator');
 const { loadProject } = require('../lib/project');
 const { getMongoCollection } = require('../lib/mongo');
 const { setConfigValue } = require('../lib/config');
@@ -283,6 +284,15 @@ async function runChat(opts) {
     llmModel: llmConfig.model,
   });
 
+  // Create TurnOrchestrator for state-machine-driven turns
+  const orchestrator = new TurnOrchestrator({
+    sessionId: history.sessionId,
+    mode: isAgent ? 'agent' : 'pipeline',
+  });
+
+  // Track whether a turn is currently in progress (for SIGINT handling)
+  let turnInProgress = false;
+
   // Track tool calls from last agent response (for /tools and /export-workflow)
   let lastToolCalls = [];
 
@@ -338,16 +348,17 @@ async function runChat(opts) {
 
     // Execute chat turn
     turnCount++;
+    turnInProgress = true;
     try {
       if (isAgent) {
         lastToolCalls = await handleAgentTurn(input, {
-          llm, history, opts, db, collection, systemPrompt, chatConf, sessionStats,
+          llm, history, opts, db, collection, systemPrompt, chatConf, sessionStats, orchestrator,
         });
       } else {
         await handlePipelineTurn(input, {
           db, collection, llm, history, opts,
           maxDocs, doRerank, doStream, systemPrompt, textField, chatConf,
-          isLocal, embeddingModel, isLocalEmbed, sessionStats,
+          isLocal, embeddingModel, isLocalEmbed, sessionStats, orchestrator,
         });
       }
     } catch (err) {
@@ -358,6 +369,8 @@ async function runChat(opts) {
         console.error(ui.error(err.message));
         console.error('');
       }
+    } finally {
+      turnInProgress = false;
     }
 
     rl.prompt();
@@ -383,10 +396,15 @@ async function runChat(opts) {
 
   // Handle Ctrl+C gracefully
   rl.on('SIGINT', async () => {
-    sendChatTelemetry();
-    console.log('');
-    await cleanup(historyMongo);
-    process.exit(0);
+    if (turnInProgress) {
+      // Interrupt the current turn instead of exiting
+      orchestrator.interrupt();
+    } else {
+      sendChatTelemetry();
+      console.log('');
+      await cleanup(historyMongo);
+      process.exit(0);
+    }
   });
 }
 
@@ -394,7 +412,7 @@ async function runChat(opts) {
  * Handle a single pipeline mode turn.
  */
 async function handlePipelineTurn(input, ctx) {
-  const { db, collection, llm, history, opts, maxDocs, doRerank, doStream, systemPrompt, textField, chatConf, isLocal, embeddingModel, isLocalEmbed, sessionStats } = ctx;
+  const { db, collection, llm, history, opts, maxDocs, doRerank, doStream, systemPrompt, textField, chatConf, isLocal, embeddingModel, isLocalEmbed, sessionStats, orchestrator } = ctx;
 
   // Build embedding options based on model selection
   let localOpts = {};
@@ -412,14 +430,16 @@ async function handlePipelineTurn(input, ctx) {
     let sources = [];
     let metadata = {};
 
-    for await (const event of chatTurn({
-      query: input, db, collection, llm, history,
-      opts: { maxDocs, rerank: doRerank, stream: false, systemPrompt, textField, filter: opts.filter, ...localOpts },
+    for await (const event of orchestrator.executePipelineTurn({
+      generatorFn: (args) => chatTurn({ query: input, db, collection, llm, history, opts: { maxDocs, rerank: doRerank, stream: false, systemPrompt, textField, filter: opts.filter, ...localOpts } }),
     })) {
       if (event.type === 'chunk') fullResponse += event.data;
       if (event.type === 'done') {
         sources = event.data.sources;
         metadata = event.data.metadata;
+      }
+      if (event.type === 'error') {
+        console.error(JSON.stringify({ error: event.data.message }));
       }
     }
 
@@ -451,10 +471,32 @@ async function handlePipelineTurn(input, ctx) {
     }
 
     try {
-      for await (const event of chatTurn({
-        query: input, db, collection, llm, history,
-        opts: { maxDocs, rerank: doRerank, stream: doStream, systemPrompt, textField, filter: opts.filter, ...localOpts },
+      for await (const event of orchestrator.executePipelineTurn({
+        generatorFn: (args) => chatTurn({ query: input, db, collection, llm, history, opts: { maxDocs, rerank: doRerank, stream: doStream, systemPrompt, textField, filter: opts.filter, ...localOpts } }),
       })) {
+        if (event.type === 'interrupted') {
+          if (generationSpinner) { generationSpinner.stop(); generationSpinner = null; }
+          if (streamRenderer) { streamRenderer.flush(); streamRenderer = null; }
+          if (event.data.partialResponse) {
+            console.log(pc.dim(' [interrupted]'));
+          }
+          console.log('');
+          break;
+        }
+
+        if (event.type === 'error') {
+          if (generationSpinner) { generationSpinner.stop(); generationSpinner = null; }
+          if (retrievalSpinner) { retrievalSpinner.stop(); retrievalSpinner = null; }
+          if (showAnimations) {
+            moments.error(event.data.message);
+          } else {
+            console.error('');
+            console.error(ui.error(event.data.message));
+            console.error('');
+          }
+          break;
+        }
+
         if (event.type === 'history') {
           const { turnCount } = event.data;
           if (!opts.quiet && turnCount > 0) {
@@ -550,7 +592,7 @@ async function handlePipelineTurn(input, ctx) {
  * @returns {Array} Tool calls from this turn (for /tools and /export-workflow)
  */
 async function handleAgentTurn(input, ctx) {
-  const { llm, history, opts, db, collection, systemPrompt, chatConf, sessionStats } = ctx;
+  const { llm, history, opts, db, collection, systemPrompt, chatConf, sessionStats, orchestrator } = ctx;
   const showToolCalls = chatConf.showToolCalls !== undefined ? chatConf.showToolCalls : true;
   const toolCalls = [];
 
@@ -559,9 +601,8 @@ async function handleAgentTurn(input, ctx) {
     let fullResponse = '';
     let metadata = {};
 
-    for await (const event of agentChatTurn({
-      query: input, llm, history,
-      opts: { systemPrompt, db, collection },
+    for await (const event of orchestrator.executeAgentTurn({
+      generatorFn: (args) => agentChatTurn({ query: input, llm, history, opts: { systemPrompt, db, collection } }),
     })) {
       if (event.type === 'tool_call') {
         toolCalls.push(event.data);
@@ -569,6 +610,9 @@ async function handleAgentTurn(input, ctx) {
       if (event.type === 'chunk') fullResponse += event.data;
       if (event.type === 'done') {
         metadata = event.data.metadata;
+      }
+      if (event.type === 'error') {
+        console.error(JSON.stringify({ error: event.data.message }));
       }
     }
 
@@ -598,10 +642,31 @@ async function handleAgentTurn(input, ctx) {
     }
 
     try {
-      for await (const event of agentChatTurn({
-        query: input, llm, history,
-        opts: { systemPrompt, db, collection },
+      for await (const event of orchestrator.executeAgentTurn({
+        generatorFn: (args) => agentChatTurn({ query: input, llm, history, opts: { systemPrompt, db, collection } }),
       })) {
+        if (event.type === 'interrupted') {
+          if (thinkingSpinner) { thinkingSpinner.stop(); thinkingSpinner = null; }
+          if (streamRenderer) { streamRenderer.flush(); streamRenderer = null; }
+          if (event.data.partialResponse) {
+            console.log(pc.dim(' [interrupted]'));
+          }
+          console.log('');
+          break;
+        }
+
+        if (event.type === 'error') {
+          if (thinkingSpinner) { thinkingSpinner.stop(); thinkingSpinner = null; }
+          if (showAnimations) {
+            moments.error(event.data.message);
+          } else {
+            console.error('');
+            console.error(ui.error(event.data.message));
+            console.error('');
+          }
+          break;
+        }
+
         if (event.type === 'history') {
           const { turnCount } = event.data;
           if (!opts.quiet && turnCount > 0) {
