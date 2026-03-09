@@ -47,6 +47,7 @@ function registerChat(program) {
     .option('--filter <json>', 'MongoDB pre-filter for vector search')
     .option('--memory-strategy <name>', 'Memory strategy: sliding_window, summarization, hierarchical', 'sliding_window')
     .option('--estimate', 'Show estimated per-turn cost breakdown and exit')
+    .option('--replay <id>', 'Replay a stored session for debugging')
     .option('--list', 'List recent chat sessions and exit')
     .option('--all', 'Include archived sessions in --list output')
     .option('--json', 'Output JSON per turn (for scripting)')
@@ -114,6 +115,13 @@ async function runChat(opts) {
     } catch (err) {
       console.error(ui.error(`Failed to list sessions: ${err.message}`));
     }
+    return;
+  }
+
+  // --replay: replay a stored session and exit
+  if (opts.replay) {
+    if (startupAnim) startupAnim.stop();
+    await replaySession(opts, db);
     return;
   }
 
@@ -1235,6 +1243,108 @@ function resolveEmbeddingConfig(opts, chatConf = {}) {
   const isLocalEmbed = embeddingModel === 'voyage-4-nano';
   const doRerank = isLocalEmbed ? false : (opts.rerank !== false);
   return { embeddingModel, isLocalEmbed, doRerank };
+}
+
+/**
+ * Replay a stored session's turns for debugging.
+ * @param {object} opts - CLI options (replay, json, quiet)
+ * @param {string} db - Database name
+ */
+async function replaySession(opts, db) {
+  const { SessionStore } = require('../lib/session-store');
+  const store = new SessionStore({ db: db || 'vai' });
+
+  try {
+    const session = await store.getSession(opts.replay);
+    if (!session) {
+      console.error(ui.error(`Session not found: ${opts.replay}`));
+      console.error(pc.dim('  Tip: Run vai chat --list to see available sessions'));
+      process.exit(1);
+    }
+
+    const turns = await store.getTurns(opts.replay);
+
+    if (turns.length === 0) {
+      console.log(pc.dim('  No turns found for this session.'));
+      return;
+    }
+
+    if (opts.json) {
+      // JSON output: session + per-turn diagnostics
+      const output = {
+        sessionId: opts.replay,
+        model: session.model || null,
+        provider: session.provider || null,
+        mode: session.mode || 'pipeline',
+        lifecycleState: session.lifecycleState || 'unknown',
+        createdAt: session.createdAt,
+        turnCount: turns.length,
+        turns: turns.map(t => ({
+          turnIndex: t.turnIndex,
+          request: t.request || { role: t.role, content: t.content },
+          response: t.response || null,
+          tokens: t.tokens || null,
+          timing: t.timing || null,
+          createdAt: t.createdAt,
+          diagnostics: {
+            tokens: t.tokens || null,
+            timing: t.timing || null,
+          },
+        })),
+      };
+      console.log(JSON.stringify(output, null, 2));
+    } else {
+      // Interactive formatted output
+      if (!opts.quiet) {
+        console.log('');
+        console.log(pc.bold(`  Session Replay: ${opts.replay.slice(0, 8)}...`));
+        console.log(pc.dim(`  Model: ${session.model || 'unknown'} | Provider: ${session.provider || 'unknown'} | Mode: ${session.mode || 'pipeline'}`));
+        console.log(pc.dim(`  State: ${session.lifecycleState || 'unknown'} | Created: ${session.createdAt ? new Date(session.createdAt).toLocaleString() : 'unknown'}`));
+        console.log(pc.dim(`  ${turns.length} turn${turns.length !== 1 ? 's' : ''}`));
+        console.log(pc.dim('  ' + '\u2501'.repeat(50)));
+        console.log('');
+      }
+
+      for (const turn of turns) {
+        // User message
+        const userContent = turn.request ? turn.request.content : (turn.role === 'user' ? turn.content : null);
+        if (userContent) {
+          console.log(`  ${pc.bold(pc.cyan('You:'))} ${userContent}`);
+        }
+
+        // Assistant response
+        const assistantContent = turn.response ? turn.response.content : (turn.role === 'assistant' ? turn.content : null);
+        if (assistantContent) {
+          console.log(`  ${pc.bold(pc.green('Assistant:'))}`);
+          const lines = assistantContent.split('\n');
+          for (const line of lines) {
+            console.log(`    ${line}`);
+          }
+        }
+
+        // Turn metadata
+        const meta = [];
+        if (turn.tokens) {
+          meta.push(`tokens: ${turn.tokens.total || '?'}`);
+        }
+        if (turn.timing?.totalMs) {
+          meta.push(`${turn.timing.totalMs}ms`);
+        }
+        if (meta.length > 0) {
+          console.log(pc.dim(`    [Turn ${turn.turnIndex}: ${meta.join(' | ')}]`));
+        }
+
+        console.log('');
+      }
+
+      if (!opts.quiet) {
+        console.log(pc.dim('  End of replay'));
+        console.log('');
+      }
+    }
+  } finally {
+    await store.close();
+  }
 }
 
 module.exports = { registerChat, resolveEmbeddingConfig };
