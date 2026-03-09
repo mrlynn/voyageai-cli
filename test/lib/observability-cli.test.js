@@ -33,7 +33,6 @@ describe('Observability CLI', () => {
       assert.equal(resolveConcept('harness'), 'harness');
       assert.equal(resolveConcept('state-machine'), 'harness');
       assert.equal(resolveConcept('chat-harness'), 'harness');
-      assert.equal(resolveConcept('sessions'), 'harness');
     });
 
     it('harness concept has links and tryIt arrays', () => {

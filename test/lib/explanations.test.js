@@ -38,6 +38,10 @@ describe('explanations', () => {
     'chat',
     'workflows',
     'workflow-publishing',
+    'harness',
+    'sessions',
+    'memory-strategies',
+    'cross-session-recall',
   ];
 
   it('has all expected concepts', () => {
