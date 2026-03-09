@@ -429,6 +429,32 @@ function createPlaygroundServer() {
         return;
       }
 
+      // Serve home promo assets: /assets/home/{filename}
+      const homeAssetMatch = req.url.match(/^\/assets\/home\/([a-zA-Z0-9_.-]+\.(mp4|webm|png|jpg|jpeg|gif))$/);
+      if (req.method === 'GET' && homeAssetMatch) {
+        const assetPath = path.join(__dirname, '..', 'playground', 'assets', 'home', homeAssetMatch[1]);
+        if (fs.existsSync(assetPath)) {
+          const mimeTypes = {
+            mp4: 'video/mp4',
+            webm: 'video/webm',
+            jpg: 'image/jpeg',
+            jpeg: 'image/jpeg',
+            png: 'image/png',
+            gif: 'image/gif',
+          };
+          const data = fs.readFileSync(assetPath);
+          res.writeHead(200, {
+            'Content-Type': mimeTypes[homeAssetMatch[2]] || 'application/octet-stream',
+            'Cache-Control': 'public, max-age=86400',
+          });
+          res.end(data);
+        } else {
+          res.writeHead(404);
+          res.end('Asset not found');
+        }
+        return;
+      }
+
       // Serve vendor assets (bundled JS libraries)
       const vendorMatch = req.url.match(/^\/vendor\/([a-zA-Z0-9_.-]+\.js)$/);
       if (req.method === 'GET' && vendorMatch) {
@@ -685,6 +711,43 @@ function createPlaygroundServer() {
           nanoAvailable,
           hasApiKey,
           ollamaAvailable,
+        }));
+        return;
+      }
+
+      // API: Chat memory status — returns current memory utilization
+      if (req.method === 'GET' && req.url === '/api/chat/memory') {
+        const { MemoryBudget } = require('../lib/memory-budget');
+        const { estimateTokens } = require('../lib/turn-state');
+
+        const budget = new MemoryBudget();
+        const historyBudget = budget.estimateSlotTokens({
+          systemPrompt: '',
+          contextDocs: [],
+          currentMessage: '',
+        });
+        const breakdown = budget.getBreakdown() || {};
+
+        // Current history utilization
+        const turns = _chatHistory ? _chatHistory.getMessages() : [];
+        const usedTokens = turns.reduce((sum, t) => sum + estimateTokens(t.content || ''), 0);
+        const utilization = historyBudget > 0 ? Math.min(100, Math.round((usedTokens / historyBudget) * 100)) : 0;
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          strategy: 'sliding_window',
+          availableStrategies: ['sliding_window', 'summarization', 'hierarchical'],
+          budget: {
+            modelLimit: breakdown.modelLimit || 128000,
+            reservedResponse: breakdown.reservedResponse || 4096,
+            historyBudget,
+          },
+          utilization: {
+            turnCount: Math.floor(turns.length / 2),
+            tokensUsed: usedTokens,
+            tokensBudget: historyBudget,
+            percent: utilization,
+          },
         }));
         return;
       }
@@ -1561,7 +1624,7 @@ function createPlaygroundServer() {
 
         // API: Chat message (streaming SSE)
         if (req.url === '/api/chat/message') {
-          const { query, db, collection, provider, model, maxDocs, rerank, systemPrompt, mode, textField, embeddingModel } = parsed;
+          const { query, db, collection, provider, model, maxDocs, rerank, systemPrompt, mode, textField, embeddingModel, memoryStrategy } = parsed;
           const isAgent = mode === 'agent';
           const isLocalEmbed = embeddingModel === 'voyage-4-nano';
 
@@ -1580,6 +1643,8 @@ function createPlaygroundServer() {
           const { createLLMProvider } = require('../lib/llm');
           const { chatTurn, agentChatTurn } = require('../lib/chat');
           const { ChatHistory } = require('../lib/history');
+          const { TurnOrchestrator } = require('../lib/turn-orchestrator');
+          const { LABELS } = require('../lib/turn-state');
 
           let llm;
           try {
@@ -1644,18 +1709,31 @@ function createPlaygroundServer() {
             embedOpts.model = embeddingModel;
           }
 
+          // Create orchestrator for state tracking
+          const orchestrator = new TurnOrchestrator({ sessionId: 'playground', mode: isAgent ? 'agent' : 'pipeline' });
+
+          // Stream state changes as SSE events
+          orchestrator.on('stateChange', ({ from, to }) => {
+            if (!res.writableEnded) {
+              res.write(`event: state\ndata: ${JSON.stringify({ from, to, label: LABELS[to] || to })}\n\n`);
+            }
+          });
+
           // Helper: run pipeline mode
           const runPipeline = async () => {
-            for await (const event of chatTurn({
-              query, db, collection, llm, history,
-              opts: {
-                maxDocs: maxDocs || 5,
-                rerank: isLocalEmbed ? false : (rerank !== false),
-                stream: true,
-                systemPrompt,
-                textField: textField || 'content',
-                ...embedOpts,
-              },
+            for await (const event of orchestrator.executePipelineTurn({
+              generatorFn: () => chatTurn({
+                query, db, collection, llm, history,
+                opts: {
+                  maxDocs: maxDocs || 5,
+                  rerank: isLocalEmbed ? false : (rerank !== false),
+                  stream: true,
+                  systemPrompt,
+                  textField: textField || 'content',
+                  ...embedOpts,
+                  memoryStrategy: memoryStrategy || undefined,
+                },
+              }),
             })) {
               if (event.type === 'retrieval') {
                 res.write(`event: retrieval\ndata: ${JSON.stringify(event.data)}\n\n`);
@@ -1671,9 +1749,11 @@ function createPlaygroundServer() {
             if (isAgent) {
               // Agent mode: LLM decides which tools to call
               try {
-                for await (const event of agentChatTurn({
-                  query, llm, history,
-                  opts: { systemPrompt, db: db || undefined, collection: collection || undefined },
+                for await (const event of orchestrator.executeAgentTurn({
+                  generatorFn: () => agentChatTurn({
+                    query, llm, history,
+                    opts: { systemPrompt, db: db || undefined, collection: collection || undefined },
+                  }),
                 })) {
                   if (event.type === 'tool_call') {
                     const { name, args, timeMs, error, result } = event.data;
@@ -1740,6 +1820,8 @@ function createPlaygroundServer() {
             }
           } catch (err) {
             res.write(`event: error\ndata: ${JSON.stringify({ error: err.message })}\n\n`);
+          } finally {
+            orchestrator.getStateMachine().removeAllListeners('stateChange');
           }
 
           res.end();
