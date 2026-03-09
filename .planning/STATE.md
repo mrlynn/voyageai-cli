@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Chat Harness
 status: in-progress
-last_updated: "2026-03-09T10:13:32.000Z"
+last_updated: "2026-03-09T10:58:09Z"
 progress:
-  total_phases: 4
-  completed_phases: 4
-  total_plans: 8
-  completed_plans: 10
+  total_phases: 5
+  completed_phases: 5
+  total_plans: 12
+  completed_plans: 12
 ---
 
 # Project State
@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-09)
 
 **Core value:** Zero-API-key path from install to working vector search, with seamless upgrade to Voyage API
-**Current focus:** Phase 23 - Observability Integration
+**Current focus:** Phase 25 - Wire MemoryManager into Playground
 
 ## Current Position
 
-Phase: 23 of 25 (Observability Integration)
-Plan: 03 of 03 complete
+Phase: 25 of 25 (Wire MemoryManager into Playground)
+Plan: 01 of 01 complete
 Status: Phase Complete
-Last activity: 2026-03-09 -- Completed 23-03 Playground Observability (state indicator, memory bar, strategy selector)
+Last activity: 2026-03-09 -- Completed 25-01 Wire MemoryManager into playground chat handler
 
-Progress: [████████████████████] ~85%
+Progress: [████████████████████] ~100%
 
 ## Performance Metrics
 
@@ -53,6 +53,7 @@ Progress: [████████████████████] ~85%
 | Phase 23-01 P01 | 6min | 2 tasks | 3 files |
 | Phase 23-02 P02 | 2min | 2 tasks | 2 files |
 | Phase 23-03 P03 | 4min | 2 tasks | 2 files |
+| Phase 25-01 P01 | 2min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -94,6 +95,8 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [23-03] State indicator and typing indicator coexist -- typing shows before SSE, state takes over on first event
 - [23-03] Memory bar fetched after turn completion (not streamed) to avoid overhead during active turns
 - [23-03] Orchestrator cleanup via getStateMachine().removeAllListeners since orchestrator doesn't expose it directly
+- [25-01] Fresh MemoryManager created per chat request so defaultStrategy reflects user's current selection
+- [25-01] Module-level _playgroundMemoryManager variable enables /api/chat/memory to report active strategy
 
 ### Pending Todos
 
@@ -106,5 +109,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-09
-Stopped at: Completed 23-03-PLAN.md (Playground Observability) -- Phase 23 complete
+Stopped at: Completed 25-01-PLAN.md (Wire MemoryManager into Playground) -- Phase 25 complete
 Resume file: None

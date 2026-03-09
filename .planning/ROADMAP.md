@@ -79,7 +79,7 @@ Full details: [milestones/v1.4-ROADMAP.md](milestones/v1.4-ROADMAP.md)
 - [x] **Phase 22: Memory Management** - Token-budgeted sliding window, LLM summarization, hierarchical memory, cross-session recall (completed 2026-03-09)
 - [x] **Phase 23: Observability & Integration** - CLI state labels, /memory command, playground integration, explain topic, replay, --json diagnostics (completed 2026-03-09)
 - [x] **Phase 24: Wire Memory into Chat Pipeline** - Replace hardcoded history with MemoryManager, wire strategies, populate session summaries, enable cross-session recall (completed 2026-03-09)
-- [ ] **Phase 25: Wire MemoryManager into Playground** - Instantiate MemoryManager in playground chat handler, pass user-selected strategy, fix /api/chat/memory endpoint
+- [x] **Phase 25: Wire MemoryManager into Playground** - Instantiate MemoryManager in playground chat handler, pass user-selected strategy, fix /api/chat/memory endpoint (completed 2026-03-09)
 
 ## Phase Details
 
@@ -211,4 +211,4 @@ Phases execute in numeric order: 20 → 21 → 22 → 23 → 24 → 25
 | 22. Memory Management | v1.5 | 2/2 | Complete | 2026-03-09 |
 | 23. Observability & Integration | v1.5 | 3/3 | Complete | 2026-03-09 |
 | 24. Wire Memory into Chat Pipeline | v1.5 | 2/2 | Complete | 2026-03-09 |
-| 25. Wire MemoryManager into Playground | v1.5 | 0/1 | Pending | - |
+| 25. Wire MemoryManager into Playground | 1/1 | Complete   | 2026-03-09 | - |
