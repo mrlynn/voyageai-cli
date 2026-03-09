@@ -45,6 +45,7 @@ function registerChat(program) {
     .option('--system-prompt <text>', 'Override the system prompt')
     .option('--text-field <name>', 'Document text field name', 'text')
     .option('--filter <json>', 'MongoDB pre-filter for vector search')
+    .option('--memory-strategy <name>', 'Memory strategy: sliding_window, summarization, hierarchical', 'sliding_window')
     .option('--estimate', 'Show estimated per-turn cost breakdown and exit')
     .option('--list', 'List recent chat sessions and exit')
     .option('--all', 'Include archived sessions in --list output')
@@ -369,6 +370,12 @@ async function runChat(opts) {
     mode: isAgent ? 'agent' : 'pipeline',
   });
 
+  // Create MemoryManager for dynamic memory strategy selection
+  const { createFullMemoryManager } = require('../lib/memory-strategy');
+  const memoryManager = createFullMemoryManager({
+    defaultStrategy: opts.memoryStrategy || chatConf.memoryStrategy || 'sliding_window',
+  });
+
   // Track whether a turn is currently in progress (for SIGINT handling)
   let turnInProgress = false;
 
@@ -432,12 +439,14 @@ async function runChat(opts) {
       if (isAgent) {
         lastToolCalls = await handleAgentTurn(input, {
           llm, history, opts, db, collection, systemPrompt, chatConf, sessionStats, orchestrator,
+          memoryManager,
         });
       } else {
         await handlePipelineTurn(input, {
           db, collection, llm, history, opts,
           maxDocs, doRerank, doStream, systemPrompt, textField, chatConf,
           isLocal, embeddingModel, isLocalEmbed, sessionStats, orchestrator,
+          memoryManager,
         });
       }
     } catch (err) {
@@ -491,7 +500,7 @@ async function runChat(opts) {
  * Handle a single pipeline mode turn.
  */
 async function handlePipelineTurn(input, ctx) {
-  const { db, collection, llm, history, opts, maxDocs, doRerank, doStream, systemPrompt, textField, chatConf, isLocal, embeddingModel, isLocalEmbed, sessionStats, orchestrator } = ctx;
+  const { db, collection, llm, history, opts, maxDocs, doRerank, doStream, systemPrompt, textField, chatConf, isLocal, embeddingModel, isLocalEmbed, sessionStats, orchestrator, memoryManager } = ctx;
 
   // Build embedding options based on model selection
   let localOpts = {};
@@ -502,6 +511,12 @@ async function handlePipelineTurn(input, ctx) {
     localOpts = { model: embeddingModel };
   }
   const turnNum = Math.floor(history.turns.length / 2) + 1;
+  const memoryStrategy = opts.memoryStrategy || chatConf.memoryStrategy || undefined;
+
+  // Update MemoryManager with per-turn context (LLM for summarization, query for recall)
+  if (memoryManager) {
+    memoryManager.setOpts({ llm, query: input });
+  }
 
   if (opts.json) {
     // JSON mode — collect everything then output
@@ -510,7 +525,7 @@ async function handlePipelineTurn(input, ctx) {
     let metadata = {};
 
     for await (const event of orchestrator.executePipelineTurn({
-      generatorFn: (args) => chatTurn({ query: input, db, collection, llm, history, opts: { maxDocs, rerank: doRerank, stream: false, systemPrompt, textField, filter: opts.filter, ...localOpts } }),
+      generatorFn: (args) => chatTurn({ query: input, db, collection, llm, history, opts: { maxDocs, rerank: doRerank, stream: false, systemPrompt, textField, filter: opts.filter, ...localOpts, memoryManager, memoryStrategy } }),
     })) {
       if (event.type === 'chunk') fullResponse += event.data;
       if (event.type === 'done') {
@@ -551,7 +566,7 @@ async function handlePipelineTurn(input, ctx) {
 
     try {
       for await (const event of orchestrator.executePipelineTurn({
-        generatorFn: (args) => chatTurn({ query: input, db, collection, llm, history, opts: { maxDocs, rerank: doRerank, stream: doStream, systemPrompt, textField, filter: opts.filter, ...localOpts } }),
+        generatorFn: (args) => chatTurn({ query: input, db, collection, llm, history, opts: { maxDocs, rerank: doRerank, stream: doStream, systemPrompt, textField, filter: opts.filter, ...localOpts, memoryManager, memoryStrategy } }),
       })) {
         if (event.type === 'interrupted') {
           if (generationSpinner) { generationSpinner.stop(); generationSpinner = null; }
@@ -671,9 +686,15 @@ async function handlePipelineTurn(input, ctx) {
  * @returns {Array} Tool calls from this turn (for /tools and /export-workflow)
  */
 async function handleAgentTurn(input, ctx) {
-  const { llm, history, opts, db, collection, systemPrompt, chatConf, sessionStats, orchestrator } = ctx;
+  const { llm, history, opts, db, collection, systemPrompt, chatConf, sessionStats, orchestrator, memoryManager } = ctx;
   const showToolCalls = chatConf.showToolCalls !== undefined ? chatConf.showToolCalls : true;
   const toolCalls = [];
+  const memoryStrategy = opts.memoryStrategy || chatConf.memoryStrategy || undefined;
+
+  // Update MemoryManager with per-turn context
+  if (memoryManager) {
+    memoryManager.setOpts({ llm, query: input });
+  }
 
   if (opts.json) {
     // JSON mode — collect everything then output
@@ -681,7 +702,7 @@ async function handleAgentTurn(input, ctx) {
     let metadata = {};
 
     for await (const event of orchestrator.executeAgentTurn({
-      generatorFn: (args) => agentChatTurn({ query: input, llm, history, opts: { systemPrompt, db, collection } }),
+      generatorFn: (args) => agentChatTurn({ query: input, llm, history, opts: { systemPrompt, db, collection, memoryManager, memoryStrategy } }),
     })) {
       if (event.type === 'tool_call') {
         toolCalls.push(event.data);
@@ -722,7 +743,7 @@ async function handleAgentTurn(input, ctx) {
 
     try {
       for await (const event of orchestrator.executeAgentTurn({
-        generatorFn: (args) => agentChatTurn({ query: input, llm, history, opts: { systemPrompt, db, collection } }),
+        generatorFn: (args) => agentChatTurn({ query: input, llm, history, opts: { systemPrompt, db, collection, memoryManager, memoryStrategy } }),
       })) {
         if (event.type === 'interrupted') {
           if (thinkingSpinner) { thinkingSpinner.stop(); thinkingSpinner = null; }

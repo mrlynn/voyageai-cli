@@ -7,7 +7,7 @@
 - ✅ **v1.2 Robot Chat UX** -- Phases 10-11 (shipped 2026-03-07)
 - ✅ **v1.3 Playground Local Inference** -- Phases 12-15 (shipped 2026-03-07)
 - ✅ **v1.4 Chat Experience Overhaul** -- Phases 16-19 (shipped 2026-03-07)
-- 🚧 **v1.5 Chat Harness** -- Phases 20-23 (in progress)
+- 🚧 **v1.5 Chat Harness** -- Phases 20-24 (in progress)
 
 ## Phases
 
@@ -78,6 +78,7 @@ Full details: [milestones/v1.4-ROADMAP.md](milestones/v1.4-ROADMAP.md)
 - [x] **Phase 21: Session Persistence** - MongoDB session/turn CRUD, session lifecycle states, graceful in-memory fallback (completed 2026-03-09)
 - [x] **Phase 22: Memory Management** - Token-budgeted sliding window, LLM summarization, hierarchical memory, cross-session recall (completed 2026-03-09)
 - [ ] **Phase 23: Observability & Integration** - CLI state labels, /memory command, playground integration, explain topic, replay, --json diagnostics
+- [ ] **Phase 24: Wire Memory into Chat Pipeline** - Replace hardcoded history with MemoryManager, wire strategies, populate session summaries, enable cross-session recall
 
 ## Phase Details
 
@@ -145,10 +146,27 @@ Plans:
 - [ ] 23-01: TBD
 - [ ] 23-02: TBD
 
+### Phase 24: Wire Memory into Chat Pipeline
+**Goal**: Phase 22's memory management classes become the active runtime path — replacing the hardcoded `getMessagesWithBudget(4000)` in chat.js
+**Depends on**: Phase 20, Phase 21, Phase 22
+**Requirements**: MEM-01, MEM-02, MEM-03, MEM-04, MEM-05, SES-03
+**Gap Closure:** Closes gaps from v1.5 audit — wires dead-code memory classes into chat pipeline
+**Success Criteria** (what must be TRUE):
+  1. `chat.js` uses MemoryManager with MemoryBudget instead of hardcoded `getMessagesWithBudget(4000)`
+  2. SlidingWindowStrategy is the default strategy; SummarizationStrategy and HierarchicalStrategy are selectable via config
+  3. SessionSummaryStore is instantiated and summaries are generated+stored when sessions are archived
+  4. CrossSessionRecall is wired into session resume to surface relevant past context
+  5. Both E2E flows pass: "Memory-Managed Chat Turn" and "Session Resume with Smart Memory"
+**Plans**: 2 plans
+
+Plans:
+- [ ] 24-01-PLAN.md — Wire MemoryBudget + MemoryManager into chatTurn/agentChatTurn, add --memory-strategy CLI option
+- [ ] 24-02-PLAN.md — Wire SessionSummaryStore into archive, CrossSessionRecall into resume, E2E tests
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 20 → 21 → 22 → 23
+Phases execute in numeric order: 20 → 21 → 22 → 23 → 24
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -171,7 +189,8 @@ Phases execute in numeric order: 20 → 21 → 22 → 23
 | 17. Onboarding & Detection | v1.4 | 3/3 | Complete | 2026-03-07 |
 | 18. Status Bar | v1.4 | 2/2 | Complete | 2026-03-07 |
 | 19. KB Ingest | v1.4 | 2/2 | Complete | 2026-03-07 |
-| 20. Turn State Machine | 2/2 | Complete    | 2026-03-09 | - |
-| 21. Session Persistence | 2/2 | Complete    | 2026-03-09 | - |
-| 22. Memory Management | 2/2 | Complete   | 2026-03-09 | - |
+| 20. Turn State Machine | v1.5 | 2/2 | Complete | 2026-03-09 |
+| 21. Session Persistence | v1.5 | 2/2 | Complete | 2026-03-09 |
+| 22. Memory Management | v1.5 | 2/2 | Complete | 2026-03-09 |
 | 23. Observability & Integration | v1.5 | 0/? | Not started | - |
+| 24. Wire Memory into Chat Pipeline | v1.5 | 0/2 | Not started | - |

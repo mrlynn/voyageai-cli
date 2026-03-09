@@ -14,8 +14,17 @@ class SlidingWindowStrategy {
    * @param {number} budgetTokens - Maximum tokens available for history
    * @returns {Array<{role: string, content: string}>} Selected turns (oldest first)
    */
-  static select(turns, budgetTokens) {
-    if (!turns || turns.length === 0 || budgetTokens <= 0) {
+  static select(turnsOrOpts, budgetTokens) {
+    // Support both: select(turns, budget) and select({ turns, budgetTokens })
+    let turns, budget;
+    if (Array.isArray(turnsOrOpts)) {
+      turns = turnsOrOpts;
+      budget = budgetTokens;
+    } else {
+      turns = turnsOrOpts.turns;
+      budget = turnsOrOpts.budgetTokens;
+    }
+    if (!turns || turns.length === 0 || budget <= 0) {
       return [];
     }
 
@@ -24,7 +33,7 @@ class SlidingWindowStrategy {
 
     for (let i = turns.length - 1; i >= 0; i--) {
       const cost = estimateTokens(turns[i].content);
-      if (used + cost > budgetTokens) {
+      if (used + cost > budget) {
         break;
       }
       used += cost;
@@ -46,9 +55,15 @@ class MemoryManager {
    * @param {Record<string, {select: Function}>} [options.strategies] - Strategy map
    * @param {string} [options.defaultStrategy='sliding_window'] - Default strategy name
    */
-  constructor({ strategies = {}, defaultStrategy = 'sliding_window' } = {}) {
+  constructor({ strategies = {}, defaultStrategy = 'sliding_window', llm, recall, currentSessionId, query } = {}) {
     this._strategies = new Map();
     this._defaultStrategy = defaultStrategy;
+    this._extraOpts = {};
+    this._optionsStyleStrategies = new Set(['sliding_window']);
+    if (llm) this._extraOpts.llm = llm;
+    if (recall) this._extraOpts.recall = recall;
+    if (currentSessionId) this._extraOpts.currentSessionId = currentSessionId;
+    if (query) this._extraOpts.query = query;
 
     // Register built-in strategy
     this._strategies.set('sliding_window', SlidingWindowStrategy);
@@ -57,6 +72,14 @@ class MemoryManager {
     for (const [name, strategy] of Object.entries(strategies)) {
       this._strategies.set(name, strategy);
     }
+  }
+
+  /**
+   * Set or update extra options passed to strategies (e.g. llm, recall, query).
+   * @param {object} opts - Key-value pairs to merge into extra options
+   */
+  setOpts(opts) {
+    Object.assign(this._extraOpts, opts);
   }
 
   /**
@@ -73,7 +96,18 @@ class MemoryManager {
     if (!strat) {
       throw new Error(`Unknown strategy: ${name}`);
     }
-    return strat.select(turns, budget);
+    // Known built-in strategies accept an options-object form.
+    // Custom/legacy strategies that expect positional (turns, budget) get the old form
+    // for backward compatibility.
+    let result;
+    if (this._optionsStyleStrategies.has(name)) {
+      result = strat.select({ turns, budgetTokens: budget, ...this._extraOpts });
+    } else {
+      result = strat.select(turns, budget);
+    }
+    // Return as-is: synchronous strategies return arrays, async ones return Promises.
+    // Callers can safely `await` either (await on a non-Promise is harmless).
+    return result;
   }
 
   /**
@@ -220,6 +254,9 @@ function createFullMemoryManager(options = {}) {
   const mm = new MemoryManager(options);
   mm.registerStrategy('summarization', SummarizationStrategy);
   mm.registerStrategy('hierarchical', HierarchicalStrategy);
+  // Mark strategies that accept options-object form (for extra opts like llm, recall)
+  mm._optionsStyleStrategies.add('summarization');
+  mm._optionsStyleStrategies.add('hierarchical');
   return mm;
 }
 
