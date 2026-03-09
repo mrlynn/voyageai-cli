@@ -46,6 +46,8 @@ function registerChat(program) {
     .option('--text-field <name>', 'Document text field name', 'text')
     .option('--filter <json>', 'MongoDB pre-filter for vector search')
     .option('--estimate', 'Show estimated per-turn cost breakdown and exit')
+    .option('--list', 'List recent chat sessions and exit')
+    .option('--all', 'Include archived sessions in --list output')
     .option('--json', 'Output JSON per turn (for scripting)')
     .option('-q, --quiet', 'Suppress decorative output')
     .action(async (opts) => {
@@ -69,6 +71,51 @@ async function runChat(opts) {
 
   const db = opts.db || proj.db;
   const collection = opts.collection || proj.collection;
+
+  // --list: show recent sessions and exit
+  if (opts.list) {
+    if (startupAnim) startupAnim.stop();
+    const { SessionStore, SESSION_STATES } = require('../lib/session-store');
+    const store = new SessionStore({ db: db || 'vai' });
+    try {
+      await store._connect();
+      if (store.isFallbackMode) {
+        console.error(ui.error('MongoDB unavailable. Cannot list sessions.'));
+        process.exit(1);
+      }
+      const filter = opts.all
+        ? {}
+        : { lifecycleState: { $ne: SESSION_STATES.ARCHIVED } };
+      const sessions = await store._sessionsCol
+        .find(filter)
+        .sort({ updatedAt: -1 })
+        .limit(20)
+        .toArray();
+
+      if (sessions.length === 0) {
+        console.log(pc.dim('  No sessions found.'));
+      } else {
+        console.log('');
+        console.log(pc.bold('  Recent Sessions'));
+        console.log('');
+        for (const s of sessions) {
+          const id = (s._id || '').toString().slice(0, 8);
+          const status = s.lifecycleState || 'unknown';
+          const date = s.updatedAt ? new Date(s.updatedAt).toLocaleString() : 'unknown';
+          const model = s.model || '';
+          const statusColor = status === 'archived' ? pc.dim(status) : pc.green(status);
+          console.log(`  ${pc.bold(id)}  ${statusColor}  ${pc.dim(date)}  ${model}`);
+        }
+        console.log('');
+        console.log(pc.dim('  Resume with: vai chat --session <id>'));
+      }
+      await store.close();
+    } catch (err) {
+      console.error(ui.error(`Failed to list sessions: ${err.message}`));
+    }
+    return;
+  }
+
   const maxDocs = opts.maxContextDocs || chatConf.maxContextDocs || 5;
   const maxTurns = opts.maxTurns || chatConf.maxConversationTurns || 20;
   const textField = opts.textField || 'text';
@@ -243,33 +290,65 @@ async function runChat(opts) {
     }
   }
 
-  // Initialize history
+  // Initialize session store and history
   let historyMongo = null;
+  let sessionStore = null;
+  let sessionId = opts.session || undefined;
+  let fallbackWarningShown = false;
+
   if (opts.history !== false) {
-    try {
-      const historyCollection = chatConf.historyCollection ||
-        process.env.VAI_CHAT_HISTORY || 'vai_chat_history';
-      const { client, collection: coll } = await getMongoCollection(db || 'vai', historyCollection);
-      historyMongo = { client, collection: coll };
-      await ChatHistory.ensureIndexes(coll);
-    } catch {
-      // MongoDB persistence failure is non-fatal
-      historyMongo = null;
+    const { SessionStore } = require('../lib/session-store');
+    sessionStore = new SessionStore({ db: db || 'vai' });
+
+    if (opts.session) {
+      // Resume existing session
+      const existingSession = await sessionStore.getSession(opts.session);
+      if (existingSession) {
+        // Reactivate if paused
+        if (existingSession.lifecycleState === 'paused') {
+          await sessionStore.transitionLifecycle(opts.session, 'active');
+        }
+        // Load turns
+        const turns = await sessionStore.getLatestTurns(opts.session, maxTurns * 2);
+        if (!opts.quiet && !opts.json) {
+          console.log(pc.dim(`  Resumed session ${opts.session.slice(0, 8)} (${turns.length} turns loaded)`));
+        }
+      } else if (!opts.quiet && !opts.json) {
+        console.log(ui.warn(`Session ${opts.session} not found. Starting new conversation.`));
+        sessionId = undefined;
+      }
     }
+
+    if (!sessionId) {
+      // Create new session
+      const newSession = await sessionStore.createSession({
+        model: llmConfig.model || 'unknown',
+        provider: llmConfig.provider || 'unknown',
+        mode: isAgent ? 'agent' : 'pipeline',
+      });
+      sessionId = newSession._id;
+    }
+
+    // Show one-time warning if store fell back to in-memory
+    if (sessionStore.isFallbackMode && !fallbackWarningShown && !opts.quiet && !opts.json) {
+      console.log(pc.dim('  MongoDB unavailable \u2014 session will not be persisted'));
+      fallbackWarningShown = true;
+    }
+
+    // Legacy mongo path not needed when store is available
+    historyMongo = null;
   }
 
   const history = new ChatHistory({
-    sessionId: opts.session || undefined,
+    sessionId,
     maxTurns,
+    store: sessionStore,
     mongo: historyMongo,
   });
 
-  // Load existing session if resuming
-  if (opts.session) {
-    const loaded = await history.load();
-    if (!loaded && !opts.quiet && !opts.json) {
-      console.log(ui.warn(`Session ${opts.session} not found. Starting new conversation.`));
-    }
+  // Load existing session turns if resuming
+  if (opts.session && sessionStore) {
+    await history.load();
   }
 
   // Telemetry: track session
@@ -336,10 +415,10 @@ async function runChat(opts) {
     if (input.startsWith('/')) {
       const handled = await handleSlashCommand(input, {
         history, opts, db, collection, llm, rl, historyMongo,
-        isAgent, lastToolCalls,
+        isAgent, lastToolCalls, sessionStore, sessionId,
       });
       if (handled === 'quit') {
-        await cleanup(historyMongo);
+        await cleanup(historyMongo, sessionStore);
         process.exit(0);
       }
       rl.prompt();
@@ -390,7 +469,7 @@ async function runChat(opts) {
 
   rl.on('close', async () => {
     sendChatTelemetry();
-    await cleanup(historyMongo);
+    await cleanup(historyMongo, sessionStore);
     process.exit(0);
   });
 
@@ -402,7 +481,7 @@ async function runChat(opts) {
     } else {
       sendChatTelemetry();
       console.log('');
-      await cleanup(historyMongo);
+      await cleanup(historyMongo, sessionStore);
       process.exit(0);
     }
   });
@@ -754,7 +833,7 @@ async function handleAgentTurn(input, ctx) {
  * @returns {'quit'|true|false} - 'quit' to exit, true if handled, false if unknown
  */
 async function handleSlashCommand(input, ctx) {
-  const { history, opts, db, collection, llm, rl, isAgent, lastToolCalls } = ctx;
+  const { history, opts, db, collection, llm, rl, isAgent, lastToolCalls, sessionStore, sessionId } = ctx;
   const parts = input.split(/\s+/);
   const cmd = parts[0].toLowerCase();
 
@@ -773,6 +852,8 @@ async function handleSlashCommand(input, ctx) {
       console.log('  /context    Show retrieved context from last query');
       console.log('  /clear      Clear conversation history');
       console.log('  /model      Show or switch LLM model (/model <name>)');
+      console.log('  /sessions   List recent sessions');
+      console.log('  /archive    Archive current session');
       console.log('  /export [format] [file]  Export conversation (markdown, json, pdf)');
       if (isAgent) {
         console.log('  /tools      Show tool calls from last response');
@@ -991,15 +1072,69 @@ async function handleSlashCommand(input, ctx) {
       return true;
     }
 
+    case '/archive': {
+      if (!sessionStore) {
+        console.log(pc.dim('  Session archiving not available (no MongoDB connection).'));
+        return true;
+      }
+      if (sessionStore.isFallbackMode) {
+        console.log(pc.dim('  Session archiving not available (no MongoDB connection).'));
+        return true;
+      }
+      try {
+        await sessionStore.transitionLifecycle(sessionId, 'archived');
+        console.log(pc.dim('  Session archived.'));
+      } catch (err) {
+        console.log(pc.dim(`  Archive failed: ${err.message}`));
+      }
+      return true;
+    }
+
+    case '/sessions': {
+      if (!sessionStore || sessionStore.isFallbackMode) {
+        console.log(pc.dim('  Session listing not available (no MongoDB connection).'));
+        return true;
+      }
+      try {
+        await sessionStore._connect();
+        const { SESSION_STATES } = require('../lib/session-store');
+        const sessions = await sessionStore._sessionsCol
+          .find({ lifecycleState: { $ne: SESSION_STATES.ARCHIVED } })
+          .sort({ updatedAt: -1 })
+          .limit(10)
+          .toArray();
+
+        if (sessions.length === 0) {
+          console.log(pc.dim('  No sessions found.'));
+        } else {
+          console.log('');
+          for (const s of sessions) {
+            const id = (s._id || '').toString().slice(0, 8);
+            const active = s._id === sessionId ? ui.green(' <- current') : '';
+            const date = s.updatedAt ? new Date(s.updatedAt).toLocaleString() : 'unknown';
+            console.log(`  ${pc.bold(id)}  ${pc.dim(date)}  ${s.model || ''}${active}`);
+          }
+          console.log('');
+          console.log(pc.dim('  Resume with: vai chat --session <id>'));
+        }
+      } catch (err) {
+        console.log(pc.dim(`  Error listing sessions: ${err.message}`));
+      }
+      return true;
+    }
+
     default:
       console.log(pc.dim(`  Unknown command: ${cmd}. Type /help for available commands.`));
       return true;
   }
 }
 
-async function cleanup(mongo) {
+async function cleanup(mongo, store) {
   if (mongo?.client) {
     try { await mongo.client.close(); } catch { /* ignore */ }
+  }
+  if (store) {
+    try { await store.close(); } catch { /* ignore */ }
   }
 }
 
