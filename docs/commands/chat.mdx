@@ -89,12 +89,19 @@ These commands are available at the chat prompt during an active session:
 | Command | Description |
 |---------|-------------|
 | `/help` | Show available slash commands |
+| `/sources` | Show sources from last response |
+| `/session` | Display current session ID |
+| `/context` | Show retrieved context from last query |
 | `/history` | List recent chat sessions with status, turn count, and date |
-| `/memory` | Show current memory strategy, token budget breakdown, and utilization |
 | `/clear` | Clear conversation history for the current session |
-| `/stats` | Show session statistics |
-| `/quit` | Exit the chat |
-| `/exit` | Exit the chat (alias for `/quit`) |
+| `/model [name]` | Show current LLM model, or switch to `name` |
+| `/memory` | Show memory strategy, token budget breakdown, and utilization |
+| `/sessions` | List recent sessions |
+| `/archive` | Archive the current session |
+| `/export [format] [file]` | Export conversation as markdown, json, or pdf |
+| `/tools` | Show tool calls from last response (agent mode only) |
+| `/export-workflow` | Export last tool sequence as reusable workflow (agent mode only) |
+| `/quit` | Exit the chat (aliases: `/exit`, `/q`) |
 
 ### /memory Output Example
 
