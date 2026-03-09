@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Chat Harness
 status: in-progress
-last_updated: "2026-03-09T07:05:05Z"
+last_updated: "2026-03-09T07:40:45.374Z"
 progress:
-  total_phases: 2
+  total_phases: 3
   completed_phases: 2
-  total_plans: 4
-  completed_plans: 4
+  total_plans: 6
+  completed_plans: 5
 ---
 
 # Project State
@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-09)
 
 **Core value:** Zero-API-key path from install to working vector search, with seamless upgrade to Voyage API
-**Current focus:** Phase 21 - Session Persistence
+**Current focus:** Phase 22 - Memory Management
 
 ## Current Position
 
-Phase: 21 of 23 (Session Persistence)
-Plan: 02 of 02 complete
-Status: Phase Complete
-Last activity: 2026-03-09 -- Completed 21-02 CLI Integration & Session Summary Store
+Phase: 22 of 23 (Memory Management)
+Plan: 01 of 02 complete
+Status: In Progress
+Last activity: 2026-03-09 -- Completed 22-01 Token Budget & Sliding Window
 
-Progress: [██████████] ~50%
+Progress: [██████████] ~55%
 
 ## Performance Metrics
 
@@ -44,6 +44,9 @@ Progress: [██████████] ~50%
 | v1.3 | 4 | 8 | 17 (+3,581/-321) |
 | v1.4 | 4 | 9 | 21 (+3,136/-290) |
 | v1.5 | 4 | TBD | -- |
+
+| Phase | Duration | Tasks | Files |
+| 22-01 P01 | 2min | 2 | 4 |
 
 ## Accumulated Context
 
@@ -63,6 +66,9 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [21-02] SessionSummaryStore uses upsert with $setOnInsert for createdAt preservation
 - [21-02] ChatHistory dual persistence: store (new) and mongo (legacy) paths coexist
 - [21-02] SessionStore replaces legacy historyMongo -- single connection, not dual
+- [22-01] Zero budget returns empty array (not single turn) for predictable behavior
+- [22-01] Strategy registry uses Map for O(1) lookup and extensibility
+- [22-01] contextDocs modeled as array of {text} objects matching existing retrieval format
 
 ### Pending Todos
 
@@ -75,5 +81,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-09
-Stopped at: Completed 21-02-PLAN.md (CLI Integration & Session Summary Store)
+Stopped at: Completed 22-01-PLAN.md (Token Budget & Sliding Window)
 Resume file: None
