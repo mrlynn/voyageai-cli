@@ -6,9 +6,9 @@ status: in-progress
 last_updated: "2026-03-09T07:05:05Z"
 progress:
   total_phases: 2
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 4
-  completed_plans: 3
+  completed_plans: 4
 ---
 
 # Project State
@@ -23,11 +23,11 @@ See: .planning/PROJECT.md (updated 2026-03-09)
 ## Current Position
 
 Phase: 21 of 23 (Session Persistence)
-Plan: 01 of 02 complete
-Status: In Progress
-Last activity: 2026-03-09 -- Completed 21-01 SessionStore
+Plan: 02 of 02 complete
+Status: Phase Complete
+Last activity: 2026-03-09 -- Completed 21-02 CLI Integration & Session Summary Store
 
-Progress: [█████░░░░░] ~25%
+Progress: [██████████] ~50%
 
 ## Performance Metrics
 
@@ -60,6 +60,9 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [21-01] Sessions start in ACTIVE state on create (skip manual INITIALIZING->ACTIVE)
 - [21-01] In-memory fallback is permanent per instance -- no MongoDB retry after fallback
 - [21-01] Index creation is lazy (first write) and non-fatal
+- [21-02] SessionSummaryStore uses upsert with $setOnInsert for createdAt preservation
+- [21-02] ChatHistory dual persistence: store (new) and mongo (legacy) paths coexist
+- [21-02] SessionStore replaces legacy historyMongo -- single connection, not dual
 
 ### Pending Todos
 
@@ -72,5 +75,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-09
-Stopped at: Completed 21-01-PLAN.md (SessionStore)
+Stopped at: Completed 21-02-PLAN.md (CLI Integration & Session Summary Store)
 Resume file: None
