@@ -3671,6 +3671,63 @@ select:focus { outline: none; border-color: var(--accent); }
   60%, 100% { content: '...'; }
 }
 
+/* ── Turn State Indicator ── */
+.chat-state-indicator {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  margin: 4px 16px;
+  font-size: 0.82em;
+  color: var(--text-dim);
+  border-radius: var(--radius);
+  background: var(--bg-surface);
+  transition: opacity 0.2s;
+}
+.chat-state-indicator.active {
+  display: flex;
+}
+.chat-state-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: statePulse 1s ease-in-out infinite;
+}
+@keyframes statePulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* ── Memory Usage Bar ── */
+.chat-memory-bar {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 16px;
+  margin: 0 16px 4px;
+  font-size: 0.75em;
+  color: var(--text-muted);
+}
+.chat-memory-bar.active {
+  display: flex;
+}
+.chat-memory-bar-track {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--border);
+  overflow: hidden;
+}
+.chat-memory-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  background: var(--accent);
+  transition: width 0.3s ease;
+}
+.chat-memory-bar-fill.warning { background: var(--warning, #f59e0b); }
+.chat-memory-bar-fill.danger { background: var(--error, #ef4444); }
+
 /* ── Multimodal Tab ── */
 .mm-grid {
   display: grid;
@@ -6433,6 +6490,12 @@ select:focus { outline: none; border-color: var(--accent); }
   line-height: 1.65;
 }
 
+.home-hero-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
 .home-hero-links {
   display: flex;
   flex-wrap: wrap;
@@ -6584,6 +6647,152 @@ select:focus { outline: none; border-color: var(--accent); }
   color: var(--text-dim);
   font-size: 12px;
   line-height: 1.5;
+}
+
+.home-demo-gallery-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 0.9fr);
+  gap: 18px;
+  width: 100%;
+  margin-top: 24px;
+  padding: 18px;
+  min-height: 208px;
+  border: 1px solid rgba(0, 212, 170, 0.16);
+  border-radius: 18px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.03), rgba(0, 212, 170, 0.05)),
+    radial-gradient(circle at top right, rgba(64, 224, 255, 0.12), transparent 38%);
+  overflow: hidden;
+  text-decoration: none;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.home-demo-gallery-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(0, 212, 170, 0.42);
+  box-shadow: 0 16px 30px rgba(0, 212, 170, 0.08);
+}
+
+.home-demo-gallery-copy {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 0;
+}
+
+.home-demo-gallery-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  padding: 4px 9px;
+  border-radius: 999px;
+  border: 1px solid rgba(64, 224, 255, 0.22);
+  background: rgba(64, 224, 255, 0.08);
+  color: var(--blue);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.home-demo-gallery-badge::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.85;
+}
+
+.home-demo-gallery-title {
+  display: block;
+  margin: 0 0 8px 0;
+  color: var(--accent-text);
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.home-demo-gallery-description {
+  display: block;
+  color: var(--text-dim);
+  font-size: 13px;
+  line-height: 1.65;
+  max-width: 40ch;
+}
+
+.home-demo-gallery-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.home-demo-gallery-link svg {
+  width: 14px;
+  height: 14px;
+  transition: transform 0.2s ease;
+}
+
+.home-demo-gallery-card:hover .home-demo-gallery-link svg {
+  transform: translateX(2px);
+}
+
+.home-demo-gallery-media {
+  position: relative;
+  min-height: 168px;
+  border: 1px solid rgba(0, 212, 170, 0.12);
+  border-radius: 14px;
+  background:
+    linear-gradient(180deg, rgba(64, 224, 255, 0.06), rgba(0, 212, 170, 0.04)),
+    radial-gradient(circle at 50% 10%, rgba(64, 224, 255, 0.12), transparent 48%),
+    var(--bg);
+  overflow: hidden;
+}
+
+.home-demo-gallery-media-label {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(7, 17, 26, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-muted);
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.home-demo-gallery-media::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(7, 17, 26, 0.04), rgba(7, 17, 26, 0.46)),
+    repeating-linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.015) 0px,
+      rgba(255, 255, 255, 0.015) 1px,
+      transparent 1px,
+      transparent 6px
+    );
+  pointer-events: none;
+}
+
+.home-demo-gallery-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  filter: saturate(0.96) contrast(1.02);
 }
 
 .home-overview-grid,
@@ -6916,6 +7125,14 @@ select:focus { outline: none; border-color: var(--accent); }
 
   .home-hero-actions {
     grid-template-columns: 1fr;
+  }
+
+  .home-demo-gallery-card {
+    grid-template-columns: 1fr;
+  }
+
+  .home-demo-gallery-media {
+    min-height: 140px;
   }
 
   .home-hero-robot-wrap {
@@ -8363,6 +8580,42 @@ select:focus { outline: none; border-color: var(--accent); }
           <button class="home-link-button" onclick="toggleCommandPalette()">Command palette</button>
           <a class="home-link-button" href="https://docs.vaicli.com" target="_blank" rel="noopener">Documentation</a>
         </div>
+        <a
+          class="home-demo-gallery-card"
+          href="https://vaicli.com/demos"
+          target="_blank"
+          rel="noopener"
+          title="Open the VAI demo gallery"
+          onclick="if (typeof sendTelemetry === 'function') sendTelemetry('open_demo_gallery')"
+        >
+          <span class="home-demo-gallery-copy">
+            <span class="home-demo-gallery-badge">New</span>
+            <span>
+              <strong class="home-demo-gallery-title">Demo gallery</strong>
+              <span class="home-demo-gallery-description">Watch tiny terminal demos, copy the commands, and jump from the desktop app into the full public gallery.</span>
+            </span>
+            <span class="home-demo-gallery-link">
+              Explore the gallery
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M4 12 12 4"/>
+                <path d="M6 4h6v6"/>
+              </svg>
+            </span>
+          </span>
+          <span class="home-demo-gallery-media" aria-hidden="true">
+            <video
+              class="home-demo-gallery-video"
+              autoplay
+              muted
+              loop
+              playsinline
+              preload="metadata"
+              poster="/assets/home/demo-gallery-preview.png"
+            >
+              <source src="/assets/home/demo-gallery-preview.mp4" type="video/mp4">
+            </video>
+          </span>
+        </a>
       </div>
       <div class="home-hero-side">
         <div class="home-hero-robot-wrap">
@@ -9646,6 +9899,17 @@ Reranking models rescore initial search results to improve relevance ordering.</
                 <option value="agent">Agent (tool-calling)</option>
               </select>
             </div>
+            <div class="kb-config-row">
+              <label class="kb-config-label">Memory Strategy</label>
+              <select class="settings-select" id="chatMemoryStrategy">
+                <option value="sliding_window" selected>Sliding Window (default)</option>
+                <option value="summarization">Summarization</option>
+                <option value="hierarchical">Hierarchical</option>
+              </select>
+              <p style="font-size:0.75em;color:var(--text-muted);margin-top:4px;margin-bottom:0;">
+                Controls how conversation history is managed within the token budget.
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -9694,6 +9958,17 @@ Reranking models rescore initial search results to improve relevance ordering.</
     </div>
     <div class="chat-messages" id="chatMessages">
       <div class="chat-message system-msg">Chat with your knowledge base. Click <strong>Configure</strong> above to adjust your LLM provider and database.</div>
+    </div>
+    <div class="chat-state-indicator" id="chatStateIndicator">
+      <span class="chat-state-dot"></span>
+      <span id="chatStateLabel">Ready</span>
+    </div>
+    <div class="chat-memory-bar" id="chatMemoryBar">
+      <span>Memory:</span>
+      <div class="chat-memory-bar-track">
+        <div class="chat-memory-bar-fill" id="chatMemoryFill" style="width: 0%"></div>
+      </div>
+      <span id="chatMemoryPercent">0%</span>
     </div>
     <div class="chat-input-area">
       <textarea class="chat-input" id="chatInput" placeholder="Ask a question about your documents..." rows="1" onkeydown="chatInputKeydown(event)"></textarea>
@@ -17928,16 +18203,24 @@ async function sendChatMessage() {
   typing.textContent = isAgent ? 'Agent working' : 'Thinking';
   document.getElementById('chatMessages').appendChild(typing);
 
+  // Show state indicator
+  const stateIndicator = document.getElementById('chatStateIndicator');
+  const stateLabel = document.getElementById('chatStateLabel');
+  stateIndicator.classList.add('active');
+  stateLabel.textContent = 'Validating...';
+
   // Disable input
   const sendBtn = document.getElementById('chatSendBtn');
   sendBtn.disabled = true;
   input.disabled = true;
 
+  const chatMemoryStrategy = document.getElementById('chatMemoryStrategy')?.value || 'sliding_window';
+
   try {
     const res = await fetch('/api/chat/message', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query, db, collection, provider, model, maxDocs, rerank, systemPrompt, mode, textField: 'content', embeddingModel: document.getElementById('chatEmbeddingModel').value }),
+      body: JSON.stringify({ query, db, collection, provider, model, maxDocs, rerank, systemPrompt, mode, textField: 'content', embeddingModel: document.getElementById('chatEmbeddingModel').value, memoryStrategy: chatMemoryStrategy }),
     });
 
     if (!res.ok) {
@@ -17973,6 +18256,24 @@ async function sendChatMessage() {
         }
         if (line.startsWith('data: ')) {
           const data = JSON.parse(line.slice(6));
+
+          if (currentEvent === 'state') {
+            try {
+              if (stateLabel && data.label) {
+                stateLabel.textContent = data.label;
+              }
+              // Hide on IDLE or STREAMING (streaming has its own visual)
+              if (data.to === 'IDLE' || data.to === 'STREAMING') {
+                stateIndicator.classList.remove('active');
+              }
+              // Remove typing indicator once state events arrive
+              if (typing && typing.parentNode) {
+                typing.remove();
+              }
+            } catch {}
+            currentEvent = null;
+            continue;
+          }
 
           if (currentEvent === 'retrieval') {
             typing.textContent = `Retrieved ${data.docs?.length || 0} docs (${data.timeMs}ms)`;
@@ -18061,10 +18362,30 @@ async function sendChatMessage() {
               details.appendChild(ul);
               assistantDiv.appendChild(details);
             }
+            // Hide state indicator on done
+            stateIndicator.classList.remove('active');
+            // Update memory bar
+            try {
+              const memRes = await fetch('/api/chat/memory');
+              if (memRes.ok) {
+                const memData = await memRes.json();
+                const fill = document.getElementById('chatMemoryFill');
+                const pct = document.getElementById('chatMemoryPercent');
+                const bar = document.getElementById('chatMemoryBar');
+                if (fill && pct && bar) {
+                  fill.style.width = memData.utilization.percent + '%';
+                  fill.className = 'chat-memory-bar-fill' +
+                    (memData.utilization.percent > 80 ? ' danger' : memData.utilization.percent > 60 ? ' warning' : '');
+                  pct.textContent = memData.utilization.percent + '% (' + memData.utilization.turnCount + ' turns)';
+                  bar.classList.add('active');
+                }
+              }
+            } catch {}
           }
 
           if (currentEvent === 'error') {
             typing.remove();
+            stateIndicator.classList.remove('active');
             addChatMessage('system-msg', `Error: ${data.error}`);
           }
 
@@ -18073,8 +18394,9 @@ async function sendChatMessage() {
       }
     }
 
-    // Remove typing if still present
+    // Remove typing and state indicator if still present
     if (typing.parentNode) typing.remove();
+    stateIndicator.classList.remove('active');
 
     // Capture for export
     if (!window._chatExportData) {
