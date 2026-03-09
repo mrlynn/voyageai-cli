@@ -185,5 +185,5 @@ Plans:
 | 25. Wire MemoryManager into Playground | v1.5 | 1/1 | Complete | 2026-03-09 |
 | 26. Session & Memory Guides | 2/2 | Complete    | 2026-03-09 | - |
 | 27. Playground Documentation | 2/2 | Complete    | 2026-03-09 | - |
-| 28. Config Reference & Cross-Links | v1.6 | 0/2 | Not started | - |
+| 28. Config Reference & Cross-Links | 1/2 | In Progress|  | - |
 | 29. Phase 26 Tech Debt Fix | v1.6 | 1/1 | Complete | 2026-03-09 |

@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.6
 milestone_name: Docs Refresh
 status: unknown
-last_updated: "2026-03-09T12:54:45Z"
+last_updated: "2026-03-09T16:54:19.081Z"
 progress:
-  total_phases: 2
-  completed_phases: 2
-  total_plans: 3
-  completed_plans: 3
+  total_phases: 4
+  completed_phases: 3
+  total_plans: 7
+  completed_plans: 6
 ---
 
 # Project State
@@ -22,10 +22,10 @@ See: .planning/PROJECT.md (updated 2026-03-09)
 
 ## Current Position
 
-Phase: 29 of 29 (Phase 26 Tech Debt Fix)
+Phase: 27 of 29 (Playground Documentation)
 Plan: 1 of 1 complete
 Status: Phase complete
-Last activity: 2026-03-09 — Completed 29-01 (gap closure: session lifecycle + slash commands)
+Last activity: 2026-03-09 — Completed 27-01 (playground overview + chat tab reference docs)
 
 Progress: [██████████] 100%
 
@@ -46,6 +46,9 @@ Progress: [██████████] 100%
 | v1.5 | 6 | 12 | 44 (+7,028/-101) |
 | Phase 26 P02 | 3min | 2 tasks | 5 files |
 | Phase 29 P01 | 2min | 2 tasks | 2 files |
+| Phase 27-playground-documentation P02 | 3 | 2 tasks | 1 files |
+| Phase 27-playground-documentation P01 | 2 | 2 tasks | 3 files |
+| Phase 28-config-reference-cross-links P01 | 3 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -58,6 +61,13 @@ Decisions are logged in PROJECT.md Key Decisions tables (v1.0 through v1.5).
 - [Phase 26]: Organized chat docs into 7-category flag reference and 3 cross-linked guide pages
 - [29-01] Aligned lifecycle state descriptions with SESSION_STATES enum rather than paraphrasing
 - [29-01] Consolidated /exit and /q as aliases in /quit row instead of separate rows
+- [Phase 27-01]: Omitted local-inference-tab.mdx See Also link from playground.mdx — page does not exist yet
+- [Phase 27-01]: Used Docusaurus details block for Configuration field reference table to keep page scannable
+- [Phase 27-02]: Listed quantization options in table with compression ratios for easy scanning
+- [Phase 27-02]: Cross-bridge section explains local/cloud embedding interoperability as practical use case
+- [Phase 28-01]: Session/Memory/Observability section in env vars page points to CLI flags and .vai.json chat block -- no fabricated env vars
+- [Phase 28-01]: docs/reference/ added to .gitignore whitelist (same pattern as guides/commands/playground)
+- [Phase 28-01]: showSources and showToolCalls documented as config-only fields with no CLI equivalent
 
 ### Pending Todos
 
@@ -70,5 +80,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-09
-Stopped at: Completed 29-01-PLAN.md — Phase 29 complete
+Stopped at: Completed 27-02-PLAN.md — Local Inference tab reference page
 Resume file: None

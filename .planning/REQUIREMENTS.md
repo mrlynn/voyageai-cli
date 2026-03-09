@@ -16,15 +16,15 @@ Requirements for v1.6. Each maps to roadmap phases.
 
 ### Playground
 
-- [ ] **PLAY-01**: Stale claims removed ("no Chat tab", "in-memory only") and tab count corrected
-- [ ] **PLAY-02**: User can find documentation for playground chat tab (model selector, provider badges, welcome banner, KB ingest)
-- [ ] **PLAY-03**: User can find documentation for playground memory/observability UI (memory bar, strategy selector, turn state indicator)
-- [ ] **PLAY-04**: User can find documentation for local inference tab (embed UI, similarity heatmap, MRL comparison, cross-bridge visualization)
+- [x] **PLAY-01**: Stale claims removed ("no Chat tab", "in-memory only") and tab count corrected
+- [x] **PLAY-02**: User can find documentation for playground chat tab (model selector, provider badges, welcome banner, KB ingest)
+- [x] **PLAY-03**: User can find documentation for playground memory/observability UI (memory bar, strategy selector, turn state indicator)
+- [x] **PLAY-04**: User can find documentation for local inference tab (embed UI, similarity heatmap, MRL comparison, cross-bridge visualization)
 
 ### Configuration
 
-- [ ] **CONF-01**: Environment variables reference includes all session, memory, replay, and observability env vars
-- [ ] **CONF-02**: .vai.json schema reference includes new chat config options (memory strategy, session TTL, etc.)
+- [x] **CONF-01**: Environment variables reference includes all session, memory, replay, and observability env vars
+- [x] **CONF-02**: .vai.json schema reference includes new chat config options (memory strategy, session TTL, etc.)
 
 ### Cross-References
 
@@ -57,12 +57,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SESS-02 | Phase 26 | Complete |
 | SESS-03 | Phase 26 | Complete |
 | SESS-04 | Phase 29 | Complete |
-| PLAY-01 | Phase 27 | Pending |
-| PLAY-02 | Phase 27 | Pending |
-| PLAY-03 | Phase 27 | Pending |
-| PLAY-04 | Phase 27 | Pending |
-| CONF-01 | Phase 28 | Pending |
-| CONF-02 | Phase 28 | Pending |
+| PLAY-01 | Phase 27 | Complete |
+| PLAY-02 | Phase 27 | Complete |
+| PLAY-03 | Phase 27 | Complete |
+| PLAY-04 | Phase 27 | Complete |
+| CONF-01 | Phase 28 | Complete |
+| CONF-02 | Phase 28 | Complete |
 | XREF-01 | Phase 28 | Pending |
 
 **Coverage:**
