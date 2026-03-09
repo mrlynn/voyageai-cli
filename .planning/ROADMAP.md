@@ -172,6 +172,6 @@ Phases execute in numeric order: 20 → 21 → 22 → 23
 | 18. Status Bar | v1.4 | 2/2 | Complete | 2026-03-07 |
 | 19. KB Ingest | v1.4 | 2/2 | Complete | 2026-03-07 |
 | 20. Turn State Machine | 2/2 | Complete    | 2026-03-09 | - |
-| 21. Session Persistence | v1.5 | 0/? | Not started | - |
+| 21. Session Persistence | 1/2 | In Progress|  | - |
 | 22. Memory Management | v1.5 | 0/? | Not started | - |
 | 23. Observability & Integration | v1.5 | 0/? | Not started | - |

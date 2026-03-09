@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Chat Harness
-status: active
-last_updated: "2026-03-09"
+status: in-progress
+last_updated: "2026-03-09T07:05:05Z"
 progress:
-  total_phases: 4
-  completed_phases: 0
-  total_plans: 2
-  completed_plans: 2
+  total_phases: 2
+  completed_phases: 1
+  total_plans: 4
+  completed_plans: 3
 ---
 
 # Project State
@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-09)
 
 **Core value:** Zero-API-key path from install to working vector search, with seamless upgrade to Voyage API
-**Current focus:** Phase 20 - Turn State Machine
+**Current focus:** Phase 21 - Session Persistence
 
 ## Current Position
 
-Phase: 20 of 23 (Turn State Machine)
-Plan: 02 complete (all plans in phase done)
-Status: Phase Complete
-Last activity: 2026-03-09 -- Completed 20-02 TurnOrchestrator Integration
+Phase: 21 of 23 (Session Persistence)
+Plan: 01 of 02 complete
+Status: In Progress
+Last activity: 2026-03-09 -- Completed 21-01 SessionStore
 
-Progress: [████░░░░░░] ~20%
+Progress: [█████░░░░░] ~25%
 
 ## Performance Metrics
 
@@ -57,6 +57,9 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [20-02] Orchestrator wraps generators via generatorFn callback for decoupling and testability
 - [20-02] Interrupt yields 'interrupted' event with partialResponse rather than throwing
 - [20-02] State fast-forward on chunk arrival when retrieval was skipped
+- [21-01] Sessions start in ACTIVE state on create (skip manual INITIALIZING->ACTIVE)
+- [21-01] In-memory fallback is permanent per instance -- no MongoDB retry after fallback
+- [21-01] Index creation is lazy (first write) and non-fatal
 
 ### Pending Todos
 
@@ -69,5 +72,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-09
-Stopped at: Completed 20-02-PLAN.md (TurnOrchestrator Integration)
+Stopped at: Completed 21-01-PLAN.md (SessionStore)
 Resume file: None

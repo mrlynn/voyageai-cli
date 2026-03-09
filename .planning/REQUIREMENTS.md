@@ -15,7 +15,7 @@ Requirements for milestone v1.5. Each maps to roadmap phases.
 - [x] **SM-04**: Each state has a human-readable label for UI rendering
 - [x] **SM-05**: Interrupt (Ctrl+C/abort) transitions to INTERRUPTED; partial response saved if during GENERATING/STREAMING
 - [x] **SM-06**: ERROR_TURN state is recoverable; session continues after turn-level errors
-- [ ] **SM-07**: Session lifecycle states (INITIALIZING/ACTIVE/PAUSED/ARCHIVED) with persistence
+- [x] **SM-07**: Session lifecycle states (INITIALIZING/ACTIVE/PAUSED/ARCHIVED) with persistence
 
 ### Memory Management
 
@@ -28,12 +28,12 @@ Requirements for milestone v1.5. Each maps to roadmap phases.
 
 ### Session Persistence
 
-- [ ] **SES-01**: Session documents stored in `vai_sessions` MongoDB collection with schema from spec
-- [ ] **SES-02**: Turn documents stored in `vai_chat_turns` with compound index on (sessionId, turnIndex)
+- [x] **SES-01**: Session documents stored in `vai_sessions` MongoDB collection with schema from spec
+- [x] **SES-02**: Turn documents stored in `vai_chat_turns` with compound index on (sessionId, turnIndex)
 - [ ] **SES-03**: Session summaries stored in `vai_session_summaries` with Atlas Vector Search index
 - [ ] **SES-04**: User can list, resume, and archive sessions
-- [ ] **SES-05**: Turn documents have configurable TTL (default 90 days)
-- [ ] **SES-06**: Graceful degradation: sessions run in-memory when MongoDB is unavailable
+- [x] **SES-05**: Turn documents have configurable TTL (default 90 days)
+- [x] **SES-06**: Graceful degradation: sessions run in-memory when MongoDB is unavailable
 
 ### Observability
 
@@ -81,19 +81,19 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SM-04 | Phase 20 | Complete |
 | SM-05 | Phase 20 | Complete |
 | SM-06 | Phase 20 | Complete |
-| SM-07 | Phase 21 | Pending |
+| SM-07 | Phase 21 | Complete |
 | MEM-01 | Phase 22 | Pending |
 | MEM-02 | Phase 22 | Pending |
 | MEM-03 | Phase 22 | Pending |
 | MEM-04 | Phase 22 | Pending |
 | MEM-05 | Phase 22 | Pending |
 | MEM-06 | Phase 20 | Complete |
-| SES-01 | Phase 21 | Pending |
-| SES-02 | Phase 21 | Pending |
+| SES-01 | Phase 21 | Complete |
+| SES-02 | Phase 21 | Complete |
 | SES-03 | Phase 21 | Pending |
 | SES-04 | Phase 21 | Pending |
-| SES-05 | Phase 21 | Pending |
-| SES-06 | Phase 21 | Pending |
+| SES-05 | Phase 21 | Complete |
+| SES-06 | Phase 21 | Complete |
 | OBS-01 | Phase 23 | Pending |
 | OBS-02 | Phase 23 | Pending |
 | OBS-03 | Phase 23 | Pending |
