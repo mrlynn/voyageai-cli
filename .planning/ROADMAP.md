@@ -90,7 +90,7 @@ Full details: [milestones/v1.5-ROADMAP.md](milestones/v1.5-ROADMAP.md)
 **Milestone Goal:** Bring Docusaurus documentation site up to date with all user-facing features shipped in v1.2-v1.5, focusing on chat harness capabilities.
 
 - [x] **Phase 26: Session & Memory Guides** - Usage docs for chat sessions, memory strategies, cross-session recall, and chat command reference (completed 2026-03-09)
-- [ ] **Phase 27: Playground Documentation** - Fix stale claims, document chat tab, memory UI, and local inference tab
+- [x] **Phase 27: Playground Documentation** - Fix stale claims, document chat tab, memory UI, and local inference tab (completed 2026-03-09)
 - [ ] **Phase 28: Config Reference & Cross-Links** - Environment variables, .vai.json schema updates, and vai explain harness cross-references
 - [x] **Phase 29: Phase 26 Tech Debt Fix** - Fix SESS-01/SESS-04 content accuracy issues (lifecycle state, slash commands table) (completed 2026-03-09)
 
@@ -134,10 +134,11 @@ Plans:
   1. The environment variables reference page includes all session, memory, replay, and observability env vars added in v1.5
   2. The .vai.json schema reference includes new chat config options (memory strategy, session TTL, etc.)
   3. Docs site includes at least one cross-reference link to `vai explain harness` CLI topic for users wanting deeper architectural detail
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 28-01: TBD
+- [ ] 28-01-PLAN.md — Environment variables reference page + .vai.json schema reference page (with chat block)
+- [ ] 28-02-PLAN.md — Add vai explain harness cross-reference links to guide pages and playground chat tab doc
 
 ### Phase 29: Phase 26 Tech Debt Fix
 **Goal**: Fix content accuracy issues in Phase 26 deliverables identified by milestone audit
@@ -183,6 +184,6 @@ Plans:
 | 24. Wire Memory into Chat Pipeline | v1.5 | 2/2 | Complete | 2026-03-09 |
 | 25. Wire MemoryManager into Playground | v1.5 | 1/1 | Complete | 2026-03-09 |
 | 26. Session & Memory Guides | 2/2 | Complete    | 2026-03-09 | - |
-| 27. Playground Documentation | v1.6 | 0/2 | Not started | - |
-| 28. Config Reference & Cross-Links | v1.6 | 0/? | Not started | - |
+| 27. Playground Documentation | 2/2 | Complete    | 2026-03-09 | - |
+| 28. Config Reference & Cross-Links | v1.6 | 0/2 | Not started | - |
 | 29. Phase 26 Tech Debt Fix | v1.6 | 1/1 | Complete | 2026-03-09 |
