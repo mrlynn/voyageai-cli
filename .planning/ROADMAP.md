@@ -193,4 +193,4 @@ Phases execute in numeric order: 20 → 21 → 22 → 23 → 24
 | 21. Session Persistence | v1.5 | 2/2 | Complete | 2026-03-09 |
 | 22. Memory Management | v1.5 | 2/2 | Complete | 2026-03-09 |
 | 23. Observability & Integration | v1.5 | 0/? | Not started | - |
-| 24. Wire Memory into Chat Pipeline | v1.5 | 0/2 | Not started | - |
+| 24. Wire Memory into Chat Pipeline | 1/2 | In Progress|  | - |

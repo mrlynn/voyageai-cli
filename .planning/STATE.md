@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Chat Harness
-status: in-progress
-last_updated: "2026-03-09T07:46:04.000Z"
+status: unknown
+last_updated: "2026-03-09T08:18:19.743Z"
 progress:
-  total_phases: 3
+  total_phases: 4
   completed_phases: 3
-  total_plans: 6
-  completed_plans: 6
+  total_plans: 8
+  completed_plans: 7
 ---
 
 # Project State
@@ -22,10 +22,10 @@ See: .planning/PROJECT.md (updated 2026-03-09)
 
 ## Current Position
 
-Phase: 22 of 23 (Memory Management)
-Plan: 02 of 02 complete
-Status: Phase Complete
-Last activity: 2026-03-09 -- Completed 22-02 Summarization, Hierarchical Memory & Cross-Session Recall
+Phase: 24 of 25 (Wire Memory into Chat Pipeline)
+Plan: 01 of 02 complete
+Status: In Progress
+Last activity: 2026-03-09 -- Completed 24-01 Wire MemoryBudget + MemoryManager into Chat Pipeline
 
 Progress: [██████████] ~60%
 
@@ -48,6 +48,7 @@ Progress: [██████████] ~60%
 | Phase | Duration | Tasks | Files |
 | 22-01 P01 | 2min | 2 | 4 |
 | 22-02 P02 | 3min | 2 | 6 |
+| Phase 24-01 P01 | 6min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -74,6 +75,9 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [22-02] CrossSessionRecall uses voyage-4-lite for queries (asymmetric with large model at index time)
 - [22-02] HierarchicalStrategy budget allocation: 20% recall, 20% summaries, 60% recent verbatim
 - [22-02] All strategies degrade gracefully returning sliding-window results on component failure
+- [Phase 24-01]: buildHistory returns sync for sync strategies, Promise for async -- preserves backward compat
+- [Phase 24-01]: SlidingWindowStrategy.select accepts both positional and options-object form for dual compatibility
+- [Phase 24-01]: _optionsStyleStrategies Set tracks which strategies use options-object dispatch vs positional
 
 ### Pending Todos
 
@@ -86,5 +90,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-09
-Stopped at: Completed 22-02-PLAN.md (Summarization, Hierarchical Memory & Cross-Session Recall)
+Stopped at: Completed 24-01-PLAN.md (Wire MemoryBudget + MemoryManager into Chat Pipeline)
 Resume file: None

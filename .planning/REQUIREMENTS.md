@@ -19,10 +19,10 @@ Requirements for milestone v1.5. Each maps to roadmap phases.
 
 ### Memory Management
 
-- [ ] **MEM-01**: Token budget model allocates history budget after reserving system prompt, context, message, and response tokens
-- [ ] **MEM-02**: Sliding window strategy includes newest turns that fit within budget
-- [ ] **MEM-03**: Summarization strategy compresses older turns into LLM-generated summaries when utilization exceeds threshold
-- [ ] **MEM-04**: Hierarchical strategy combines verbatim recent turns + tiered summaries + vector-retrieved long-term memory
+- [x] **MEM-01**: Token budget model allocates history budget after reserving system prompt, context, message, and response tokens
+- [x] **MEM-02**: Sliding window strategy includes newest turns that fit within budget
+- [x] **MEM-03**: Summarization strategy compresses older turns into LLM-generated summaries when utilization exceeds threshold
+- [x] **MEM-04**: Hierarchical strategy combines verbatim recent turns + tiered summaries + vector-retrieved long-term memory
 - [ ] **MEM-05**: Cross-session recall retrieves relevant past session summaries via asymmetric Voyage AI embedding (voyage-4-large embeds, voyage-4-lite queries)
 - [x] **MEM-06**: Token estimator uses conservative character-based estimation (4 chars ≈ 1 token)
 
@@ -82,10 +82,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SM-05 | Phase 20 | Complete |
 | SM-06 | Phase 20 | Complete |
 | SM-07 | Phase 21 | Complete |
-| MEM-01 | Phase 24 | Pending |
-| MEM-02 | Phase 24 | Pending |
-| MEM-03 | Phase 24 | Pending |
-| MEM-04 | Phase 24 | Pending |
+| MEM-01 | Phase 24 | Complete |
+| MEM-02 | Phase 24 | Complete |
+| MEM-03 | Phase 24 | Complete |
+| MEM-04 | Phase 24 | Complete |
 | MEM-05 | Phase 24 | Pending |
 | MEM-06 | Phase 20 | Complete |
 | SES-01 | Phase 21 | Complete |
