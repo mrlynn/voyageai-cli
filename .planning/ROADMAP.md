@@ -107,11 +107,11 @@ Plans:
   3. User can list past sessions, resume a previous session (with history loaded), and archive sessions they no longer need
   4. Turn documents expire after the configured TTL (default 90 days)
   5. When MongoDB is unavailable, chat still works with in-memory session state (no crash, no error wall)
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 21-01: TBD
-- [ ] 21-02: TBD
+- [ ] 21-01-PLAN.md — TDD: SessionStore + TurnStore (MongoDB CRUD, lifecycle, TTL, in-memory fallback)
+- [ ] 21-02-PLAN.md — SessionSummaryStore + CLI session commands (list/resume/archive) + chat integration
 
 ### Phase 22: Memory Management
 **Goal**: Conversations maintain coherent context within token budgets through automatic compression and cross-session recall
@@ -171,7 +171,7 @@ Phases execute in numeric order: 20 → 21 → 22 → 23
 | 17. Onboarding & Detection | v1.4 | 3/3 | Complete | 2026-03-07 |
 | 18. Status Bar | v1.4 | 2/2 | Complete | 2026-03-07 |
 | 19. KB Ingest | v1.4 | 2/2 | Complete | 2026-03-07 |
-| 20. Turn State Machine | 2/2 | Complete   | 2026-03-09 | - |
+| 20. Turn State Machine | 2/2 | Complete    | 2026-03-09 | - |
 | 21. Session Persistence | v1.5 | 0/? | Not started | - |
 | 22. Memory Management | v1.5 | 0/? | Not started | - |
 | 23. Observability & Integration | v1.5 | 0/? | Not started | - |
