@@ -9,10 +9,10 @@ Requirements for v1.6. Each maps to roadmap phases.
 
 ### Session & Memory
 
-- [x] **SESS-01**: User can find a guide explaining how to start, resume, and list chat sessions
+- [ ] **SESS-01**: User can find a guide explaining how to start, resume, and list chat sessions
 - [x] **SESS-02**: User can find a guide explaining memory strategies (sliding window, summarization, hierarchical) and how to choose between them
 - [x] **SESS-03**: User can find documentation on cross-session recall and how past sessions inform new conversations
-- [x] **SESS-04**: Chat command reference (chat.mdx) includes all current slash commands (/memory, /history), flags (--replay, --json, --session), and options
+- [ ] **SESS-04**: Chat command reference (chat.mdx) includes all current slash commands (/memory, /history), flags (--replay, --json, --session), and options
 
 ### Playground
 
@@ -53,10 +53,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SESS-01 | Phase 26 | Complete |
+| SESS-01 | Phase 29 | Pending |
 | SESS-02 | Phase 26 | Complete |
 | SESS-03 | Phase 26 | Complete |
-| SESS-04 | Phase 26 | Complete |
+| SESS-04 | Phase 29 | Pending |
 | PLAY-01 | Phase 27 | Pending |
 | PLAY-02 | Phase 27 | Pending |
 | PLAY-03 | Phase 27 | Pending |
