@@ -123,11 +123,11 @@ Plans:
   3. When conversation grows long, older turns are compressed into LLM-generated summaries that preserve key facts
   4. Hierarchical mode combines verbatim recent turns, tiered summaries, and vector-retrieved long-term memory in a single prompt
   5. Cross-session recall surfaces relevant context from past sessions using Voyage AI asymmetric embedding (voyage-4-large for indexing, voyage-4-lite for queries)
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 22-01: TBD
-- [ ] 22-02: TBD
+- [ ] 22-01-PLAN.md — TDD: MemoryBudget + SlidingWindowStrategy (token budget model, sliding window)
+- [ ] 22-02-PLAN.md — TDD: SummarizationStrategy + HierarchicalStrategy + CrossSessionRecall
 
 ### Phase 23: Observability & Integration
 **Goal**: Users can see what the harness is doing, diagnose memory behavior, and replay past sessions
@@ -172,6 +172,6 @@ Phases execute in numeric order: 20 → 21 → 22 → 23
 | 18. Status Bar | v1.4 | 2/2 | Complete | 2026-03-07 |
 | 19. KB Ingest | v1.4 | 2/2 | Complete | 2026-03-07 |
 | 20. Turn State Machine | 2/2 | Complete    | 2026-03-09 | - |
-| 21. Session Persistence | 2/2 | Complete   | 2026-03-09 | - |
+| 21. Session Persistence | 2/2 | Complete    | 2026-03-09 | - |
 | 22. Memory Management | v1.5 | 0/? | Not started | - |
 | 23. Observability & Integration | v1.5 | 0/? | Not started | - |
