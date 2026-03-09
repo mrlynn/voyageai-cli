@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Chat Harness
-status: unknown
-last_updated: "2026-03-09T08:18:19.743Z"
+status: in-progress
+last_updated: "2026-03-09T08:22:00Z"
 progress:
   total_phases: 4
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 8
-  completed_plans: 7
+  completed_plans: 8
 ---
 
 # Project State
@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-09)
 
 **Core value:** Zero-API-key path from install to working vector search, with seamless upgrade to Voyage API
-**Current focus:** Phase 22 - Memory Management
+**Current focus:** Phase 24 - Wire Memory into Chat Pipeline
 
 ## Current Position
 
 Phase: 24 of 25 (Wire Memory into Chat Pipeline)
-Plan: 01 of 02 complete
-Status: In Progress
-Last activity: 2026-03-09 -- Completed 24-01 Wire MemoryBudget + MemoryManager into Chat Pipeline
+Plan: 02 of 02 complete
+Status: Phase Complete
+Last activity: 2026-03-09 -- Completed 24-02 Wire Session Summary + Cross-Session Recall
 
-Progress: [██████████] ~60%
+Progress: [████████████████████] ~80%
 
 ## Performance Metrics
 
@@ -49,6 +49,7 @@ Progress: [██████████] ~60%
 | 22-01 P01 | 2min | 2 | 4 |
 | 22-02 P02 | 3min | 2 | 6 |
 | Phase 24-01 P01 | 6min | 2 tasks | 4 files |
+| Phase 24-02 P02 | 2min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -78,6 +79,9 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [Phase 24-01]: buildHistory returns sync for sync strategies, Promise for async -- preserves backward compat
 - [Phase 24-01]: SlidingWindowStrategy.select accepts both positional and options-object form for dual compatibility
 - [Phase 24-01]: _optionsStyleStrategies Set tracks which strategies use options-object dispatch vs positional
+- [Phase 24-02]: Summary generation on archive is non-fatal -- session is already archived even if summary fails
+- [Phase 24-02]: CrossSessionRecall initialization on resume is non-fatal -- chat works without recall
+- [Phase 24-02]: Uses voyage-4-large for document embedding (asymmetric with voyage-4-lite for queries)
 
 ### Pending Todos
 
@@ -90,5 +94,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-09
-Stopped at: Completed 24-01-PLAN.md (Wire MemoryBudget + MemoryManager into Chat Pipeline)
+Stopped at: Completed 24-02-PLAN.md (Wire Session Summary + Cross-Session Recall)
 Resume file: None

@@ -23,14 +23,14 @@ Requirements for milestone v1.5. Each maps to roadmap phases.
 - [x] **MEM-02**: Sliding window strategy includes newest turns that fit within budget
 - [x] **MEM-03**: Summarization strategy compresses older turns into LLM-generated summaries when utilization exceeds threshold
 - [x] **MEM-04**: Hierarchical strategy combines verbatim recent turns + tiered summaries + vector-retrieved long-term memory
-- [ ] **MEM-05**: Cross-session recall retrieves relevant past session summaries via asymmetric Voyage AI embedding (voyage-4-large embeds, voyage-4-lite queries)
+- [x] **MEM-05**: Cross-session recall retrieves relevant past session summaries via asymmetric Voyage AI embedding (voyage-4-large embeds, voyage-4-lite queries)
 - [x] **MEM-06**: Token estimator uses conservative character-based estimation (4 chars ≈ 1 token)
 
 ### Session Persistence
 
 - [x] **SES-01**: Session documents stored in `vai_sessions` MongoDB collection with schema from spec
 - [x] **SES-02**: Turn documents stored in `vai_chat_turns` with compound index on (sessionId, turnIndex)
-- [ ] **SES-03**: Session summaries stored in `vai_session_summaries` with Atlas Vector Search index
+- [x] **SES-03**: Session summaries stored in `vai_session_summaries` with Atlas Vector Search index
 - [x] **SES-04**: User can list, resume, and archive sessions
 - [x] **SES-05**: Turn documents have configurable TTL (default 90 days)
 - [x] **SES-06**: Graceful degradation: sessions run in-memory when MongoDB is unavailable
@@ -86,11 +86,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | MEM-02 | Phase 24 | Complete |
 | MEM-03 | Phase 24 | Complete |
 | MEM-04 | Phase 24 | Complete |
-| MEM-05 | Phase 24 | Pending |
+| MEM-05 | Phase 24 | Complete |
 | MEM-06 | Phase 20 | Complete |
 | SES-01 | Phase 21 | Complete |
 | SES-02 | Phase 21 | Complete |
-| SES-03 | Phase 24 | Pending |
+| SES-03 | Phase 24 | Complete |
 | SES-04 | Phase 21 | Complete |
 | SES-05 | Phase 21 | Complete |
 | SES-06 | Phase 21 | Complete |
