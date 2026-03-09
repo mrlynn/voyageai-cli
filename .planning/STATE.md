@@ -2,8 +2,8 @@
 gsd_state_version: 1.0
 milestone: v1.6
 milestone_name: Docs Refresh
-status: unknown
-last_updated: "2026-03-09T16:56:53.635Z"
+status: milestone_complete
+last_updated: "2026-03-09T17:31:51.138Z"
 progress:
   total_phases: 4
   completed_phases: 4
@@ -18,16 +18,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-09)
 
 **Core value:** Zero-API-key path from install to working vector search, with seamless upgrade to Voyage API
-**Current focus:** v1.6 Docs Refresh -- Phase 29 complete
+**Current focus:** Planning next milestone (v1.7)
 
 ## Current Position
 
-Phase: 28 of 29 (Config Reference and Cross-Links)
-Plan: 2 of 2 complete
-Status: Phase complete
-Last activity: 2026-03-09 — Completed 28-02 (guide and playground cross-references to vai explain harness)
-
-Progress: [██████████] 100%
+Milestone v1.6 complete and archived. Ready for next milestone planning.
+Last activity: 2026-03-09 — Archived v1.6 Docs Refresh milestone
 
 ## Performance Metrics
 
@@ -55,23 +51,7 @@ Progress: [██████████] 100%
 
 ### Decisions
 
-Decisions are logged in PROJECT.md Key Decisions tables (v1.0 through v1.5).
-
-- [26-01] Removed stale harness aliases (sessions, session-persistence) that conflicted with new dedicated sessions topic
-- [26-01] No changes needed to chat.js -- all flags and slash commands already accurate
-- [Phase 26]: Organized chat docs into 7-category flag reference and 3 cross-linked guide pages
-- [29-01] Aligned lifecycle state descriptions with SESSION_STATES enum rather than paraphrasing
-- [29-01] Consolidated /exit and /q as aliases in /quit row instead of separate rows
-- [Phase 27-01]: Omitted local-inference-tab.mdx See Also link from playground.mdx — page does not exist yet
-- [Phase 27-01]: Used Docusaurus details block for Configuration field reference table to keep page scannable
-- [Phase 27-02]: Listed quantization options in table with compression ratios for easy scanning
-- [Phase 27-02]: Cross-bridge section explains local/cloud embedding interoperability as practical use case
-- [Phase 28-01]: Session/Memory/Observability section in env vars page points to CLI flags and .vai.json chat block -- no fabricated env vars
-- [Phase 28-01]: docs/reference/ added to .gitignore whitelist (same pattern as guides/commands/playground)
-- [Phase 28-01]: showSources and showToolCalls documented as config-only fields with no CLI equivalent
-- [Phase 28-02]: Appended harness cross-ref to existing See Also sections without restructuring any page
-- [Phase 28-02]: memory-strategies.mdx also links to .vai.json Schema for memoryStrategy project default
-- [Phase 28-02]: chat-sessions.mdx also links to Environment Variables for MONGODB_URI and VAI_CONFIG_PATH
+Decisions are logged in PROJECT.md Key Decisions tables (v1.0 through v1.6).
 
 ### Pending Todos
 
