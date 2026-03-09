@@ -1,14 +1,14 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.5
-milestone_name: Chat Harness
-status: complete
+milestone: v1.6
+milestone_name: Docs Refresh
+status: executing
 last_updated: "2026-03-09"
 progress:
-  total_phases: 6
-  completed_phases: 6
-  total_plans: 12
-  completed_plans: 12
+  total_phases: 3
+  completed_phases: 0
+  total_plans: 2
+  completed_plans: 1
 ---
 
 # Project State
@@ -18,15 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-09)
 
 **Core value:** Zero-API-key path from install to working vector search, with seamless upgrade to Voyage API
-**Current focus:** Planning next milestone
+**Current focus:** v1.6 Docs Refresh -- Phase 26 executing
 
 ## Current Position
 
-Milestone: v1.5 Chat Harness -- SHIPPED 2026-03-09
-Status: Milestone Complete
-Last activity: 2026-03-09 -- Milestone v1.5 archived
+Phase: 26 of 28 (Session & Memory Guides)
+Plan: 1 of 2 complete
+Status: Executing
+Last activity: 2026-03-09 — Completed 26-01 (session & memory explain topics)
 
-Progress: [████████████████████] 100%
+Progress: [█████░░░░░] 50%
 
 ## Performance Metrics
 
@@ -50,6 +51,9 @@ Progress: [████████████████████] 100%
 
 Decisions are logged in PROJECT.md Key Decisions tables (v1.0 through v1.5).
 
+- [26-01] Removed stale harness aliases (sessions, session-persistence) that conflicted with new dedicated sessions topic
+- [26-01] No changes needed to chat.js -- all flags and slash commands already accurate
+
 ### Pending Todos
 
 None.
@@ -61,5 +65,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-09
-Stopped at: Milestone v1.5 archived -- ready for next milestone
+Stopped at: Completed 26-01-PLAN.md
 Resume file: None
