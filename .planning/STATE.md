@@ -1,34 +1,38 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.6
-milestone_name: Docs Refresh
-status: milestone_complete
-last_updated: "2026-03-09T17:31:51.138Z"
+milestone: v1.7
+milestone_name: Bundled Knowledge Base
+status: executing
+last_updated: "2026-03-10"
 progress:
   total_phases: 4
-  completed_phases: 4
-  total_plans: 7
-  completed_plans: 7
+  completed_phases: 0
+  total_plans: 4
+  completed_plans: 1
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-03-09)
+See: .planning/PROJECT.md (updated 2026-03-10)
 
 **Core value:** Zero-API-key path from install to working vector search, with seamless upgrade to Voyage API
-**Current focus:** Planning next milestone (v1.7)
+**Current focus:** v1.7 Bundled Knowledge Base -- executing Phase 30
 
 ## Current Position
 
-Milestone v1.6 complete and archived. Ready for next milestone planning.
-Last activity: 2026-03-09 — Archived v1.6 Docs Refresh milestone
+Phase: 30 of 33 (KB Corpus & Manifest) -- in progress
+Plan: 02 of 04
+Status: Executing
+Last activity: 2026-03-10 -- Completed 30-01 (KB infrastructure: directory scaffolding, manifest generator, verification script)
+
+Progress: [██░░░░░░░░] 25%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 57 (across v1.0-v1.5)
+- Total plans completed: 64 (across v1.0-v1.6)
 
 **By Milestone:**
 
@@ -40,18 +44,18 @@ Last activity: 2026-03-09 — Archived v1.6 Docs Refresh milestone
 | v1.3 | 4 | 8 | 17 (+3,581/-321) |
 | v1.4 | 4 | 9 | 21 (+3,136/-290) |
 | v1.5 | 6 | 12 | 44 (+7,028/-101) |
-| Phase 26 P02 | 3min | 2 tasks | 5 files |
-| Phase 29 P01 | 2min | 2 tasks | 2 files |
-| Phase 27-playground-documentation P02 | 3 | 2 tasks | 1 files |
-| Phase 27-playground-documentation P01 | 2 | 2 tasks | 3 files |
-| Phase 28-config-reference-cross-links P01 | 3 | 2 tasks | 3 files |
-| Phase 28-config-reference-cross-links P02 | 56s | 2 tasks | 4 files |
+| v1.6 | 4 | 7 | 22 (+2,449/-18) |
 
 ## Accumulated Context
 
 ### Decisions
 
 Decisions are logged in PROJECT.md Key Decisions tables (v1.0 through v1.6).
+
+**v1.7 Phase 30:**
+- No external dependencies for KB scripts -- both use only Node.js built-ins (fs, path, crypto)
+- Simple YAML parser for front matter (key: value pairs only) -- sufficient for corpus metadata
+- Chunk estimation uses Math.ceil(wordCount / 380) approximating 512 tokens at ~380 words
 
 ### Pending Todos
 
@@ -63,6 +67,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-09
-Stopped at: Completed 28-02-PLAN.md — Guide and playground cross-references to vai explain harness
+Last session: 2026-03-10
+Stopped at: Completed 30-01-PLAN.md (KB infrastructure) -- ready for 30-02
 Resume file: None
