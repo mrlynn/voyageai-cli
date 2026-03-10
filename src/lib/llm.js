@@ -1057,9 +1057,10 @@ const PROVIDER_MODELS = {
     { id: 'o3-mini', name: 'o3 Mini', context: '200K' },
   ],
   bedrock: [
+    { id: 'us.anthropic.claude-opus-4-6-v1', name: 'Claude Opus 4.6', context: '200K' },
+    { id: 'us.anthropic.claude-sonnet-4-6', name: 'Claude Sonnet 4.6', context: '200K' },
     { id: 'us.anthropic.claude-sonnet-4-5-20250929-v1:0', name: 'Claude Sonnet 4.5', context: '200K' },
-    { id: 'us.anthropic.claude-opus-4-20250514-v1:0', name: 'Claude Opus 4', context: '200K' },
-    { id: 'us.anthropic.claude-3-5-haiku-20241022-v1:0', name: 'Claude 3.5 Haiku', context: '200K' },
+    { id: 'us.anthropic.claude-haiku-4-5-20251001-v1:0', name: 'Claude Haiku 4.5', context: '200K' },
   ],
 };
 
