@@ -1,0 +1,12 @@
+{
+  "mode": "yolo",
+  "depth": "quick",
+  "parallelization": true,
+  "commit_docs": false,
+  "model_profile": "budget",
+  "workflow": {
+    "research": false,
+    "plan_check": false,
+    "verifier": false
+  }
+}

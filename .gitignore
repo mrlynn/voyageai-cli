@@ -1,6 +1,5 @@
 node_modules/
 .vai.json
-.planning/
 .env.local
 .DS_Store
 *.tgz
@@ -44,7 +43,6 @@ USER.md
 .claude/
 .cursor/
 .openclaw/
-.planning/
 .venv/
 
 docs/demos/.venv/
