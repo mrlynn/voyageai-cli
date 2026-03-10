@@ -133,7 +133,7 @@ describe('llm', () => {
     it('has curated models for bedrock', () => {
       assert.ok(PROVIDER_MODELS.bedrock.length >= 3);
       assert.ok(PROVIDER_MODELS.bedrock.every(m => m.id && m.name && m.context));
-      assert.ok(PROVIDER_MODELS.bedrock.some(m => m.id.startsWith('anthropic.claude')));
+      assert.ok(PROVIDER_MODELS.bedrock.some(m => m.id.startsWith('us.anthropic.claude')));
     });
   });
 

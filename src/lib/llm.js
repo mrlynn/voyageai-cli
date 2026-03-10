@@ -15,7 +15,7 @@ const PROVIDER_DEFAULTS = {
   anthropic: 'claude-sonnet-4-5-20250929',
   openai: 'gpt-4o',
   ollama: 'llama3.1',
-  bedrock: 'anthropic.claude-sonnet-4-5-20250929-v1:0',
+  bedrock: 'us.anthropic.claude-sonnet-4-5-20250929-v1:0',
 };
 
 const PROVIDER_BASE_URLS = {
@@ -1057,10 +1057,9 @@ const PROVIDER_MODELS = {
     { id: 'o3-mini', name: 'o3 Mini', context: '200K' },
   ],
   bedrock: [
-    { id: 'anthropic.claude-sonnet-4-5-20250929-v1:0', name: 'Claude Sonnet 4.5', context: '200K' },
-    { id: 'anthropic.claude-opus-4-20250514-v1:0', name: 'Claude Opus 4', context: '200K' },
-    { id: 'anthropic.claude-3-5-haiku-20241022-v1:0', name: 'Claude 3.5 Haiku', context: '200K' },
-    { id: 'us.anthropic.claude-sonnet-4-5-20250929-v1:0', name: 'Claude Sonnet 4.5 (Cross-Region)', context: '200K' },
+    { id: 'us.anthropic.claude-sonnet-4-5-20250929-v1:0', name: 'Claude Sonnet 4.5', context: '200K' },
+    { id: 'us.anthropic.claude-opus-4-20250514-v1:0', name: 'Claude Opus 4', context: '200K' },
+    { id: 'us.anthropic.claude-3-5-haiku-20241022-v1:0', name: 'Claude 3.5 Haiku', context: '200K' },
   ],
 };
 

@@ -129,10 +129,9 @@ function estimateLLMCost(provider, model, inputTokens, outputTokens) {
     },
     ollama: {}, // all free
     bedrock: {
-      'anthropic.claude-sonnet-4-5-20250929-v1:0': { input: 3.0, output: 15.0 },
       'us.anthropic.claude-sonnet-4-5-20250929-v1:0': { input: 3.0, output: 15.0 },
-      'anthropic.claude-opus-4-20250514-v1:0': { input: 15.0, output: 75.0 },
-      'anthropic.claude-3-5-haiku-20241022-v1:0': { input: 1.0, output: 5.0 },
+      'us.anthropic.claude-opus-4-20250514-v1:0': { input: 15.0, output: 75.0 },
+      'us.anthropic.claude-3-5-haiku-20241022-v1:0': { input: 1.0, output: 5.0 },
     },
   };
 
