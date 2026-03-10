@@ -1,0 +1,88 @@
+{
+  "slug": "ollama-nano-chat",
+  "title": "Local RAG Chat With Ollama And Nano",
+  "summary": "Build a tiny Atlas-backed RAG chat flow using local nano embeddings and Ollama for generation.",
+  "categories": [
+    "RAG",
+    "Local Inference",
+    "Chat",
+    "MongoDB Atlas"
+  ],
+  "published": true,
+  "featured": true,
+  "prerequisites": [
+    "Ollama is installed and running locally.",
+    "The `llama3.2:3b` model is already pulled in Ollama.",
+    "`vai nano setup` has already completed successfully.",
+    "MongoDB Atlas is configured through `MONGODB_URI` or `vai config set mongodb-uri ...`."
+  ],
+  "environment": {
+    "requiresApiKey": false,
+    "requiresMongoDbAtlas": true,
+    "requiresOllama": true,
+    "worksOffline": false,
+    "platformNotes": []
+  },
+  "commands": [
+    "vai --version",
+    "ollama list",
+    "vai nano status",
+    "export DEMO_DB=vai_demo",
+    "export DEMO_COLLECTION=ollama_nano_chat_demo_$(date +%s)",
+    "export DEMO_FILE=\"docs/demos/ollama-nano-chat-docs.jsonl\"",
+    "export OLLAMA_MODEL=\"llama3.2:3b\"",
+    "cat \"$DEMO_FILE\"",
+    "vai ingest --file \"$DEMO_FILE\" --db \"$DEMO_DB\" --collection \"$DEMO_COLLECTION\" --field embedding --text-field text --local --batch-size 3",
+    "vai index create --db \"$DEMO_DB\" --collection \"$DEMO_COLLECTION\" --field embedding --dimensions 1024",
+    "vai chat --db \"$DEMO_DB\" --collection \"$DEMO_COLLECTION\" --local --llm-provider ollama --llm-model \"$OLLAMA_MODEL\" --llm-base-url http://localhost:11434 --no-history --no-stream",
+    "Which models are used in this demo, and what benefits does the document mention?",
+    "What is the workflow from ingest to exit?",
+    "/quit"
+  ],
+  "assets": {
+    "recordingOutput": "ollama-nano-chat.gif",
+    "sitePreviewPath": "/demos/ollama-nano-chat.gif"
+  },
+  "source": {
+    "tapePath": "docs/demos/ollama-nano-chat.tape",
+    "repoUrl": "https://github.com/mrlynn/voyageai-cli/blob/main/docs/demos/ollama-nano-chat.tape"
+  },
+  "links": {
+    "docs": [
+      "https://docs.vaicli.com",
+      "https://github.com/mrlynn/voyageai-cli#local-inference"
+    ],
+    "related": [
+      "local-inference"
+    ]
+  },
+  "social": {
+    "headline": "A tiny Atlas-backed local RAG chat flow with Ollama and nano embeddings.",
+    "linkedinText": "This VAI demo shows a strong end-to-end pattern for local RAG chat: ingest a small corpus, index it in MongoDB Atlas, embed locally with nano, and generate with Ollama. The gallery includes exact commands and the source tape so anyone can reproduce it.",
+    "xText": "VAI demo: local RAG chat with Ollama + nano embeddings + MongoDB Atlas. End-to-end workflow, exact commands, and source tape included.",
+    "hashtags": [
+      "vai",
+      "rag",
+      "ollama",
+      "mongodb"
+    ],
+    "callToAction": "Explore the workflow, then share the demo with your team."
+  },
+  "underTheHood": {
+    "vaiCommand": "vai chat --db \"$DEMO_DB\" --collection \"$DEMO_COLLECTION\" --local --llm-provider ollama --llm-model \"$OLLAMA_MODEL\" --llm-base-url http://localhost:11434 --no-history --no-stream",
+    "voyageApi": {
+      "node": "// No remote Voyage AI API call.\\n// This flow uses local embeddings plus Ollama for generation.",
+      "python": "# No remote Voyage AI API call.\\n# This flow uses local embeddings plus Ollama for generation.",
+      "curl": "# No remote Voyage AI API call.\\n# This flow uses local embeddings plus Ollama for generation."
+    },
+    "mongoQuery": {
+      "node": "const results = await collection.aggregate([\\n  {\\n    $vectorSearch: {\\n      index: 'default',\\n      path: 'embedding',\\n      queryVector,\\n      numCandidates: 40,\\n      limit: 6\\n    }\\n  },\\n  {\\n    $project: {\\n      _id: 0,\\n      text: 1,\\n      source: 1,\\n      score: { $meta: 'vectorSearchScore' }\\n    }\\n  }\\n]).toArray();",
+      "python": "pipeline = [\\n    {\\n        \"$vectorSearch\": {\\n            \"index\": \"default\",\\n            \"path\": \"embedding\",\\n            \"queryVector\": query_vector,\\n            \"numCandidates\": 40,\\n            \"limit\": 6\\n        }\\n    },\\n    {\\n        \"$project\": {\\n            \"_id\": 0,\\n            \"text\": 1,\\n            \"source\": 1,\\n            \"score\": {\"$meta\": \"vectorSearchScore\"}\\n        }\\n    }\\n]\\nresults = list(collection.aggregate(pipeline))"
+    },
+    "explanations": {
+      "vaiCommand": "This is the high-level chat entrypoint from the GIF. VAI handles query embedding, Atlas retrieval, prompt assembly, and Ollama generation behind one command.",
+      "voyageApi": "This demo is intentionally local on the model side: nano handles embeddings and Ollama handles generation. The point of transparency here is showing that no hosted Voyage AI API round-trip is happening.",
+      "mongoQuery": "Atlas Vector Search is the retrieval layer for this chat flow. numCandidates is set higher than limit so the system can over-sample similar chunks before trimming the final context."
+    }
+  }
+}

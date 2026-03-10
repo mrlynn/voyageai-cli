@@ -48,6 +48,7 @@ describe('explain command', () => {
     assert.ok(combined.includes('reranking'), 'Should list reranking');
     assert.ok(combined.includes('rag'), 'Should list rag');
     assert.ok(combined.includes('vector-search'), 'Should list vector-search');
+    assert.ok(combined.includes('local-inference'), 'Should list local-inference');
     assert.ok(combined.includes('vai explain <topic>'), 'Should show usage hint');
   });
 
@@ -141,6 +142,18 @@ describe('explain command', () => {
 
     const combined = output.join('\n');
     assert.ok(combined.includes('Batch Processing'), 'Should resolve alias');
+  });
+
+  it('resolves alias "local" to local-inference', async () => {
+    const program = new Command();
+    program.exitOverride();
+    registerExplain(program);
+
+    await program.parseAsync(['node', 'test', 'explain', 'local']);
+
+    const combined = output.join('\n');
+    assert.ok(combined.includes('Local Inference'), 'Should resolve alias and show Local Inference');
+    assert.ok(combined.includes('Python bridge'), 'Should explain why the Python bridge exists');
   });
 
   it('shows error and suggestions for unknown concept', async () => {

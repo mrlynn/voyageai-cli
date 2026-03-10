@@ -122,4 +122,16 @@ describe('chat command', () => {
     assert.ok(cmd.options.find(o => o.long === '--json'));
     assert.ok(cmd.options.find(o => o.long === '--quiet'));
   });
+
+  it('has --list flag', () => {
+    const cmd = setup();
+    const opt = cmd.options.find(o => o.long === '--list');
+    assert.ok(opt);
+  });
+
+  it('has --all flag', () => {
+    const cmd = setup();
+    const opt = cmd.options.find(o => o.long === '--all');
+    assert.ok(opt);
+  });
 });

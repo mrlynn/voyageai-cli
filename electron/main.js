@@ -6,6 +6,22 @@ const fs = require('fs');
 const http = require('http');
 const Module = require('module');
 
+function inferVoyageApiBaseFromKey(key) {
+  if (typeof key !== 'string' || !key) return null;
+  if (key.startsWith('al-')) return 'https://ai.mongodb.com/v1';
+  if (key.startsWith('pa-')) return 'https://api.voyageai.com/v1';
+  return null;
+}
+
+function applyApiKeyToEnv(key) {
+  if (!key) return;
+  process.env.VOYAGE_API_KEY = key;
+  const inferredBase = inferVoyageApiBaseFromKey(key);
+  if (inferredBase) {
+    process.env.VOYAGE_API_BASE = inferredBase;
+  }
+}
+
 // ── Module Resolution for Bundled CLI Dependencies ──
 // When packaged, CLI source files in Resources/src need to find their
 // dependencies in Resources/node_modules (copied via extraResources)
@@ -93,14 +109,16 @@ function registerApiKeyHandlers() {
 
   ipcMain.handle('api-key:set', (_event, key) => {
     saveApiKey(key);
-    // Also inject into process.env so the playground server picks it up
-    process.env.VOYAGE_API_KEY = key;
+    // Also inject into process.env so the playground server picks it up.
+    // Keep the endpoint aligned with the stored key type.
+    applyApiKeyToEnv(key);
     return true;
   });
 
   ipcMain.handle('api-key:delete', () => {
     deleteApiKey();
     delete process.env.VOYAGE_API_KEY;
+    delete process.env.VOYAGE_API_BASE;
     return true;
   });
 
@@ -479,7 +497,7 @@ function checkForUpdates() {
       currentVersion: APP_VERSION,
       latestVersion: info.version,
       releaseName: info.releaseName || `v${info.version}`,
-      releaseUrl: `https://github.com/mrlynn/voyageai-cli/releases/tag/app-v${info.version}`,
+      releaseUrl: `https://github.com/mrlynn/voyageai-cli/releases/tag/v${info.version}`,
     };
   }).catch(() => {
     return { hasUpdate: false, currentVersion: APP_VERSION, error: 'check_failed' };
@@ -527,15 +545,14 @@ function checkForUpdatesManual() {
       res.on('end', () => {
         try {
           const releases = JSON.parse(data);
-          const appRelease = Array.isArray(releases)
-            ? releases.find(r => r.tag_name && r.tag_name.startsWith('app-v'))
+          const release = Array.isArray(releases)
+            ? releases.find(r => r.tag_name && r.tag_name.startsWith('v') && !r.tag_name.startsWith('v0') && !r.draft && !r.prerelease)
             : null;
-          const release = appRelease || (releases && releases.tag_name ? releases : null);
           if (!release) {
-            resolve({ hasUpdate: false, currentVersion: APP_VERSION, error: 'no_app_release' });
+            resolve({ hasUpdate: false, currentVersion: APP_VERSION, error: 'no_release' });
             return;
           }
-          const latestTag = (release.tag_name || '').replace(/^app-v/, '');
+          const latestTag = (release.tag_name || '').replace(/^v/, '');
           if (latestTag && compareVersions(latestTag, APP_VERSION) > 0) {
             resolve({
               hasUpdate: true,
@@ -735,7 +752,7 @@ async function startPlaygroundServer() {
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Voyage AI Playground - Error</title>
+  <title>VAI - Error</title>
   <style>
     body { 
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; 
@@ -977,7 +994,7 @@ function createWindow() {
     height: WINDOW_HEIGHT,
     minWidth: 960,
     minHeight: 600,
-    title: 'Voyage AI Playground',
+    title: 'VAI',
     icon: getIconPath(isDark),
     titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
     trafficLightPosition: { x: 14, y: 14 },
@@ -1076,7 +1093,7 @@ app.whenReady().then(async () => {
   if (!process.env.VOYAGE_API_KEY) {
     const stored = await loadStoredApiKeyWithRetry();
     if (stored) {
-      process.env.VOYAGE_API_KEY = stored;
+      applyApiKeyToEnv(stored);
     }
   }
 
@@ -1102,7 +1119,7 @@ app.whenReady().then(async () => {
       if (fs.existsSync(cliConfigPath)) {
         const cliConfig = JSON.parse(fs.readFileSync(cliConfigPath, 'utf8'));
         if (cliConfig.apiKey && !process.env.VOYAGE_API_KEY) {
-          process.env.VOYAGE_API_KEY = cliConfig.apiKey;
+          applyApiKeyToEnv(cliConfig.apiKey);
         }
         if (cliConfig.llmApiKey && !process.env.VAI_LLM_API_KEY) {
           process.env.VAI_LLM_API_KEY = cliConfig.llmApiKey;
@@ -1135,6 +1152,10 @@ app.whenReady().then(async () => {
     await startPlaygroundServer();
     createWindow();
     maybeShowTelemetryNotice();
+    // Check for updates after launch (silent — notification via renderer)
+    setTimeout(() => {
+      checkForUpdates().catch(() => {});
+    }, 5000);
     // Desktop telemetry
     try {
       const telemetry = require('../src/lib/telemetry');

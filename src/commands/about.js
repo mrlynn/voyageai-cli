@@ -18,7 +18,7 @@ function registerAbout(program) {
           binary: 'vai',
           author: {
             name: 'Michael Lynn',
-            role: 'Principal Staff Developer Advocate, MongoDB',
+            role: 'Founder, Advisor, Engineer, Developer Advocate, MongoDB',
             github: 'https://github.com/mrlynn',
             vai_website: 'https://vaicli.com',
             website: 'https://mlynn.org',

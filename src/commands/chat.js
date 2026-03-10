@@ -4,6 +4,7 @@ const readline = require('readline');
 const { createLLMProvider, resolveLLMConfig } = require('../lib/llm');
 const { ChatHistory } = require('../lib/history');
 const { chatTurn, agentChatTurn } = require('../lib/chat');
+const { TurnOrchestrator } = require('../lib/turn-orchestrator');
 const { loadProject } = require('../lib/project');
 const { getMongoCollection } = require('../lib/mongo');
 const { setConfigValue } = require('../lib/config');
@@ -15,7 +16,9 @@ const chatUI = require('../lib/chat-ui');
 const pc = require('picocolors');
 const fs = require('fs');
 
-const { createTimedSpinner } = chatUI;
+const { moments } = require('../lib/robot-moments');
+const { ChatSessionStats } = require('../lib/chat-session-stats');
+const { LABELS } = require('../lib/turn-state');
 
 /**
  * Register the chat command.
@@ -38,11 +41,16 @@ function registerChat(program) {
     .option('--no-history', 'Disable MongoDB persistence (in-memory only)')
     .option('--no-rerank', 'Skip reranking step')
     .option('--local', 'Use local nano embeddings instead of Voyage API')
+    .option('--embedding-model <name>', 'Embedding model: voyage-4-nano, voyage-4-lite, voyage-4, voyage-4-large')
     .option('--no-stream', 'Wait for complete response instead of streaming')
     .option('--system-prompt <text>', 'Override the system prompt')
     .option('--text-field <name>', 'Document text field name', 'text')
     .option('--filter <json>', 'MongoDB pre-filter for vector search')
+    .option('--memory-strategy <name>', 'Memory strategy: sliding_window, summarization, hierarchical', 'sliding_window')
     .option('--estimate', 'Show estimated per-turn cost breakdown and exit')
+    .option('--replay <id>', 'Replay a stored session for debugging')
+    .option('--list', 'List recent chat sessions and exit')
+    .option('--all', 'Include archived sessions in --list output')
     .option('--json', 'Output JSON per turn (for scripting)')
     .option('-q, --quiet', 'Suppress decorative output')
     .action(async (opts) => {
@@ -57,18 +65,87 @@ function registerChat(program) {
 
 async function runChat(opts) {
   // Show startup spinner immediately so the user sees activity
-  const startupSpinner = (!opts.json && !opts.quiet) ? createTimedSpinner('Starting vai chat') : null;
+  const startupAnim = moments.isInteractive({ json: opts.json, plain: opts.quiet })
+    ? moments.startWaving('Starting vai chat')
+    : null;
 
   const { config: proj } = loadProject();
   const chatConf = proj.chat || {};
 
   const db = opts.db || proj.db;
   const collection = opts.collection || proj.collection;
+
+  // --list: show recent sessions and exit
+  if (opts.list) {
+    if (startupAnim) startupAnim.stop();
+    const { SessionStore, SESSION_STATES } = require('../lib/session-store');
+    const store = new SessionStore({ db: db || 'vai' });
+    try {
+      await store._connect();
+      if (store.isFallbackMode) {
+        console.error(ui.error('MongoDB unavailable. Cannot list sessions.'));
+        process.exit(1);
+      }
+      const filter = opts.all
+        ? {}
+        : { lifecycleState: { $ne: SESSION_STATES.ARCHIVED } };
+      const sessions = await store._sessionsCol
+        .find(filter)
+        .sort({ updatedAt: -1 })
+        .limit(20)
+        .toArray();
+
+      if (sessions.length === 0) {
+        console.log(pc.dim('  No sessions found.'));
+      } else {
+        console.log('');
+        console.log(pc.bold('  Recent Sessions'));
+        console.log('');
+        for (const s of sessions) {
+          const id = (s._id || '').toString().slice(0, 8);
+          const status = s.lifecycleState || 'unknown';
+          const date = s.updatedAt ? new Date(s.updatedAt).toLocaleString() : 'unknown';
+          const model = s.model || '';
+          const statusColor = status === 'archived' ? pc.dim(status) : pc.green(status);
+          console.log(`  ${pc.bold(id)}  ${statusColor}  ${pc.dim(date)}  ${model}`);
+        }
+        console.log('');
+        console.log(pc.dim('  Resume with: vai chat --session <id>'));
+      }
+      await store.close();
+    } catch (err) {
+      console.error(ui.error(`Failed to list sessions: ${err.message}`));
+    }
+    return;
+  }
+
+  // --replay: replay a stored session and exit
+  if (opts.replay) {
+    if (startupAnim) startupAnim.stop();
+    await replaySession(opts, db);
+    return;
+  }
+
   const maxDocs = opts.maxContextDocs || chatConf.maxContextDocs || 5;
   const maxTurns = opts.maxTurns || chatConf.maxConversationTurns || 20;
   const textField = opts.textField || 'text';
-  const isLocal = opts.local || false;
-  const doRerank = isLocal ? false : (opts.rerank !== false);
+  // Resolve embedding model: explicit flag > --local shorthand > project config > default
+  let embeddingModel = opts.embeddingModel || chatConf.embeddingModel || null;
+  if (opts.local && !opts.embeddingModel) embeddingModel = 'voyage-4-nano';
+  const isLocalEmbed = embeddingModel === 'voyage-4-nano';
+  // Update isLocal to reflect embedding model choice (for existing isLocal checks)
+  const isLocal = isLocalEmbed || opts.local || false;
+  const doRerank = isLocalEmbed ? false : (opts.rerank !== false);
+
+  // Validate embedding model name if explicitly provided
+  const validEmbedModels = ['voyage-4-nano', 'voyage-4-lite', 'voyage-4', 'voyage-4-large'];
+  if (embeddingModel && !validEmbedModels.includes(embeddingModel)) {
+    if (startupAnim) startupAnim.stop();
+    console.error(ui.error(`Unknown embedding model: ${embeddingModel}`));
+    console.error(`  Valid models: ${validEmbedModels.join(', ')}`);
+    process.exit(1);
+  }
+
   const doStream = opts.stream !== false;
   const systemPrompt = opts.systemPrompt || chatConf.systemPrompt;
 
@@ -78,7 +155,7 @@ async function runChat(opts) {
 
   // Validate DB + collection (required for pipeline, recommended for agent)
   if (!isAgent && (!db || !collection)) {
-    if (startupSpinner) startupSpinner.stop();
+    if (startupAnim) startupAnim.stop();
     console.error(ui.error('Database and collection required for pipeline mode.'));
     console.error('');
     console.error('  Use --db and --collection, or configure .vai.json:');
@@ -90,12 +167,12 @@ async function runChat(opts) {
   }
 
   // Nano prerequisite check (before LLM config)
-  if (isLocal) {
+  if (isLocalEmbed) {
     const { checkVenv, checkModel } = require('../nano/nano-health');
     const venv = checkVenv();
     const model = checkModel();
     if (!venv.ok || !model.ok) {
-      if (startupSpinner) startupSpinner.stop();
+      if (startupAnim) startupAnim.stop();
       console.error('');
       console.error(pc.red('  voyage-4-nano is not set up.'));
       console.error(`  Run ${pc.cyan('vai nano setup')} to install voyage-4-nano`);
@@ -107,7 +184,7 @@ async function runChat(opts) {
   // Resolve LLM config — run interactive setup if missing
   let llmConfig = resolveLLMConfig(opts);
   if (!llmConfig.provider) {
-    if (startupSpinner) startupSpinner.stop();
+    if (startupAnim) startupAnim.stop();
     if (opts.json) {
       // Non-interactive mode — can't run wizard
       console.error(JSON.stringify({ error: 'No LLM provider configured. Run vai chat interactively to set up.' }));
@@ -141,7 +218,7 @@ async function runChat(opts) {
 
   // --estimate: show per-turn cost breakdown and exit
   if (opts.estimate) {
-    if (startupSpinner) startupSpinner.stop();
+    if (startupAnim) startupAnim.stop();
     const { estimateChatCost, formatChatCostBreakdown } = require('../lib/cost');
     const breakdown = estimateChatCost({
       query: 'How does authentication work?', // sample question
@@ -177,7 +254,6 @@ async function runChat(opts) {
   if (!isAgent && !opts.json) {
     const { runPreflight, formatPreflight, waitForIndex } = require('../lib/preflight');
 
-    if (startupSpinner) startupSpinner.updateText('Checking pipeline');
     const { checks, ready } = await runPreflight({
       db, collection,
       field: proj.field || 'embedding',
@@ -185,7 +261,7 @@ async function runChat(opts) {
       textField,
       local: isLocal,
     });
-    if (startupSpinner) startupSpinner.stop();
+    if (startupAnim) startupAnim.stop();
 
     console.log('');
     console.log(formatPreflight(checks));
@@ -224,32 +300,84 @@ async function runChat(opts) {
     }
   }
 
-  // Initialize history
+  // Initialize session store and history
   let historyMongo = null;
+  let sessionStore = null;
+  let sessionId = opts.session || undefined;
+  let fallbackWarningShown = false;
+
   if (opts.history !== false) {
-    try {
-      const historyCollection = chatConf.historyCollection ||
-        process.env.VAI_CHAT_HISTORY || 'vai_chat_history';
-      const { client, collection: coll } = await getMongoCollection(db || 'vai', historyCollection);
-      historyMongo = { client, collection: coll };
-      await ChatHistory.ensureIndexes(coll);
-    } catch {
-      // MongoDB persistence failure is non-fatal
-      historyMongo = null;
+    const { SessionStore } = require('../lib/session-store');
+    sessionStore = new SessionStore({ db: db || 'vai' });
+
+    if (opts.session) {
+      // Resume existing session
+      const existingSession = await sessionStore.getSession(opts.session);
+      if (existingSession) {
+        // Reactivate if paused
+        if (existingSession.lifecycleState === 'paused') {
+          await sessionStore.transitionLifecycle(opts.session, 'active');
+        }
+        // Load turns
+        const turns = await sessionStore.getLatestTurns(opts.session, maxTurns * 2);
+        if (!opts.quiet && !opts.json) {
+          console.log(pc.dim(`  Resumed session ${opts.session.slice(0, 8)} (${turns.length} turns loaded)`));
+        }
+      } else if (!opts.quiet && !opts.json) {
+        console.log(ui.warn(`Session ${opts.session} not found. Starting new conversation.`));
+        sessionId = undefined;
+      }
     }
+
+    if (!sessionId) {
+      // Create new session
+      const newSession = await sessionStore.createSession({
+        model: llmConfig.model || 'unknown',
+        provider: llmConfig.provider || 'unknown',
+        mode: isAgent ? 'agent' : 'pipeline',
+      });
+      sessionId = newSession._id;
+    }
+
+    // Show one-time warning if store fell back to in-memory
+    if (sessionStore.isFallbackMode && !fallbackWarningShown && !opts.quiet && !opts.json) {
+      console.log(pc.dim('  MongoDB unavailable \u2014 session will not be persisted'));
+      fallbackWarningShown = true;
+    }
+
+    // Legacy mongo path not needed when store is available
+    historyMongo = null;
   }
 
   const history = new ChatHistory({
-    sessionId: opts.session || undefined,
+    sessionId,
     maxTurns,
+    store: sessionStore,
     mongo: historyMongo,
   });
 
-  // Load existing session if resuming
-  if (opts.session) {
-    const loaded = await history.load();
-    if (!loaded && !opts.quiet && !opts.json) {
-      console.log(ui.warn(`Session ${opts.session} not found. Starting new conversation.`));
+  // Load existing session turns if resuming
+  if (opts.session && sessionStore) {
+    await history.load();
+  }
+
+  // Initialize cross-session recall for resumed sessions
+  let summaryStoreInstance = null;
+  let crossSessionRecall = null;
+  if (opts.session && sessionStore && !sessionStore.isFallbackMode) {
+    try {
+      const { SessionSummaryStore } = require('../lib/session-summary-store');
+      const { CrossSessionRecall } = require('../lib/cross-session-recall');
+      const { generateEmbeddings: embedForRecall } = require('../lib/api');
+
+      summaryStoreInstance = new SessionSummaryStore({ db: db || 'vai' });
+      await summaryStoreInstance._connect();
+      crossSessionRecall = new CrossSessionRecall({
+        summaryStore: summaryStoreInstance,
+        embedFn: embedForRecall,
+      });
+    } catch {
+      // Cross-session recall init failure is non-fatal
     }
   }
 
@@ -258,11 +386,38 @@ async function runChat(opts) {
   const chatStartTime = Date.now();
   let turnCount = 0;
 
+  // Session-level token and cost accumulator
+  const sessionStats = new ChatSessionStats({
+    embeddingModel: embeddingModel || 'default',
+    llmProvider: llmConfig.provider,
+    llmModel: llmConfig.model,
+  });
+
+  // Create TurnOrchestrator for state-machine-driven turns
+  const orchestrator = new TurnOrchestrator({
+    sessionId: history.sessionId,
+    mode: isAgent ? 'agent' : 'pipeline',
+  });
+
+  // Create MemoryManager for dynamic memory strategy selection
+  const { createFullMemoryManager } = require('../lib/memory-strategy');
+  const memoryManager = createFullMemoryManager({
+    defaultStrategy: opts.memoryStrategy || chatConf.memoryStrategy || 'sliding_window',
+  });
+
+  // Attach cross-session recall to memory manager if available
+  if (crossSessionRecall) {
+    memoryManager.setOpts({ recall: crossSessionRecall, currentSessionId: sessionId });
+  }
+
+  // Track whether a turn is currently in progress (for SIGINT handling)
+  let turnInProgress = false;
+
   // Track tool calls from last agent response (for /tools and /export-workflow)
   let lastToolCalls = [];
 
   // Stop startup spinner (covers agent mode and any remaining init)
-  if (startupSpinner) startupSpinner.stop();
+  if (startupAnim) startupAnim.stop();
 
   // Print header
   if (!opts.quiet && !opts.json) {
@@ -274,6 +429,9 @@ async function runChat(opts) {
       db,
       collection,
       sessionId: history.sessionId,
+      interactive: moments.isInteractive({ json: opts.json, plain: opts.quiet }),
+      embeddingModel: embeddingModel || null,
+      isLocalEmbed,
     }));
   }
 
@@ -281,7 +439,7 @@ async function runChat(opts) {
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
-    prompt: pc.green('> '),
+    prompt: (!opts.json && !opts.quiet) ? chatUI.renderUserPrompt() : '> ',
     terminal: !opts.json,
   });
 
@@ -298,10 +456,10 @@ async function runChat(opts) {
     if (input.startsWith('/')) {
       const handled = await handleSlashCommand(input, {
         history, opts, db, collection, llm, rl, historyMongo,
-        isAgent, lastToolCalls,
+        isAgent, lastToolCalls, sessionStore, sessionId, memoryManager,
       });
       if (handled === 'quit') {
-        await cleanup(historyMongo);
+        await cleanup(historyMongo, sessionStore, summaryStoreInstance);
         process.exit(0);
       }
       rl.prompt();
@@ -310,21 +468,31 @@ async function runChat(opts) {
 
     // Execute chat turn
     turnCount++;
+    turnInProgress = true;
     try {
       if (isAgent) {
         lastToolCalls = await handleAgentTurn(input, {
-          llm, history, opts, db, collection, systemPrompt, chatConf,
+          llm, history, opts, db, collection, systemPrompt, chatConf, sessionStats, orchestrator,
+          memoryManager,
         });
       } else {
         await handlePipelineTurn(input, {
           db, collection, llm, history, opts,
-          maxDocs, doRerank, doStream, systemPrompt, textField, chatConf, isLocal,
+          maxDocs, doRerank, doStream, systemPrompt, textField, chatConf,
+          isLocal, embeddingModel, isLocalEmbed, sessionStats, orchestrator,
+          memoryManager,
         });
       }
     } catch (err) {
-      console.error('');
-      console.error(ui.error(err.message));
-      console.error('');
+      if (moments.isInteractive({ json: opts.json, plain: opts.quiet })) {
+        moments.error(err.message);
+      } else {
+        console.error('');
+        console.error(ui.error(err.message));
+        console.error('');
+      }
+    } finally {
+      turnInProgress = false;
     }
 
     rl.prompt();
@@ -333,8 +501,10 @@ async function runChat(opts) {
   function sendChatTelemetry() {
     telemetry.send('cli_chat', {
       provider: llmConfig.provider,
+      rerankModel: doRerank ? 'rerank-2.5' : undefined,
       llmModel: llmConfig.model,
-      embeddingModel: proj.model || undefined,
+      embeddingModel: embeddingModel || proj.model || undefined,
+      local: isLocalEmbed,
       turnCount,
       durationMs: Date.now() - chatStartTime,
     });
@@ -342,16 +512,21 @@ async function runChat(opts) {
 
   rl.on('close', async () => {
     sendChatTelemetry();
-    await cleanup(historyMongo);
+    await cleanup(historyMongo, sessionStore, summaryStoreInstance);
     process.exit(0);
   });
 
   // Handle Ctrl+C gracefully
   rl.on('SIGINT', async () => {
-    sendChatTelemetry();
-    console.log('');
-    await cleanup(historyMongo);
-    process.exit(0);
+    if (turnInProgress) {
+      // Interrupt the current turn instead of exiting
+      orchestrator.interrupt();
+    } else {
+      sendChatTelemetry();
+      console.log('');
+      await cleanup(historyMongo, sessionStore, summaryStoreInstance);
+      process.exit(0);
+    }
   });
 }
 
@@ -359,15 +534,23 @@ async function runChat(opts) {
  * Handle a single pipeline mode turn.
  */
 async function handlePipelineTurn(input, ctx) {
-  const { db, collection, llm, history, opts, maxDocs, doRerank, doStream, systemPrompt, textField, chatConf, isLocal } = ctx;
+  const { db, collection, llm, history, opts, maxDocs, doRerank, doStream, systemPrompt, textField, chatConf, isLocal, embeddingModel, isLocalEmbed, sessionStats, orchestrator, memoryManager } = ctx;
 
-  // Build local embedding options if in local mode
+  // Build embedding options based on model selection
   let localOpts = {};
-  if (isLocal) {
+  if (isLocalEmbed) {
     const { generateLocalEmbeddings } = require('../nano/nano-local');
     localOpts = { embedFn: generateLocalEmbeddings, model: 'voyage-4-nano', dimensions: 1024 };
+  } else if (embeddingModel) {
+    localOpts = { model: embeddingModel };
   }
   const turnNum = Math.floor(history.turns.length / 2) + 1;
+  const memoryStrategy = opts.memoryStrategy || chatConf.memoryStrategy || undefined;
+
+  // Update MemoryManager with per-turn context (LLM for summarization, query for recall)
+  if (memoryManager) {
+    memoryManager.setOpts({ llm, query: input });
+  }
 
   if (opts.json) {
     // JSON mode — collect everything then output
@@ -375,17 +558,34 @@ async function handlePipelineTurn(input, ctx) {
     let sources = [];
     let metadata = {};
 
-    for await (const event of chatTurn({
-      query: input, db, collection, llm, history,
-      opts: { maxDocs, rerank: doRerank, stream: false, systemPrompt, textField, filter: opts.filter, ...localOpts },
+    // Track state transitions for --json diagnostics
+    const stateLog = [];
+    orchestrator.on('stateChange', ({ from, to, timestamp }) => {
+      stateLog.push({ from, to, timestamp });
+    });
+
+    for await (const event of orchestrator.executePipelineTurn({
+      generatorFn: (args) => chatTurn({ query: input, db, collection, llm, history, opts: { maxDocs, rerank: doRerank, stream: false, systemPrompt, textField, filter: opts.filter, ...localOpts, memoryManager, memoryStrategy } }),
     })) {
       if (event.type === 'chunk') fullResponse += event.data;
       if (event.type === 'done') {
         sources = event.data.sources;
         metadata = event.data.metadata;
       }
+      if (event.type === 'error') {
+        console.error(JSON.stringify({ error: event.data.message }));
+      }
     }
 
+    // Clean up listener to prevent leaks
+    orchestrator.getStateMachine().removeAllListeners('stateChange');
+
+    sessionStats.recordTurn({ tokens: metadata.tokens });
+    const diagnostics = {
+      stateTransitions: stateLog,
+      memoryStrategy: memoryManager ? memoryManager._defaultStrategy : 'sliding_window',
+      turnIndex: orchestrator.turnIndex,
+    };
     console.log(JSON.stringify({
       sessionId: history.sessionId,
       turn: turnNum,
@@ -393,24 +593,61 @@ async function handlePipelineTurn(input, ctx) {
       response: fullResponse,
       sources,
       metadata,
+      diagnostics,
+      latency: {
+        retrievalMs: metadata.retrievalTimeMs || null,
+        generationMs: metadata.generationTimeMs || null,
+        totalMs: metadata.totalTimeMs || null,
+      },
+      sessionStats: sessionStats.getTotals(),
     }));
   } else {
     // Interactive mode — stream output with markdown rendering
-    const showSpinners = !opts.quiet;
+    const showAnimations = moments.isInteractive({ json: opts.json, plain: opts.quiet });
     let retrievalShown = false;
-    let retrievalSpinner = null;
-    let generationSpinner = null;
+    let activeSpinner = null;
     let streamRenderer = null;
 
-    if (showSpinners) {
-      retrievalSpinner = createTimedSpinner('Searching knowledge base');
+    // State-driven spinners: subscribe to state changes from the orchestrator
+    if (showAnimations) {
+      orchestrator.on('stateChange', ({ to }) => {
+        const label = LABELS[to];
+        if (!label || to === 'IDLE' || to === 'STREAMING') return;
+        if (activeSpinner) { activeSpinner.stop(); activeSpinner = null; }
+        if (to === 'EMBEDDING' || to === 'RETRIEVING' || to === 'RERANKING') {
+          activeSpinner = moments.startSearching(label);
+        } else if (to === 'GENERATING' || to === 'BUILDING_PROMPT' || to === 'VALIDATING' || to === 'PERSISTING' || to === 'TOOL_CALLING') {
+          activeSpinner = moments.startThinking(label);
+        }
+      });
     }
 
     try {
-      for await (const event of chatTurn({
-        query: input, db, collection, llm, history,
-        opts: { maxDocs, rerank: doRerank, stream: doStream, systemPrompt, textField, filter: opts.filter, ...localOpts },
+      for await (const event of orchestrator.executePipelineTurn({
+        generatorFn: (args) => chatTurn({ query: input, db, collection, llm, history, opts: { maxDocs, rerank: doRerank, stream: doStream, systemPrompt, textField, filter: opts.filter, ...localOpts, memoryManager, memoryStrategy } }),
       })) {
+        if (event.type === 'interrupted') {
+          if (activeSpinner) { activeSpinner.stop(); activeSpinner = null; }
+          if (streamRenderer) { streamRenderer.flush(); streamRenderer = null; }
+          if (event.data.partialResponse) {
+            console.log(pc.dim(' [interrupted]'));
+          }
+          console.log('');
+          break;
+        }
+
+        if (event.type === 'error') {
+          if (activeSpinner) { activeSpinner.stop(); activeSpinner = null; }
+          if (showAnimations) {
+            moments.error(event.data.message);
+          } else {
+            console.error('');
+            console.error(ui.error(event.data.message));
+            console.error('');
+          }
+          break;
+        }
+
         if (event.type === 'history') {
           const { turnCount } = event.data;
           if (!opts.quiet && turnCount > 0) {
@@ -419,31 +656,23 @@ async function handlePipelineTurn(input, ctx) {
         }
 
         if (event.type === 'retrieval') {
-          if (retrievalSpinner) {
-            retrievalSpinner.stop();
-            retrievalSpinner = null;
-          }
-
           if (!opts.quiet && !retrievalShown) {
+            if (activeSpinner) { activeSpinner.stop(); activeSpinner = null; }
             const { docs, timeMs } = event.data;
             const rerankNote = isLocal ? ', reranking skipped' : '';
             console.log(pc.dim(`  [${docs.length} docs retrieved in ${timeMs}ms${rerankNote}]`));
             console.log('');
             retrievalShown = true;
           }
-
-          if (showSpinners) {
-            generationSpinner = createTimedSpinner('Generating response');
-          }
         }
 
         if (event.type === 'chunk') {
-          if (generationSpinner) {
-            generationSpinner.stop();
-            generationSpinner = null;
-          }
+          if (activeSpinner) { activeSpinner.stop(); activeSpinner = null; }
           // Initialize streaming markdown renderer on first chunk
           if (!streamRenderer) {
+            if (showAnimations) {
+              console.log(chatUI.renderAssistantLabel());
+            }
             streamRenderer = chatUI.createStreamRenderer();
           }
           streamRenderer.write(event.data);
@@ -463,13 +692,37 @@ async function handlePipelineTurn(input, ctx) {
           if (sources.length > 0 && chatConf.showSources !== false) {
             console.log(chatUI.renderSources(sources));
           }
-          console.log('');
+
+          // Brief success pose after successful response with sources
+          if (showAnimations && sources.length > 0) {
+            moments.success();
+          }
+
+          // Show per-message latency
+          if (!opts.quiet) {
+            const { metadata } = event.data;
+            const latencyStr = chatUI.renderLatencyLine(metadata);
+            if (latencyStr) console.log(latencyStr);
+          }
+
+          // Accumulate and show session stats
+          sessionStats.recordTurn({ tokens: event.data.metadata?.tokens });
+          if (!opts.quiet) {
+            console.log(sessionStats.formatSummary());
+          }
+
+          if (showAnimations) {
+            console.log(chatUI.renderTurnDivider());
+            console.log('');
+          } else {
+            console.log('');
+          }
         }
       }
     } finally {
-      if (retrievalSpinner) retrievalSpinner.stop();
-      if (generationSpinner) generationSpinner.stop();
+      if (activeSpinner) activeSpinner.stop();
       if (streamRenderer) streamRenderer.flush();
+      orchestrator.getStateMachine().removeAllListeners('stateChange');
     }
   }
 }
@@ -479,18 +732,29 @@ async function handlePipelineTurn(input, ctx) {
  * @returns {Array} Tool calls from this turn (for /tools and /export-workflow)
  */
 async function handleAgentTurn(input, ctx) {
-  const { llm, history, opts, db, collection, systemPrompt, chatConf } = ctx;
+  const { llm, history, opts, db, collection, systemPrompt, chatConf, sessionStats, orchestrator, memoryManager } = ctx;
   const showToolCalls = chatConf.showToolCalls !== undefined ? chatConf.showToolCalls : true;
   const toolCalls = [];
+  const memoryStrategy = opts.memoryStrategy || chatConf.memoryStrategy || undefined;
+
+  // Update MemoryManager with per-turn context
+  if (memoryManager) {
+    memoryManager.setOpts({ llm, query: input });
+  }
 
   if (opts.json) {
     // JSON mode — collect everything then output
     let fullResponse = '';
     let metadata = {};
 
-    for await (const event of agentChatTurn({
-      query: input, llm, history,
-      opts: { systemPrompt, db, collection },
+    // Track state transitions for --json diagnostics
+    const stateLog = [];
+    orchestrator.on('stateChange', ({ from, to, timestamp }) => {
+      stateLog.push({ from, to, timestamp });
+    });
+
+    for await (const event of orchestrator.executeAgentTurn({
+      generatorFn: (args) => agentChatTurn({ query: input, llm, history, opts: { systemPrompt, db, collection, memoryManager, memoryStrategy } }),
     })) {
       if (event.type === 'tool_call') {
         toolCalls.push(event.data);
@@ -499,31 +763,81 @@ async function handleAgentTurn(input, ctx) {
       if (event.type === 'done') {
         metadata = event.data.metadata;
       }
+      if (event.type === 'error') {
+        console.error(JSON.stringify({ error: event.data.message }));
+      }
     }
 
+    // Clean up listener to prevent leaks
+    orchestrator.getStateMachine().removeAllListeners('stateChange');
+
+    sessionStats.recordTurn({ tokens: metadata.tokens });
+    const diagnostics = {
+      stateTransitions: stateLog,
+      memoryStrategy: memoryManager ? memoryManager._defaultStrategy : 'sliding_window',
+      turnIndex: orchestrator.turnIndex,
+    };
     console.log(JSON.stringify({
       sessionId: history.sessionId,
       query: input,
       response: fullResponse,
       toolCalls,
       metadata,
+      diagnostics,
+      latency: {
+        retrievalMs: metadata.retrievalTimeMs || null,
+        generationMs: metadata.generationTimeMs || null,
+        totalMs: metadata.totalTimeMs || null,
+      },
+      sessionStats: sessionStats.getTotals(),
     }));
   } else {
     // Interactive mode with markdown rendering
-    const showSpinners = !opts.quiet;
-    let thinkingSpinner = null;
+    const showAnimations = moments.isInteractive({ json: opts.json, plain: opts.quiet });
+    let activeSpinner = null;
     let hasShownToolCalls = false;
     let streamRenderer = null;
 
-    if (showSpinners) {
-      thinkingSpinner = createTimedSpinner('Thinking');
+    // State-driven spinners: subscribe to state changes from the orchestrator
+    if (showAnimations) {
+      orchestrator.on('stateChange', ({ to }) => {
+        const label = LABELS[to];
+        if (!label || to === 'IDLE' || to === 'STREAMING') return;
+        if (activeSpinner) { activeSpinner.stop(); activeSpinner = null; }
+        if (to === 'EMBEDDING' || to === 'RETRIEVING' || to === 'RERANKING') {
+          activeSpinner = moments.startSearching(label);
+        } else if (to === 'GENERATING' || to === 'BUILDING_PROMPT' || to === 'VALIDATING' || to === 'PERSISTING' || to === 'TOOL_CALLING') {
+          activeSpinner = moments.startThinking(label);
+        }
+      });
     }
 
     try {
-      for await (const event of agentChatTurn({
-        query: input, llm, history,
-        opts: { systemPrompt, db, collection },
+      for await (const event of orchestrator.executeAgentTurn({
+        generatorFn: (args) => agentChatTurn({ query: input, llm, history, opts: { systemPrompt, db, collection, memoryManager, memoryStrategy } }),
       })) {
+        if (event.type === 'interrupted') {
+          if (activeSpinner) { activeSpinner.stop(); activeSpinner = null; }
+          if (streamRenderer) { streamRenderer.flush(); streamRenderer = null; }
+          if (event.data.partialResponse) {
+            console.log(pc.dim(' [interrupted]'));
+          }
+          console.log('');
+          break;
+        }
+
+        if (event.type === 'error') {
+          if (activeSpinner) { activeSpinner.stop(); activeSpinner = null; }
+          if (showAnimations) {
+            moments.error(event.data.message);
+          } else {
+            console.error('');
+            console.error(ui.error(event.data.message));
+            console.error('');
+          }
+          break;
+        }
+
         if (event.type === 'history') {
           const { turnCount } = event.data;
           if (!opts.quiet && turnCount > 0) {
@@ -532,10 +846,7 @@ async function handleAgentTurn(input, ctx) {
         }
 
         if (event.type === 'tool_call') {
-          if (thinkingSpinner) {
-            thinkingSpinner.stop();
-            thinkingSpinner = null;
-          }
+          if (activeSpinner) { activeSpinner.stop(); activeSpinner = null; }
 
           toolCalls.push(event.data);
           hasShownToolCalls = true;
@@ -543,23 +854,18 @@ async function handleAgentTurn(input, ctx) {
           if (showToolCalls) {
             console.log(chatUI.renderToolCall(event.data, showToolCalls));
           }
-
-          // Start spinner for next LLM call (analyzing tool results)
-          if (showSpinners) {
-            thinkingSpinner = createTimedSpinner('Analyzing results');
-          }
         }
 
         if (event.type === 'chunk') {
-          if (thinkingSpinner) {
-            thinkingSpinner.stop();
-            thinkingSpinner = null;
-          }
+          if (activeSpinner) { activeSpinner.stop(); activeSpinner = null; }
           if (hasShownToolCalls && !opts.quiet) {
             console.log(''); // Visual separator after tool calls
             hasShownToolCalls = false;
           }
           if (!streamRenderer) {
+            if (showAnimations) {
+              console.log(chatUI.renderAssistantLabel());
+            }
             streamRenderer = chatUI.createStreamRenderer();
           }
           streamRenderer.write(event.data);
@@ -572,12 +878,32 @@ async function handleAgentTurn(input, ctx) {
           } else {
             console.log('');
           }
-          console.log('');
+
+          // Show per-message latency
+          if (!opts.quiet) {
+            const { metadata } = event.data;
+            const latencyStr = chatUI.renderLatencyLine(metadata);
+            if (latencyStr) console.log(latencyStr);
+          }
+
+          // Accumulate and show session stats
+          sessionStats.recordTurn({ tokens: event.data.metadata?.tokens });
+          if (!opts.quiet) {
+            console.log(sessionStats.formatSummary());
+          }
+
+          if (showAnimations) {
+            console.log(chatUI.renderTurnDivider());
+            console.log('');
+          } else {
+            console.log('');
+          }
         }
       }
     } finally {
-      if (thinkingSpinner) thinkingSpinner.stop();
+      if (activeSpinner) activeSpinner.stop();
       if (streamRenderer) streamRenderer.flush();
+      orchestrator.getStateMachine().removeAllListeners('stateChange');
     }
   }
 
@@ -589,7 +915,7 @@ async function handleAgentTurn(input, ctx) {
  * @returns {'quit'|true|false} - 'quit' to exit, true if handled, false if unknown
  */
 async function handleSlashCommand(input, ctx) {
-  const { history, opts, db, collection, llm, rl, isAgent, lastToolCalls } = ctx;
+  const { history, opts, db, collection, llm, rl, isAgent, lastToolCalls, sessionStore, sessionId, memoryManager } = ctx;
   const parts = input.split(/\s+/);
   const cmd = parts[0].toLowerCase();
 
@@ -608,6 +934,9 @@ async function handleSlashCommand(input, ctx) {
       console.log('  /context    Show retrieved context from last query');
       console.log('  /clear      Clear conversation history');
       console.log('  /model      Show or switch LLM model (/model <name>)');
+      console.log('  /sessions   List recent sessions');
+      console.log('  /memory     Show memory strategy and utilization');
+      console.log('  /archive    Archive current session');
       console.log('  /export [format] [file]  Export conversation (markdown, json, pdf)');
       if (isAgent) {
         console.log('  /tools      Show tool calls from last response');
@@ -667,7 +996,7 @@ async function handleSlashCommand(input, ctx) {
         } else {
           console.log('');
           for (const s of sessions) {
-            const active = s.sessionId === history.sessionId ? pc.green(' <- current') : '';
+            const active = s.sessionId === history.sessionId ? ui.green(' <- current') : '';
             const date = s.lastActivity ? new Date(s.lastActivity).toLocaleString() : 'unknown';
             const preview = (s.firstMessage || '').substring(0, 60);
             console.log(`  ${pc.bold(s.sessionId.slice(0, 8))}  ${pc.dim(date)}  ${s.turnCount} turns${active}`);
@@ -702,7 +1031,7 @@ async function handleSlashCommand(input, ctx) {
             console.log('');
             console.log(`  Available models:`);
             for (const m of models) {
-              const current = m.id === llm.model ? pc.green(' <- current') : '';
+              const current = m.id === llm.model ? ui.green(' <- current') : '';
               let info = m.name || m.id;
               if (m.size) info += pc.dim(` (${m.size})`);
               if (m.parameterSize) info += pc.dim(` [${m.parameterSize}]`);
@@ -768,7 +1097,7 @@ async function handleSlashCommand(input, ctx) {
       console.log('');
       for (let i = 0; i < lastToolCalls.length; i++) {
         const tc = lastToolCalls[i];
-        const status = tc.error ? pc.red('FAILED') : pc.green('OK');
+        const status = tc.error ? pc.red('FAILED') : ui.green('OK');
         console.log(`  ${i + 1}. ${pc.bold(tc.name)} [${status}] (${tc.timeMs}ms)`);
 
         // Show args
@@ -826,15 +1155,155 @@ async function handleSlashCommand(input, ctx) {
       return true;
     }
 
+    case '/archive': {
+      if (!sessionStore) {
+        console.log(pc.dim('  Session archiving not available (no MongoDB connection).'));
+        return true;
+      }
+      if (sessionStore.isFallbackMode) {
+        console.log(pc.dim('  Session archiving not available (no MongoDB connection).'));
+        return true;
+      }
+      try {
+        await sessionStore.transitionLifecycle(sessionId, 'archived');
+        console.log(pc.dim('  Session archived.'));
+
+        // Generate session summary for cross-session recall
+        try {
+          const { summarizeTurns } = require('../lib/memory-summarizer');
+          const { SessionSummaryStore } = require('../lib/session-summary-store');
+          const { generateEmbeddings } = require('../lib/api');
+
+          const allTurns = history.getMessages();
+          if (allTurns.length >= 2) {
+            const summary = await summarizeTurns(allTurns, llm);
+            if (summary) {
+              const summaryStore = new SessionSummaryStore({ db: db || 'vai' });
+              try {
+                const embedResult = await generateEmbeddings([summary], {
+                  model: 'voyage-4-large',
+                  inputType: 'document',
+                });
+                const embedding = embedResult.data[0].embedding;
+                await summaryStore.storeSummary({ sessionId, summary, embedding });
+                if (!opts.quiet && !opts.json) {
+                  console.log(pc.dim('  Session summary saved for cross-session recall.'));
+                }
+              } finally {
+                await summaryStore.close();
+              }
+            }
+          }
+        } catch {
+          // Summary generation is non-fatal — session is already archived
+        }
+      } catch (err) {
+        console.log(pc.dim(`  Archive failed: ${err.message}`));
+      }
+      return true;
+    }
+
+    case '/sessions': {
+      if (!sessionStore || sessionStore.isFallbackMode) {
+        console.log(pc.dim('  Session listing not available (no MongoDB connection).'));
+        return true;
+      }
+      try {
+        await sessionStore._connect();
+        const { SESSION_STATES } = require('../lib/session-store');
+        const sessions = await sessionStore._sessionsCol
+          .find({ lifecycleState: { $ne: SESSION_STATES.ARCHIVED } })
+          .sort({ updatedAt: -1 })
+          .limit(10)
+          .toArray();
+
+        if (sessions.length === 0) {
+          console.log(pc.dim('  No sessions found.'));
+        } else {
+          console.log('');
+          for (const s of sessions) {
+            const id = (s._id || '').toString().slice(0, 8);
+            const active = s._id === sessionId ? ui.green(' <- current') : '';
+            const date = s.updatedAt ? new Date(s.updatedAt).toLocaleString() : 'unknown';
+            console.log(`  ${pc.bold(id)}  ${pc.dim(date)}  ${s.model || ''}${active}`);
+          }
+          console.log('');
+          console.log(pc.dim('  Resume with: vai chat --session <id>'));
+        }
+      } catch (err) {
+        console.log(pc.dim(`  Error listing sessions: ${err.message}`));
+      }
+      return true;
+    }
+
+    case '/memory': {
+      // Active strategy
+      const strategyName = memoryManager ? memoryManager._defaultStrategy : 'sliding_window';
+      const availableStrategies = memoryManager ? memoryManager.getStrategyNames() : ['sliding_window'];
+
+      console.log('');
+      console.log(pc.bold('  Memory Status'));
+      console.log('');
+      console.log(`  Strategy:     ${pc.cyan(strategyName)}`);
+      console.log(`  Available:    ${availableStrategies.join(', ')}`);
+
+      // Token budget breakdown
+      const { MemoryBudget } = require('../lib/memory-budget');
+      const budget = new MemoryBudget();
+      const historyBudget = budget.estimateSlotTokens({
+        systemPrompt: opts.systemPrompt || '',
+        contextDocs: [],
+        currentMessage: '',
+      });
+      const breakdown = budget.getBreakdown();
+
+      if (breakdown) {
+        console.log('');
+        console.log(pc.bold('  Token Budget'));
+        console.log(`  Model limit:  ${breakdown.modelLimit.toLocaleString()}`);
+        console.log(`  Reserved:     ${breakdown.reservedResponse.toLocaleString()} (response)`);
+        console.log(`  System:       ${breakdown.systemPrompt.toLocaleString()}`);
+        console.log(`  History:      ${pc.cyan(breakdown.historyBudget.toLocaleString())} available`);
+      }
+
+      // Current utilization
+      const allTurns = history.getMessages();
+      const turnCount = Math.floor(allTurns.length / 2);
+      const { estimateTokens } = require('../lib/turn-state');
+      const usedTokens = allTurns.reduce((sum, t) => sum + estimateTokens(t.content || ''), 0);
+      const utilization = historyBudget > 0 ? Math.min(100, Math.round((usedTokens / historyBudget) * 100)) : 0;
+
+      console.log('');
+      console.log(pc.bold('  Utilization'));
+      console.log(`  Turns:        ${turnCount}`);
+      console.log(`  Tokens used:  ${usedTokens.toLocaleString()} / ${historyBudget.toLocaleString()}`);
+      console.log(`  Utilization:  ${utilization}%`);
+
+      // Visual bar
+      const barWidth = 30;
+      const filled = Math.round((utilization / 100) * barWidth);
+      const bar = pc.green('\u2588'.repeat(filled)) + pc.dim('\u2591'.repeat(barWidth - filled));
+      console.log(`  [${bar}]`);
+
+      console.log('');
+      return true;
+    }
+
     default:
       console.log(pc.dim(`  Unknown command: ${cmd}. Type /help for available commands.`));
       return true;
   }
 }
 
-async function cleanup(mongo) {
+async function cleanup(mongo, store, summaryStore) {
   if (mongo?.client) {
     try { await mongo.client.close(); } catch { /* ignore */ }
+  }
+  if (store) {
+    try { await store.close(); } catch { /* ignore */ }
+  }
+  if (summaryStore) {
+    try { await summaryStore.close(); } catch { /* ignore */ }
   }
 }
 
@@ -846,4 +1315,118 @@ function getVersion() {
   }
 }
 
-module.exports = { registerChat };
+/**
+ * Resolve embedding model configuration from CLI opts and project config.
+ * Exported for testing.
+ */
+function resolveEmbeddingConfig(opts, chatConf = {}) {
+  let embeddingModel = opts.embeddingModel || chatConf.embeddingModel || null;
+  if (opts.local && !opts.embeddingModel) embeddingModel = 'voyage-4-nano';
+  const isLocalEmbed = embeddingModel === 'voyage-4-nano';
+  const doRerank = isLocalEmbed ? false : (opts.rerank !== false);
+  return { embeddingModel, isLocalEmbed, doRerank };
+}
+
+/**
+ * Replay a stored session's turns for debugging.
+ * @param {object} opts - CLI options (replay, json, quiet)
+ * @param {string} db - Database name
+ */
+async function replaySession(opts, db) {
+  const { SessionStore } = require('../lib/session-store');
+  const store = new SessionStore({ db: db || 'vai' });
+
+  try {
+    const session = await store.getSession(opts.replay);
+    if (!session) {
+      console.error(ui.error(`Session not found: ${opts.replay}`));
+      console.error(pc.dim('  Tip: Run vai chat --list to see available sessions'));
+      process.exit(1);
+    }
+
+    const turns = await store.getTurns(opts.replay);
+
+    if (turns.length === 0) {
+      console.log(pc.dim('  No turns found for this session.'));
+      return;
+    }
+
+    if (opts.json) {
+      // JSON output: session + per-turn diagnostics
+      const output = {
+        sessionId: opts.replay,
+        model: session.model || null,
+        provider: session.provider || null,
+        mode: session.mode || 'pipeline',
+        lifecycleState: session.lifecycleState || 'unknown',
+        createdAt: session.createdAt,
+        turnCount: turns.length,
+        turns: turns.map(t => ({
+          turnIndex: t.turnIndex,
+          request: t.request || { role: t.role, content: t.content },
+          response: t.response || null,
+          tokens: t.tokens || null,
+          timing: t.timing || null,
+          createdAt: t.createdAt,
+          diagnostics: {
+            tokens: t.tokens || null,
+            timing: t.timing || null,
+          },
+        })),
+      };
+      console.log(JSON.stringify(output, null, 2));
+    } else {
+      // Interactive formatted output
+      if (!opts.quiet) {
+        console.log('');
+        console.log(pc.bold(`  Session Replay: ${opts.replay.slice(0, 8)}...`));
+        console.log(pc.dim(`  Model: ${session.model || 'unknown'} | Provider: ${session.provider || 'unknown'} | Mode: ${session.mode || 'pipeline'}`));
+        console.log(pc.dim(`  State: ${session.lifecycleState || 'unknown'} | Created: ${session.createdAt ? new Date(session.createdAt).toLocaleString() : 'unknown'}`));
+        console.log(pc.dim(`  ${turns.length} turn${turns.length !== 1 ? 's' : ''}`));
+        console.log(pc.dim('  ' + '\u2501'.repeat(50)));
+        console.log('');
+      }
+
+      for (const turn of turns) {
+        // User message
+        const userContent = turn.request ? turn.request.content : (turn.role === 'user' ? turn.content : null);
+        if (userContent) {
+          console.log(`  ${pc.bold(pc.cyan('You:'))} ${userContent}`);
+        }
+
+        // Assistant response
+        const assistantContent = turn.response ? turn.response.content : (turn.role === 'assistant' ? turn.content : null);
+        if (assistantContent) {
+          console.log(`  ${pc.bold(pc.green('Assistant:'))}`);
+          const lines = assistantContent.split('\n');
+          for (const line of lines) {
+            console.log(`    ${line}`);
+          }
+        }
+
+        // Turn metadata
+        const meta = [];
+        if (turn.tokens) {
+          meta.push(`tokens: ${turn.tokens.total || '?'}`);
+        }
+        if (turn.timing?.totalMs) {
+          meta.push(`${turn.timing.totalMs}ms`);
+        }
+        if (meta.length > 0) {
+          console.log(pc.dim(`    [Turn ${turn.turnIndex}: ${meta.join(' | ')}]`));
+        }
+
+        console.log('');
+      }
+
+      if (!opts.quiet) {
+        console.log(pc.dim('  End of replay'));
+        console.log('');
+      }
+    }
+  } finally {
+    await store.close();
+  }
+}
+
+module.exports = { registerChat, resolveEmbeddingConfig };

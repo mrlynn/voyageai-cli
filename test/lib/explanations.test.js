@@ -23,6 +23,7 @@ describe('explanations', () => {
     'shared-embedding-space',
     'rteb-benchmarks',
     'voyage-4-nano',
+    'local-inference',
     'provider-comparison',
     'rerank-eval',
     'multimodal-embeddings',
@@ -37,6 +38,10 @@ describe('explanations', () => {
     'chat',
     'workflows',
     'workflow-publishing',
+    'harness',
+    'sessions',
+    'memory-strategies',
+    'cross-session-recall',
   ];
 
   it('has all expected concepts', () => {
@@ -114,6 +119,9 @@ describe('explanations', () => {
       binary: 'quantization',
       matryoshka: 'quantization',
       dtype: 'quantization',
+      local: 'local-inference',
+      'python-bridge': 'local-inference',
+      'nano-setup': 'local-inference',
     };
 
     it('alias map covers expected aliases', () => {

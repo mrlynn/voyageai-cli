@@ -84,6 +84,52 @@ function requireApiKey() {
 }
 
 /**
+ * Inspect the current API key + endpoint configuration.
+ * @returns {{
+ *   apiKey: string,
+ *   base: string,
+ *   keyInfo: { type: 'atlas'|'voyage'|'unknown', label: string, expectedBase: string },
+ *   mismatch: boolean
+ * }}
+ */
+function getApiDiagnostics() {
+  const apiKey = requireApiKey();
+  const base = getApiBase();
+  const keyInfo = identifyKey(apiKey);
+
+  return {
+    apiKey,
+    base,
+    keyInfo,
+    mismatch: keyInfo.type !== 'unknown' && keyInfo.expectedBase !== base,
+  };
+}
+
+/**
+ * Build a structured mismatch error so apps can show recovery guidance.
+ * @param {ReturnType<typeof getApiDiagnostics>} diagnostics
+ * @returns {Error}
+ */
+function createMismatchError(diagnostics) {
+  const { base, keyInfo, apiKey } = diagnostics;
+  const err = new Error(
+    `Stored ${keyInfo.label} API key cannot be used with ${base}.`
+  );
+  err.code = 'API_KEY_BASE_MISMATCH';
+  err.statusCode = 400;
+  err.hint =
+    `Open Settings and replace the stored key, or switch your base URL to ${keyInfo.expectedBase}.`;
+  err.details = {
+    keyType: keyInfo.type,
+    keyLabel: keyInfo.label,
+    keyPrefix: apiKey.slice(0, 5),
+    base,
+    expectedBase: keyInfo.expectedBase,
+  };
+  return err;
+}
+
+/**
  * Sleep for the given number of milliseconds.
  * @param {number} ms
  * @returns {Promise<void>}
@@ -99,9 +145,16 @@ function sleep(ms) {
  * @returns {Promise<object>}
  */
 async function apiRequest(endpoint, body) {
-  const apiKey = requireApiKey();
-  const base = getApiBase();
+  const diagnostics = getApiDiagnostics();
+  const { apiKey, base } = diagnostics;
   const url = `${base}${endpoint}`;
+
+  if (diagnostics.mismatch) {
+    const mismatchErr = createMismatchError(diagnostics);
+    console.error(mismatchErr.message);
+    console.error(mismatchErr.hint);
+    throw mismatchErr;
+  }
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     const response = await fetch(url, {
@@ -152,7 +205,18 @@ async function apiRequest(endpoint, body) {
 
       // Throw instead of process.exit so callers (like playground) can catch gracefully
       const err = new Error(errMsg);
+      err.code =
+        response.status === 401
+          ? 'API_UNAUTHORIZED'
+          : response.status === 403
+            ? 'API_FORBIDDEN'
+            : 'API_ERROR';
       err.statusCode = response.status;
+      if (hint) err.hint = hint.trim();
+      err.details = {
+        endpoint: base,
+        provider: diagnostics.keyInfo.label,
+      };
       throw err;
     }
 
@@ -232,6 +296,7 @@ module.exports = {
   identifyKey,
   getApiBase,
   requireApiKey,
+  getApiDiagnostics,
   apiRequest,
   generateEmbeddings,
   generateMultimodalEmbeddings,

@@ -5,7 +5,7 @@ const path = require('path');
 let p;
 function clack() { if (!p) p = require('@clack/prompts'); return p; }
 const { loadProject } = require('../lib/project');
-const { connect, close } = require('../lib/mongo');
+const { getMongoCollection } = require('../lib/mongo');
 const ui = require('../lib/ui');
 
 /**
@@ -125,8 +125,9 @@ async function purge(options = {}) {
     if (!quiet) {
       p.log.step(`Connecting to database: ${db}`);
     }
-    client = await connect(db);
-    const collection = client.db(db).collection(collectionName);
+    const mongo = await getMongoCollection(db, collectionName);
+    client = mongo.client;
+    const collection = mongo.collection;
 
     let filter = {};
     let staleIds = [];
@@ -223,8 +224,8 @@ async function purge(options = {}) {
       p.log.step('Deleting documents...');
     }
     
-    const result = await collection.deleteMany(filter);
-    const deleted = result.deletedCount;
+    const deleteResult = await collection.deleteMany(filter);
+    const deleted = deleteResult.deletedCount;
 
     if (options.json) {
       console.log(JSON.stringify({ success: true, deleted }));
@@ -244,7 +245,7 @@ async function purge(options = {}) {
     return { success: false, error: err.message };
   } finally {
     if (client) {
-      await close();
+      await client.close();
     }
   }
 }

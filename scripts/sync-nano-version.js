@@ -38,4 +38,4 @@ if (checkOnly) {
 
 const updated = source.replace(VERSION_RE, `BRIDGE_VERSION = "${version}"`);
 fs.writeFileSync(BRIDGE_PATH, updated, 'utf8');
-console.log(`Synced BRIDGE_VERSION to ${version}`);
+console.error(`Synced BRIDGE_VERSION to ${version}`);

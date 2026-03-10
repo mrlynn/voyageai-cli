@@ -193,6 +193,16 @@ async function handleOptimizeAnalyze(req, res, body) {
       finalQueries = await optimizer.generateSampleQueries(5);
     }
 
+    if (!finalQueries || finalQueries.length === 0) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        error:
+          `No usable test queries could be generated from ${db}.${collection}. ` +
+          'Add queries manually or use a collection with text/content fields.',
+      }));
+      return;
+    }
+
     // Run analysis
     const result = await optimizer.analyze({
       queries: finalQueries,

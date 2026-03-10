@@ -37,7 +37,7 @@ const TELEMETRY_EVENTS = [
   },
   {
     name: 'cli_chat',
-    fields: ['provider', 'llmModel', 'embeddingModel', 'turnCount', 'durationMs'],
+    fields: ['model', 'modelRole', 'models', 'provider', 'llmModel', 'embeddingModel', 'rerankModel', 'local', 'turnCount', 'durationMs'],
     source: 'src/commands/chat.js',
     description: 'Interactive chat session summary.',
   },
@@ -139,7 +139,7 @@ const TELEMETRY_EVENTS = [
   },
   {
     name: 'cli_ingest',
-    fields: ['durationMs'],
+    fields: ['model', 'modelRole', 'models', 'local', 'inputType', 'batchSize', 'format', 'docCount', 'durationMs'],
     source: 'src/commands/ingest.js',
     description: 'Ingest command timing.',
   },
@@ -169,7 +169,7 @@ const TELEMETRY_EVENTS = [
   },
   {
     name: 'cli_pipeline',
-    fields: ['model', 'chunkStrategy', 'chunkSize', 'createIndex', 'durationMs'],
+    fields: ['model', 'modelRole', 'models', 'local', 'chunkStrategy', 'chunkSize', 'createIndex', 'durationMs'],
     source: 'src/commands/pipeline.js',
     description: 'End-to-end pipeline execution summary.',
   },

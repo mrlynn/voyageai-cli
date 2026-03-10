@@ -211,7 +211,13 @@ function registerIngest(program) {
     .option('-q, --quiet', 'Suppress progress, show only final summary')
     .action(async (opts) => {
       const telemetry = require('../lib/telemetry');
-      const done = telemetry.timer('cli_ingest');
+      const ingestModel = opts.local ? 'voyage-4-nano' : opts.model;
+      const done = telemetry.timer('cli_ingest', {
+        model: ingestModel,
+        local: !!opts.local,
+        inputType: opts.inputType,
+        batchSize: opts.batchSize,
+      });
       const startTime = Date.now();
 
       // Validate file exists
@@ -269,7 +275,7 @@ function registerIngest(program) {
             batches: totalBatches,
             batchSize: opts.batchSize,
             estimatedTokens: estimated,
-            model: opts.model,
+            model: ingestModel,
             textField: textKey,
           }, null, 2));
         } else {
@@ -279,7 +285,7 @@ function registerIngest(program) {
           console.log(ui.label('Documents', String(documents.length)));
           console.log(ui.label('Batches', `${totalBatches} (batch size: ${opts.batchSize})`));
           console.log(ui.label('Est. tokens', `~${estimated.toLocaleString()}`));
-          console.log(ui.label('Model', opts.model));
+          console.log(ui.label('Model', ingestModel));
           console.log(ui.label('Text field', textKey));
           console.log(ui.label('Target', `${opts.db}.${opts.collection}`));
           console.log(ui.label('Embed field', opts.field));
@@ -398,7 +404,7 @@ function registerIngest(program) {
             collection: opts.collection,
             batches: totalBatches,
             tokens: totalTokens,
-            model: opts.model,
+            model: ingestModel,
             durationSeconds: parseFloat(duration),
             docsPerSecond: parseFloat(rate),
           };
@@ -414,7 +420,7 @@ function registerIngest(program) {
           }
           console.log(ui.label('Batches', String(totalBatches)));
           console.log(ui.label('Tokens', totalTokens.toLocaleString()));
-          console.log(ui.label('Model', opts.model));
+          console.log(ui.label('Model', ingestModel));
           console.log(ui.label('Duration', `${duration}s`));
           console.log(ui.label('Rate', `${rate} docs/sec`));
           if (errors.length > 0) {

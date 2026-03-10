@@ -25,20 +25,43 @@ class ChatHistory {
    * @param {object} [opts]
    * @param {string} [opts.sessionId] - Resume an existing session
    * @param {number} [opts.maxTurns] - Max turns to keep (default 20)
-   * @param {object} [opts.mongo] - { client, collection } for persistence
+   * @param {object} [opts.mongo] - { client, collection } for persistence (legacy)
+   * @param {object} [opts.store] - SessionStore instance for persistence (new)
    */
   constructor(opts = {}) {
     this.sessionId = opts.sessionId || generateSessionId();
     this.maxTurns = opts.maxTurns || 20;
     this.turns = []; // Array of { role, content, context?, metadata?, timestamp }
     this._mongo = opts.mongo || null;
+    this._store = opts.store || null;
   }
 
   /**
-   * Load existing session from MongoDB.
+   * Load existing session from SessionStore or MongoDB.
    * @returns {Promise<boolean>} true if session was found and loaded
    */
   async load() {
+    // Prefer SessionStore (new path)
+    if (this._store) {
+      try {
+        const turns = await this._store.getLatestTurns(this.sessionId, this.maxTurns * 2);
+        if (!turns || turns.length === 0) return false;
+
+        this.turns = turns.map(d => ({
+          role: d.role,
+          content: d.content,
+          context: d.context || undefined,
+          metadata: d.metadata || undefined,
+          timestamp: d.createdAt || d.timestamp,
+        }));
+
+        return true;
+      } catch {
+        return false;
+      }
+    }
+
+    // Legacy MongoDB path
     if (!this._mongo) return false;
 
     try {
@@ -83,8 +106,25 @@ class ChatHistory {
       this.turns = this.turns.slice(-maxEntries);
     }
 
-    // Persist to MongoDB if available
-    if (this._mongo) {
+    // Persist via SessionStore (new path)
+    if (this._store && !this._store.isFallbackMode) {
+      try {
+        await this._store.storeTurn({
+          sessionId: this.sessionId,
+          turnIndex: Math.floor(this.turns.length / 2),
+          role: entry.role,
+          content: entry.content,
+          context: entry.context,
+          tokens: {},
+          timing: {},
+        });
+      } catch {
+        // Persistence failure is non-fatal
+      }
+    }
+
+    // Legacy: persist to MongoDB if available
+    if (!this._store && this._mongo) {
       try {
         await this._mongo.collection.insertOne({
           sessionId: this.sessionId,

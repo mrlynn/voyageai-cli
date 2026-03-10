@@ -1,0 +1,190 @@
+---
+title: vai chat
+description: Complete reference for the vai chat command -- flags, slash commands, and usage examples.
+sidebar_position: 1
+---
+
+# vai chat
+
+RAG-powered conversational interface -- chat with your knowledge base.
+
+## Synopsis
+
+```bash
+vai chat [options]
+```
+
+## Description
+
+`vai chat` opens an interactive chat session backed by vector search over your embedded documents. Each user message triggers a retrieval step (embedding + optional reranking), and the retrieved context is injected into the LLM prompt alongside conversation history. The result is a conversational experience grounded in your actual data.
+
+Sessions are persisted to MongoDB by default so you can resume later. Memory strategies control how conversation history is managed as the context window fills up.
+
+## Options
+
+### Data Source
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--db <name>` | MongoDB database name | Project config |
+| `--collection <name>` | Collection with embedded documents | Project config |
+| `--text-field <name>` | Document text field name | `text` |
+| `--filter <json>` | MongoDB pre-filter for vector search | None |
+
+### LLM Configuration
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--llm-provider <name>` | LLM provider: `anthropic`, `openai`, `ollama` | Project config |
+| `--llm-model <name>` | Specific LLM model to use | Provider default |
+| `--llm-api-key <key>` | LLM API key | Environment variable |
+| `--llm-base-url <url>` | LLM API base URL (Ollama) | None |
+| `--mode <mode>` | Chat mode: `pipeline` (fixed RAG) or `agent` (tool-calling) | `pipeline` |
+
+### Embedding
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--local` | Use local nano embeddings instead of Voyage API | Off |
+| `--embedding-model <name>` | Embedding model: `voyage-4-nano`, `voyage-4-lite`, `voyage-4`, `voyage-4-large` | API default |
+| `--no-rerank` | Skip reranking step | Rerank enabled |
+
+### Session Management
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--session <id>` | Resume a previous chat session | New session |
+| `--list` | List recent chat sessions and exit | Off |
+| `--all` | Include archived sessions in `--list` output | Active + paused only |
+
+### Memory
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--memory-strategy <name>` | Memory strategy: `sliding_window`, `summarization`, `hierarchical` | `sliding_window` |
+| `--max-turns <n>` | Max conversation turns before truncation | `20` |
+| `--max-context-docs <n>` | Max retrieved documents for context | `5` |
+
+### Output
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--json` | Output JSON per turn (for scripting) | Off |
+| `--no-stream` | Wait for complete response instead of streaming | Stream enabled |
+| `-q`, `--quiet` | Suppress decorative output | Off |
+| `--estimate` | Show estimated per-turn cost breakdown and exit | Off |
+| `--replay <id>` | Replay a stored session for debugging | Off |
+
+### Advanced
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--system-prompt <text>` | Override the system prompt | Built-in prompt |
+| `--no-history` | Disable MongoDB persistence (in-memory only) | Persistence enabled |
+
+## Slash Commands
+
+These commands are available at the chat prompt during an active session:
+
+| Command | Description |
+|---------|-------------|
+| `/help` | Show available slash commands |
+| `/sources` | Show sources from last response |
+| `/session` | Display current session ID |
+| `/context` | Show retrieved context from last query |
+| `/history` | List recent chat sessions with status, turn count, and date |
+| `/clear` | Clear conversation history for the current session |
+| `/model [name]` | Show current LLM model, or switch to `name` |
+| `/memory` | Show memory strategy, token budget breakdown, and utilization |
+| `/sessions` | List recent sessions |
+| `/archive` | Archive the current session |
+| `/export [format] [file]` | Export conversation as markdown, json, or pdf |
+| `/tools` | Show tool calls from last response (agent mode only) |
+| `/export-workflow` | Export last tool sequence as reusable workflow (agent mode only) |
+| `/quit` | Exit the chat (aliases: `/exit`, `/q`) |
+
+### /memory Output Example
+
+```
+Strategy: hierarchical
+Budget: 128,000 tokens (model limit)
+  System prompt:    1,200 tokens
+  Context docs:     8,400 tokens
+  Response reserve: 4,096 tokens
+  History budget:   114,304 tokens (62% utilized)
+```
+
+## Examples
+
+**Basic usage** -- chat with an embedded collection:
+
+```bash
+vai chat --db mydb --collection docs
+```
+
+**Resume a session** -- pick up where you left off:
+
+```bash
+vai chat --session abc12345
+```
+
+**Use a specific memory strategy** -- hierarchical for cross-session recall:
+
+```bash
+vai chat --memory-strategy hierarchical
+```
+
+**Local embeddings** -- no API key needed:
+
+```bash
+vai chat --local
+```
+
+**JSON output for scripting** -- pipe structured output to other tools:
+
+```bash
+vai chat --json
+```
+
+**List sessions** -- see recent conversations:
+
+```bash
+vai chat --list
+```
+
+**List all sessions** -- include archived:
+
+```bash
+vai chat --list --all
+```
+
+**Replay for debugging** -- replay a stored session:
+
+```bash
+vai chat --replay <session-id>
+```
+
+**Cost estimate** -- see per-turn cost breakdown without starting a session:
+
+```bash
+vai chat --estimate
+```
+
+**Agent mode with custom model** -- tool-calling with a specific LLM:
+
+```bash
+vai chat --mode agent --llm-provider openai --llm-model gpt-4o
+```
+
+**Filtered search** -- scope vector search with a MongoDB filter:
+
+```bash
+vai chat --filter '{"category": "api-docs"}'
+```
+
+## See Also
+
+- [Chat Sessions Guide](/docs/guides/chat-sessions) -- session lifecycle, resume, and listing
+- [Memory Strategies Guide](/docs/guides/memory-strategies) -- compare sliding window, summarization, and hierarchical
+- [Cross-Session Recall Guide](/docs/guides/cross-session-recall) -- how past session context is surfaced
+- `vai explain harness` -- interactive explanation of the chat architecture

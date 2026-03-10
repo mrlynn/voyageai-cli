@@ -1,6 +1,5 @@
 node_modules/
 .vai.json
-.planning/
 .env.local
 .DS_Store
 *.tgz
@@ -18,7 +17,17 @@ VaiSite-Marketing-Assessment.md
 .claude/*
 .mcp.json
 /docs/*
+!/docs/demos/
+!/docs/demos/**
 !/docs/linkedin-posts.md
+!/docs/guides/
+!/docs/guides/**
+!/docs/commands/
+!/docs/commands/**
+!/docs/playground/
+!/docs/playground/**
+!/docs/reference/
+!/docs/reference/**
 .env.local.planning/
 AGENTS.md
 BOOTSTRAP.md
@@ -30,3 +39,10 @@ SOUL.md
 TOOLS.md
 USER.md
 .vai.json
+.env.local
+.claude/
+.cursor/
+.openclaw/
+.venv/
+
+docs/demos/.venv/

@@ -5,35 +5,34 @@ set -euo pipefail
 # vai release script
 #
 # Usage:
-#   ./scripts/release.sh patch|minor|major [--dry-run] [--skip-npm] [--skip-app]
+#   ./scripts/release.sh patch|minor|major [--dry-run] [--skip-npm]
 #
 # What it does:
-#   1. Ensures clean git state (no uncommitted changes)
+#   1. Ensures clean git state on main branch
 #   2. Runs tests
-#   3. Bumps CLI version in package.json (npm version)
-#   4. Syncs electron/package.json version
-#   5. Commits both package.json files
-#   6. Tags: v{cli-version} for npm, app-v{electron-version} for Electron
-#   7. Pushes commits + tags
-#   8. Publishes to npm (unless --skip-npm)
-#   9. The app-v* tag triggers GH Actions to build + release Electron app
+#   3. Bumps CLI version in package.json (single source of truth)
+#   4. Syncs electron/package.json to same version
+#   5. Commits, tags (v* only), pushes
+#   6. Publishes to npm (unless --skip-npm)
+#   7. CI handles everything else:
+#      - Builds macOS (signed + notarized), Linux, Windows
+#      - Publishes all assets to GitHub Releases
+#      - Promotes the draft release to Latest
 # ─────────────────────────────────────────────────────────
 
 BUMP="${1:-}"
 DRY_RUN=false
 SKIP_NPM=false
-SKIP_APP=false
 
 for arg in "$@"; do
   case "$arg" in
-    --dry-run)  DRY_RUN=true ;;
-    --skip-npm) SKIP_NPM=true ;;
-    --skip-app) SKIP_APP=true ;;
+    --dry-run)   DRY_RUN=true ;;
+    --skip-npm)  SKIP_NPM=true ;;
   esac
 done
 
 if [[ -z "$BUMP" || "$BUMP" == --* ]]; then
-  echo "Usage: ./scripts/release.sh <patch|minor|major> [--dry-run] [--skip-npm] [--skip-app]"
+  echo "Usage: ./scripts/release.sh <patch|minor|major> [--dry-run] [--skip-npm]"
   exit 1
 fi
 
@@ -45,101 +44,111 @@ fi
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
+# ── Helpers ──
+step() { echo ""; echo "── $1 ──"; }
+ok()   { echo "  ✓ $1"; }
+warn() { echo "  ⚠ $1"; }
+fail() { echo "  ✗ $1"; exit 1; }
+
 # ── Pre-flight checks ──
-echo "🔍 Pre-flight checks..."
+step "Pre-flight checks"
 
-# Clean working tree
 if [[ -n "$(git status --porcelain)" ]]; then
-  echo "Error: Working directory is not clean. Commit or stash changes first."
-  git status --short
-  exit 1
+  fail "Working directory is not clean. Commit or stash changes first."
 fi
+ok "Clean working directory"
 
-# On main branch
 BRANCH="$(git branch --show-current)"
 if [[ "$BRANCH" != "main" ]]; then
-  echo "Warning: Not on main branch (on: $BRANCH). Continue? [y/N]"
+  warn "Not on main branch (on: $BRANCH). Continue? [y/N]"
   read -r CONFIRM
   [[ "$CONFIRM" == "y" || "$CONFIRM" == "Y" ]] || exit 1
 fi
+ok "On branch: $BRANCH"
 
-# Pull latest
-echo "📥 Pulling latest..."
+echo "  Pulling latest..."
 git pull --rebase
+ok "Up to date with origin"
 
 # ── Run tests ──
-echo "🧪 Running tests..."
+step "Running tests"
 npm test
+ok "All tests passed"
 
-# ── Read current versions ──
-CLI_VERSION_OLD="$(node -p "require('./package.json').version")"
-APP_VERSION_OLD="$(node -p "require('./electron/package.json').version")"
-echo "📦 Current versions: CLI=$CLI_VERSION_OLD  App=$APP_VERSION_OLD"
+# ── Read current version ──
+VERSION_OLD="$(node -p "require('./package.json').version")"
 
-# ── Bump CLI version ──
-# Use npm version without git tag (we'll tag manually)
-CLI_VERSION_NEW="$(npm version "$BUMP" --no-git-tag-version)"
-CLI_VERSION_NEW="${CLI_VERSION_NEW#v}"  # strip leading 'v'
-echo "📦 CLI: $CLI_VERSION_OLD → $CLI_VERSION_NEW"
+# ── Bump CLI version (single source of truth) ──
+# npm version runs the "version" lifecycle script (sync-nano-version.js)
+# which syncs nano-bridge.py.
+step "Bumping version ($BUMP)"
+npm version "$BUMP" --no-git-tag-version > /dev/null 2>&1
+VERSION_NEW="$(node -p "require('./package.json').version")"
+echo "  $VERSION_OLD → $VERSION_NEW"
 
-# ── Bump Electron version to match ──
-# Electron app uses its own versioning scheme but we keep them in sync
-APP_VERSION_NEW="$(cd electron && npm version "$BUMP" --no-git-tag-version)"
-APP_VERSION_NEW="${APP_VERSION_NEW#v}"
-echo "🖥️  App: $APP_VERSION_OLD → $APP_VERSION_NEW"
+# ── Sync Electron version to match CLI ──
+cd electron
+npm version "$VERSION_NEW" --no-git-tag-version --allow-same-version > /dev/null 2>&1
+cd "$ROOT"
+ok "Electron synced to $VERSION_NEW"
+
+# ── Also stage nano-bridge.py if the sync script updated it ──
+git add -f src/nano/nano-bridge.py 2>/dev/null || true
 
 if $DRY_RUN; then
+  step "DRY RUN — would do"
+  echo "  git commit  → release: v$VERSION_NEW"
+  echo "  git tag     → v$VERSION_NEW"
+  echo "  git push    → origin + tags (triggers CI for all platforms)"
+  [[ "$SKIP_NPM" == false ]] && echo "  npm publish → voyageai-cli@$VERSION_NEW"
   echo ""
-  echo "🏜️  DRY RUN — would do:"
-  echo "  git add package.json package-lock.json electron/package.json electron/package-lock.json"
-  echo "  git commit -m 'release: v$CLI_VERSION_NEW'"
-  echo "  git tag v$CLI_VERSION_NEW"
-  [[ "$SKIP_APP" == false ]] && echo "  git tag app-v$APP_VERSION_NEW"
-  echo "  git push && git push --tags"
-  [[ "$SKIP_NPM" == false ]] && echo "  npm publish"
+  echo "  CI will then:"
+  echo "    → Build + sign + notarize macOS"
+  echo "    → Build Linux AppImage"
+  echo "    → Build Windows NSIS installer"
+  echo "    → Promote release to Latest"
   echo ""
   # Revert version bumps
-  git checkout -- package.json package-lock.json electron/package.json electron/package-lock.json 2>/dev/null || true
-  echo "✅ Dry run complete. No changes made."
+  git checkout -- package.json package-lock.json electron/package.json electron/package-lock.json src/nano/nano-bridge.py 2>/dev/null || true
+  ok "Dry run complete. No changes made."
   exit 0
 fi
 
 # ── Commit ──
-echo "📝 Committing version bump..."
-git add package.json package-lock.json electron/package.json electron/package-lock.json
-git commit -m "release: v${CLI_VERSION_NEW}"
+step "Committing version bump"
+git add package.json package-lock.json electron/package.json electron/package-lock.json src/nano/nano-bridge.py
+git commit -m "release: v${VERSION_NEW}"
+ok "Committed"
 
-# ── Tag ──
-echo "🏷️  Tagging v${CLI_VERSION_NEW}..."
-git tag "v${CLI_VERSION_NEW}"
-
-if [[ "$SKIP_APP" == false ]]; then
-  echo "🏷️  Tagging app-v${APP_VERSION_NEW} (triggers Electron build)..."
-  git tag "app-v${APP_VERSION_NEW}"
-fi
+# ── Tag (v* format only — this is what electron-updater expects) ──
+step "Tagging v${VERSION_NEW}"
+git tag "v${VERSION_NEW}"
+ok "Tagged"
 
 # ── Push ──
-echo "🚀 Pushing to origin..."
+step "Pushing to origin"
 git push
 git push --tags
+ok "Pushed (CI will build all platforms)"
 
 # ── Publish to npm ──
 if [[ "$SKIP_NPM" == false ]]; then
-  echo "📦 Publishing to npm..."
+  step "Publishing to npm"
   npm publish
-  echo "✅ Published voyageai-cli@${CLI_VERSION_NEW} to npm"
+  ok "Published voyageai-cli@${VERSION_NEW}"
 else
-  echo "⏭️  Skipping npm publish (--skip-npm)"
+  step "Skipping npm publish (--skip-npm)"
 fi
 
 # ── Summary ──
+step "Release v${VERSION_NEW} initiated"
 echo ""
-echo "═══════════════════════════════════════════"
-echo "  ✅ Release complete!"
+echo "  ┌──────────────────────────────────────────────────┐"
+echo "  │  npm:     $([ "$SKIP_NPM" == false ] && printf "✓ published" || printf "— skipped")                             │"
+echo "  │  CI:      building macOS + Linux + Windows...     │"
+echo "  │  Release: will auto-promote to Latest when done   │"
+echo "  └──────────────────────────────────────────────────┘"
 echo ""
-echo "  CLI:  v${CLI_VERSION_NEW}  $([ "$SKIP_NPM" == false ] && echo '(published to npm)' || echo '(npm skipped)')"
-echo "  App:  app-v${APP_VERSION_NEW}  $([ "$SKIP_APP" == false ] && echo '(GH Actions building)' || echo '(skipped)')"
+echo "  Monitor: https://github.com/mrlynn/voyageai-cli/actions"
+echo "  Release: https://github.com/mrlynn/voyageai-cli/releases/tag/v${VERSION_NEW}"
 echo ""
-echo "  Monitor Electron build:"
-echo "  https://github.com/mrlynn/voyageai-cli/actions"
-echo "═══════════════════════════════════════════"

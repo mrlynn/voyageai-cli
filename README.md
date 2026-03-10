@@ -1,7 +1,7 @@
 # voyageai-cli
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/mrlynn/voyageai-cli/main/demo-readme.gif" alt="voyageai-cli demo" width="800" />
+  <img src="https://raw.githubusercontent.com/mrlynn/voyageai-cli/main/cli-quickstart.gif" alt="voyageai-cli demo" width="800" />
 </p>
 
 [![CI](https://github.com/mrlynn/voyageai-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/mrlynn/voyageai-cli/actions/workflows/ci.yml) [![npm version](https://img.shields.io/npm/v/voyageai-cli.svg)](https://www.npmjs.com/package/voyageai-cli) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT) [![Node.js](https://img.shields.io/node/v/voyageai-cli.svg)](https://nodejs.org) [![GitHub release](https://img.shields.io/github/v/release/mrlynn/voyageai-cli?label=Desktop%20App)](https://github.com/mrlynn/voyageai-cli/releases)

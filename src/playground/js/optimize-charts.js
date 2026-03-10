@@ -575,6 +575,21 @@ class OptimizeTab {
     card.className = 'card';
 
     const { queries } = this.currentAnalysis;
+    if (!Array.isArray(queries) || queries.length === 0) {
+      card.innerHTML = `
+        <div class="card-title">Retrieval Quality</div>
+        <div style="border-left: 4px solid #ff9800; padding: 16px; background: rgba(255, 152, 0, 0.06); border-radius: 6px;">
+          <div style="font-weight: 600; margin-bottom: 8px;">No test queries were available</div>
+          <div style="font-size: 13px; color: var(--text-dim);">
+            The selected collection does not have enough readable text to auto-generate test queries.
+            Add queries manually in the configuration panel or choose a collection with
+            <code>content</code> or <code>text</code> fields.
+          </div>
+        </div>
+      `;
+      return card;
+    }
+
     const avgOverlap = queries.reduce((sum, q) => sum + q.overlapPercent, 0) / queries.length;
     const avgCorrelation =
       queries.reduce((sum, q) => sum + q.rankCorrelation, 0) / queries.length;
@@ -814,7 +829,9 @@ class OptimizeTab {
     const { queries, costs, scale } = this.currentAnalysis;
     const { symmetric, asymmetric, savings } = costs;
     const savingsPercent = ((savings / symmetric) * 100).toFixed(1);
-    const avgOverlap = (queries.reduce((sum, q) => sum + q.overlapPercent, 0) / queries.length).toFixed(1);
+    const avgOverlap = queries.length > 0
+      ? (queries.reduce((sum, q) => sum + q.overlapPercent, 0) / queries.length).toFixed(1)
+      : 'N/A';
 
     const markdown = `# Voyage AI Cost Optimization Report
 

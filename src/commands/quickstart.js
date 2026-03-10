@@ -4,6 +4,7 @@ const pc = require('picocolors');
 const readline = require('readline');
 const { getConfigValue } = require('../lib/config');
 const { generateEmbeddings } = require('../lib/api');
+const ui = require('../lib/ui');
 
 /**
  * vai quickstart — Zero-to-search interactive tutorial
@@ -55,7 +56,7 @@ async function runQuickstart(options = {}) {
     return 1;
   }
   
-  console.log(pc.green('✓') + ' API key configured\n');
+  console.log(ui.green('✓') + ' API key configured\n');
   
   // Step 1: Explain what we're doing
   console.log(pc.bold('Step 1: Understanding Embeddings'));
@@ -94,9 +95,9 @@ Running: ${pc.cyan('vai embed --model voyage-4-lite')}
       inputType: 'document',
     });
     embeddings = (result.data || []).map((d) => d.embedding);
-    console.log(pc.green('✓'));
+    console.log(ui.green('✓'));
     console.log(`
-  ${pc.green('✓')} Created ${embeddings.length} embeddings
+  ${ui.green('✓')} Created ${embeddings.length} embeddings
   ${pc.dim(`  Dimensions: ${embeddings[0].length}`)}
   ${pc.dim(`  Model: voyage-4-lite`)}
 `);
@@ -125,7 +126,7 @@ Query: "${pc.cyan(query)}"
       inputType: 'query',
     });
     const queryEmbedding = queryResult.data[0].embedding;
-    console.log(pc.green('✓'));
+    console.log(ui.green('✓'));
     
     // Calculate similarities
     const similarities = embeddings.map((docEmb, i) => {
@@ -147,7 +148,7 @@ Query: "${pc.cyan(query)}"
 `);
     
     similarities.forEach((item, rank) => {
-      const scoreColor = item.score > 0.5 ? pc.green : item.score > 0.3 ? pc.yellow : pc.dim;
+      const scoreColor = item.score > 0.5 ? ui.green : item.score > 0.3 ? pc.yellow : pc.dim;
       const preview = item.text.length > 60 ? item.text.slice(0, 60) + '...' : item.text;
       console.log(`  ${rank + 1}. ${scoreColor(item.score.toFixed(3))} ${preview}`);
     });

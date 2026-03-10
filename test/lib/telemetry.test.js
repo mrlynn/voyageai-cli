@@ -201,4 +201,32 @@ describe('telemetry', () => {
     assert.equal(payload.context, 'cli');
     assert.ok(payload.version);
   });
+
+  it('normalizes model telemetry for chat-style events', () => {
+    const telemetry = loadTelemetryFresh();
+    const payload = telemetry.preview('cli_chat', {
+      embeddingModel: 'voyage-4-nano',
+      llmModel: 'qwen3.5:latest',
+      rerankModel: 'rerank-2.5',
+    });
+
+    assert.equal(payload.model, 'voyage-4-nano');
+    assert.equal(payload.modelRole, 'embedding');
+    assert.equal(payload.local, true);
+    assert.deepEqual(payload.models, ['voyage-4-nano', 'rerank-2.5', 'qwen3.5:latest']);
+    assert.equal(payload.modelCount, 3);
+  });
+
+  it('preserves explicit model fields while adding model inventory', () => {
+    const telemetry = loadTelemetryFresh();
+    const payload = telemetry.preview('cli_query', {
+      model: 'voyage-4-large',
+      rerankModel: 'rerank-2.5',
+    });
+
+    assert.equal(payload.model, 'voyage-4-large');
+    assert.equal(payload.modelRole, 'embedding');
+    assert.deepEqual(payload.models, ['voyage-4-large', 'rerank-2.5']);
+    assert.equal(payload.modelCount, 2);
+  });
 });

@@ -9,6 +9,7 @@
  */
 
 const { generateEmbeddings, apiRequest } = require('./api');
+const { MemoryBudget } = require('./memory-budget');
 
 /**
  * Build a human-readable source label from a document.
@@ -247,9 +248,26 @@ async function* chatTurn({ query, db, collection, llm, history, opts = {} }) {
   yield { type: 'retrieval', data: { docs, timeMs: retrievalTimeMs, tokens } };
 
   // 2. Build messages
-  // Budget history conservatively to leave room for RAG context + generation
-  const historyBudget = opts.historyBudget || 4000;
-  const historyMessages = history.getMessagesWithBudget(historyBudget);
+  // Budget history dynamically via MemoryBudget + MemoryManager, or legacy fallback
+  let historyMessages;
+  if (opts.memoryManager) {
+    const budget = new MemoryBudget();
+    const historyBudget = budget.estimateSlotTokens({
+      systemPrompt: opts.systemPrompt || '',
+      contextDocs: docs,
+      currentMessage: query,
+    });
+    const allTurns = history.getMessages();
+    historyMessages = await opts.memoryManager.buildHistory({
+      turns: allTurns,
+      budget: historyBudget,
+      strategy: opts.memoryStrategy,
+    });
+  } else {
+    // Legacy fallback
+    const historyBudget = opts.historyBudget || 4000;
+    historyMessages = history.getMessagesWithBudget(historyBudget);
+  }
   const messages = buildMessages({
     query,
     contextDocs: docs,
@@ -343,8 +361,24 @@ async function* agentChatTurn({ query, llm, history, opts = {} }) {
   const maxIterations = opts.maxIterations || 10;
   const start = Date.now();
 
-  // 1. Build initial messages
-  const historyMessages = history.getMessagesWithBudget(8000);
+  // 1. Build initial messages with dynamic budget or legacy fallback
+  let historyMessages;
+  if (opts.memoryManager) {
+    const budget = new MemoryBudget({ reservedResponse: 8192 });
+    const historyBudget = budget.estimateSlotTokens({
+      systemPrompt: opts.systemPrompt || '',
+      contextDocs: null,
+      currentMessage: query,
+    });
+    const allTurns = history.getMessages();
+    historyMessages = await opts.memoryManager.buildHistory({
+      turns: allTurns,
+      budget: historyBudget,
+      strategy: opts.memoryStrategy,
+    });
+  } else {
+    historyMessages = history.getMessagesWithBudget(8000);
+  }
   const initialMessages = buildAgentMessages({
     query,
     history: historyMessages,

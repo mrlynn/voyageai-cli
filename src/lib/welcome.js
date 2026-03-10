@@ -1,6 +1,7 @@
 'use strict';
 
 const pc = require('picocolors');
+const ui = require('./ui');
 const { identifyKey } = require('./api');
 const { showBanner } = require('./banner');
 const { loadConfig, isFirstRun, isWelcomeSuppressed, saveConfig } = require('./config');
@@ -86,16 +87,16 @@ async function runWelcome(opts = {}) {
   console.log('');
   if (apiKey) {
     const keyInfo = identifyKey(apiKey);
-    console.log(`  ${pc.green('\u2713')} API key saved (${pc.dim(keyInfo.label)} endpoint)`);
+    console.log(`  ${ui.green('\u2713')} API key saved (${pc.dim(keyInfo.label)} endpoint)`);
   }
   if (answers.mongodbUri) {
-    console.log(`  ${pc.green('\u2713')} MongoDB URI saved`);
+    console.log(`  ${ui.green('\u2713')} MongoDB URI saved`);
   }
   console.log('');
   console.log(pc.bold('  What to do next:\n'));
   console.log(`    ${pc.cyan('vai quickstart')}     Zero-to-search tutorial (2 min)`);
   console.log(`    ${pc.cyan('vai doctor')}         Verify your full setup`);
-  console.log(`    ${pc.cyan('vai init')}           Initialize a project config`);
+  console.log(`    ${pc.cyan('vai nano setup')}     Enable free local embeddings`);
   console.log(`    ${pc.cyan('vai embed "hello"')}  Generate your first embedding`);
   console.log('');
   console.log(pc.dim('  Run vai --help to see all commands.\n'));

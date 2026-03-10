@@ -1,0 +1,65 @@
+---
+title: VAI Playground
+description: Overview of the VAI Playground — a local, in-app interface for exploring Voyage AI embedding models and RAG chat.
+sidebar_position: 1
+---
+
+# VAI Playground
+
+The VAI Playground is a built-in browser UI that opens when you run `vai playground`. It provides tabs for experimenting with embedding, reranking, multimodal retrieval, chat, local inference, and more — all without leaving the terminal.
+
+## Opening the Playground
+
+```bash
+vai playground
+```
+
+The playground opens in your default browser at `http://localhost:3000` (or the next available port). No additional setup is required beyond having `vai` installed.
+
+## Tab Overview
+
+The playground is organized into four sidebar sections. Each section contains one or more tabs:
+
+### Build
+
+| Tab | Purpose |
+|-----|---------|
+| Embed | Embed text and inspect the resulting vector |
+| Rerank | Score and reorder a list of candidate passages |
+| Multimodal | Embed images alongside text queries |
+| Generate | Generate code or scaffold snippets using LLM + embeddings |
+| **Chat** | RAG-powered conversational chat backed by a knowledge base |
+| Workflows | Build multi-step embedding pipelines |
+
+### Evaluate
+
+| Tab | Purpose |
+|-----|---------|
+| Compare | Side-by-side semantic similarity comparison |
+| Benchmark | Latency and throughput benchmarks |
+| Optimize | Quantization and storage optimization analysis |
+| Explore | Guided feature walkthroughs |
+
+### Reference
+
+| Tab | Purpose |
+|-----|---------|
+| Models | Voyage AI model catalog with pricing and specs |
+| About | Version information |
+
+### Settings
+
+Configure API keys, database connection, and global preferences.
+
+## Key Features
+
+**Zero API key for local inference** — The Local Inference tab runs `voyage-4-nano` on your machine via a Python bridge. No Voyage AI API key is required.
+
+**Persistent knowledge bases** — The Chat tab stores ingested documents in your MongoDB Atlas collection. Knowledge bases persist between playground sessions.
+
+**Light and dark mode** — Toggle between themes using the Settings tab or the theme toggle in the top-right corner.
+
+## See Also
+
+- [Chat Tab Reference](./chat-tab.mdx)
+- [Memory Strategies](../guides/memory-strategies.mdx)

@@ -4,6 +4,7 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const pc = require('picocolors');
+const ui = require('../lib/ui');
 const { getConfigValue, setConfigValue, CONFIG_DIR, CONFIG_PATH } = require('../lib/config');
 const { getApiBase } = require('../lib/api');
 const { resolveLLMConfig, createLLMProvider } = require('../lib/llm');
@@ -22,11 +23,12 @@ const CHECKS = {
   llmConnection: { name: 'LLM API Connection', required: false },
   mongodb: { name: 'MongoDB Connection', required: false },
   pdfParse: { name: 'PDF Support (pdf-parse)', required: false },
+  nano: { name: 'Local Inference (voyage-4-nano)', required: false },
   config: { name: 'Configuration Files', required: false },
 };
 
 function checkMark(ok) {
-  return ok ? pc.green('✓') : pc.red('✗');
+  return ok ? ui.green('✓') : pc.red('✗');
 }
 
 function warnMark() {
@@ -362,7 +364,40 @@ async function fixApiKey() {
         setConfigValue('apiKey', trimmed);
         // Also set in env for the current session so the connection check passes
         process.env.VOYAGE_API_KEY = trimmed;
-        console.log(pc.green('  ✓ API key saved to ~/.vai/config.json'));
+        console.log(ui.green('  ✓ API key saved to ~/.vai/config.json'));
+        resolve(true);
+      } catch (err) {
+        console.log(pc.red(`  ✗ Failed to save: ${err.message}`));
+        resolve(false);
+      }
+    });
+  });
+}
+
+async function fixLLMKey() {
+  const readline = require('readline');
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+  const config = resolveLLMConfig();
+
+  return new Promise((resolve) => {
+    console.log(pc.cyan('\n  Fixing: LLM API Key'));
+    if (config.provider) {
+      const urls = { anthropic: 'https://console.anthropic.com/settings/keys', openai: 'https://platform.openai.com/api-keys' };
+      if (urls[config.provider]) console.log(pc.dim(`  Get a key at: ${urls[config.provider]}\n`));
+    }
+
+    rl.question('  Enter your LLM API key: ', (key) => {
+      rl.close();
+      const trimmed = (key || '').trim();
+      if (!trimmed) {
+        console.log(pc.yellow('  Skipped (no key entered)'));
+        resolve(false);
+        return;
+      }
+      try {
+        setConfigValue('llmApiKey', trimmed);
+        process.env.VAI_LLM_API_KEY = trimmed;
+        console.log(ui.green('  ✓ LLM API key saved to ~/.vai/config.json'));
         resolve(true);
       } catch (err) {
         console.log(pc.red(`  ✗ Failed to save: ${err.message}`));
@@ -408,7 +443,7 @@ async function fixLLMKey() {
 function fixConfigPermissions() {
   try {
     fs.chmodSync(CONFIG_PATH, 0o600);
-    console.log(pc.green('  ✓ Fixed ~/.vai/config.json permissions to 600'));
+    console.log(ui.green('  ✓ Fixed ~/.vai/config.json permissions to 600'));
     return true;
   } catch (err) {
     console.log(pc.red(`  ✗ Failed to fix permissions: ${err.message}`));
@@ -419,7 +454,7 @@ function fixConfigPermissions() {
 function fixConfigDir() {
   try {
     fs.mkdirSync(CONFIG_DIR, { recursive: true });
-    console.log(pc.green('  ✓ Created ~/.vai/ directory'));
+    console.log(ui.green('  ✓ Created ~/.vai/ directory'));
     return true;
   } catch (err) {
     console.log(pc.red(`  ✗ Failed to create directory: ${err.message}`));
@@ -432,11 +467,36 @@ async function fixPdfParse() {
   console.log(pc.cyan('\n  Installing pdf-parse...'));
   try {
     execSync('npm install pdf-parse', { stdio: 'pipe' });
-    console.log(pc.green('  ✓ pdf-parse installed'));
+    console.log(ui.green('  ✓ pdf-parse installed'));
     return true;
   } catch (err) {
     console.log(pc.red(`  ✗ Failed to install: ${err.message}`));
     return false;
+  }
+}
+
+function checkNano() {
+  try {
+    const { checkPython, checkVenv, checkDeps, checkModel } = require('../nano/nano-health');
+    const python = checkPython();
+    if (!python.ok) {
+      return { ok: null, message: 'Python 3.10+ not found', hint: 'Run: vai nano setup' };
+    }
+    const venv = checkVenv();
+    if (!venv.ok) {
+      return { ok: null, message: 'Not set up', hint: 'Run: vai nano setup (one-time install — enables free local embeddings)' };
+    }
+    const deps = checkDeps();
+    if (!deps.ok) {
+      return { ok: null, message: 'Dependencies missing', hint: 'Run: vai nano setup' };
+    }
+    const model = checkModel();
+    if (!model.ok) {
+      return { ok: null, message: 'Model not downloaded', hint: 'Run: vai nano setup' };
+    }
+    return { ok: true, message: 'Ready (free local embeddings via voyage-4-nano)' };
+  } catch {
+    return { ok: null, message: 'Not set up', hint: 'Run: vai nano setup (one-time install — enables free local embeddings)' };
   }
 }
 
@@ -459,6 +519,7 @@ async function runDoctor(options = {}) {
     { key: 'llmConnection', fn: checkLLMConnection },
     { key: 'mongodb', fn: checkMongoDB },
     { key: 'pdfParse', fn: checkPdfParse },
+    { key: 'nano', fn: checkNano },
     { key: 'config', fn: checkConfig },
   ];
 
@@ -504,7 +565,7 @@ async function runDoctor(options = {}) {
   } else if (hasWarning) {
     console.log(pc.yellow('  ⚠ Some optional features are not configured.\n'));
   } else {
-    console.log(pc.green('  ✓ All checks passed. vai is ready to use!\n'));
+    console.log(ui.green('  ✓ All checks passed. vai is ready to use!\n'));
   }
 
   // --fix mode: attempt automatic repairs
@@ -532,7 +593,7 @@ async function runDoctor(options = {}) {
 
     console.log('');
     if (fixed > 0) {
-      console.log(pc.green(`  ✓ Fixed ${fixed} issue${fixed === 1 ? '' : 's'}. Run ${pc.bold('vai doctor')} again to verify.\n`));
+      console.log(ui.green(`  ✓ Fixed ${fixed} issue${fixed === 1 ? '' : 's'}. Run ${pc.bold('vai doctor')} again to verify.\n`));
     } else {
       console.log(pc.yellow('  No issues were fixed. See hints above for manual steps.\n'));
     }

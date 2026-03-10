@@ -1,0 +1,103 @@
+---
+title: .vai.json Schema
+description: Complete reference for the .vai.json project configuration file, including the chat block options for memory strategy, session TTL, and retrieval settings added in v1.5.
+sidebar_position: 11
+---
+
+# .vai.json Schema
+
+`.vai.json` is an optional project-level configuration file placed in your project root. It sets defaults for embedding model, MongoDB database and collection, chunking, and (since v1.5) chat behavior. CLI flags always override `.vai.json` values.
+
+## Overview
+
+<details>
+<summary>Full example</summary>
+
+```json
+{
+  "version": 1,
+  "model": "voyage-4-lite",
+  "db": "mydb",
+  "collection": "docs",
+  "field": "embedding",
+  "inputType": "document",
+  "dimensions": 1024,
+  "index": "vector_index",
+  "chunk": {
+    "strategy": "recursive",
+    "size": 512,
+    "overlap": 50
+  },
+  "chat": {
+    "memoryStrategy": "sliding_window",
+    "maxContextDocs": 5,
+    "maxConversationTurns": 20,
+    "embeddingModel": "voyage-4-lite",
+    "systemPrompt": "You are a helpful assistant for our product documentation.",
+    "mode": "pipeline",
+    "showSources": true,
+    "showToolCalls": true
+  }
+}
+```
+
+</details>
+
+## Root Fields
+
+| Field | Type | Description | Default |
+|-------|------|-------------|---------|
+| `version` | number | Schema version, always `1` | `1` |
+| `model` | string | Default embedding model for `ingest`/`embed` commands | API default |
+| `db` | string | MongoDB database name | None |
+| `collection` | string | MongoDB collection name | None |
+| `field` | string | Embedding field name in documents | `"embedding"` |
+| `inputType` | string | Input type for embedding: `"document"` or `"query"` | `"document"` |
+| `dimensions` | number | Embedding dimensions | `1024` |
+| `index` | string | Vector index name | `"vector_index"` |
+
+## chunk
+
+The `chunk` object configures how documents are split during ingestion. All three fields are optional — omit to use the defaults.
+
+| Field | Type | Description | Default |
+|-------|------|-------------|---------|
+| `strategy` | string | Chunking strategy: `"recursive"`, `"sentence"`, `"paragraph"` | `"recursive"` |
+| `size` | number | Chunk size in tokens | `512` |
+| `overlap` | number | Overlap between consecutive chunks in tokens | `50` |
+
+## chat
+
+:::note Added in v1.5
+:::
+
+The `chat` block configures defaults for `vai chat`. Every field corresponds to a CLI flag — the flag always wins if both are set.
+
+| Field | Type | CLI Equivalent | Description | Default |
+|-------|------|----------------|-------------|---------|
+| `memoryStrategy` | string | `--memory-strategy` | Memory strategy: `sliding_window`, `summarization`, `hierarchical` | `"sliding_window"` |
+| `maxContextDocs` | number | `--max-context-docs` | Max retrieved documents injected as context per turn | `5` |
+| `maxConversationTurns` | number | `--max-turns` | Max turns before oldest turns are truncated | `20` |
+| `embeddingModel` | string | `--embedding-model` | Embedding model for retrieval queries | API default |
+| `systemPrompt` | string | `--system-prompt` | Override the built-in system prompt | Built-in |
+| `mode` | string | `--mode` | Chat mode: `pipeline` (fixed RAG) or `agent` (tool-calling) | `"pipeline"` |
+| `showSources` | boolean | (none — config only) | Display retrieved source documents after each response | `true` |
+| `showToolCalls` | boolean | (none — config only) | Display tool call details in agent mode | `true` |
+
+## Resolution Order
+
+Configuration values are resolved in this order, with earlier entries winning:
+
+1. **CLI flag** — passed directly at invocation time (e.g., `--memory-strategy hierarchical`)
+2. **Environment variable** — shell-level overrides (e.g., `VAI_LLM_PROVIDER`)
+3. **`.vai.json` chat block** — project-level defaults for chat behavior
+4. **Hardcoded default** — the built-in fallback value
+
+This means a value set in `.vai.json` will be overridden by an environment variable, and both will be overridden by a CLI flag.
+
+## See Also
+
+- [Environment Variables](/docs/reference/environment-variables) -- per-session overrides via shell
+- [vai chat](/docs/commands/chat) -- full CLI flag reference
+- [Memory Strategies Guide](/docs/guides/memory-strategies) -- choosing a memory strategy
+- `vai explain harness` -- architectural overview of the chat engine

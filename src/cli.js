@@ -48,6 +48,7 @@ const { registerExport } = require('./commands/export');
 const { registerImport } = require('./commands/import');
 const { registerCodeSearch } = require('./commands/code-search');
 const { showBanner, showQuickStart, getVersion } = require('./lib/banner');
+const { moments } = require('./lib/robot-moments');
 
 const version = getVersion();
 
@@ -98,6 +99,15 @@ registerExport(program);
 registerImport(program);
 registerCodeSearch(program);
 
+// Show robot header before help output in TTY mode (skip when banner already shown)
+let bannerShown = false;
+program.addHelpText('beforeAll', () => {
+  if (!bannerShown && moments.isInteractive()) {
+    moments.help(version);
+  }
+  return '';
+});
+
 // Append disclaimer to all help output
 program.addHelpText('after', `
 ${pc.dim('Community tool — not an official MongoDB or Voyage AI product.')}
@@ -118,6 +128,7 @@ if (process.argv.length <= 2) {
       .then((completed) => {
         if (!completed) {
           // User cancelled: fall back to normal quick start
+          bannerShown = true;
           showQuickStart();
           program.outputHelp();
         }
@@ -125,12 +136,14 @@ if (process.argv.length <= 2) {
       })
       .catch(() => {
         // Wizard error: fall back gracefully
+        bannerShown = true;
         showBanner();
         showQuickStart();
         program.outputHelp();
         process.exit(0);
       });
   } else {
+    bannerShown = true;
     showBanner();
     showQuickStart();
     program.outputHelp();

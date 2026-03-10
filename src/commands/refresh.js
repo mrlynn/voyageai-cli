@@ -3,7 +3,7 @@
 let p;
 function clack() { if (!p) p = require('@clack/prompts'); return p; }
 const { loadProject, saveProject } = require('../lib/project');
-const { connect, close } = require('../lib/mongo');
+const { getMongoCollection } = require('../lib/mongo');
 const { generateEmbeddings } = require('../lib/api');
 const { chunkText } = require('../lib/chunker');
 const ui = require('../lib/ui');
@@ -76,8 +76,9 @@ async function refresh(options = {}) {
     if (!quiet) {
       p.log.step(`Connecting to database: ${db}`);
     }
-    client = await connect(db);
-    const collection = client.db(db).collection(collectionName);
+    const result = await getMongoCollection(db, collectionName);
+    client = result.client;
+    const collection = result.collection;
 
     // Build filter
     let filter = {};
@@ -291,7 +292,7 @@ async function refresh(options = {}) {
     return { success: false, error: err.message };
   } finally {
     if (client) {
-      await close();
+      await client.close();
     }
   }
 }

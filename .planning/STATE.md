@@ -1,69 +1,70 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.1
-milestone_name: Nano Documentation & Demos
-status: in-progress
-last_updated: "2026-03-06T21:00:00.000Z"
+milestone: v1.7
+milestone_name: Bundled Knowledge Base
+status: executing
+last_updated: "2026-03-10"
 progress:
   total_phases: 4
-  completed_phases: 4
-  total_plans: 6
-  completed_plans: 6
+  completed_phases: 1
+  total_plans: 4
+  completed_plans: 4
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-03-06)
+See: .planning/PROJECT.md (updated 2026-03-10)
 
-**Core value:** Zero-API-key path from install to working vector search, with seamless upgrade to Voyage API.
-**Current focus:** v1.1 milestone complete — all phases done
+**Core value:** Zero-API-key path from install to working vector search, with seamless upgrade to Voyage API
+**Current focus:** v1.7 Bundled Knowledge Base -- Phase 30 complete, ready to plan Phase 31
 
 ## Current Position
 
-Phase: 8 of 9 (Chat Local Embeddings) -- COMPLETE
-Plan: 2 of 2 complete
-Status: All v1.1 phases complete (6, 7, 8, 9)
-Last activity: 2026-03-06 -- Completed 08-02 (demo chat --local, UX improvements, MongoDB docs)
+Phase: 31 of 33 (KB Seeding Pipeline) -- not started
+Plan: --
+Status: Ready to plan
+Last activity: 2026-03-10 -- Completed Phase 30 (KB Corpus & Manifest) -- 4 plans, 36 corpus docs, manifest verified
 
-Progress: [██████████████████████████████] 100% (v1.0 complete, v1.1 all phases complete)
+Progress: [██░░░░░░░░] 25%
 
 ## Performance Metrics
 
-**Velocity (v1.0):**
-- Total plans completed: 18
-- Phases completed: 5
+**Velocity:**
+- Total plans completed: 64 (across v1.0-v1.6)
 
-**v1.1 Metrics:**
+**By Milestone:**
 
-| Phase | Plan | Duration | Tasks | Files |
-|-------|------|----------|-------|-------|
-| 06    | 01   | 1min     | 1     | 1     |
-| 06    | 02   | 2min     | 2     | 2     |
-| 09    | 01   | 2min     | 2     | 2     |
-| 07    | 01   | 2min     | 2     | 2     |
-| 08    | 01   | 12min    | 2     | 7     |
-| 08    | 02   | 45min    | 2     | 19    |
+| Milestone | Phases | Plans | Files Changed |
+|-----------|--------|-------|---------------|
+| v1.0 | 5 | 18 | 52 (+5,396) |
+| v1.1 | 4 | 6 | 94 (+9,201/-4,913) |
+| v1.2 | 2 | 4 | 21 (+1,550/-1,393) |
+| v1.3 | 4 | 8 | 17 (+3,581/-321) |
+| v1.4 | 4 | 9 | 21 (+3,136/-290) |
+| v1.5 | 6 | 12 | 44 (+7,028/-101) |
+| v1.6 | 4 | 7 | 22 (+2,449/-18) |
+| v1.7 (Phase 30) | 1 | 4 | 38 files |
 
 ## Accumulated Context
 
 ### Decisions
 
-Full decision log in PROJECT.md Key Decisions table.
+Decisions are logged in PROJECT.md Key Decisions tables (v1.0 through v1.6).
 
-- [06-01] Duplicated theory()/step() helpers from demo.js (not exported, ~10 lines)
-- [06-01] Used padStart(6) for matrix scores to fit 80-column terminal
-- [06-01] Called ui.ensureSpinnerReady() before spinner for async ora import
-- [06-02] Lazy require api.js only inside DEMO-06 block (avoids loading when no API key)
-- [06-02] Cache API document embeddings across all 3 shared space queries
-- [06-02] REPL reuses cached 1024-dim embeddings from Step 1
-- [09-01] Referenced specific line numbers and function names for all verification evidence
-- [07-01] Placed Local Inference after Models & Benchmarks for discoverability
-- [07-01] Kept only HuggingFace link in explain entry (removed blog link)
-- [08-01] Used function injection (embedFn param) over strategy pattern for embedding swap
-- [08-01] Lazy-require nano modules only inside isLocal code paths
-- [08-01] --local implies --no-rerank automatically
+**v1.7 Phase 30:**
+- No external dependencies for KB scripts -- both use only Node.js built-ins (fs, path, crypto)
+- Simple YAML parser for front matter (key: value pairs only) -- sufficient for corpus metadata
+- Chunk estimation uses Math.ceil(wordCount / 380) approximating 512 tokens at ~380 words
+- Consolidated 4 multimodal topics into single multimodal-embeddings.md for the explainer corpus
+- Used 4 new vai-features topics (harness, workflow, atlas-setup, vai-vs-diy) per CONTEXT decisions
+- Explainer template: YAML front matter + 4 H2 sections, each self-contained for chunking
+- Used accurate model specs from src/lib/catalog.js MODEL_CATALOG for reference docs
+- Included RTEB benchmark scores in embedding-models reference for competitive context
+- Referenced vai CLI commands in every corpus document for consistency
+- No package.json changes needed for bundling -- existing src/ in files array covers corpus
+- Word counts 305-590 accepted as valid range for corpus documents
 
 ### Pending Todos
 
@@ -75,6 +76,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-06
-Stopped at: Phase 8 complete, v1.1 milestone fully executed
+Last session: 2026-03-10
+Stopped at: Phase 30 complete -- ready to plan Phase 31 (KB Seeding Pipeline)
 Resume file: None

@@ -1,0 +1,74 @@
+---
+title: Local Inference Tab
+description: Reference for the playground Local Inference tab — run voyage-4-nano embeddings on your device with no API key required.
+sidebar_position: 3
+---
+
+# Local Inference Tab
+
+The Local Inference tab lets you generate embeddings using `voyage-4-nano` on your own machine via a Python bridge — no Voyage AI API key required. It provides four tools: an embed UI with visual heatmap, a similarity matrix, an MRL dimension comparison, and a cross-bridge comparison against cloud embeddings.
+
+## Prerequisites
+
+```bash
+vai nano setup
+```
+
+Run this command once before using the Local Inference tab. It installs Python dependencies and downloads the `voyage-4-nano` model weights. After setup, the tab shows a green "Nano bridge ready" banner.
+
+If the bridge is not running, the tab shows a warning banner with the setup command. The four tool sections are hidden until the bridge is ready.
+
+## Embed UI
+
+The Embed Text card lets you generate a single embedding locally and inspect the result:
+
+- **Text input** — enter any text to embed
+- **Dimension** selector — 256, 512, 1024 (default), 2048. Higher dimensions capture more semantic nuance at the cost of larger storage.
+- **Quantization** selector:
+
+  | Option    | Description                                        |
+  |-----------|----------------------------------------------------|
+  | `float32` | Full precision (default)                           |
+  | `int8`    | 4x smaller; good balance of speed and accuracy    |
+  | `uint8`   | 4x smaller; unsigned integers                     |
+  | `binary`  | 32x smaller; extreme compression, highest speed   |
+
+- **Embed Locally** button — runs the embedding on your device through the Python bridge
+- Result shows: dimension count, embedding time in ms, a truncated vector preview, and a **Copy Full Vector** button
+- **Vector Heatmap** — a color-coded grid where each cell represents one dimension value; warm colors indicate higher values, cool colors indicate lower values. Useful for visually comparing how different texts are encoded.
+
+## Similarity Matrix
+
+The Similarity Matrix card embeds multiple texts and shows pairwise cosine similarity:
+
+- **Text input** — enter 2 to 10 texts, one per line
+- **Dimension** selector — 256, 512, 1024 (default), 2048
+- **Compare** button — embeds all texts and computes pairwise cosine similarity
+- Result: a color-coded N×N heatmap where each cell shows the cosine similarity score between two texts. Diagonal cells are always 1.0 (identical). Higher scores with warmer colors indicate more semantically similar text pairs.
+- **Highlights** section — automatically identifies the most and least similar pairs
+
+## MRL Dimension Comparison
+
+The MRL Dimension Comparison card embeds a single text at all four dimension sizes so you can see the quality/storage tradeoff:
+
+- **Text input** — enter a single text to embed at all four dimension sizes
+- **Compare Dimensions** button — runs four embed calls (256, 512, 1024, 2048 dimensions)
+- Result: one card per dimension showing embedding stats (size in bytes, quantized size estimate)
+
+Use this tool to understand the Matryoshka Representation Learning (MRL) tradeoff. `voyage-4-nano` is trained so that lower-dimension prefixes of the full vector still capture meaningful semantic information — you can choose a smaller dimension to save storage without a proportional loss in retrieval quality.
+
+## Cross-Bridge Comparison
+
+The Cross-Bridge Comparison card embeds the same text using both the local nano bridge and the Voyage AI cloud API, then computes the cosine similarity between the two vectors:
+
+- **Text input** — enter text to embed with both the local nano bridge and the Voyage AI cloud API
+- **Dimension** selector — 256, 512, 1024 (default), 2048
+- **Compare Bridges** button — embeds via the local Python bridge AND via the Voyage AI API (requires an API key in Settings)
+- If no API key is configured, a message appears: "No API key configured. Add your Voyage AI API key in Settings to enable cross-bridge comparison."
+- Result shows the cosine similarity between local and cloud embeddings for the same text. A high similarity score (typically > 0.99) confirms that local nano embeddings are interchangeable with cloud embeddings — you can index locally with nano and query via the API (or vice versa) without losing search quality.
+
+## See Also
+
+- [Playground Overview](./playground.mdx)
+- [Chat Tab Reference](./chat-tab.mdx)
+- [Memory Strategies Guide](../guides/memory-strategies.mdx)

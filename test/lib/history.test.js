@@ -1,6 +1,6 @@
 'use strict';
 
-const { describe, it } = require('node:test');
+const { describe, it, mock } = require('node:test');
 const assert = require('node:assert/strict');
 const { ChatHistory, generateSessionId } = require('../../src/lib/history');
 
@@ -128,6 +128,64 @@ describe('history', () => {
       assert.equal(json.sessionId, 'test-json');
       assert.equal(json.turns.length, 1);
       assert.ok(json.exportedAt);
+    });
+
+    it('accepts store option', () => {
+      const mockStore = { isFallbackMode: false };
+      const h = new ChatHistory({ store: mockStore });
+      assert.equal(h._store, mockStore);
+    });
+
+    it('load() uses store.getLatestTurns when store provided', async () => {
+      const mockStore = {
+        getLatestTurns: mock.fn(async () => [
+          { role: 'user', content: 'hello', createdAt: new Date() },
+          { role: 'assistant', content: 'hi', createdAt: new Date() },
+        ]),
+        isFallbackMode: false,
+      };
+      const h = new ChatHistory({ sessionId: 'sess-1', store: mockStore });
+      const loaded = await h.load();
+      assert.equal(loaded, true);
+      assert.equal(h.turns.length, 2);
+      assert.equal(h.turns[0].role, 'user');
+      assert.equal(h.turns[0].content, 'hello');
+    });
+
+    it('load() returns false when store has no turns', async () => {
+      const mockStore = {
+        getLatestTurns: mock.fn(async () => []),
+        isFallbackMode: false,
+      };
+      const h = new ChatHistory({ sessionId: 'sess-1', store: mockStore });
+      const loaded = await h.load();
+      assert.equal(loaded, false);
+    });
+
+    it('addTurn() persists via store.storeTurn when store provided', async () => {
+      const mockStore = {
+        storeTurn: mock.fn(async () => ({})),
+        isFallbackMode: false,
+      };
+      const h = new ChatHistory({ sessionId: 'sess-1', store: mockStore });
+      await h.addTurn({ role: 'user', content: 'hello' });
+      assert.equal(mockStore.storeTurn.mock.callCount(), 1);
+      const args = mockStore.storeTurn.mock.calls[0].arguments[0];
+      assert.equal(args.sessionId, 'sess-1');
+      assert.equal(args.role, 'user');
+      assert.equal(args.content, 'hello');
+    });
+
+    it('addTurn() does not call store.storeTurn when in fallback mode', async () => {
+      const mockStore = {
+        storeTurn: mock.fn(async () => ({})),
+        isFallbackMode: true,
+      };
+      const h = new ChatHistory({ sessionId: 'sess-1', store: mockStore });
+      await h.addTurn({ role: 'user', content: 'hello' });
+      assert.equal(mockStore.storeTurn.mock.callCount(), 0);
+      // Turn still added to in-memory
+      assert.equal(h.turns.length, 1);
     });
   });
 });

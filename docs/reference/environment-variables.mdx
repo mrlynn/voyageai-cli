@@ -1,0 +1,106 @@
+---
+title: Environment Variables
+description: All environment variables recognized by the vai CLI, including session, memory, replay, and observability variables added in v1.5.
+sidebar_position: 10
+---
+
+# Environment Variables
+
+Environment variables override `vai config set` values and `.vai.json` project settings. They are useful for CI/CD pipelines, Docker containers, and per-session overrides without editing config files.
+
+**Precedence order:** CLI flag > environment variable > `.vai.json` > `~/.vai/config.json` default.
+
+## Core Credentials
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `VOYAGE_API_KEY` | Voyage AI API key | None (required for cloud embeddings) |
+| `VOYAGE_API_BASE` | Override Voyage API base URL | Voyage AI default |
+| `MONGODB_URI` | MongoDB connection string | None (required for persistence) |
+
+`VOYAGE_API_KEY` and `MONGODB_URI` can also be set with `vai config set api-key` and `vai config set mongodb-uri`. Environment variables take precedence over stored config values.
+
+## LLM Configuration
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `VAI_LLM_PROVIDER` | LLM provider: `anthropic`, `openai`, `ollama` | None |
+| `VAI_LLM_MODEL` | LLM model name | Provider default |
+| `VAI_LLM_API_KEY` | LLM API key | None |
+| `VAI_LLM_BASE_URL` | LLM API base URL (used for Ollama) | None |
+
+These variables match the `--llm-*` flags in `vai chat`. Setting them as environment variables is useful when you want a consistent LLM provider across all chat sessions without passing flags each time.
+
+## Project Defaults
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `VAI_DEFAULT_DB` | Default MongoDB database | None |
+| `VAI_DEFAULT_COLLECTION` | Default MongoDB collection | None |
+| `VAI_DB` | Alias for `VAI_DEFAULT_DB` (used in purge/refresh commands) | None |
+| `VAI_COLLECTION` | Alias for `VAI_DEFAULT_COLLECTION` (used in purge/refresh commands) | None |
+| `VAI_CONFIG_PATH` | Override config file path | `~/.vai/config.json` |
+
+`VAI_DB` and `VAI_COLLECTION` are shorthand aliases for `VAI_DEFAULT_DB` and `VAI_DEFAULT_COLLECTION`. They are recognized by the same set of commands and behave identically.
+
+## Session, Memory, and Observability
+
+:::note Added in v1.5
+:::
+
+Session and memory behavior is configured via CLI flags (see [`vai chat` reference](/docs/commands/chat)) and the `.vai.json` `chat` block (see [.vai.json Schema reference](/docs/reference/vai-json-schema)). No dedicated environment variables control session TTL or memory strategy — use the chat block or CLI flags instead.
+
+For example, to set a default memory strategy for all chat sessions in a project, add a `chat` block to your `.vai.json`:
+
+```json
+{
+  "chat": {
+    "memoryStrategy": "hierarchical",
+    "maxConversationTurns": 30
+  }
+}
+```
+
+## Display and UX
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `VAI_NO_WELCOME` | Set to `1` or `true` to suppress the welcome/onboarding flow | Off |
+| `VAI_MASK` | Set to `1` or `true` to mask API keys in `ping`/`doctor` output | Off |
+
+## MCP Server
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `VAI_MCP_SERVER_KEY` | Auth key for the MCP server endpoint | None (no auth) |
+| `VAI_MCP_VERBOSE` | Set to `1` to enable verbose MCP server logging | Off |
+
+## Playground
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `VAI_PLAYGROUND_PASSWORD` | Password for the playground web UI | None (no auth) |
+
+## Telemetry
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `DO_NOT_TRACK` | Standard cross-tool privacy signal; disables telemetry when set to `1` or `true` | Off |
+| `VAI_TELEMETRY` | Set to `0` or `false` to disable anonymous telemetry for vai specifically | On |
+| `VAI_TELEMETRY_DEBUG` | Set to `1` to print telemetry payloads to stderr | Off |
+
+`DO_NOT_TRACK` is the standard cross-tool privacy signal honored by many developer tools. `VAI_TELEMETRY=0` does the same thing but is specific to vai. Either one disables anonymous usage telemetry. Use `vai telemetry` for interactive control over telemetry settings.
+
+## Advanced / Debug
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `DEBUG` | Enables debug stack traces in several commands | Off |
+| `NODE_ENV` | Standard Node.js environment (`production` suppresses some error details) | None |
+
+## See Also
+
+- [.vai.json Schema](/docs/reference/vai-json-schema) -- configure session/memory defaults per project
+- [vai chat](/docs/commands/chat) -- CLI flags that override these settings at runtime
+- `vai explain harness` -- architectural overview of the chat engine
+- `vai telemetry` -- view and control telemetry settings interactively
