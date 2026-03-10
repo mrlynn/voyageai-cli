@@ -391,7 +391,7 @@ async function* agentChatTurn({ query, llm, history, opts = {} }) {
   yield { type: 'history', data: { turnCount: Math.floor(historyMessages.length / 2), messageCount: initialMessages.length } };
 
   // 2. Get tool definitions for this provider
-  const format = llm.name === 'anthropic' ? 'anthropic' : 'openai';
+  const format = (llm.name === 'anthropic' || llm.name === 'bedrock') ? 'anthropic' : 'openai';
   const tools = getToolDefinitions(format);
 
   // Track messages for the tool-calling loop (mutable copy)

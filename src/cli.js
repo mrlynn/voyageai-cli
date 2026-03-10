@@ -47,6 +47,7 @@ const { registerIndexWorkspace } = require('./commands/index-workspace');
 const { registerExport } = require('./commands/export');
 const { registerImport } = require('./commands/import');
 const { registerCodeSearch } = require('./commands/code-search');
+const { registerKb } = require('./commands/kb');
 const { showBanner, showQuickStart, getVersion } = require('./lib/banner');
 const { moments } = require('./lib/robot-moments');
 
@@ -98,6 +99,7 @@ registerIndexWorkspace(program);
 registerExport(program);
 registerImport(program);
 registerCodeSearch(program);
+registerKb(program);
 
 // Show robot header before help output in TTY mode (skip when banner already shown)
 let bannerShown = false;

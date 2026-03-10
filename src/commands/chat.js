@@ -7,7 +7,8 @@ const { chatTurn, agentChatTurn } = require('../lib/chat');
 const { TurnOrchestrator } = require('../lib/turn-orchestrator');
 const { loadProject } = require('../lib/project');
 const { getMongoCollection } = require('../lib/mongo');
-const { setConfigValue } = require('../lib/config');
+const { setConfigValue, loadConfig } = require('../lib/config');
+const { KB_COLLECTION } = require('../kb/seeder');
 const { runWizard } = require('../lib/wizard');
 const { createCLIRenderer } = require('../lib/wizard-cli');
 const { chatSetupSteps } = require('../lib/wizard-steps-chat');
@@ -19,6 +20,25 @@ const fs = require('fs');
 const { moments } = require('../lib/robot-moments');
 const { ChatSessionStats } = require('../lib/chat-session-stats');
 const { LABELS } = require('../lib/turn-state');
+
+const KB_SYSTEM_PROMPT = `You are vai, the Voyage AI CLI assistant. You answer questions using vai's built-in knowledge base about Voyage AI embeddings, vector search, and the vai CLI.
+
+Your knowledge covers:
+- Voyage AI embedding models (voyage-4-large, voyage-4, voyage-4-lite, voyage-4-nano)
+- Vector search with MongoDB Atlas Vector Search
+- The vai CLI: commands, configuration, workflows
+- RAG (Retrieval-Augmented Generation) patterns
+- Reranking with Voyage AI models
+- Code search and semantic similarity
+
+Be concise and practical. Include relevant vai CLI commands when helpful. Reference specific models and their tradeoffs. If the retrieved context does not cover the question, say so. Answer directly without preamble such as "Using the context of our conversation," "According to the documents retrieved," or similar. Jump straight to the answer.`;
+
+const KB_STARTER_QUESTIONS = [
+  'What embedding models does Voyage AI offer?',
+  'How do I set up vector search with vai?',
+  'What is the difference between voyage-4 and voyage-4-large?',
+  'How does reranking improve search results?',
+];
 
 /**
  * Register the chat command.
@@ -72,8 +92,10 @@ async function runChat(opts) {
   const { config: proj } = loadProject();
   const chatConf = proj.chat || {};
 
-  const db = opts.db || proj.db;
-  const collection = opts.collection || proj.collection;
+  const globalConf = loadConfig();
+  const kbConf = globalConf.kb || {};
+  let db = opts.db || kbConf.db || (kbConf.collection ? 'vai' : null) || proj.db;
+  let collection = opts.collection || kbConf.collection || proj.collection;
 
   // --list: show recent sessions and exit
   if (opts.list) {
@@ -129,13 +151,12 @@ async function runChat(opts) {
   const maxDocs = opts.maxContextDocs || chatConf.maxContextDocs || 5;
   const maxTurns = opts.maxTurns || chatConf.maxConversationTurns || 20;
   const textField = opts.textField || 'text';
-  // Resolve embedding model: explicit flag > --local shorthand > project config > default
   let embeddingModel = opts.embeddingModel || chatConf.embeddingModel || null;
   if (opts.local && !opts.embeddingModel) embeddingModel = 'voyage-4-nano';
-  const isLocalEmbed = embeddingModel === 'voyage-4-nano';
-  // Update isLocal to reflect embedding model choice (for existing isLocal checks)
-  const isLocal = isLocalEmbed || opts.local || false;
-  const doRerank = isLocalEmbed ? false : (opts.rerank !== false);
+  if (!embeddingModel && kbConf.embeddingModel === 'voyage-4-nano') embeddingModel = 'voyage-4-nano';
+  let isLocalEmbed = embeddingModel === 'voyage-4-nano';
+  let isLocal = isLocalEmbed || opts.local || false;
+  let doRerank = isLocalEmbed ? false : (opts.rerank !== false);
 
   // Validate embedding model name if explicitly provided
   const validEmbedModels = ['voyage-4-nano', 'voyage-4-lite', 'voyage-4', 'voyage-4-large'];
@@ -147,23 +168,41 @@ async function runChat(opts) {
   }
 
   const doStream = opts.stream !== false;
-  const systemPrompt = opts.systemPrompt || chatConf.systemPrompt;
+  let systemPrompt = opts.systemPrompt || chatConf.systemPrompt;
 
   // Resolve mode
   const mode = opts.mode || chatConf.mode || 'pipeline';
   const isAgent = mode === 'agent';
 
   // Validate DB + collection (required for pipeline, recommended for agent)
+  let isKbMode = false;
   if (!isAgent && (!db || !collection)) {
-    if (startupAnim) startupAnim.stop();
-    console.error(ui.error('Database and collection required for pipeline mode.'));
-    console.error('');
-    console.error('  Use --db and --collection, or configure .vai.json:');
-    console.error('    vai init');
-    console.error('');
-    console.error('  Or use --mode agent to let the LLM discover collections.');
-    console.error('');
-    process.exit(1);
+    const globalConfig = loadConfig();
+    if (globalConfig.kb && globalConfig.kb.version) {
+      db = globalConfig.defaultDb || 'vai';
+      collection = KB_COLLECTION;
+      isKbMode = true;
+      if (!systemPrompt) {
+        systemPrompt = KB_SYSTEM_PROMPT;
+      }
+      if (globalConfig.kb.embeddingModel === 'voyage-4-nano' && !embeddingModel) {
+        embeddingModel = 'voyage-4-nano';
+        isLocalEmbed = true;
+        isLocal = true;
+        doRerank = false;
+      }
+    } else {
+      if (startupAnim) startupAnim.stop();
+      console.error(ui.error('Database and collection required for pipeline mode.'));
+      console.error('');
+      console.error('  Use --db and --collection, or configure .vai.json:');
+      console.error('    vai init');
+      console.error('');
+      console.error('  Or run ' + pc.cyan('vai kb setup') + ' to seed the built-in knowledge base.');
+      console.error('  Or use --mode agent to let the LLM discover collections.');
+      console.error('');
+      process.exit(1);
+    }
   }
 
   // Nano prerequisite check (before LLM config)
@@ -211,6 +250,9 @@ async function runChat(opts) {
     if (answers.ollamaBaseUrl && answers.ollamaBaseUrl !== 'http://localhost:11434') {
       setConfigValue('llmBaseUrl', answers.ollamaBaseUrl);
     }
+    if (answers.awsRegion) setConfigValue('awsRegion', answers.awsRegion);
+    if (answers.awsAccessKeyId) setConfigValue('awsAccessKeyId', answers.awsAccessKeyId);
+    if (answers.awsSecretAccessKey) setConfigValue('awsSecretAccessKey', answers.awsSecretAccessKey);
 
     // Re-resolve with new config
     llmConfig = resolveLLMConfig(opts);
@@ -425,7 +467,7 @@ async function runChat(opts) {
       version: getVersion(),
       provider: llmConfig.provider,
       model: llmConfig.model,
-      mode: isAgent ? 'agent' : 'pipeline',
+      mode: isAgent ? 'agent' : (isKbMode ? 'kb' : 'pipeline'),
       db,
       collection,
       sessionId: history.sessionId,
@@ -433,6 +475,20 @@ async function runChat(opts) {
       embeddingModel: embeddingModel || null,
       isLocalEmbed,
     }));
+
+    if (isKbMode) {
+      console.log('');
+      console.log(pc.bold('  Built-in Knowledge Base Mode'));
+      console.log(pc.dim('  Answering from vai\'s bundled docs about Voyage AI, vector search, and more.'));
+      console.log('');
+      console.log('  Try asking:');
+      for (const q of KB_STARTER_QUESTIONS) {
+        console.log('    ' + pc.cyan(q));
+      }
+      console.log('');
+      console.log(pc.dim('  To chat with your own data, run: vai init'));
+      console.log('');
+    }
   }
 
   // Start REPL

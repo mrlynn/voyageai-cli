@@ -51,54 +51,111 @@ function registerInit(program) {
 
       // Interactive mode — ensure global config (API key, optional MongoDB/LLM) then project wizard
       const hasApiKey = process.env.VOYAGE_API_KEY || getConfigValue('apiKey');
+      let useNanoMode = false;
+
       if (!hasApiKey && process.stdin.isTTY && process.stdout.isTTY) {
-        console.log(pc.dim('  First, configure your API key and optional connections.\n'));
-        const { answers: globalAnswers, cancelled: globalCancelled } = await runWizard({
-          steps: globalSetupSteps,
-          config: {},
-          renderer: createCLIRenderer({
-            title: 'API & connections',
-            doneMessage: 'Saved to ~/.vai/config.json',
-          }),
-        });
-        if (globalCancelled) {
-          process.exit(0);
-        }
-        const globalConfig = {};
-        const apiKey = (globalAnswers.apiKey || '').trim();
-        if (apiKey) {
-          globalConfig.apiKey = apiKey;
-          globalConfig.baseUrl = identifyKey(apiKey).expectedBase;
-          process.env.VOYAGE_API_KEY = apiKey;
-        }
-        if (globalAnswers.mongodbUri) {
-          const uri = globalAnswers.mongodbUri.trim();
-          if (uri) {
-            globalConfig.mongodbUri = uri;
-            process.env.MONGODB_URI = uri;
+        // Detect if nano is set up and offer as an option
+        let nanoReady = false;
+        try {
+          const { checkVenv, checkModel } = require('../nano/nano-health');
+          nanoReady = checkVenv().ok && checkModel().ok;
+        } catch { /* nano module not available */ }
+
+        if (nanoReady) {
+          const clack = require('@clack/prompts');
+          console.log('');
+          const mode = await clack.select({
+            message: 'How would you like to use Voyage AI?',
+            options: [
+              { value: 'nano', label: 'Local (voyage-4-nano)', hint: 'No API key needed, fully offline' },
+              { value: 'cloud', label: 'Cloud API', hint: 'Requires API key from dash.voyageai.com' },
+            ],
+          });
+          if (clack.isCancel(mode)) {
+            process.exit(0);
           }
+          useNanoMode = mode === 'nano';
         }
-        if (globalAnswers.wantLlm && globalAnswers.llmProvider) {
-          globalConfig.llmProvider = globalAnswers.llmProvider;
-          if (globalAnswers.llmApiKey) globalConfig.llmApiKey = globalAnswers.llmApiKey.trim();
-          if (globalAnswers.llmModel) globalConfig.llmModel = globalAnswers.llmModel;
-          if (globalAnswers.llmProvider === 'ollama' && globalAnswers.llmBaseUrl) {
-            globalConfig.llmBaseUrl = globalAnswers.llmBaseUrl.trim();
+
+        if (useNanoMode) {
+          // Nano path: just collect MongoDB URI
+          console.log(pc.dim('  Local nano mode: no API key needed.\n'));
+          const { nanoSetupSteps } = require('../lib/wizard-steps-global');
+          const { answers: nanoAnswers, cancelled: nanoCancelled } = await runWizard({
+            steps: nanoSetupSteps,
+            config: {},
+            renderer: createCLIRenderer({
+              title: 'MongoDB connection',
+              doneMessage: 'Saved to ~/.vai/config.json',
+            }),
+          });
+          if (nanoCancelled) {
+            process.exit(0);
           }
+          const globalConfig = {};
+          if (nanoAnswers.mongodbUri) {
+            const uri = nanoAnswers.mongodbUri.trim();
+            if (uri) {
+              globalConfig.mongodbUri = uri;
+              process.env.MONGODB_URI = uri;
+            }
+          }
+          if (Object.keys(globalConfig).length) {
+            const existing = loadConfig();
+            saveConfig({ ...existing, ...globalConfig });
+          }
+          console.log('');
+        } else {
+          // Cloud path: full global setup wizard
+          console.log(pc.dim('  First, configure your API key and optional connections.\n'));
+          const { answers: globalAnswers, cancelled: globalCancelled } = await runWizard({
+            steps: globalSetupSteps,
+            config: {},
+            renderer: createCLIRenderer({
+              title: 'API & connections',
+              doneMessage: 'Saved to ~/.vai/config.json',
+            }),
+          });
+          if (globalCancelled) {
+            process.exit(0);
+          }
+          const globalConfig = {};
+          const apiKey = (globalAnswers.apiKey || '').trim();
+          if (apiKey) {
+            globalConfig.apiKey = apiKey;
+            globalConfig.baseUrl = identifyKey(apiKey).expectedBase;
+            process.env.VOYAGE_API_KEY = apiKey;
+          }
+          if (globalAnswers.mongodbUri) {
+            const uri = globalAnswers.mongodbUri.trim();
+            if (uri) {
+              globalConfig.mongodbUri = uri;
+              process.env.MONGODB_URI = uri;
+            }
+          }
+          if (globalAnswers.wantLlm && globalAnswers.llmProvider) {
+            globalConfig.llmProvider = globalAnswers.llmProvider;
+            if (globalAnswers.llmApiKey) globalConfig.llmApiKey = globalAnswers.llmApiKey.trim();
+            if (globalAnswers.llmModel) globalConfig.llmModel = globalAnswers.llmModel;
+            if (globalAnswers.llmProvider === 'ollama' && globalAnswers.llmBaseUrl) {
+              globalConfig.llmBaseUrl = globalAnswers.llmBaseUrl.trim();
+            }
+          }
+          if (Object.keys(globalConfig).length) {
+            const existing = loadConfig();
+            saveConfig({ ...existing, ...globalConfig });
+          }
+          console.log('');
         }
-        if (Object.keys(globalConfig).length) {
-          const existing = loadConfig();
-          saveConfig({ ...existing, ...globalConfig });
-        }
-        console.log('');
       } else if (hasApiKey && process.stdout.isTTY) {
         console.log(pc.dim('  Using existing API key from ~/.vai/config.json or env.\n'));
       }
 
-      // Project wizard
+      // Project wizard (pre-select nano model if in nano mode)
+      const wizardConfig = useNanoMode ? { model: 'voyage-4-nano' } : {};
       const { answers, cancelled } = await runWizard({
         steps: initSteps,
-        config: {},
+        config: wizardConfig,
         renderer: createCLIRenderer({
           title: '🚀 Initialize Voyage AI Project',
           doneMessage: 'Project initialized!',

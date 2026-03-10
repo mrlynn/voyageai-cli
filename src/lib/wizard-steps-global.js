@@ -30,6 +30,7 @@ async function getProviderOptions() {
         : 'Ollama (local — not detected)',
       hint: ollamaAvailable ? 'Free, fully private' : 'Requires ollama running locally',
     },
+    { value: 'bedrock', label: 'AWS Bedrock (Claude)', hint: 'Uses your AWS credentials' },
   ];
 }
 
@@ -118,7 +119,7 @@ const globalSetupSteps = [
     type: 'password',
     required: false,
     placeholder: 'sk-...',
-    skip: (answers) => !answers.wantLlm || answers.llmProvider === 'ollama',
+    skip: (answers) => !answers.wantLlm || answers.llmProvider === 'ollama' || answers.llmProvider === 'bedrock',
     validate: (value) => {
       if (value && value.length < 8) return 'API key looks too short';
       return true;
@@ -145,10 +146,63 @@ const globalSetupSteps = [
     skip: (answers) => !answers.wantLlm || answers.llmProvider !== 'ollama',
     group: 'LLM (optional)',
   },
+  {
+    id: 'awsRegion',
+    label: 'AWS Region',
+    type: 'text',
+    defaultValue: 'us-east-1',
+    placeholder: 'us-east-1',
+    required: false,
+    skip: (answers) => !answers.wantLlm || answers.llmProvider !== 'bedrock',
+    validate: (value) => {
+      if (value && !/^[a-z]{2}-[a-z]+-\d+$/.test(value)) return 'Region format: us-east-1, eu-west-2, etc.';
+      return true;
+    },
+    group: 'LLM (optional)',
+  },
+  {
+    id: 'awsAccessKeyId',
+    label: 'AWS Access Key ID (blank to use env/file)',
+    type: 'password',
+    required: false,
+    placeholder: 'AKIA...',
+    skip: (answers) => !answers.wantLlm || answers.llmProvider !== 'bedrock',
+    group: 'LLM (optional)',
+  },
+  {
+    id: 'awsSecretAccessKey',
+    label: 'AWS Secret Access Key (blank to use env/file)',
+    type: 'password',
+    required: false,
+    skip: (answers) => !answers.wantLlm || answers.llmProvider !== 'bedrock',
+    group: 'LLM (optional)',
+  },
+];
+
+/**
+ * Minimal setup steps for nano-only workflows (no API key needed).
+ * Collects: MongoDB connection URI.
+ */
+const nanoSetupSteps = [
+  {
+    id: 'mongodbUri',
+    label: 'MongoDB connection URI',
+    type: 'password',
+    required: true,
+    placeholder: 'mongodb+srv://user:pass@cluster.mongodb.net/',
+    validate: (value) => {
+      if (!value || !value.trim()) return 'Connection string is required for storing embeddings';
+      if (!value.startsWith('mongodb://') && !value.startsWith('mongodb+srv://'))
+        return 'URI should start with mongodb:// or mongodb+srv://';
+      return true;
+    },
+    group: 'MongoDB connection',
+  },
 ];
 
 module.exports = {
   globalSetupSteps,
+  nanoSetupSteps,
   getProviderOptions,
   getModelOptions,
 };

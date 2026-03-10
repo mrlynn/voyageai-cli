@@ -14,8 +14,8 @@ afterEach(() => {
 });
 
 describe('chatSetupSteps', () => {
-  it('has 4 steps', () => {
-    assert.equal(chatSetupSteps.length, 4);
+  it('has 7 steps', () => {
+    assert.equal(chatSetupSteps.length, 7);
   });
 
   it('all steps have required fields', () => {
@@ -27,9 +27,9 @@ describe('chatSetupSteps', () => {
     }
   });
 
-  it('step ids are provider, apiKey, model, ollamaBaseUrl', () => {
+  it('step ids include bedrock credential steps', () => {
     const ids = chatSetupSteps.map(s => s.id);
-    assert.deepEqual(ids, ['provider', 'apiKey', 'model', 'ollamaBaseUrl']);
+    assert.deepEqual(ids, ['provider', 'apiKey', 'model', 'ollamaBaseUrl', 'awsRegion', 'awsAccessKeyId', 'awsSecretAccessKey']);
   });
 
   it('provider step is required', () => {
@@ -45,6 +45,11 @@ describe('chatSetupSteps', () => {
   it('apiKey skips for ollama provider', () => {
     const step = chatSetupSteps.find(s => s.id === 'apiKey');
     assert.equal(step.skip({ provider: 'ollama' }, {}), true);
+  });
+
+  it('apiKey skips for bedrock provider', () => {
+    const step = chatSetupSteps.find(s => s.id === 'apiKey');
+    assert.equal(step.skip({ provider: 'bedrock' }, {}), true);
   });
 
   it('apiKey skips when already configured', () => {
@@ -88,16 +93,44 @@ describe('chatSetupSteps', () => {
     const step = chatSetupSteps.find(s => s.id === 'provider');
     assert.equal(step.skip({}, {}), false);
   });
+
+  it('awsRegion shows for bedrock provider', () => {
+    const step = chatSetupSteps.find(s => s.id === 'awsRegion');
+    assert.equal(step.skip({ provider: 'bedrock' }, {}), false);
+  });
+
+  it('awsRegion skips for non-bedrock providers', () => {
+    const step = chatSetupSteps.find(s => s.id === 'awsRegion');
+    assert.equal(step.skip({ provider: 'anthropic' }, {}), true);
+    assert.equal(step.skip({ provider: 'openai' }, {}), true);
+    assert.equal(step.skip({ provider: 'ollama' }, {}), true);
+  });
+
+  it('awsRegion skips when already configured', () => {
+    const step = chatSetupSteps.find(s => s.id === 'awsRegion');
+    assert.equal(step.skip({ provider: 'bedrock' }, { awsRegion: 'us-east-1' }), true);
+  });
+
+  it('awsAccessKeyId skips for non-bedrock providers', () => {
+    const step = chatSetupSteps.find(s => s.id === 'awsAccessKeyId');
+    assert.equal(step.skip({ provider: 'anthropic' }, {}), true);
+  });
+
+  it('awsAccessKeyId shows for bedrock without config', () => {
+    const step = chatSetupSteps.find(s => s.id === 'awsAccessKeyId');
+    assert.equal(step.skip({ provider: 'bedrock' }, {}), false);
+  });
 });
 
 describe('getProviderOptions', () => {
-  it('returns array with 3 providers', async () => {
+  it('returns array with 4 providers', async () => {
     const options = await getProviderOptions();
-    assert.equal(options.length, 3);
+    assert.equal(options.length, 4);
     const values = options.map(o => o.value);
     assert.ok(values.includes('anthropic'));
     assert.ok(values.includes('openai'));
     assert.ok(values.includes('ollama'));
+    assert.ok(values.includes('bedrock'));
   });
 
   it('all options have value, label, hint', async () => {
@@ -126,5 +159,12 @@ describe('getModelOptions', () => {
     const options = await getModelOptions({ provider: 'openai' });
     assert.ok(options.length > 0);
     assert.ok(options.every(o => o.value && o.label));
+  });
+
+  it('returns curated models for bedrock', async () => {
+    const options = await getModelOptions({ provider: 'bedrock' });
+    assert.ok(options.length > 0);
+    assert.ok(options.every(o => o.value && o.label));
+    assert.ok(options.some(o => o.value.includes('anthropic.claude')));
   });
 });

@@ -102,6 +102,11 @@ describe('llm', () => {
       assert.ok(PROVIDER_DEFAULTS.anthropic);
       assert.ok(PROVIDER_DEFAULTS.openai);
       assert.ok(PROVIDER_DEFAULTS.ollama);
+      assert.ok(PROVIDER_DEFAULTS.bedrock);
+    });
+
+    it('bedrock default is a Claude model', () => {
+      assert.ok(PROVIDER_DEFAULTS.bedrock.includes('anthropic.claude'));
     });
   });
 
@@ -124,6 +129,12 @@ describe('llm', () => {
       assert.ok(PROVIDER_MODELS.openai.length >= 3);
       assert.ok(PROVIDER_MODELS.openai.some(m => m.id === 'gpt-4o'));
     });
+
+    it('has curated models for bedrock', () => {
+      assert.ok(PROVIDER_MODELS.bedrock.length >= 3);
+      assert.ok(PROVIDER_MODELS.bedrock.every(m => m.id && m.name && m.context));
+      assert.ok(PROVIDER_MODELS.bedrock.some(m => m.id.startsWith('anthropic.claude')));
+    });
   });
 
   describe('listModels', () => {
@@ -141,6 +152,12 @@ describe('llm', () => {
     it('returns empty array for unknown provider', async () => {
       const models = await listModels('unknown');
       assert.deepEqual(models, []);
+    });
+
+    it('returns curated list for bedrock', async () => {
+      const models = await listModels('bedrock');
+      assert.ok(models.length > 0);
+      assert.ok(models[0].id.startsWith('anthropic.') || models[0].id.startsWith('us.anthropic.'));
     });
 
     it('returns empty array for ollama when not running', async () => {

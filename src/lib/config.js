@@ -37,10 +37,13 @@ const KEY_MAP = {
   'default-collection': 'defaultCollection',
   'show-cost': 'showCost',
   'telemetry': 'telemetry',
+  'aws-access-key-id': 'awsAccessKeyId',
+  'aws-secret-access-key': 'awsSecretAccessKey',
+  'aws-region': 'awsRegion',
 };
 
 // Keys whose values should be masked in output
-const SECRET_KEYS = new Set(['apiKey', 'mongodbUri', 'llmApiKey']);
+const SECRET_KEYS = new Set(['apiKey', 'mongodbUri', 'llmApiKey', 'awsAccessKeyId', 'awsSecretAccessKey']);
 
 /**
  * Load config from disk. Returns {} if file doesn't exist.

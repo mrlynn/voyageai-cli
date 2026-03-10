@@ -114,11 +114,12 @@ describe('catalog', () => {
     assert.equal(large.architecture, 'moe');
   });
 
-  it('voyage-4-nano has huggingface URL and is unreleased', () => {
+  it('voyage-4-nano has huggingface URL and is local-only', () => {
     const nano = MODEL_CATALOG.find(m => m.name === 'voyage-4-nano');
     assert.ok(nano.huggingface, 'voyage-4-nano should have huggingface URL');
     assert.ok(nano.huggingface.includes('huggingface.co'), 'URL should point to huggingface');
-    assert.ok(nano.unreleased, 'voyage-4-nano should be marked unreleased (not yet on API)');
+    assert.ok(nano.local, 'voyage-4-nano should be marked as local');
+    assert.equal(nano.pricePerMToken, 0, 'voyage-4-nano should be free');
   });
 
   it('embedding models have pricePerMToken for cost estimation', () => {

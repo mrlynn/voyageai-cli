@@ -150,6 +150,7 @@ const LLM_KEY_HINTS = {
   anthropic: 'Get a key at: https://console.anthropic.com/settings/keys\n         Set via: vai config set llm-api-key YOUR_KEY',
   openai: 'Get a key at: https://platform.openai.com/api-keys\n         Set via: vai config set llm-api-key YOUR_KEY',
   ollama: null,
+  bedrock: 'Set via: export AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY\n         or: ~/.aws/credentials file\n         or: vai config set aws-access-key-id YOUR_KEY',
 };
 
 async function checkLLMKey() {
@@ -170,6 +171,44 @@ async function checkLLMKey() {
       message: `${config.provider} (no key required)`,
       hint: null,
     };
+  }
+
+  // Bedrock uses AWS credentials, not an API key
+  if (config.provider === 'bedrock') {
+    const { resolveAWSCredentials } = require('../lib/aws');
+    try {
+      const creds = resolveAWSCredentials({
+        awsAccessKeyId: config.awsAccessKeyId,
+        awsSecretAccessKey: config.awsSecretAccessKey,
+        awsRegion: config.awsRegion,
+      });
+      if (!creds.accessKeyId || !creds.secretAccessKey) {
+        return {
+          ok: false,
+          message: 'bedrock: AWS credentials not found',
+          hint: LLM_KEY_HINTS.bedrock,
+        };
+      }
+      if (!creds.region) {
+        return {
+          ok: false,
+          message: 'bedrock: AWS region not set',
+          hint: 'Set via: export AWS_REGION=us-east-1 or vai config set aws-region us-east-1',
+        };
+      }
+      const maskedKey = `${creds.accessKeyId.slice(0, 8)}...${creds.accessKeyId.slice(-4)}`;
+      return {
+        ok: true,
+        message: `bedrock (${maskedKey}, ${creds.region})`,
+        hint: null,
+      };
+    } catch (err) {
+      return {
+        ok: false,
+        message: `bedrock: ${err.message}`,
+        hint: LLM_KEY_HINTS.bedrock,
+      };
+    }
   }
 
   if (!config.apiKey) {
@@ -199,7 +238,7 @@ async function checkLLMConnection() {
     };
   }
 
-  if (config.provider !== 'ollama' && !config.apiKey) {
+  if (config.provider !== 'ollama' && config.provider !== 'bedrock' && !config.apiKey) {
     return {
       ok: false,
       message: 'Skipped (no API key)',

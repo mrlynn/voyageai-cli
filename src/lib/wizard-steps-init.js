@@ -19,7 +19,9 @@ function getEmbeddingModelOptions() {
     .map(m => ({
       value: m.name,
       label: m.name,
-      hint: `${m.shortFor || m.bestFor} — ${m.price}`,
+      hint: m.local
+        ? `${m.shortFor || m.bestFor} — requires: vai nano setup`
+        : `${m.shortFor || m.bestFor} — ${m.price}`,
     }));
 }
 

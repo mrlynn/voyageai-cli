@@ -15,6 +15,7 @@ const PROVIDER_DEFAULTS = {
   anthropic: 'claude-sonnet-4-5-20250929',
   openai: 'gpt-4o',
   ollama: 'llama3.1',
+  bedrock: 'anthropic.claude-sonnet-4-5-20250929-v1:0',
 };
 
 const PROVIDER_BASE_URLS = {
@@ -60,7 +61,23 @@ function resolveLLMConfig(opts = {}) {
     (provider ? PROVIDER_BASE_URLS[provider] : null) ||
     null;
 
-  return { provider, apiKey, model, baseUrl };
+  // AWS-specific fields (only relevant when provider is bedrock)
+  const awsAccessKeyId =
+    opts.awsAccessKeyId ||
+    getConfigValue('awsAccessKeyId') ||
+    null;
+
+  const awsSecretAccessKey =
+    opts.awsSecretAccessKey ||
+    getConfigValue('awsSecretAccessKey') ||
+    null;
+
+  const awsRegion =
+    opts.awsRegion ||
+    getConfigValue('awsRegion') ||
+    null;
+
+  return { provider, apiKey, model, baseUrl, awsAccessKeyId, awsSecretAccessKey, awsRegion };
 }
 
 /**
@@ -82,8 +99,10 @@ function createLLMProvider(opts = {}) {
       return new OpenAIProvider(config);
     case 'ollama':
       return new OllamaProvider(config);
+    case 'bedrock':
+      return new BedrockProvider(config);
     default:
-      throw new Error(`Unknown LLM provider: "${config.provider}". Supported: anthropic, openai, ollama`);
+      throw new Error(`Unknown LLM provider: "${config.provider}". Supported: anthropic, openai, ollama, bedrock`);
   }
 }
 
@@ -292,6 +311,231 @@ class AnthropicProvider {
           messages: [{ role: 'user', content: 'hi' }],
         }),
       });
+      if (res.ok) {
+        return { ok: true, model: this.model };
+      }
+      const errBody = await res.text();
+      return { ok: false, model: this.model, error: `HTTP ${res.status}: ${errBody.substring(0, 200)}` };
+    } catch (err) {
+      return { ok: false, model: this.model, error: err.message };
+    }
+  }
+}
+
+// ============================================
+// AWS Bedrock Provider (Claude models)
+// ============================================
+
+class BedrockProvider {
+  constructor(config) {
+    this.name = 'bedrock';
+    this.model = config.model || PROVIDER_DEFAULTS.bedrock;
+
+    // Resolve AWS credentials from env vars, vai config, and ~/.aws/ files
+    const { resolveAWSCredentials } = require('./aws');
+    const creds = resolveAWSCredentials({
+      awsAccessKeyId: config.awsAccessKeyId,
+      awsSecretAccessKey: config.awsSecretAccessKey,
+      awsRegion: config.awsRegion,
+    });
+
+    this.region = creds.region;
+    this.accessKeyId = creds.accessKeyId;
+    this.secretAccessKey = creds.secretAccessKey;
+    this.sessionToken = creds.sessionToken;
+
+    if (!this.accessKeyId || !this.secretAccessKey) {
+      throw new Error(
+        'AWS credentials required for Bedrock.\n' +
+        '  Option 1: export AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY\n' +
+        '  Option 2: Configure ~/.aws/credentials\n' +
+        '  Option 3: vai config set aws-access-key-id YOUR_KEY'
+      );
+    }
+    if (!this.region) {
+      throw new Error(
+        'AWS region required for Bedrock.\n' +
+        '  export AWS_REGION=us-east-1\n' +
+        '  or: vai config set aws-region us-east-1'
+      );
+    }
+
+    // Create aws4fetch client for SigV4 request signing
+    const { AwsClient } = require('aws4fetch');
+    this._aws = new AwsClient({
+      accessKeyId: this.accessKeyId,
+      secretAccessKey: this.secretAccessKey,
+      sessionToken: this.sessionToken || undefined,
+      region: this.region,
+      service: 'bedrock',
+    });
+  }
+
+  get supportsTools() { return true; }
+
+  _endpoint(streaming = false) {
+    const action = streaming ? 'invoke-with-response-stream' : 'invoke';
+    return `https://bedrock-runtime.${this.region}.amazonaws.com/model/${encodeURIComponent(this.model)}/${action}`;
+  }
+
+  async *chat(messages, options = {}) {
+    const maxTokens = options.maxTokens || 4096;
+    const stream = options.stream !== false;
+
+    // Anthropic message format: separate system param
+    const systemMsg = messages.find(m => m.role === 'system');
+    const nonSystemMsgs = messages.filter(m => m.role !== 'system');
+
+    const body = {
+      anthropic_version: 'bedrock-2023-05-31',
+      max_tokens: maxTokens,
+      messages: nonSystemMsgs,
+    };
+    if (systemMsg) {
+      body.system = systemMsg.content;
+    }
+
+    const url = this._endpoint(stream);
+    const res = await this._aws.fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    if (!res.ok) {
+      const errBody = await res.text();
+      throw new Error(`Bedrock API error (${res.status}): ${errBody}`);
+    }
+
+    if (!stream) {
+      const json = await res.json();
+      const text = json.content?.[0]?.text || '';
+      yield text;
+      const apiUsage = json.usage || {};
+      yield { __usage: { inputTokens: apiUsage.input_tokens || 0, outputTokens: apiUsage.output_tokens || 0 } };
+      return;
+    }
+
+    // Streaming: parse AWS binary event stream
+    const { parseBedrockEventStream } = require('./aws');
+    const usage = { inputTokens: 0, outputTokens: 0 };
+
+    for await (const chunk of parseBedrockEventStream(res.body)) {
+      const data = chunk.__data;
+      const event = chunk.__event;
+
+      if (event === 'message_start' && data?.message?.usage) {
+        usage.inputTokens = data.message.usage.input_tokens || 0;
+      } else if (event === 'message_delta' && data?.usage) {
+        usage.outputTokens = data.usage.output_tokens || 0;
+      } else if (event === 'content_block_delta' && data?.delta?.text) {
+        yield data.delta.text;
+      }
+    }
+    yield { __usage: usage };
+  }
+
+  async chatWithTools(messages, tools, options = {}) {
+    const maxTokens = options.maxTokens || 4096;
+
+    const systemMsg = messages.find(m => m.role === 'system');
+    const nonSystemMsgs = messages.filter(m => m.role !== 'system');
+
+    const body = {
+      anthropic_version: 'bedrock-2023-05-31',
+      max_tokens: maxTokens,
+      messages: nonSystemMsgs,
+      tools,
+    };
+    if (systemMsg) {
+      body.system = systemMsg.content;
+    }
+
+    const url = this._endpoint(false);
+    const res = await this._aws.fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    if (!res.ok) {
+      const errBody = await res.text();
+      throw new Error(`Bedrock API error (${res.status}): ${errBody}`);
+    }
+
+    const json = await res.json();
+    const stopReason = json.stop_reason || 'end_turn';
+    const apiUsage = json.usage || {};
+    const usage = { inputTokens: apiUsage.input_tokens || 0, outputTokens: apiUsage.output_tokens || 0 };
+
+    // Check for tool_use blocks (same structure as Anthropic)
+    const toolBlocks = (json.content || []).filter(b => b.type === 'tool_use');
+    if (toolBlocks.length > 0) {
+      return {
+        type: 'tool_calls',
+        calls: toolBlocks.map(b => ({
+          id: b.id,
+          name: b.name,
+          arguments: b.input,
+        })),
+        stopReason,
+        usage,
+        _raw: json.content,
+      };
+    }
+
+    const textBlocks = (json.content || []).filter(b => b.type === 'text');
+    return {
+      type: 'text',
+      content: textBlocks.map(b => b.text).join(''),
+      stopReason,
+      usage,
+    };
+  }
+
+  // Identical to AnthropicProvider (same Anthropic message format)
+  formatAssistantToolCall(response) {
+    if (response._raw) {
+      return { role: 'assistant', content: response._raw };
+    }
+    return {
+      role: 'assistant',
+      content: response.calls.map(c => ({
+        type: 'tool_use',
+        id: c.id,
+        name: c.name,
+        input: c.arguments,
+      })),
+    };
+  }
+
+  formatToolResult(callId, content, isError = false) {
+    return {
+      role: 'user',
+      content: [{
+        type: 'tool_result',
+        tool_use_id: callId,
+        content,
+        ...(isError && { is_error: true }),
+      }],
+    };
+  }
+
+  async ping() {
+    try {
+      const body = {
+        anthropic_version: 'bedrock-2023-05-31',
+        max_tokens: 1,
+        messages: [{ role: 'user', content: 'hi' }],
+      };
+
+      const url = this._endpoint(false);
+      const res = await this._aws.fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+
       if (res.ok) {
         return { ok: true, model: this.model };
       }
@@ -811,6 +1055,12 @@ const PROVIDER_MODELS = {
     { id: 'o1', name: 'o1', context: '200K' },
     { id: 'o1-mini', name: 'o1 Mini', context: '128K' },
     { id: 'o3-mini', name: 'o3 Mini', context: '200K' },
+  ],
+  bedrock: [
+    { id: 'anthropic.claude-sonnet-4-5-20250929-v1:0', name: 'Claude Sonnet 4.5', context: '200K' },
+    { id: 'anthropic.claude-opus-4-20250514-v1:0', name: 'Claude Opus 4', context: '200K' },
+    { id: 'anthropic.claude-3-5-haiku-20241022-v1:0', name: 'Claude 3.5 Haiku', context: '200K' },
+    { id: 'us.anthropic.claude-sonnet-4-5-20250929-v1:0', name: 'Claude Sonnet 4.5 (Cross-Region)', context: '200K' },
   ],
 };
 

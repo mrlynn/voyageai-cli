@@ -16,6 +16,7 @@ const {
 const PKG_VERSION = require('../../package.json').version;
 const BRIDGE_SCRIPT = path.join(__dirname, 'nano-bridge.py');
 const VENV_PYTHON = path.join(os.homedir(), '.vai', 'nano-env', 'bin', 'python3');
+const MODEL_CACHE_DIR = path.join(os.homedir(), '.vai', 'nano-model');
 
 const IDLE_TIMEOUT = 30_000;
 const REQUEST_TIMEOUT = 60_000;
@@ -114,6 +115,8 @@ class NanoBridgeManager {
         ...process.env,
         PYTHONUNBUFFERED: '1',
         PYTHONDONTWRITEBYTECODE: '1',
+        HF_HUB_OFFLINE: '1',
+        SENTENCE_TRANSFORMERS_HOME: MODEL_CACHE_DIR,
       },
     });
 
@@ -222,18 +225,17 @@ class NanoBridgeManager {
 
     if (code !== 0 && this.#pending.size > 0) {
       this.#crashCount++;
-      if (this.#crashCount >= 2) {
-        this.#rejectAllPending('NANO_PROCESS_CRASH');
-      }
-      // First crash: pending requests will be retried on next embed() call
-      // which triggers #ensureProcess again
+      this.#rejectAllPending('NANO_PROCESS_CRASH');
     }
   }
 
   #rejectAllPending(code) {
+    const stderr = this.#stderrChunks.join('').trim();
     for (const [id, entry] of this.#pending) {
       clearTimeout(entry.timer);
-      entry.reject(createNanoError(code));
+      const err = createNanoError(code);
+      if (stderr) err.stderr = stderr;
+      entry.reject(err);
     }
     this.#pending.clear();
   }

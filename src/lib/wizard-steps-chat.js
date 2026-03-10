@@ -62,6 +62,11 @@ async function getProviderOptions() {
         : 'Ollama (local — not detected)',
       hint: ollamaAvailable ? 'Free, fully private' : 'Requires ollama running locally',
     },
+    {
+      value: 'bedrock',
+      label: 'AWS Bedrock (Claude)',
+      hint: 'Uses your AWS credentials',
+    },
   ];
 
   return options;
@@ -122,7 +127,7 @@ const chatSetupSteps = [
     skip: (answers, config) => {
       // Skip for Ollama (no key needed)
       const provider = answers.provider || config.llmProvider;
-      if (provider === 'ollama') return true;
+      if (provider === 'ollama' || provider === 'bedrock') return true;
       // Skip if already configured
       if (config.llmApiKey) return true;
       return false;
@@ -157,6 +162,53 @@ const chatSetupSteps = [
     skip: (answers, config) => {
       const provider = answers.provider || config.llmProvider;
       return provider !== 'ollama';
+    },
+    group: 'LLM Configuration',
+  },
+
+  {
+    id: 'awsRegion',
+    label: 'AWS Region',
+    type: 'text',
+    defaultValue: 'us-east-1',
+    placeholder: 'us-east-1',
+    required: false,
+    skip: (answers, config) => {
+      const provider = answers.provider || config.llmProvider;
+      if (provider !== 'bedrock') return true;
+      if (config.awsRegion) return true;
+      return false;
+    },
+    validate: (value) => {
+      if (value && !/^[a-z]{2}-[a-z]+-\d+$/.test(value)) return 'Region format: us-east-1, eu-west-2, etc.';
+      return true;
+    },
+    group: 'LLM Configuration',
+  },
+  {
+    id: 'awsAccessKeyId',
+    label: 'AWS Access Key ID (blank to use env/file)',
+    type: 'password',
+    required: false,
+    placeholder: 'AKIA...',
+    skip: (answers, config) => {
+      const provider = answers.provider || config.llmProvider;
+      if (provider !== 'bedrock') return true;
+      if (config.awsAccessKeyId) return true;
+      return false;
+    },
+    group: 'LLM Configuration',
+  },
+  {
+    id: 'awsSecretAccessKey',
+    label: 'AWS Secret Access Key (blank to use env/file)',
+    type: 'password',
+    required: false,
+    skip: (answers, config) => {
+      const provider = answers.provider || config.llmProvider;
+      if (provider !== 'bedrock') return true;
+      if (config.awsSecretAccessKey) return true;
+      return false;
     },
     group: 'LLM Configuration',
   },
