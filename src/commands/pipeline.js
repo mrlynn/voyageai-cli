@@ -6,7 +6,7 @@ const { chunk, estimateTokens, STRATEGIES } = require('../lib/chunker');
 const { readFile, scanDirectory, isSupported, getReaderType } = require('../lib/readers');
 const { loadProject } = require('../lib/project');
 const { getDefaultModel } = require('../lib/catalog');
-const { generateEmbeddings } = require('../lib/api');
+const { generateEmbeddings, getModelBatchTokenLimit, createTokenAwareBatches } = require('../lib/api');
 const { getMongoCollection } = require('../lib/mongo');
 const ui = require('../lib/ui');
 const { formatNanoError } = require('../nano/nano-errors.js');
@@ -224,22 +224,21 @@ function registerPipeline(program) {
         // Step 3: Embed in batches
         if (verbose) console.log(ui.bold('Step 2/3 — Embedding'));
 
-        const batches = [];
-        for (let i = 0; i < allChunks.length; i += batchSize) {
-          batches.push(allChunks.slice(i, i + batchSize));
-        }
+        const allChunkTexts = allChunks.map(c => c.text);
+        const tokenLimit = opts.local ? Infinity : getModelBatchTokenLimit(model);
+        const batchIndices = createTokenAwareBatches(allChunkTexts, { maxItems: batchSize, maxTokens: tokenLimit });
 
         let embeddedCount = 0;
         let totalApiTokens = 0;
         const embeddings = new Array(allChunks.length);
 
-        for (let bi = 0; bi < batches.length; bi++) {
-          const batch = batches[bi];
-          const texts = batch.map(c => c.text);
+        for (let bi = 0; bi < batchIndices.length; bi++) {
+          const indices = batchIndices[bi];
+          const texts = indices.map(i => allChunkTexts[i]);
 
           if (verbose) {
-            const pct = Math.round(((bi + 1) / batches.length) * 100);
-            process.stderr.write(`\r  Batch ${bi + 1}/${batches.length} (${pct}%)...`);
+            const pct = Math.round(((bi + 1) / batchIndices.length) * 100);
+            process.stderr.write(`\r  Batch ${bi + 1}/${batchIndices.length} (${pct}%)...`);
           }
 
           let result;
@@ -256,10 +255,10 @@ function registerPipeline(program) {
           }
           totalApiTokens += result.usage?.total_tokens || 0;
 
-          for (let j = 0; j < result.data.length; j++) {
-            embeddings[embeddedCount + j] = result.data[j].embedding;
+          for (let j = 0; j < indices.length; j++) {
+            embeddings[indices[j]] = result.data[j].embedding;
           }
-          embeddedCount += batch.length;
+          embeddedCount += indices.length;
         }
 
         if (verbose) {

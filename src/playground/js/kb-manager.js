@@ -6,12 +6,20 @@
 class KBManager {
   constructor() {
     this.currentKB = null;
+    this.currentKBMeta = null; // Built-in KB metadata: { builtin, db, collection, index, textField }
     this.kbs = [];
     this.isIngesting = false;
     this.ingestionProgress = { current: 0, total: 0, currentFile: '' };
 
     // Local state
     this.loadLastKB();
+  }
+
+  /**
+   * Check if the currently selected KB is the built-in vai docs KB
+   */
+  isBuiltinKB() {
+    return this.currentKBMeta?.builtin === true;
   }
 
   /**
@@ -48,13 +56,17 @@ class KBManager {
   async listKBs() {
     try {
       const res = await fetch('/api/rag/kbs');
-      if (!res.ok) throw new Error('Failed to fetch KBs');
+      if (!res.ok) {
+        let detail = `HTTP ${res.status}`;
+        try { const body = await res.json(); detail = body.error || detail; } catch {}
+        throw new Error(detail);
+      }
       const data = await res.json();
       this.kbs = data.kbs || [];
       return this.kbs;
     } catch (err) {
       console.error('Error listing KBs:', err);
-      return [];
+      throw err;
     }
   }
 
@@ -68,9 +80,20 @@ class KBManager {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ kbName })
       });
-      if (!res.ok) throw new Error('Failed to select KB');
+      if (!res.ok) {
+        let detail = `HTTP ${res.status}`;
+        try { const body = await res.json(); detail = body.error || detail; } catch {}
+        throw new Error(detail);
+      }
       const data = await res.json();
       this.currentKB = data.selected || null;
+      this.currentKBMeta = data.builtin ? {
+        builtin: true,
+        db: data.builtinDb,
+        collection: data.builtinCollection,
+        index: data.builtinIndex,
+        textField: data.builtinTextField,
+      } : null;
       this.saveLastKB();
       return data;
     } catch (err) {

@@ -137,6 +137,43 @@ describe('readers', () => {
     });
   });
 
+  describe('readFile — source code', () => {
+    it('reads a .js file as plain text', async () => {
+      const tmpFile = path.join(os.tmpdir(), `vai-test-${Date.now()}.js`);
+      fs.writeFileSync(tmpFile, 'const x = 42;\nconsole.log(x);\n');
+      try {
+        const content = await readFile(tmpFile);
+        assert.equal(typeof content, 'string');
+        assert.ok(content.length > 0);
+        assert.ok(content.includes('const x = 42'));
+      } finally {
+        fs.unlinkSync(tmpFile);
+      }
+    });
+
+    it('reads a .py file as plain text', async () => {
+      const tmpFile = path.join(os.tmpdir(), `vai-test-${Date.now()}.py`);
+      fs.writeFileSync(tmpFile, 'print("hello")\n');
+      try {
+        const content = await readFile(tmpFile);
+        assert.ok(content.includes('print'));
+      } finally {
+        fs.unlinkSync(tmpFile);
+      }
+    });
+
+    it('reads a .yaml file as plain text', async () => {
+      const tmpFile = path.join(os.tmpdir(), `vai-test-${Date.now()}.yaml`);
+      fs.writeFileSync(tmpFile, 'key: value\n');
+      try {
+        const content = await readFile(tmpFile);
+        assert.ok(content.includes('key: value'));
+      } finally {
+        fs.unlinkSync(tmpFile);
+      }
+    });
+  });
+
   describe('readFile — unsupported', () => {
     it('throws for unsupported extension', async () => {
       await assert.rejects(() => readFile('file.xyz'), /Unsupported file type/);

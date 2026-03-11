@@ -8147,6 +8147,15 @@ select:focus { outline: none; border-color: var(--accent); }
   color: var(--text-muted);
   display: flex;
   gap: 6px;
+  flex-wrap: wrap;
+}
+.kb-file-category {
+  font-size: 9px;
+  padding: 0 4px;
+  border-radius: 4px;
+  background: rgba(0,212,170,0.1);
+  color: #00D4AA;
+  border: 1px solid rgba(0,212,170,0.2);
 }
 .kb-file-delete {
   flex-shrink: 0;
@@ -9722,6 +9731,8 @@ Reranking models rescore initial search results to improve relevance ordering.</
           <span class="kb-chevron">&#x25B6;</span>
           <span>KB Info</span>
           <span class="kb-section-badge kb-name-editable" id="kbPanelName" title="Click to rename" onclick="event.stopPropagation(); window.kbUI && window.kbUI.startRename()">--</span>
+          <span id="kbBuiltinBadge" style="display:none; font-size:9px; padding:1px 6px; border-radius:8px; background:rgba(0,212,170,0.13); color:#00D4AA; border:1px solid rgba(0,212,170,0.27); font-weight:600; letter-spacing:0.5px; white-space:nowrap;">BUILT-IN</span>
+          <span id="kbBuiltinVersion" style="display:none; font-size:9px; color:#888; white-space:nowrap;"></span>
         </div>
         <div class="kb-section-body" data-kb-section="stats" style="max-height:none;">
           <div class="kb-section-body-inner">
@@ -9740,6 +9751,10 @@ Reranking models rescore initial search results to improve relevance ordering.</
               </div>
             </div>
             <div id="kbIndexStatus" style="margin-top:6px; font-size:11px; text-align:center; transition: opacity 0.3s;"></div>
+            <div id="kbBuiltinSetupPrompt" style="display:none; padding:12px; background:#112733; border:1px solid #3D4F58; border-radius:8px; margin:8px 0; text-align:center;">
+              <p style="font-size:12px; color:#ccc; margin:0 0 8px;">The built-in vai Docs KB has not been set up yet.</p>
+              <p style="font-size:11px; color:#888; margin:0;">Run <code style="background:#1C2D38; padding:2px 6px; border-radius:4px; color:#00D4AA;">vai kb setup</code> in your terminal to seed it.</p>
+            </div>
             <button class="kb-panel-btn kb-panel-btn-danger" id="kbPanelClearBtn" style="width:100%; margin-top:8px; font-size:11px;">Clear All Documents</button>
           </div>
         </div>
@@ -18123,7 +18138,11 @@ function addChatMessage(role, content, sources) {
   div.className = `chat-message ${role}`;
   const contentSpan = document.createElement('span');
   contentSpan.className = 'chat-message-content';
-  contentSpan.textContent = content;
+  if (role === 'system-msg') {
+    contentSpan.innerHTML = content;
+  } else {
+    contentSpan.textContent = content;
+  }
   div.appendChild(contentSpan);
 
   // Add copy button for assistant messages
@@ -18220,7 +18239,13 @@ async function sendChatMessage() {
     const res = await fetch('/api/chat/message', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query, db, collection, provider, model, maxDocs, rerank, systemPrompt, mode, textField: 'content', embeddingModel: document.getElementById('chatEmbeddingModel').value, memoryStrategy: chatMemoryStrategy }),
+      body: JSON.stringify({
+        query, db, collection, provider, model, maxDocs, rerank, systemPrompt, mode,
+        textField: (window.kbUI && window.kbUI._overrideTextField) || 'content',
+        index: (window.kbUI && window.kbUI._overrideIndex) || undefined,
+        embeddingModel: document.getElementById('chatEmbeddingModel').value,
+        memoryStrategy: chatMemoryStrategy,
+      }),
     });
 
     if (!res.ok) {

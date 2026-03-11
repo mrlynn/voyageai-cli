@@ -5,7 +5,7 @@ const path = require('path');
 const https = require('https');
 const pc = require('picocolors');
 const { chunkMarkdown, ensureVectorIndex, waitForIndex } = require('../lib/demo-ingest');
-const { generateEmbeddings } = require('../lib/api');
+const { generateEmbeddings, getModelBatchTokenLimit, createTokenAwareBatches } = require('../lib/api');
 const { getMongoCollection } = require('../lib/mongo');
 const { estimateTokens, estimateCost, formatCostEstimate, confirmOrSwitchModel } = require('../lib/cost');
 const { loadConfig, saveConfig } = require('../lib/config');
@@ -234,34 +234,40 @@ async function seedKnowledgeBase(opts = {}) {
     }
   }
 
-  // Embed in batches (smaller batches for local nano to avoid Python bridge overload)
+  // Embed in token-aware batches (smaller batches for local nano to avoid Python bridge overload)
   const batchSize = useLocal ? 2 : 20;
+  const allChunkTexts = allChunks.map(c => c.text);
+  const tokenLimit = useLocal ? Infinity : getModelBatchTokenLimit(chosenModel);
+  const batchIndices = createTokenAwareBatches(allChunkTexts, { maxItems: batchSize, maxTokens: tokenLimit });
   const documents = [];
   const embedFn = useLocal
     ? require('../nano/nano-local').generateLocalEmbeddings
     : generateEmbeddings;
+  let embedded = 0;
 
-  for (let i = 0; i < allChunks.length; i += batchSize) {
-    const batch = allChunks.slice(i, i + batchSize);
-    const texts = batch.map(c => c.text);
+  for (const indices of batchIndices) {
+    const texts = indices.map(i => allChunkTexts[i]);
 
-    onProgress('embed', { done: i, total: allChunks.length });
+    onProgress('embed', { done: embedded, total: allChunks.length });
 
     const embedOpts = useLocal
       ? { inputType: 'document', dimensions: 1024 }
       : { model: chosenModel };
     const embedResult = await embedFn(texts, embedOpts);
 
-    for (let j = 0; j < batch.length; j++) {
+    for (let j = 0; j < indices.length; j++) {
+      const src = allChunks[indices[j]];
       documents.push({
-        text: batch[j].text,
-        source: batch[j].metadata.title,
+        text: src.text,
+        source: src.metadata.title,
         embedding: embedResult.data[j].embedding,
-        metadata: batch[j].metadata,
+        metadata: src.metadata,
         model: chosenModel,
         ingestedAt: new Date(),
       });
     }
+
+    embedded += indices.length;
   }
 
   onProgress('embed', { done: allChunks.length, total: allChunks.length });

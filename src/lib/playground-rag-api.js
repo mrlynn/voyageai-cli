@@ -9,7 +9,7 @@ const os = require('os');
 const crypto = require('crypto');
 const pdfParse = require('pdf-parse');
 const { getMongoCollection } = require('./mongo');
-const { getConfigValue } = require('./config');
+const { getConfigValue, loadConfig } = require('./config');
 
 /**
  * Extract text content from a PDF buffer
@@ -24,6 +24,82 @@ async function extractTextFromPDF(buffer) {
 // MongoDB database for RAG
 const RAG_DB = 'vai_rag';
 const KBS_COLLECTION = 'knowledge_bases';
+
+// Reserved name for the bundled vai docs KB
+const BUILTIN_KB_NAME = '__builtin_vai_docs';
+
+/**
+ * Load bundled KB info from ~/.vai/config.json
+ * Returns null if not seeded.
+ */
+function loadBuiltinKBConfig() {
+  try {
+    const config = loadConfig();
+    return config.kb || null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Build the bundled KB entry for the KB list response.
+ * Optionally queries MongoDB for live doc count.
+ */
+async function getBuiltinKBEntry(getMongoCollectionFn) {
+  const kbConfig = loadBuiltinKBConfig();
+  const base = {
+    name: BUILTIN_KB_NAME,
+    displayName: 'vai Docs',
+    builtin: true,
+  };
+
+  if (!kbConfig) {
+    return { ...base, seeded: false, docCount: 0, chunkCount: 0, size: 0 };
+  }
+
+  const builtinDb = kbConfig.db || kbConfig.defaultDb || 'vai';
+  const builtinCollection = kbConfig.collection || 'vai_kb';
+
+  const entry = {
+    ...base,
+    seeded: true,
+    builtinDb,
+    builtinCollection,
+    builtinIndex: 'vai_kb_vector_index',
+    builtinTextField: 'text',
+    builtinVersion: kbConfig.version,
+    builtinModel: kbConfig.embeddingModel,
+    createdAt: kbConfig.seededAt,
+    chunkCount: kbConfig.chunkCount || 0,
+    size: 0,
+  };
+
+  // Try to get live stats from MongoDB
+  if (getMongoCollectionFn) {
+    try {
+      const { client, collection: coll } = await getMongoCollectionFn(builtinDb, builtinCollection);
+      const stats = await coll.aggregate([
+        { $group: {
+          _id: null,
+          totalSize: { $sum: { $strLenBytes: { $ifNull: ['$text', ''] } } },
+          chunkCount: { $sum: 1 },
+          docs: { $addToSet: '$metadata.title' },
+        }}
+      ]).toArray();
+      client.close();
+      const live = stats[0] || { totalSize: 0, chunkCount: 0, docs: [] };
+      entry.docCount = live.docs.filter(Boolean).length;
+      entry.chunkCount = live.chunkCount;
+      entry.size = live.totalSize;
+    } catch {
+      entry.docCount = kbConfig.chunkCount || 0;
+    }
+  } else {
+    entry.docCount = kbConfig.chunkCount || 0;
+  }
+
+  return entry;
+}
 
 async function computeKBStatsFromCollection(docsCollection) {
   const stats = await docsCollection.aggregate([
@@ -181,18 +257,29 @@ async function handleRAGRequest(req, res, context) {
 
       client.close();
 
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({
-        kbs: hydratedKbs.map(kb => ({
-          name: kb.name,
-          displayName: kb.displayName || kb.name,
-          docCount: kb.docCount || 0,
-          chunkCount: kb.chunkCount || 0,
-          createdAt: kb.createdAt,
-          updatedAt: kb.updatedAt,
-          size: kb.size || 0
-        }))
+      // Build the custom KB entries
+      const customKbs = hydratedKbs.map(kb => ({
+        name: kb.name,
+        displayName: kb.displayName || kb.name,
+        docCount: kb.docCount || 0,
+        chunkCount: kb.chunkCount || 0,
+        createdAt: kb.createdAt,
+        updatedAt: kb.updatedAt,
+        size: kb.size || 0
       }));
+
+      // Prepend the bundled vai docs KB
+      let builtinEntry;
+      try {
+        builtinEntry = await getBuiltinKBEntry(getMongoCollection);
+      } catch {
+        builtinEntry = null;
+      }
+
+      const allKbs = builtinEntry ? [builtinEntry, ...customKbs] : customKbs;
+
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ kbs: allKbs }));
       return true;
     } catch (err) {
       console.error('Error listing KBs:', err);
@@ -209,6 +296,28 @@ async function handleRAGRequest(req, res, context) {
     req.on('end', async () => {
       try {
         const { kbName } = JSON.parse(body);
+
+        // Handle built-in KB selection
+        if (kbName === BUILTIN_KB_NAME) {
+          const kbConfig = loadBuiltinKBConfig();
+          if (!kbConfig) {
+            res.writeHead(404, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Built-in KB not seeded. Run "vai kb setup" to set it up.' }));
+            return;
+          }
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({
+            selected: BUILTIN_KB_NAME,
+            indexStatus: 'exists',
+            builtin: true,
+            builtinDb: kbConfig.db || 'vai',
+            builtinCollection: kbConfig.collection || 'vai_kb',
+            builtinIndex: 'vai_kb_vector_index',
+            builtinTextField: 'text',
+          }));
+          return;
+        }
+
         const { client, collection: kbsCollection } = await getMongoCollection(RAG_DB, KBS_COLLECTION);
 
         let selected = null;
@@ -584,6 +693,40 @@ async function handleRAGRequest(req, res, context) {
   if (req.method === 'GET' && kbDocsMatch) {
     try {
       const kbName = decodeURIComponent(kbDocsMatch[1]);
+
+      // Handle built-in KB: different db, collection, and grouping field
+      if (kbName === BUILTIN_KB_NAME) {
+        const kbConfig = loadBuiltinKBConfig();
+        if (!kbConfig) {
+          res.writeHead(404, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Built-in KB not seeded', docs: [] }));
+          return true;
+        }
+        const { client, collection: coll } = await getMongoCollection(kbConfig.db || 'vai', kbConfig.collection || 'vai_kb');
+        const docs = await coll.aggregate([
+          { $group: {
+            _id: '$metadata.title',
+            chunkCount: { $sum: 1 },
+            createdAt: { $min: '$ingestedAt' },
+            totalSize: { $sum: { $strLenBytes: { $ifNull: ['$text', ''] } } },
+            category: { $first: '$metadata.category' },
+          }},
+          { $sort: { _id: 1 } },
+          { $project: {
+            fileName: '$_id',
+            chunkCount: 1,
+            createdAt: 1,
+            size: '$totalSize',
+            category: 1,
+            _id: 0
+          }}
+        ]).toArray();
+        client.close();
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ docs, builtin: true }));
+        return true;
+      }
+
       const { client, collection: docsCollection } = await getMongoCollection(RAG_DB, `kb_${kbName}_docs`);
 
       const docs = await docsCollection.aggregate([
@@ -620,6 +763,15 @@ async function handleRAGRequest(req, res, context) {
   if (req.method === 'GET' && kbMatch) {
     try {
       const kbName = decodeURIComponent(kbMatch[1]);
+
+      // Handle built-in KB details
+      if (kbName === BUILTIN_KB_NAME) {
+        const entry = await getBuiltinKBEntry(getMongoCollection);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(entry));
+        return true;
+      }
+
       const { client, collection: kbsCollection } = await getMongoCollection(RAG_DB, KBS_COLLECTION);
       const kb = await kbsCollection.findOne({ name: kbName });
 
@@ -650,6 +802,11 @@ async function handleRAGRequest(req, res, context) {
   if (req.method === 'DELETE' && kbMatch) {
     try {
       const kbName = decodeURIComponent(kbMatch[1]);
+      if (kbName === BUILTIN_KB_NAME) {
+        res.writeHead(403, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Cannot modify the built-in knowledge base' }));
+        return true;
+      }
       const { client: kbClient, collection: kbsCollection } = await getMongoCollection(RAG_DB, KBS_COLLECTION);
       const { client: docsClient, collection: docsCollection } = await getMongoCollection(RAG_DB, `kb_${kbName}_docs`);
 
@@ -671,11 +828,21 @@ async function handleRAGRequest(req, res, context) {
 
   // PATCH /api/rag/kb/:name - Rename KB (display name only; collection stays the same)
   if (req.method === 'PATCH' && kbMatch) {
+    const patchKbName = decodeURIComponent(kbMatch[1]);
+    if (patchKbName === BUILTIN_KB_NAME) {
+      // Drain the request body before responding
+      req.on('data', () => {});
+      req.on('end', () => {
+        res.writeHead(403, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Cannot modify the built-in knowledge base' }));
+      });
+      return true;
+    }
     let body = '';
     req.on('data', chunk => { body += chunk; });
     req.on('end', async () => {
       try {
-        const kbName = decodeURIComponent(kbMatch[1]);
+        const kbName = patchKbName;
         const { newName } = JSON.parse(body);
 
         if (!newName || typeof newName !== 'string' || !newName.trim()) {

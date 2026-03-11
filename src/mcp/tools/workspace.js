@@ -2,7 +2,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { generateEmbeddings } = require('../../lib/api');
+const { generateEmbeddings, getModelBatchTokenLimit, createTokenAwareBatches } = require('../../lib/api');
 const { getMongoCollection } = require('../../lib/mongo');
 const { getDefaultModel } = require('../../lib/catalog');
 const { chunk } = require('../../lib/chunker');
@@ -258,20 +258,26 @@ async function handleIndexWorkspace(input) {
         }
       }
 
-      // Generate embeddings for batch
+      // Generate embeddings in token-aware sub-batches
       if (documents.length > 0) {
         const texts = documents.map(d => d.text);
-        const embedResult = await generateEmbeddings(texts, { model, inputType: 'document' });
+        const tokenLimit = getModelBatchTokenLimit(model);
+        const subBatches = createTokenAwareBatches(texts, { maxItems: batchSize, maxTokens: tokenLimit });
 
-        // Combine documents with embeddings and insert
-        const docsToInsert = documents.map((doc, idx) => ({
-          text: doc.text,
-          embedding: embedResult.data[idx].embedding,
-          metadata: doc.metadata,
-        }));
+        for (const indices of subBatches) {
+          const subTexts = indices.map(i => texts[i]);
+          const subDocs = indices.map(i => documents[i]);
+          const embedResult = await generateEmbeddings(subTexts, { model, inputType: 'document' });
 
-        await collection.insertMany(docsToInsert);
-        stats.chunksCreated += docsToInsert.length;
+          const docsToInsert = subDocs.map((doc, idx) => ({
+            text: doc.text,
+            embedding: embedResult.data[idx].embedding,
+            metadata: doc.metadata,
+          }));
+
+          await collection.insertMany(docsToInsert);
+          stats.chunksCreated += docsToInsert.length;
+        }
       }
     }
 

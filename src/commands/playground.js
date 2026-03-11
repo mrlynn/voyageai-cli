@@ -1627,7 +1627,7 @@ function createPlaygroundServer() {
 
         // API: Chat message (streaming SSE)
         if (req.url === '/api/chat/message') {
-          const { query, db, collection, provider, model, maxDocs, rerank, systemPrompt, mode, textField, embeddingModel, memoryStrategy } = parsed;
+          const { query, db, collection, provider, model, maxDocs, rerank, systemPrompt, mode, textField, embeddingModel, memoryStrategy, index } = parsed;
           const isAgent = mode === 'agent';
           const isLocalEmbed = embeddingModel === 'voyage-4-nano';
 
@@ -1740,6 +1740,7 @@ function createPlaygroundServer() {
                   stream: true,
                   systemPrompt,
                   textField: textField || 'content',
+                  index: index || undefined,
                   ...embedOpts,
                   memoryManager: _playgroundMemoryManager,
                   memoryStrategy: memoryStrategy || undefined,
@@ -1798,6 +1799,9 @@ function createPlaygroundServer() {
                       }
                     }
                     res.write(`event: tool_call\ndata: ${JSON.stringify({ name, args, timeMs, error, resultSummary })}\n\n`);
+                  } else if (event.type === 'error') {
+                    // Re-throw so the catch block can handle fallback logic
+                    throw new Error(event.data.message || 'Agent error');
                   } else if (event.type === 'chunk') {
                     res.write(`event: chunk\ndata: ${JSON.stringify({ text: event.data })}\n\n`);
                   } else if (event.type === 'done') {

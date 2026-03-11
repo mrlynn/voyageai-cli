@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const pc = require('picocolors');
 const { getMongoCollection } = require('./mongo');
-const { generateEmbeddings } = require('./api');
+const { generateEmbeddings, getModelBatchTokenLimit, createTokenAwareBatches } = require('./api');
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
@@ -323,28 +323,34 @@ async function ingestChunkedData(sampleDataDir, options) {
 
   if (onProgress) onProgress('chunks', { chunkCount: allChunks.length });
 
-  // Embed in batches
+  // Embed in token-aware batches
   const batchSize = 20;
+  const allChunkTexts = allChunks.map(c => c.text);
+  const tokenLimit = getModelBatchTokenLimit(modelName);
+  const batchIndices = createTokenAwareBatches(allChunkTexts, { maxItems: batchSize, maxTokens: tokenLimit });
   const documents = [];
-  for (let i = 0; i < allChunks.length; i += batchSize) {
-    const batch = allChunks.slice(i, i + batchSize);
-    const texts = batch.map(c => c.text);
+  let embedded = 0;
+
+  for (const indices of batchIndices) {
+    const texts = indices.map(i => allChunkTexts[i]);
     const embedOpts = { model: modelName };
     if (embedDimensions) embedOpts.dimensions = embedDimensions;
     const embedResult = await embedFn(texts, embedOpts);
 
-    for (let j = 0; j < batch.length; j++) {
+    for (let j = 0; j < indices.length; j++) {
+      const src = allChunks[indices[j]];
       documents.push({
-        text: batch[j].text,
-        source: batch[j].source,
+        text: src.text,
+        source: src.source,
         embedding: embedResult.data[j].embedding,
-        metadata: batch[j].metadata,
+        metadata: src.metadata,
         model: modelName,
         ingestedAt: new Date(),
       });
     }
 
-    if (onProgress) onProgress('embed', { done: Math.min(i + batchSize, allChunks.length), total: allChunks.length });
+    embedded += indices.length;
+    if (onProgress) onProgress('embed', { done: embedded, total: allChunks.length });
   }
 
   // Store in MongoDB

@@ -3,7 +3,7 @@
 const path = require('path');
 const fs = require('fs');
 const pc = require('picocolors');
-const { generateEmbeddings, apiRequest } = require('../lib/api');
+const { generateEmbeddings, apiRequest, getModelBatchTokenLimit, createTokenAwareBatches } = require('../lib/api');
 const { getMongoCollection } = require('../lib/mongo');
 const { loadProject, saveProject } = require('../lib/project');
 const { DEFAULT_RERANK_MODEL } = require('../lib/catalog');
@@ -182,23 +182,30 @@ async function handleInit(workspacePath, opts) {
     }
 
     let totalTokens = 0;
-    for (let i = 0; i < allDocs.length; i += batchSize) {
-      const batch = allDocs.slice(i, i + batchSize);
-      const texts = batch.map(d => d.text);
+    const allTexts = allDocs.map(d => d.text);
+    const tokenLimit = getModelBatchTokenLimit(model);
+    const batches = createTokenAwareBatches(allTexts, { maxItems: batchSize, maxTokens: tokenLimit });
+    let embedded = 0;
+
+    for (let b = 0; b < batches.length; b++) {
+      const indices = batches[b];
+      const batchDocs = indices.map(i => allDocs[i]);
+      const texts = indices.map(i => allTexts[i]);
       const embedResult = await generateEmbeddings(texts, { model, inputType: 'document' });
       totalTokens += embedResult.usage?.total_tokens || 0;
 
-      const docsToInsert = batch.map((doc, idx) => ({
+      const docsToInsert = batchDocs.map((doc, idx) => ({
         text: doc.text,
         embedding: embedResult.data[idx].embedding,
         metadata: doc.metadata,
       }));
 
       await collection.insertMany(docsToInsert);
+      embedded += indices.length;
 
       if (useSpinner && spin) {
         spin.stop();
-        spin = ui.spinner(`Embedding chunks... ${Math.min(i + batchSize, allDocs.length)}/${allDocs.length}`);
+        spin = ui.spinner(`Embedding chunks... ${embedded}/${allDocs.length}`);
         spin.start();
       }
     }
@@ -686,13 +693,18 @@ async function handleRefresh(workspacePath, opts) {
     }
 
     let totalTokens = 0;
-    for (let i = 0; i < allDocs.length; i += batchSize) {
-      const batch = allDocs.slice(i, i + batchSize);
-      const texts = batch.map(d => d.text);
+    const refreshTexts = allDocs.map(d => d.text);
+    const refreshTokenLimit = getModelBatchTokenLimit(model);
+    const refreshBatches = createTokenAwareBatches(refreshTexts, { maxItems: batchSize, maxTokens: refreshTokenLimit });
+
+    for (let b = 0; b < refreshBatches.length; b++) {
+      const indices = refreshBatches[b];
+      const batchDocs = indices.map(i => allDocs[i]);
+      const texts = indices.map(i => refreshTexts[i]);
       const embedResult = await generateEmbeddings(texts, { model, inputType: 'document' });
       totalTokens += embedResult.usage?.total_tokens || 0;
 
-      const docsToInsert = batch.map((doc, idx) => ({
+      const docsToInsert = batchDocs.map((doc, idx) => ({
         text: doc.text,
         embedding: embedResult.data[idx].embedding,
         metadata: doc.metadata,

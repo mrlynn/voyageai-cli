@@ -7,17 +7,47 @@ const path = require('path');
  * Supported file extensions and their reader types.
  */
 const SUPPORTED_EXTENSIONS = {
+  // Documents & prose
   '.txt': 'text',
   '.md': 'text',
   '.markdown': 'text',
   '.rst': 'text',
+  '.csv': 'text',
+  // Markup
   '.html': 'html',
   '.htm': 'html',
+  // Structured data
   '.json': 'json',
   '.jsonl': 'jsonl',
   '.ndjson': 'jsonl',
-  '.csv': 'text',
+  // Binary
   '.pdf': 'pdf',
+  // Source code
+  '.js': 'text',
+  '.mjs': 'text',
+  '.cjs': 'text',
+  '.ts': 'text',
+  '.tsx': 'text',
+  '.jsx': 'text',
+  '.py': 'text',
+  '.sh': 'text',
+  '.bash': 'text',
+  '.zsh': 'text',
+  '.rb': 'text',
+  '.go': 'text',
+  '.rs': 'text',
+  '.java': 'text',
+  '.c': 'text',
+  '.cpp': 'text',
+  '.h': 'text',
+  '.cs': 'text',
+  // Config
+  '.yaml': 'text',
+  '.yml': 'text',
+  '.toml': 'text',
+  '.env': 'text',
+  '.graphql': 'text',
+  '.sql': 'text',
 };
 
 /**
@@ -41,7 +71,7 @@ function getReaderType(filePath) {
 }
 
 /**
- * Read a text file (txt, md, rst, csv).
+ * Read a text/source file as UTF-8 (txt, md, rst, csv, js, ts, py, etc.).
  * @param {string} filePath
  * @returns {Promise<string>}
  */

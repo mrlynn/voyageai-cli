@@ -95,13 +95,16 @@ class KBUIManager {
     const fileList = document.getElementById('kbFileList');
     const fileCount = document.getElementById('kbFileCount');
     if (!fileList) return;
+    const isBuiltin = this.kbManager.isBuiltinKB();
 
     try {
       const docs = await this.kbManager.listDocs(kbName);
       if (fileCount) fileCount.textContent = docs.length;
 
       if (docs.length === 0) {
-        fileList.innerHTML = '<li class="kb-file-empty">No documents ingested</li>';
+        fileList.innerHTML = isBuiltin
+          ? '<li class="kb-file-empty">Not set up yet. Run <code>vai kb setup</code> in your terminal.</li>'
+          : '<li class="kb-file-empty">No documents ingested</li>';
         return;
       }
 
@@ -110,6 +113,17 @@ class KBUIManager {
           ? (doc.size / 1024).toFixed(1) + ' KB'
           : (doc.size || 0) + ' B';
         const safeName = this.escapeHtml(doc.fileName);
+        const categoryBadge = isBuiltin && doc.category
+          ? `<span class="kb-file-category">${this.escapeHtml(doc.category)}</span>`
+          : '';
+
+        const deleteBtn = isBuiltin ? '' : `
+          <button class="kb-file-delete" onclick="window.kbUI.removeFile('${safeName.replace(/'/g, "\\'")}')" title="Remove">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
+              <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+            </svg>
+          </button>`;
 
         return `<li class="kb-file-item" data-filename="${safeName}">
           <svg class="kb-file-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -121,14 +135,10 @@ class KBUIManager {
             <div class="kb-file-meta">
               <span>${doc.chunkCount} chunks</span>
               <span>${sizeStr}</span>
+              ${categoryBadge}
             </div>
           </div>
-          <button class="kb-file-delete" onclick="window.kbUI.removeFile('${safeName.replace(/'/g, "\\'")}')" title="Remove">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
-              <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-            </svg>
-          </button>
+          ${deleteBtn}
         </li>`;
       }).join('');
     } catch (err) {
@@ -263,8 +273,21 @@ class KBUIManager {
     if (!kbName) return;
     const dbEl = document.getElementById('chatDb');
     const collEl = document.getElementById('chatCollection');
-    if (dbEl) dbEl.value = 'vai_rag';
-    if (collEl) collEl.value = `kb_${kbName}_docs`;
+
+    if (this.kbManager.isBuiltinKB()) {
+      const meta = this.kbManager.currentKBMeta;
+      if (dbEl) dbEl.value = meta.db;
+      if (collEl) collEl.value = meta.collection;
+      // Store overrides for the chat message payload
+      this._overrideIndex = meta.index;
+      this._overrideTextField = meta.textField;
+    } else {
+      if (dbEl) dbEl.value = 'vai_rag';
+      if (collEl) collEl.value = `kb_${kbName}_docs`;
+      this._overrideIndex = null;
+      this._overrideTextField = null;
+    }
+
     // Persist and update header status
     if (typeof saveChatSettings === 'function') saveChatSettings();
     if (typeof updateChatStatus === 'function') updateChatStatus();
@@ -281,7 +304,10 @@ class KBUIManager {
         this.updatePanelUI();
         this.showIndexStatus(result.indexStatus);
       } catch (err) {
-        console.warn('Last KB not found, showing wizard');
+        console.warn('Could not restore last KB:', err.message);
+        // Clear stale reference so it doesn't keep failing on reload
+        localStorage.removeItem('__vai_last_kb');
+        this.kbManager.currentKB = null;
         this.openWizard();
       }
     } else {
@@ -336,7 +362,7 @@ class KBUIManager {
       this.closeWizard();
     } catch (err) {
       console.error('Error selecting KB:', err);
-      alert(`Error: ${err.message}`);
+      alert(`Failed to select KB: ${err.message}\n\nCheck that MongoDB is running and your connection string is configured.`);
     }
   }
 
@@ -349,7 +375,7 @@ class KBUIManager {
       this.updatePanelUI();
     } catch (err) {
       console.error('Error creating KB:', err);
-      alert(`Error: ${err.message}`);
+      alert(`Failed to create KB: ${err.message}\n\nCheck that MongoDB is running and your connection string is configured.`);
     }
   }
 
@@ -410,19 +436,55 @@ class KBUIManager {
   }
 
   async populateKBDropdown() {
+    const select = document.getElementById('kbWizardExistingSelect');
+    if (!select) return;
+
     try {
       const kbs = await this.kbManager.listKBs();
-      const select = document.getElementById('kbWizardExistingSelect');
-      if (!select) return;
-      select.innerHTML = '<option value="">— Choose a knowledge base —</option>';
-      kbs.forEach(kb => {
-        const option = document.createElement('option');
-        option.value = kb.name;
-        option.textContent = `${kb.displayName || kb.name} (${kb.docCount} docs)`;
-        select.appendChild(option);
-      });
+      select.innerHTML = '<option value="">-- Choose a knowledge base --</option>';
+
+      if (kbs.length === 0) {
+        select.innerHTML = '<option value="">No knowledge bases found</option>';
+        return;
+      }
+
+      // Separate built-in from custom KBs
+      const builtinKBs = kbs.filter(kb => kb.builtin);
+      const customKBs = kbs.filter(kb => !kb.builtin);
+
+      // Built-in KB group
+      if (builtinKBs.length > 0) {
+        const group = document.createElement('optgroup');
+        group.label = 'Built-in';
+        builtinKBs.forEach(kb => {
+          const option = document.createElement('option');
+          option.value = kb.name;
+          if (kb.seeded) {
+            option.textContent = `${kb.displayName} (${kb.chunkCount} chunks)`;
+          } else {
+            option.textContent = `${kb.displayName} (not set up)`;
+            option.disabled = true;
+          }
+          group.appendChild(option);
+        });
+        select.appendChild(group);
+      }
+
+      // Custom KB group
+      if (customKBs.length > 0) {
+        const group = document.createElement('optgroup');
+        group.label = 'My Knowledge Bases';
+        customKBs.forEach(kb => {
+          const option = document.createElement('option');
+          option.value = kb.name;
+          option.textContent = `${kb.displayName || kb.name} (${kb.docCount} docs)`;
+          group.appendChild(option);
+        });
+        select.appendChild(group);
+      }
     } catch (err) {
       console.error('Error populating KB dropdown:', err);
+      select.innerHTML = `<option value="">Connection error: ${err.message}</option>`;
     }
   }
 
@@ -691,6 +753,7 @@ class KBUIManager {
 
   async updatePanelUI() {
     if (!this.kbManager.currentKB) return;
+    const isBuiltin = this.kbManager.isBuiltinKB();
 
     try {
       const kb = await this.kbManager.getKBDetails(this.kbManager.currentKB);
@@ -701,12 +764,44 @@ class KBUIManager {
       const sizeEl = document.getElementById('kbPanelSize');
 
       this._currentDisplayName = kb.displayName || kb.name;
-      if (nameEl) nameEl.textContent = this._currentDisplayName;
+      if (nameEl) {
+        nameEl.textContent = this._currentDisplayName;
+        // Disable rename for built-in KB
+        nameEl.classList.toggle('kb-name-editable', !isBuiltin);
+      }
       if (docsEl) docsEl.textContent = kb.docCount || 0;
       if (chunksEl) chunksEl.textContent = kb.chunkCount || 0;
       if (sizeEl) {
         const sizeKB = ((kb.size || 0) / 1024).toFixed(1);
         sizeEl.textContent = `${sizeKB} KB`;
+      }
+
+      // Toggle built-in badge
+      const builtinBadge = document.getElementById('kbBuiltinBadge');
+      if (builtinBadge) builtinBadge.style.display = isBuiltin ? 'inline-flex' : 'none';
+
+      // Toggle built-in setup prompt (shown when seeded === false)
+      const setupPrompt = document.getElementById('kbBuiltinSetupPrompt');
+      if (setupPrompt) setupPrompt.style.display = (isBuiltin && !kb.seeded) ? 'block' : 'none';
+
+      // Hide mutating controls for built-in KB
+      const clearBtn = document.getElementById('kbPanelClearBtn');
+      const deleteBtn = document.getElementById('kbPanelDeleteBtn');
+      const uploadSection = document.querySelector('.kb-section[data-kb-section="upload"]');
+
+      if (clearBtn) clearBtn.style.display = isBuiltin ? 'none' : '';
+      if (deleteBtn) deleteBtn.style.display = isBuiltin ? 'none' : '';
+      if (uploadSection) uploadSection.style.display = isBuiltin ? 'none' : '';
+
+      // Show version info for built-in KB
+      const versionEl = document.getElementById('kbBuiltinVersion');
+      if (versionEl) {
+        if (isBuiltin && kb.builtinVersion) {
+          versionEl.textContent = `v${kb.builtinVersion}`;
+          versionEl.style.display = 'inline';
+        } else {
+          versionEl.style.display = 'none';
+        }
       }
 
       // Refresh files list

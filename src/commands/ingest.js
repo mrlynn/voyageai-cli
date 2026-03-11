@@ -3,7 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 const { getDefaultModel } = require('../lib/catalog');
-const { generateEmbeddings } = require('../lib/api');
+const { generateEmbeddings, getModelBatchTokenLimit, createTokenAwareBatches } = require('../lib/api');
 const { getMongoCollection } = require('../lib/mongo');
 const ui = require('../lib/ui');
 const { formatNanoError } = require('../nano/nano-errors.js');
@@ -262,7 +262,14 @@ function registerIngest(program) {
       }
 
       const texts = documents.map(d => d[textKey]);
-      const totalBatches = Math.ceil(documents.length / opts.batchSize);
+      const ingestTokenLimit = opts.local
+        ? Infinity
+        : getModelBatchTokenLimit(ingestModel);
+      const ingestBatches = createTokenAwareBatches(texts, {
+        maxItems: opts.batchSize,
+        maxTokens: ingestTokenLimit,
+      });
+      const totalBatches = ingestBatches.length;
 
       // Dry run mode
       if (opts.dryRun) {
@@ -283,7 +290,7 @@ function registerIngest(program) {
           console.log(ui.label('File', opts.file));
           console.log(ui.label('Format', format));
           console.log(ui.label('Documents', String(documents.length)));
-          console.log(ui.label('Batches', `${totalBatches} (batch size: ${opts.batchSize})`));
+          console.log(ui.label('Batches', `${totalBatches} (batch size: up to ${opts.batchSize})`));
           console.log(ui.label('Est. tokens', `~${estimated.toLocaleString()}`));
           console.log(ui.label('Model', ingestModel));
           console.log(ui.label('Text field', textKey));
@@ -303,15 +310,17 @@ function registerIngest(program) {
         let succeeded = 0;
         let failed = 0;
         const errors = [];
+        let embedded = 0;
 
         if (!opts.quiet && !opts.json) {
           process.stderr.write('Ingesting documents...\n');
         }
 
-        for (let i = 0; i < documents.length; i += opts.batchSize) {
-          const batchNum = Math.floor(i / opts.batchSize) + 1;
-          const batch = documents.slice(i, i + opts.batchSize);
-          const batchTexts = batch.map(d => d[textKey]);
+        for (let b = 0; b < ingestBatches.length; b++) {
+          const batchNum = b + 1;
+          const indices = ingestBatches[b];
+          const batch = indices.map(i => documents[i]);
+          const batchTexts = indices.map(i => texts[i]);
 
           try {
             let embedResult;
@@ -375,10 +384,12 @@ function registerIngest(program) {
             }
           }
 
+          embedded += indices.length;
+
           // Update progress
           if (!opts.quiet && !opts.json) {
             updateProgress(
-              Math.min(i + opts.batchSize, documents.length),
+              embedded,
               documents.length,
               batchNum,
               totalBatches,

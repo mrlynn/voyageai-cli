@@ -1,7 +1,7 @@
 'use strict';
 
 const { chunk } = require('../../lib/chunker');
-const { generateEmbeddings } = require('../../lib/api');
+const { generateEmbeddings, getModelBatchTokenLimit, createTokenAwareBatches } = require('../../lib/api');
 const { getMongoCollection } = require('../../lib/mongo');
 const { loadProject } = require('../../lib/project');
 const { getDefaultModel } = require('../../lib/catalog');
@@ -31,11 +31,22 @@ async function handleVaiIngest(input) {
     };
   }
 
-  // Step 2: Embed all chunks
-  const embedResult = await generateEmbeddings(chunks, {
-    model,
-    inputType: 'document',
-  });
+  // Step 2: Embed chunks in token-aware batches
+  const tokenLimit = getModelBatchTokenLimit(model);
+  const batches = createTokenAwareBatches(chunks, { maxItems: 128, maxTokens: tokenLimit });
+
+  // Collect all embeddings across batches, preserving order
+  const allEmbeddings = new Array(chunks.length);
+  for (const indices of batches) {
+    const batchTexts = indices.map(i => chunks[i]);
+    const embedResult = await generateEmbeddings(batchTexts, {
+      model,
+      inputType: 'document',
+    });
+    for (let j = 0; j < indices.length; j++) {
+      allEmbeddings[indices[j]] = embedResult.data[j].embedding;
+    }
+  }
 
   // Step 3: Store in MongoDB
   const { client, collection: coll } = await getMongoCollection(db, collName);
@@ -43,7 +54,7 @@ async function handleVaiIngest(input) {
     const sourceLabel = input.source || 'mcp-ingest';
     const docs = chunks.map((text, i) => ({
       text,
-      embedding: embedResult.data[i].embedding,
+      embedding: allEmbeddings[i],
       source: sourceLabel,
       metadata: {
         ...(input.metadata || {}),

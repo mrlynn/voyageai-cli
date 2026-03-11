@@ -2,7 +2,7 @@
 
 const path = require('path');
 const fs = require('fs');
-const { generateEmbeddings, apiRequest } = require('../../lib/api');
+const { generateEmbeddings, apiRequest, getModelBatchTokenLimit, createTokenAwareBatches } = require('../../lib/api');
 const { getMongoCollection } = require('../../lib/mongo');
 const { loadProject, saveProject } = require('../../lib/project');
 const {
@@ -214,14 +214,19 @@ async function handleCodeIndex(input) {
 
     stats.chunksCreated = allDocs.length;
 
-    // Embed and insert in batches
-    for (let i = 0; i < allDocs.length; i += batchSize) {
-      const batch = allDocs.slice(i, i + batchSize);
-      const texts = batch.map(d => d.text);
+    // Embed and insert in token-aware batches
+    const allTexts = allDocs.map(d => d.text);
+    const tokenLimit = getModelBatchTokenLimit(model);
+    const batches = createTokenAwareBatches(allTexts, { maxItems: batchSize, maxTokens: tokenLimit });
+
+    for (let b = 0; b < batches.length; b++) {
+      const indices = batches[b];
+      const batchDocs = indices.map(i => allDocs[i]);
+      const texts = indices.map(i => allTexts[i]);
       const embedResult = await generateEmbeddings(texts, { model, inputType: 'document' });
       stats.totalTokens += embedResult.usage?.total_tokens || 0;
 
-      const docsToInsert = batch.map((doc, idx) => ({
+      const docsToInsert = batchDocs.map((doc, idx) => ({
         text: doc.text,
         embedding: embedResult.data[idx].embedding,
         metadata: doc.metadata,

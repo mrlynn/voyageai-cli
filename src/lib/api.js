@@ -5,6 +5,86 @@ const VOYAGE_API_BASE = 'https://api.voyageai.com/v1';
 const MAX_RETRIES = 3;
 
 /**
+ * Per-model maximum tokens per embedding batch.
+ * Voyage AI enforces these server-side; exceeding them returns 400.
+ */
+const MODEL_BATCH_TOKEN_LIMITS = {
+  'voyage-code-3': 120000,
+  'voyage-code-2': 120000,
+};
+const DEFAULT_BATCH_TOKEN_LIMIT = 320000;
+
+/**
+ * Safety margins applied to token limits.
+ * Our estimator uses chars/4, which is accurate for English prose but
+ * significantly undercounts for code (minified JS tokenizes at ~2.5-3
+ * chars/token). Code models get a much more aggressive margin to compensate.
+ */
+const CODE_MODEL_SAFETY = 0.50;
+const TEXT_MODEL_SAFETY = 0.85;
+
+/**
+ * Return the max estimated-tokens-per-batch for a given model.
+ * The returned value is deliberately conservative so that our chars/4
+ * estimator stays safely under the real API limit.
+ * @param {string} model
+ * @returns {number}
+ */
+function getModelBatchTokenLimit(model) {
+  const raw = MODEL_BATCH_TOKEN_LIMITS[model] || DEFAULT_BATCH_TOKEN_LIMIT;
+  const isCode = model && model.includes('code');
+  return Math.floor(raw * (isCode ? CODE_MODEL_SAFETY : TEXT_MODEL_SAFETY));
+}
+
+/**
+ * Estimate token count for a text string (~4 chars per token).
+ * @param {string} text
+ * @returns {number}
+ */
+function estimateTokens(text) {
+  return Math.ceil((text || '').length / 4);
+}
+
+/**
+ * Split an array of texts into batches that respect both a max item count
+ * and a max estimated token count.
+ *
+ * Returns an array of index-arrays so callers can map back to their
+ * original document arrays.
+ *
+ * @param {string[]} texts
+ * @param {{ maxItems?: number, maxTokens?: number }} opts
+ * @returns {number[][]} Array of index arrays, one per batch
+ */
+function createTokenAwareBatches(texts, { maxItems = 128, maxTokens = DEFAULT_BATCH_TOKEN_LIMIT } = {}) {
+  const batches = [];
+  let currentBatch = [];
+  let currentTokens = 0;
+
+  for (let i = 0; i < texts.length; i++) {
+    const tokens = estimateTokens(texts[i]);
+
+    // Start a new batch when adding this text would exceed limits,
+    // but always include at least one item per batch.
+    if (currentBatch.length > 0 &&
+        (currentBatch.length >= maxItems || currentTokens + tokens > maxTokens)) {
+      batches.push(currentBatch);
+      currentBatch = [];
+      currentTokens = 0;
+    }
+
+    currentBatch.push(i);
+    currentTokens += tokens;
+  }
+
+  if (currentBatch.length > 0) {
+    batches.push(currentBatch);
+  }
+
+  return batches;
+}
+
+/**
  * Identify the key type from its prefix.
  * @param {string} key
  * @returns {{ type: 'atlas'|'voyage'|'unknown', label: string, expectedBase: string }}
@@ -300,4 +380,7 @@ module.exports = {
   apiRequest,
   generateEmbeddings,
   generateMultimodalEmbeddings,
+  getModelBatchTokenLimit,
+  estimateTokens,
+  createTokenAwareBatches,
 };
