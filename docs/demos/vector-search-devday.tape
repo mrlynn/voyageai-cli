@@ -21,7 +21,7 @@ Type "docker run -d --name mongodb-atlas-local -p 27017:27017 mongodb/mongodb-at
 Enter
 Sleep 3s
 
-Type "sleep 5 && mongosh --eval \"db.runCommand({ ping: 1 })\""
+Type 'sleep 5 && mongosh --eval "db.runCommand({ ping: 1 })"'
 Enter
 Sleep 4s
 
@@ -30,7 +30,7 @@ Type "npm install -g voyageai-cli"
 Enter
 Sleep 5s
 
-Type "vai config set mongodb-uri \"mongodb://localhost:27017\""
+Type 'vai config set mongodb-uri "mongodb://localhost:27017"'
 Enter
 Sleep 1s
 
@@ -40,7 +40,7 @@ Enter
 Sleep 8s
 
 # Quick embed test
-Type "vai embed \"Puppy Preschool: Raising Your Puppy Right\" --local --dimensions 1024"
+Type 'vai embed "Puppy Preschool: Raising Your Puppy Right" --local --dimensions 1024'
 Enter
 Sleep 4s
 
@@ -55,12 +55,12 @@ Enter
 Sleep 4s
 
 # Query 1: semantic search (no rerank for speed)
-Type "vai query \"A man wearing a golden crown\" --db mongodb_genai_devday_vs --collection books --model voyage-4-lite --no-rerank"
+Type 'vai query "A man wearing a golden crown" --db mongodb_genai_devday_vs --collection books --model voyage-4-lite --no-rerank'
 Enter
 Sleep 5s
 
 # Query 2: with reranking
-Type "vai query \"A boy and the ocean\" --db mongodb_genai_devday_vs --collection books --model voyage-4-lite"
+Type 'vai query "A boy and the ocean" --db mongodb_genai_devday_vs --collection books --model voyage-4-lite'
 Enter
 Sleep 6s
 
