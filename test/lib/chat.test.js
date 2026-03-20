@@ -81,6 +81,38 @@ describe('resolveSourceLabel', () => {
       'Nice Title'
     );
   });
+
+  it('uses top-level fileName (playground KB chunks)', () => {
+    assert.equal(
+      resolveSourceLabel({ fileName: 'report.pdf', content: 'x', metadata: {} }),
+      'report.pdf'
+    );
+  });
+
+  it('uses metadata.path basename for bundled KB chunks', () => {
+    assert.equal(
+      resolveSourceLabel({
+        metadata: {
+          path: 'reference/embedding-models.md',
+          kbDocumentId: 'embedding-models',
+          chunkIndex: 0,
+        },
+      }),
+      'embedding-models.md'
+    );
+  });
+
+  it('uses metadata.kbDocumentId when path is missing', () => {
+    assert.equal(
+      resolveSourceLabel({ metadata: { kbDocumentId: 'local-inference-setup', chunkIndex: 0 } }),
+      'local-inference-setup'
+    );
+  });
+
+  it('shortens UUID _id for display', () => {
+    const u = '2cc8804d-dea8-4b6d-9dec-be6c3c86c918';
+    assert.equal(resolveSourceLabel({ _id: u, metadata: {} }), 'Document 2cc8804d…');
+  });
 });
 
 describe('retrieve embedFn injection', () => {

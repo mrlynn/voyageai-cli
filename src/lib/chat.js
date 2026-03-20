@@ -12,15 +12,27 @@ const { generateEmbeddings, apiRequest } = require('./api');
 const { MemoryBudget } = require('./memory-budget');
 
 /**
+ * Last segment of a path for display (bundled KB uses metadata.path like "reference/embedding-models.md").
+ * @param {string} p
+ * @returns {string}
+ */
+function sourcePathBasename(p) {
+  if (!p || typeof p !== 'string') return '';
+  const base = p.replace(/\\/g, '/').split('/').pop();
+  return base || p;
+}
+
+/**
  * Build a human-readable source label from a document.
- * Tries metadata fields that identify the document (title, name, etc.)
- * before falling back to the raw source filename.
+ * Tries metadata fields that identify the document (title, name, etc.),
+ * top-level fields used by playground ingestion (fileName), and corpus path
+ * (metadata.path) before falling back to MongoDB _id.
  */
 function resolveSourceLabel(doc) {
   const meta = doc.metadata || {};
 
   // Try common identifying fields from the document metadata
-  const identifiers = ['title', 'name', 'subject', 'heading', 'filename'];
+  const identifiers = ['title', 'name', 'subject', 'heading', 'filename', 'fileName', 'file_name'];
   for (const key of identifiers) {
     if (meta[key] && typeof meta[key] === 'string') {
       const label = meta[key];
@@ -30,12 +42,38 @@ function resolveSourceLabel(doc) {
     }
   }
 
+  // Playground KB: fileName is stored on the document root (not in metadata)
+  if (doc.fileName && typeof doc.fileName === 'string') {
+    return doc.fileName;
+  }
+
+  // Top-level path (some ingest paths)
+  if (doc.path && typeof doc.path === 'string') {
+    const base = sourcePathBasename(doc.path);
+    if (base) return base;
+  }
+
+  // Bundled KB chunks: metadata.path + kbDocumentId (see plan-kb-seed.js)
+  if (meta.path && typeof meta.path === 'string') {
+    const base = sourcePathBasename(meta.path);
+    if (base) return base;
+  }
+
+  if (meta.kbDocumentId && typeof meta.kbDocumentId === 'string') {
+    return meta.kbDocumentId;
+  }
+
   // Try top-level source field, then metadata.source
   const rawSource = doc.source || meta.source;
   if (rawSource && typeof rawSource === 'string') return rawSource;
 
-  // Fall back to _id — but flag it so callers know this is a raw ID
-  return doc._id?.toString() || 'unknown';
+  // Fall back to _id — shorten UUIDs so UIs don't show raw 36-char IDs
+  const id = doc._id?.toString();
+  if (!id) return 'unknown';
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
+    return `Document ${id.slice(0, 8)}…`;
+  }
+  return id;
 }
 
 /**
