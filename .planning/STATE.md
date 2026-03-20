@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.7
 milestone_name: Bundled Knowledge Base
 status: executing
-last_updated: "2026-03-10"
+last_updated: "2026-03-20"
 progress:
   total_phases: 4
   completed_phases: 1
@@ -18,14 +18,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-10)
 
 **Core value:** Zero-API-key path from install to working vector search, with seamless upgrade to Voyage API
-**Current focus:** v1.7 Bundled Knowledge Base -- Phase 30 complete, ready to plan Phase 31
+**Current focus:** v1.7 Bundled Knowledge Base -- Phase 31-01 library shipped (`src/lib/kb/`), Phase 31-02 next
 
 ## Current Position
 
-Phase: 31 of 33 (KB Seeding Pipeline) -- not started
-Plan: --
-Status: Ready to plan
-Last activity: 2026-03-10 -- Completed Phase 30 (KB Corpus & Manifest) -- 4 plans, 36 corpus docs, manifest verified
+Phase: 31 of 33 (KB Seeding Pipeline) -- in progress
+Plan: 31-01 complete (implementation), 31-02 pending
+Status: Executing
+Last activity: 2026-03-20 -- Phase 31-01: `resolveKbManifest`, `buildKbChunkPlan`, `confirmKbSeedEmbeddingCost` in `src/lib/kb/`
 
 Progress: [██░░░░░░░░] 25%
 
