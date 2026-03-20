@@ -3448,6 +3448,20 @@ select:focus { outline: none; border-color: var(--accent); }
   overflow-x: auto;
   white-space: pre;
 }
+.chat-message.assistant .chat-message-content.rendered .chat-mermaid-host {
+  margin: 12px 0;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-input);
+  overflow-x: auto;
+  max-width: 100%;
+}
+.chat-message.assistant .chat-message-content.rendered .chat-mermaid-host svg {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
 .chat-message.assistant .chat-message-content.rendered pre code {
   background: none;
   padding: 0;
@@ -18042,9 +18056,8 @@ function chatInputKeydown(e) {
 
 /**
  * Lightweight markdown-to-HTML renderer for assistant chat messages.
- * Handles: fenced code blocks, inline code, headings, bold, italic,
- * links, images, unordered/ordered lists, blockquotes, tables, and <hr>.
- * No external dependencies.
+ * Handles: fenced code blocks (including ```mermaid → placeholder for runChatMermaidCharts),
+ * inline code, headings, bold, italic, links, images, lists, blockquotes, tables, and <hr>.
  */
 function renderMarkdown(md) {
   // Escape HTML to prevent XSS, then selectively render markdown
@@ -18052,11 +18065,17 @@ function renderMarkdown(md) {
     return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
-  // Extract fenced code blocks first (preserve content as-is)
+  // Extract fenced code blocks first (mermaid → host for async SVG render; else <pre><code>)
   const codeBlocks = [];
-  let text = md.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => {
+  let text = md.replace(/```(\w*)\r?\n([\s\S]*?)```/g, (_, lang, code) => {
     const idx = codeBlocks.length;
-    codeBlocks.push(`<pre><code${lang ? ' data-lang="' + esc(lang) + '"' : ''}>${esc(code.replace(/\n$/, ''))}</code></pre>`);
+    const trimmed = code.replace(/\n$/, '');
+    if (String(lang).toLowerCase() === 'mermaid') {
+      const enc = encodeURIComponent(trimmed);
+      codeBlocks.push(`<div class="chat-mermaid-host" data-chat-mermaid="${enc}"></div>`);
+    } else {
+      codeBlocks.push(`<pre><code${lang ? ' data-lang="' + esc(lang) + '"' : ''}>${esc(trimmed)}</code></pre>`);
+    }
     return '\x00CB' + idx + '\x00';
   });
 
@@ -18129,7 +18148,7 @@ function renderMarkdown(md) {
   });
 
   // Paragraphs: wrap remaining text lines that aren't already wrapped in block elements
-  const blockTags = ['<h1', '<h2', '<h3', '<h4', '<hr', '<pre', '<ul', '<ol', '<table', '<blockquote'];
+  const blockTags = ['<h1', '<h2', '<h3', '<h4', '<hr', '<pre', '<ul', '<ol', '<table', '<blockquote', '<div'];
   const lines = text.split('\n');
   const result = [];
   let paraLines = [];
@@ -18156,6 +18175,64 @@ function renderMarkdown(md) {
   flushPara();
 
   return result.join('\n');
+}
+
+/**
+ * After assistant markdown is injected, render ```mermaid``` blocks as SVG (uses /vendor/mermaid.min.js).
+ */
+async function runChatMermaidCharts(root) {
+  if (!root || !root.querySelector || !root.querySelector('.chat-mermaid-host[data-chat-mermaid]')) return;
+  try {
+    await loadMermaidLib();
+    const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: isLight ? 'default' : 'dark',
+      securityLevel: 'strict',
+      themeVariables: { primaryColor: '#00D4AA', primaryTextColor: isLight ? '#001E2B' : '#E8EDEB' },
+    });
+    const hosts = root.querySelectorAll('.chat-mermaid-host[data-chat-mermaid]');
+    const nodes = [];
+    hosts.forEach((host) => {
+      const raw = host.getAttribute('data-chat-mermaid');
+      if (!raw) return;
+      let code;
+      try {
+        code = decodeURIComponent(raw);
+      } catch {
+        return;
+      }
+      const el = document.createElement('pre');
+      el.className = 'mermaid';
+      el.textContent = code;
+      host.innerHTML = '';
+      host.appendChild(el);
+      nodes.push(el);
+    });
+    if (nodes.length) {
+      if (typeof mermaid.run === 'function') {
+        await mermaid.run({ nodes });
+      } else {
+        for (let i = 0; i < nodes.length; i++) {
+          const el = nodes[i];
+          const id = 'chat-mmd-' + Date.now() + '-' + i;
+          const { svg } = await mermaid.render(id, el.textContent);
+          const wrap = document.createElement('div');
+          wrap.className = 'mermaid-svg-out';
+          wrap.innerHTML = svg;
+          el.replaceWith(wrap);
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('Chat Mermaid render failed', e);
+    root.querySelectorAll('.chat-mermaid-host[data-chat-mermaid]').forEach((host) => {
+      try {
+        const code = decodeURIComponent(host.getAttribute('data-chat-mermaid') || '');
+        host.innerHTML = '<pre class="chat-mermaid-fallback"><code>' + code.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</code></pre>';
+      } catch { /* ignore */ }
+    });
+  }
 }
 
 /**
@@ -18546,6 +18623,7 @@ async function sendChatMessage() {
               const contentEl = assistantDiv.querySelector('.chat-message-content');
               contentEl.innerHTML = renderMarkdown(fullText);
               contentEl.classList.add('rendered');
+              runChatMermaidCharts(contentEl);
             }
             sources = data.sources || [];
             if (sources.length > 0 && assistantDiv) {
@@ -23752,15 +23830,30 @@ function loadMermaidLib() {
   return new Promise((resolve, reject) => {
     if (typeof mermaid !== 'undefined') { resolve(); return; }
     const timeout = setTimeout(() => reject(new Error('Mermaid load timed out')), 15000);
-    const script = document.createElement('script');
-    script.src = '/vendor/mermaid.min.js';
-    script.onload = () => {
-      clearTimeout(timeout);
-      mermaid.initialize({ startOnLoad: false, theme: 'dark', themeVariables: { primaryColor: '#00D4AA' } });
-      resolve();
+    const initMermaid = () => {
+      if (typeof mermaid !== 'undefined') {
+        mermaid.initialize({ startOnLoad: false, theme: 'dark', themeVariables: { primaryColor: '#00D4AA' } });
+      }
     };
-    script.onerror = () => { clearTimeout(timeout); reject(new Error('Failed to load mermaid.js')); };
-    document.head.appendChild(script);
+    function tryLoad(src, isFallback) {
+      const script = document.createElement('script');
+      script.src = src;
+      script.onload = () => {
+        clearTimeout(timeout);
+        initMermaid();
+        resolve();
+      };
+      script.onerror = () => {
+        if (!isFallback) {
+          tryLoad('https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js', true);
+        } else {
+          clearTimeout(timeout);
+          reject(new Error('Failed to load mermaid.js'));
+        }
+      };
+      document.head.appendChild(script);
+    }
+    tryLoad('/vendor/mermaid.min.js', false);
   });
 }
 
