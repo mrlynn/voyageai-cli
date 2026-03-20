@@ -3247,6 +3247,71 @@ select:focus { outline: none; border-color: var(--accent); }
 .chat-not-configured .btn:hover {
   filter: brightness(1.1);
 }
+/* Bundled KB demo banner + starter chips (Phase 33) */
+.chat-kb-banner {
+  display: none;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 14px;
+  margin: 0 16px;
+  margin-top: 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 212, 170, 0.28);
+  background: rgba(0, 212, 170, 0.06);
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-dim);
+}
+.chat-kb-banner strong {
+  color: var(--accent);
+  font-size: 13px;
+}
+.chat-kb-banner code {
+  font-size: 11px;
+  background: rgba(0, 212, 170, 0.12);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+.chat-kb-banner a {
+  color: var(--accent);
+  font-weight: 600;
+}
+.chat-kb-chips-wrap {
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 16px 8px;
+}
+.chat-kb-chips-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.chat-kb-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.chat-kb-chip {
+  font-family: var(--font);
+  font-size: 12px;
+  line-height: 1.35;
+  text-align: left;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
+  color: var(--text);
+  cursor: pointer;
+  max-width: 100%;
+  transition: border-color 0.15s, background 0.15s;
+}
+.chat-kb-chip:hover {
+  border-color: var(--accent);
+  background: rgba(0, 212, 170, 0.08);
+}
 /* Responsive: collapse settings nav on small screens */
 @media (max-width: 768px) {
   .settings-layout {
@@ -9970,6 +10035,19 @@ Reranking models rescore initial search results to improve relevance ordering.</
       <div class="chat-not-configured-icon">💬</div>
       <p>Chat requires an LLM provider and database to be configured.</p>
       <button class="btn" onclick="openChatSettings()">Open Chat Settings</button>
+    </div>
+    <div class="chat-kb-banner" id="chatKbModeBanner" style="display:none;">
+      <div>
+        <strong>Bundled demo knowledge base</strong>
+      </div>
+      <div>
+        Chatting against the seeded <code>vai_kb</code> documentation in MongoDB Atlas (same as <code>vai kb setup</code>).
+        Use your own data by setting Database / Collection in Configure, or <code>vai config set default-db</code> / <code>default-collection</code>.
+      </div>
+    </div>
+    <div class="chat-kb-chips-wrap" id="chatKbChipsWrap" style="display:none;">
+      <div class="chat-kb-chips-label">Try asking</div>
+      <div class="chat-kb-chips" id="chatKbChips"></div>
     </div>
     <div class="chat-messages" id="chatMessages">
       <div class="chat-message system-msg">Chat with your knowledge base. Click <strong>Configure</strong> above to adjust your LLM provider and database.</div>
@@ -17423,10 +17501,10 @@ function saveChatSettings() {
     body: JSON.stringify(settings),
   }).catch(() => {});
   updateChatStatus();
-  // Update not-configured banner
+  // Update not-configured banner (LLM provider is required; db can come from bundled KB defaults)
   const notConfigured = document.getElementById('chatNotConfigured');
   if (notConfigured) {
-    notConfigured.style.display = (!settings.provider || !settings.db) ? 'flex' : 'none';
+    notConfigured.style.display = !settings.provider ? 'flex' : 'none';
   }
   // Refresh origin badges after save
   loadSettingsOrigins();
@@ -17450,6 +17528,74 @@ function toggleRerank() {
 
 // ── Chat Tab ──
 let chatSessionId = null;
+
+/** Curated starters (aligned with src/lib/kb/chat-resolve.js STARTER_QUESTIONS). */
+const KB_STARTER_QUESTIONS = [
+  'How do I run local embeddings with voyage-4-nano without a Voyage API key?',
+  'How does the vai chat harness and turn state machine work?',
+  'What are MRL dimensions and quantization options for Voyage embeddings?',
+  'When should I use reranking after vector search?',
+  'How do I set up MongoDB Atlas Vector Search for vai?',
+];
+
+function isChatUsingBundledKb() {
+  const kb = window.__vaiKbDefaults;
+  if (!kb || !kb.db || !kb.collection) return false;
+  const dbEl = document.getElementById('chatDb');
+  const collEl = document.getElementById('chatCollection');
+  if (!dbEl || !collEl) return false;
+  return dbEl.value.trim() === kb.db && collEl.value.trim() === kb.collection;
+}
+
+function updateKbBannerVisibility() {
+  const banner = document.getElementById('chatKbModeBanner');
+  const show = !!(window.__vaiChatKbUiModeInitial && isChatUsingBundledKb());
+  if (banner) banner.style.display = show ? 'flex' : 'none';
+  renderChatKbChips();
+  const input = document.getElementById('chatInput');
+  if (input) {
+    input.placeholder = show
+      ? 'Ask about vai, embeddings, Atlas Vector Search…'
+      : 'Ask a question about your documents...';
+  }
+}
+
+function renderChatKbChips() {
+  const wrap = document.getElementById('chatKbChipsWrap');
+  const row = document.getElementById('chatKbChips');
+  if (!wrap || !row) return;
+  if (!window.__vaiChatKbUiModeInitial || !isChatUsingBundledKb()) {
+    wrap.style.display = 'none';
+    row.innerHTML = '';
+    return;
+  }
+  wrap.style.display = 'flex';
+  if (sessionStorage.getItem('vai_kb_chip_offset') == null) {
+    sessionStorage.setItem('vai_kb_chip_offset', String(Math.floor(Math.random() * KB_STARTER_QUESTIONS.length)));
+  }
+  const start = parseInt(sessionStorage.getItem('vai_kb_chip_offset') || '0', 10) % KB_STARTER_QUESTIONS.length;
+  row.innerHTML = '';
+  for (let i = 0; i < 3; i++) {
+    const q = KB_STARTER_QUESTIONS[(start + i) % KB_STARTER_QUESTIONS.length];
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'chat-kb-chip';
+    btn.textContent = q;
+    btn.addEventListener('click', () => {
+      const input = document.getElementById('chatInput');
+      if (input) {
+        input.value = q;
+        input.style.height = 'auto';
+        sendChatMessage();
+      }
+    });
+    row.appendChild(btn);
+  }
+}
+
+function chatSourcesSummaryLabel() {
+  return isChatUsingBundledKb() ? 'How this answer was found' : 'Sources';
+}
 
 function updateHealthDots(config) {
   var dots = [
@@ -17648,18 +17794,23 @@ async function loadChatConfig() {
     // Initialize embedding dropdown (availability, badges, auto-default)
     await initEmbeddingDropdown();
     updateHealthDots(data);
+    window.__vaiChatKbUiModeInitial = !!data.kbUiMode;
+    window.__vaiKbDefaults = data.kbDefaults || null;
     updateChatStatus();
     showOnboardingBanner(data);
     // Show not-configured banner if incomplete
     const notConfigured = document.getElementById('chatNotConfigured');
     if (notConfigured) {
-      notConfigured.style.display = (!data.provider || !data.db) ? 'flex' : 'none';
+      notConfigured.style.display = !data.provider ? 'flex' : 'none';
     }
   } catch {
+    window.__vaiChatKbUiModeInitial = false;
+    window.__vaiKbDefaults = null;
     // No config — show not-configured banner and onboarding
     const notConfigured = document.getElementById('chatNotConfigured');
     if (notConfigured) notConfigured.style.display = 'flex';
     showOnboardingBanner({});
+    updateKbBannerVisibility();
   }
 }
 
@@ -17776,8 +17927,13 @@ function updateChatStatus() {
     : 'No provider';
   const modeLabel = mode === 'agent' ? 'Agent' : 'Pipeline';
   document.getElementById('chatStatusProvider').textContent = `${providerLabel} (${modeLabel})`;
+  const kb = window.__vaiKbDefaults;
+  const bundled = kb && db === kb.db && collection === kb.collection;
   document.getElementById('chatStatusDb').textContent =
-    (db && collection) ? `${db}.${collection}` : (mode === 'agent' ? 'Agent discovers' : 'No database');
+    (db && collection)
+      ? (bundled ? `${db}.${collection} (bundled KB)` : `${db}.${collection}`)
+      : (mode === 'agent' ? 'Agent discovers' : 'No database');
+  updateKbBannerVisibility();
 }
 
 async function chatProviderChanged() {
@@ -18168,13 +18324,15 @@ function addChatMessage(role, content, sources) {
   if (sources && sources.length > 0) {
     const details = document.createElement('details');
     details.className = 'chat-sources';
+    details.open = !!isChatUsingBundledKb();
     const summary = document.createElement('summary');
-    summary.textContent = `${sources.length} source${sources.length > 1 ? 's' : ''}`;
+    summary.textContent = chatSourcesSummaryLabel();
     details.appendChild(summary);
     const ul = document.createElement('ul');
     sources.forEach(s => {
       const li = document.createElement('li');
-      li.textContent = `${s.source} (${s.score?.toFixed(2) || 'N/A'})`;
+      const chunkNote = s.chunks > 1 ? ` — ${s.chunks} chunks` : '';
+      li.textContent = `${s.source} (${s.score?.toFixed(2) || 'N/A'})${chunkNote}`;
       ul.appendChild(li);
     });
     details.appendChild(ul);
@@ -18206,10 +18364,7 @@ async function sendChatMessage() {
     addChatMessage('system-msg', 'Please select an LLM provider in <a href="#" onclick="openChatSettings();return false;">Chat Settings</a>.');
     return;
   }
-  if (!isAgent && (!db || !collection)) {
-    addChatMessage('system-msg', 'Please configure a database and collection in <a href="#" onclick="openChatSettings();return false;">Chat Settings</a>.');
-    return;
-  }
+  // Pipeline mode: empty db/collection is OK — server resolves bundled KB (same as vai chat).
 
   // Show user message
   addChatMessage('user', query);
@@ -18240,7 +18395,15 @@ async function sendChatMessage() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        query, db, collection, provider, model, maxDocs, rerank, systemPrompt, mode,
+        query,
+        db: db || undefined,
+        collection: collection || undefined,
+        provider,
+        model,
+        maxDocs,
+        rerank,
+        systemPrompt,
+        mode,
         textField: (window.kbUI && window.kbUI._overrideTextField) || 'content',
         index: (window.kbUI && window.kbUI._overrideIndex) || undefined,
         embeddingModel: document.getElementById('chatEmbeddingModel').value,
@@ -18375,13 +18538,15 @@ async function sendChatMessage() {
             if (sources.length > 0 && assistantDiv) {
               const details = document.createElement('details');
               details.className = 'chat-sources';
+              details.open = !!isChatUsingBundledKb();
               const summary = document.createElement('summary');
-              summary.textContent = `${sources.length} source${sources.length > 1 ? 's' : ''}`;
+              summary.textContent = chatSourcesSummaryLabel();
               details.appendChild(summary);
               const ul = document.createElement('ul');
               sources.forEach(s => {
                 const li = document.createElement('li');
-                li.textContent = `${s.source} (${s.score?.toFixed(2) || 'N/A'})`;
+                const chunkNote = s.chunks > 1 ? ` — ${s.chunks} chunks` : '';
+                li.textContent = `${s.source} (${s.score?.toFixed(2) || 'N/A'})${chunkNote}`;
                 ul.appendChild(li);
               });
               details.appendChild(ul);

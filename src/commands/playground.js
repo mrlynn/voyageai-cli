@@ -703,17 +703,23 @@ function createPlaygroundServer() {
 
         const { resolveKbChatTarget } = require('../lib/kb/chat-resolve');
         const kbDefaults = resolveKbChatTarget();
+        const defaultDb = getConfigValue('defaultDb');
+        const defaultCollection = getConfigValue('defaultCollection');
+        const db = proj.db || defaultDb || kbDefaults.db || null;
+        const collection = proj.collection || defaultCollection || kbDefaults.collection || null;
+        const kbUiMode = !proj.db && !proj.collection && !defaultDb && !defaultCollection;
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({
           provider: llmConfig.provider || null,
           model: llmConfig.model || null,
           hasLLMKey: !!llmConfig.apiKey || llmConfig.provider === 'ollama',
-          db: proj.db || kbDefaults.db || null,
-          collection: proj.collection || kbDefaults.collection || null,
+          db,
+          collection,
           chat: proj.chat || {},
           mode: proj.chat?.mode || 'pipeline',
           embeddingModel: proj.chat?.embeddingModel || kbDefaults.embeddingModel || null,
           kbDefaults,
+          kbUiMode,
           nanoAvailable,
           hasApiKey,
           ollamaAvailable,
