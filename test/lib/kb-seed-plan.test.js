@@ -49,6 +49,20 @@ test('buildKbChunkPlan produces chunks with KB metadata', () => {
   assert.ok(first.text.length > 0);
 });
 
+test('buildKbChunkPlan with documentIds filters to one doc', () => {
+  const manifest = require('../../src/kb/corpus/manifest.json');
+  const oneId = manifest.documents[0].id;
+  const { chunks, totalChunks } = buildKbChunkPlan({
+    manifest,
+    corpusRoot: CORPUS_ROOT,
+    documentIds: new Set([oneId]),
+  });
+  assert.ok(totalChunks > 0);
+  for (const c of chunks) {
+    assert.strictEqual(c.metadata.kbDocumentId, oneId);
+  }
+});
+
 test('confirmKbSeedEmbeddingCost dryRun does not require TTY', async () => {
   const r = await confirmKbSeedEmbeddingCost({
     totalTokens: 1000,

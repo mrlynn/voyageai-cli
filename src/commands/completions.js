@@ -22,10 +22,11 @@ _vai_completions() {
   prev="\${COMP_WORDS[COMP_CWORD-1]}"
 
   # Top-level commands
-  commands="embed rerank store search index models ping config demo explain similarity ingest estimate init chunk query pipeline eval app completions help"
+  commands="embed rerank store search index models ping config demo explain similarity ingest estimate init chunk query pipeline eval kb app completions help"
 
   # Subcommands
   local index_subs="create list delete"
+  local kb_subs="setup status reset update search"
   local config_subs="set get delete path reset"
 
   # Global flags
@@ -125,6 +126,30 @@ _vai_completions() {
       COMPREPLY=( \$(compgen -W "--db --collection --field --index --model --dimensions --strategy --chunk-size --overlap --batch-size --text-field --extensions --ignore --create-index --dry-run --json --quiet --help" -- "\$cur") )
       return 0
       ;;
+    kb)
+      if [[ \$COMP_CWORD -eq 2 ]]; then
+        COMPREPLY=( \$(compgen -W "\$kb_subs" -- "\$cur") )
+      else
+        case "\${COMP_WORDS[2]}" in
+          setup)
+            COMPREPLY=( \$(compgen -W "--db --collection --field --index --model --dry-run --yes --use-bundled --json --quiet --help" -- "\$cur") )
+            ;;
+          status)
+            COMPREPLY=( \$(compgen -W "--db --collection --json --quiet --help" -- "\$cur") )
+            ;;
+          reset)
+            COMPREPLY=( \$(compgen -W "--db --collection --yes --json --quiet --help" -- "\$cur") )
+            ;;
+          update)
+            COMPREPLY=( \$(compgen -W "--db --collection --index --model --use-bundled --yes --json --quiet --help" -- "\$cur") )
+            ;;
+          search)
+            COMPREPLY=( \$(compgen -W "--db --collection --index --model --limit --rerank --json --quiet --help" -- "\$cur") )
+            ;;
+        esac
+      fi
+      return 0
+      ;;
     eval)
       COMPREPLY=( \$(compgen -W "--test-set --mode --db --collection --index --field --model --models --dimensions --limit --k-values --rerank --no-rerank --rerank-model --top-k --text-field --id-field --compare --json --quiet --help" -- "\$cur") )
       return 0
@@ -208,6 +233,7 @@ _vai() {
     'chunk:Chunk documents for embedding'
     'query:Search + rerank in one shot'
     'pipeline:Chunk, embed, and store documents'
+    'kb:Bundled documentation KB (seed, status, search in Atlas)'
     'eval:Evaluate retrieval & reranking quality (MRR, NDCG, recall)'
     'app:Launch the desktop app (Electron)'
     'completions:Generate shell completion scripts'
@@ -324,6 +350,79 @@ _vai() {
                     '--collection[Collection name]:collection:' \\
                     '--index-name[Index name]:name:' \\
                     '--json[Machine-readable JSON output]' \\
+                    '(-q --quiet)'{-q,--quiet}'[Suppress non-essential output]'
+                  ;;
+              esac
+              ;;
+          esac
+          ;;
+        kb)
+          local -a kb_commands
+          kb_commands=(
+            'setup:Seed bundled KB into Atlas'
+            'status:Show KB version and index status'
+            'reset:Clear KB documents and re-seed'
+            'update:Incremental re-embed changed docs'
+            'search:Vector search the KB collection'
+          )
+          _arguments -C \\
+            '1:kb command:->kb_command' \\
+            '*::arg:->kb_args'
+          case \$state in
+            kb_command)
+              _describe 'kb command' kb_commands
+              ;;
+            kb_args)
+              case \$words[1] in
+                setup)
+                  _arguments \\
+                    '--db[Database name]:database:' \\
+                    '--collection[Collection name]:collection:' \\
+                    '--field[Embedding field]:field:' \\
+                    '(-n --index)'{-n,--index}'[Vector index name]:index:' \\
+                    '(-m --model)'{-m,--model}'[Embedding model]:model:(\$models)' \\
+                    '--dry-run[Estimate cost only]' \\
+                    '(-y --yes)'{-y,--yes}'[Skip cost confirmation]' \\
+                    '--use-bundled[Skip remote manifest]' \\
+                    '--json[JSON output]' \\
+                    '(-q --quiet)'{-q,--quiet}'[Suppress non-essential output]'
+                  ;;
+                status)
+                  _arguments \\
+                    '--db[Database name]:database:' \\
+                    '--collection[Collection name]:collection:' \\
+                    '--json[JSON output]' \\
+                    '(-q --quiet)'{-q,--quiet}'[Suppress non-essential output]'
+                  ;;
+                reset)
+                  _arguments \\
+                    '--db[Database name]:database:' \\
+                    '--collection[Collection name]:collection:' \\
+                    '(-y --yes)'{-y,--yes}'[Skip confirm]' \\
+                    '--json[JSON output]' \\
+                    '(-q --quiet)'{-q,--quiet}'[Suppress non-essential output]'
+                  ;;
+                update)
+                  _arguments \\
+                    '--db[Database name]:database:' \\
+                    '--collection[Collection name]:collection:' \\
+                    '(-n --index)'{-n,--index}'[Vector index name]:index:' \\
+                    '(-m --model)'{-m,--model}'[Embedding model]:model:(\$models)' \\
+                    '--use-bundled[Skip remote manifest]' \\
+                    '(-y --yes)'{-y,--yes}'[Skip cost confirmation]' \\
+                    '--json[JSON output]' \\
+                    '(-q --quiet)'{-q,--quiet}'[Suppress non-essential output]'
+                  ;;
+                search)
+                  _arguments \\
+                    '1:query text:' \\
+                    '--db[Database name]:database:' \\
+                    '--collection[Collection name]:collection:' \\
+                    '(-n --index)'{-n,--index}'[Vector index name]:index:' \\
+                    '(-m --model)'{-m,--model}'[Embedding model]:model:(\$models)' \\
+                    '(-l --limit)'{-l,--limit}'[Max results]:limit:' \\
+                    '--rerank[Enable reranking]' \\
+                    '--json[JSON output]' \\
                     '(-q --quiet)'{-q,--quiet}'[Suppress non-essential output]'
                   ;;
               esac

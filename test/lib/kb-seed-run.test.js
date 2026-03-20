@@ -47,7 +47,10 @@ test('runKbSeed embeds, inserts, creates index, returns counts', async () => {
   const mock = createMockMongo();
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'vai-kb-seed-'));
   const seedConfigPath = path.join(tmpDir, 'seed-config.json');
-  const manifest = { version: '1.0.0-test' };
+  const manifest = {
+    version: '1.0.0-test',
+    documents: [{ id: 'a', checksum: 'abc'.repeat(10) }],
+  };
   const chunks = [
     {
       text: 'hello world',

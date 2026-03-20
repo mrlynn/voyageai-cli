@@ -18,14 +18,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-10)
 
 **Core value:** Zero-API-key path from install to working vector search, with seamless upgrade to Voyage API
-**Current focus:** v1.7 Bundled Knowledge Base -- Phase 31-01 library shipped (`src/lib/kb/`), Phase 31-02 next
+**Current focus:** v1.7 Bundled Knowledge Base -- Phase 32 `vai kb` shipped; Phase 33 (self-demo chat) next
 
 ## Current Position
 
-Phase: 31 of 33 (KB Seeding Pipeline) -- complete (library)
-Plan: 31-01 + 31-02 implemented; Phase 32 CLI next
+Phase: 32 of 33 (KB CLI) -- complete
+Plan: `vai kb setup|status|reset|update|search` + bash/zsh completions
 Status: Executing
-Last activity: 2026-03-20 -- Phase 31-02: `runKbSeed`, `persistKbSeedingState`, tagged `vai_kb` docs, vector index, `config.kb`
+Last activity: 2026-03-20 -- Phase 32: KB CLI wired to Phase 31 libs; incremental update + `kbSearchQuery`
 
 Progress: [██░░░░░░░░] 25%
 

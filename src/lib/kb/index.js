@@ -8,11 +8,13 @@
 const resolve = require('./resolve-manifest');
 const plan = require('./plan-kb-seed');
 const seed = require('./seed');
+const retrieval = require('./retrieval');
 const fm = require('./front-matter');
 
 module.exports = {
   ...resolve,
   ...plan,
   ...seed,
+  ...retrieval,
   parseFrontMatter: fm.parseFrontMatter,
 };

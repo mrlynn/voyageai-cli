@@ -15,6 +15,15 @@ const DEFAULT_FIELD = 'embedding';
 const DEFAULT_INDEX_NAME = 'vai_kb_vector_index';
 
 /**
+ * @param {object} manifest
+ * @returns {Record<string, string>}
+ */
+function checksumFromManifest(manifest) {
+  if (!Array.isArray(manifest.documents)) return {};
+  return Object.fromEntries(manifest.documents.map((d) => [d.id, d.checksum]));
+}
+
+/**
  * Merge KB seeding metadata into global config under `kb` (SEED-05).
  * Does not touch `db` / `collection` top-level keys used for non-KB workflows.
  *
@@ -27,6 +36,7 @@ const DEFAULT_INDEX_NAME = 'vai_kb_vector_index';
  * @param {string} params.indexName
  * @param {string} params.embeddingModel
  * @param {number} params.chunkCount
+ * @param {Record<string, string>} [params.documentChecksums] - manifest doc id → checksum (incremental updates merge via full replace)
  * @param {string} [params.configPath]
  */
 function persistKbSeedingState({
@@ -38,9 +48,13 @@ function persistKbSeedingState({
   indexName,
   embeddingModel,
   chunkCount,
+  documentChecksums,
   configPath,
 }) {
   const config = loadConfig(configPath);
+  const checksums =
+    documentChecksums ||
+    checksumFromManifest(manifest);
   config.kb = {
     ...(config.kb || {}),
     corpusSource,
@@ -52,6 +66,7 @@ function persistKbSeedingState({
     embeddingModel,
     lastSeededAt: new Date().toISOString(),
     chunkCount,
+    documentChecksums: checksums,
   };
   saveConfig(config, configPath);
 }
@@ -180,6 +195,7 @@ async function runKbSeed({
       embeddingModel: model,
       chunkCount: chunks.length,
       configPath,
+      documentChecksums: checksumFromManifest(manifest),
     });
 
     return {
@@ -193,9 +209,142 @@ async function runKbSeed({
   }
 }
 
+/**
+ * Incremental KB update: remove chunks for changed/removed docs, embed+insert only changed docs.
+ * @param {object} params
+ * @param {string[]} params.changedDocumentIds
+ * @param {string[]} params.removedDocumentIds
+ * @param {object} params.manifest
+ * @param {string} params.corpusRoot
+ * @param {'remote'|'bundled'} params.corpusSource
+ * @param {string} params.model
+ * @param {string} [params.db]
+ * @param {string} [params.collection]
+ * @param {string} [params.field]
+ * @param {string} [params.indexName]
+ * @param {number} [params.dimensions]
+ * @param {number} [params.batchSize]
+ * @param {number} [params.storeBatchSize]
+ * @param {string} [params.configPath]
+ * @param {typeof generateEmbeddings} [params.generateEmbeddings]
+ * @param {typeof getMongoCollection} [params.getMongoCollection]
+ */
+async function runKbIncrementalUpdate({
+  changedDocumentIds,
+  removedDocumentIds,
+  manifest,
+  corpusRoot,
+  corpusSource,
+  model,
+  db = DEFAULT_DB,
+  collection = DEFAULT_COLLECTION,
+  field = DEFAULT_FIELD,
+  indexName = DEFAULT_INDEX_NAME,
+  dimensions,
+  batchSize = 25,
+  storeBatchSize = 100,
+  configPath,
+  generateEmbeddings: genEmb = generateEmbeddings,
+  getMongoCollection: getMongo = getMongoCollection,
+}) {
+  const dims = dimensions != null ? dimensions : getDefaultDimensions();
+  const changedSet = new Set(changedDocumentIds);
+  const removed = removedDocumentIds || [];
+
+  let client;
+  const { client: c, collection: coll } = await getMongo(db, collection);
+  client = c;
+
+  try {
+    if (removed.length) {
+      await coll.deleteMany({
+        [KB_MARKER_FIELD]: KB_BUNDLE_MARKER,
+        'metadata.kbDocumentId': { $in: removed },
+      });
+    }
+    for (const id of changedSet) {
+      await coll.deleteMany({
+        [KB_MARKER_FIELD]: KB_BUNDLE_MARKER,
+        'metadata.kbDocumentId': id,
+      });
+    }
+
+    const { buildKbChunkPlan } = require('./plan-kb-seed');
+    const { chunks } = buildKbChunkPlan({
+      manifest,
+      corpusRoot,
+      documentIds: changedSet,
+    });
+
+    let totalInserted = 0;
+    let totalApiTokens = 0;
+
+    if (chunks.length > 0) {
+      const embeddings = new Array(chunks.length);
+      let embeddedCount = 0;
+      for (let bi = 0; bi < chunks.length; bi += batchSize) {
+        const batch = chunks.slice(bi, bi + batchSize);
+        const texts = batch.map((x) => x.text);
+        const result = await genEmb(texts, {
+          model,
+          inputType: 'document',
+          dimensions: dims,
+        });
+        totalApiTokens += result.usage?.total_tokens || 0;
+        for (let j = 0; j < result.data.length; j++) {
+          embeddings[embeddedCount + j] = result.data[j].embedding;
+        }
+        embeddedCount += batch.length;
+      }
+
+      const documents = chunks.map((chunk, i) => ({
+        text: chunk.text,
+        [field]: embeddings[i],
+        metadata: chunk.metadata,
+        [KB_MARKER_FIELD]: KB_BUNDLE_MARKER,
+        _model: model,
+        _embeddedAt: new Date(),
+      }));
+
+      for (let i = 0; i < documents.length; i += storeBatchSize) {
+        const batch = documents.slice(i, i + storeBatchSize);
+        const ins = await coll.insertMany(batch);
+        totalInserted += ins.insertedCount;
+      }
+    }
+
+    const chunkCount = await coll.countDocuments({ [KB_MARKER_FIELD]: KB_BUNDLE_MARKER });
+
+    persistKbSeedingState({
+      manifest,
+      corpusSource,
+      db,
+      collection,
+      field,
+      indexName,
+      embeddingModel: model,
+      chunkCount,
+      configPath,
+      documentChecksums: checksumFromManifest(manifest),
+    });
+
+    return {
+      insertedCount: totalInserted,
+      totalApiTokens,
+      chunkCount,
+      changedCount: changedSet.size,
+      removedCount: removed.length,
+    };
+  } finally {
+    if (client) await client.close();
+  }
+}
+
 module.exports = {
   runKbSeed,
+  runKbIncrementalUpdate,
   persistKbSeedingState,
+  checksumFromManifest,
   KB_BUNDLE_MARKER,
   KB_MARKER_FIELD,
   DEFAULT_DB,

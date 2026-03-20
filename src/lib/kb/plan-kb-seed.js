@@ -25,9 +25,10 @@ function effectiveChunkStrategy(baseStrategy, filePath) {
  * @param {object} params
  * @param {object} params.manifest - validated manifest (see resolve-manifest)
  * @param {string} params.corpusRoot - absolute path to kb corpus root (directory containing manifest docs)
+ * @param {Set<string>|string[]} [params.documentIds] - if set, only chunk these manifest document ids (incremental update)
  * @returns {{ chunks: object[], totalTokens: number, totalChunks: number, manifest: object }}
  */
-function buildKbChunkPlan({ manifest, corpusRoot }) {
+function buildKbChunkPlan({ manifest, corpusRoot, documentIds }) {
   const chunkSize = manifest.chunkSize;
   const overlap = manifest.chunkOverlap;
   const baseStrategy = manifest.chunkStrategy;
@@ -35,10 +36,15 @@ function buildKbChunkPlan({ manifest, corpusRoot }) {
     throw new Error(`Unsupported chunkStrategy in manifest: ${baseStrategy}`);
   }
 
+  const idFilter = documentIds
+    ? new Set(Array.isArray(documentIds) ? documentIds : [...documentIds])
+    : null;
+
   /** @type {object[]} */
   const chunks = [];
 
   for (const doc of manifest.documents) {
+    if (idFilter && !idFilter.has(doc.id)) continue;
     const absPath = path.join(corpusRoot, doc.path);
     if (!fs.existsSync(absPath)) {
       throw new Error(`KB corpus file missing: ${doc.path} (expected at ${absPath})`);
