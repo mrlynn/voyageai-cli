@@ -95,9 +95,9 @@ describe('completions command', () => {
 });
 
 describe('generateBashCompletions', () => {
-  it('includes all 22 commands (including kb, app and completions)', () => {
+  it('includes all 23 commands (including chat, kb, app and completions)', () => {
     const script = generateBashCompletions();
-    const commands = ['embed', 'rerank', 'store', 'search', 'index', 'models', 'ping', 'config', 'demo', 'explain', 'similarity', 'ingest', 'estimate', 'init', 'chunk', 'query', 'pipeline', 'eval', 'kb', 'app', 'completions', 'help'];
+    const commands = ['embed', 'rerank', 'store', 'search', 'index', 'models', 'ping', 'config', 'demo', 'explain', 'similarity', 'ingest', 'estimate', 'init', 'chunk', 'query', 'pipeline', 'chat', 'eval', 'kb', 'app', 'completions', 'help'];
     for (const cmd of commands) {
       assert.ok(script.includes(cmd), `should include command: ${cmd}`);
     }
@@ -131,6 +131,12 @@ describe('generateBashCompletions', () => {
     assert.ok(script.includes('setup status reset update search'), 'should include kb subcommands');
   });
 
+  it('includes chat flags including --no-kb-fallback', () => {
+    const script = generateBashCompletions();
+    assert.ok(script.includes('chat)'), 'should include chat case');
+    assert.ok(script.includes('--no-kb-fallback'), 'should include --no-kb-fallback for chat');
+  });
+
   it('includes input-type values', () => {
     const script = generateBashCompletions();
     assert.ok(script.includes('query document'), 'should include input-type values');
@@ -145,7 +151,7 @@ describe('generateZshCompletions', () => {
 
   it('includes all commands with descriptions', () => {
     const script = generateZshCompletions();
-    const commands = ['embed', 'rerank', 'store', 'search', 'index', 'models', 'ping', 'config', 'demo', 'explain', 'similarity', 'ingest', 'kb', 'completions'];
+    const commands = ['embed', 'rerank', 'store', 'search', 'index', 'models', 'ping', 'config', 'demo', 'explain', 'similarity', 'ingest', 'chat', 'kb', 'completions'];
     for (const cmd of commands) {
       assert.ok(script.includes(`'${cmd}:`), `should include command with description: ${cmd}`);
     }

@@ -291,6 +291,7 @@ class KBUIManager {
     // Persist and update header status
     if (typeof saveChatSettings === 'function') saveChatSettings();
     if (typeof updateChatStatus === 'function') updateChatStatus();
+    if (typeof updateKbBannerVisibility === 'function') updateKbBannerVisibility();
   }
 
   // ── Initial load ──

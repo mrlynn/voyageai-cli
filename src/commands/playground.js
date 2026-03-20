@@ -727,6 +727,14 @@ function createPlaygroundServer() {
         return;
       }
 
+      // API: Curated KB starter questions (same list as src/lib/kb/chat-resolve.js)
+      if (req.method === 'GET' && req.url === '/api/chat/starters') {
+        const { STARTER_QUESTIONS } = require('../lib/kb/chat-resolve');
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ questions: STARTER_QUESTIONS }));
+        return;
+      }
+
       // API: Chat memory status — returns current memory utilization
       if (req.method === 'GET' && req.url === '/api/chat/memory') {
         const { MemoryBudget } = require('../lib/memory-budget');

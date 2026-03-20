@@ -17529,7 +17529,7 @@ function toggleRerank() {
 // ── Chat Tab ──
 let chatSessionId = null;
 
-/** Curated starters (aligned with src/lib/kb/chat-resolve.js STARTER_QUESTIONS). */
+/** Fallback starters if GET /api/chat/starters fails (keep in sync with chat-resolve STARTER_QUESTIONS). */
 const KB_STARTER_QUESTIONS = [
   'How do I run local embeddings with voyage-4-nano without a Voyage API key?',
   'How does the vai chat harness and turn state machine work?',
@@ -17569,14 +17569,17 @@ function renderChatKbChips() {
     row.innerHTML = '';
     return;
   }
+  const list = (window.__vaiKbChatStarters && window.__vaiKbChatStarters.length)
+    ? window.__vaiKbChatStarters
+    : KB_STARTER_QUESTIONS;
   wrap.style.display = 'flex';
   if (sessionStorage.getItem('vai_kb_chip_offset') == null) {
-    sessionStorage.setItem('vai_kb_chip_offset', String(Math.floor(Math.random() * KB_STARTER_QUESTIONS.length)));
+    sessionStorage.setItem('vai_kb_chip_offset', String(Math.floor(Math.random() * list.length)));
   }
-  const start = parseInt(sessionStorage.getItem('vai_kb_chip_offset') || '0', 10) % KB_STARTER_QUESTIONS.length;
+  const start = parseInt(sessionStorage.getItem('vai_kb_chip_offset') || '0', 10) % list.length;
   row.innerHTML = '';
   for (let i = 0; i < 3; i++) {
-    const q = KB_STARTER_QUESTIONS[(start + i) % KB_STARTER_QUESTIONS.length];
+    const q = list[(start + i) % list.length];
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'chat-kb-chip';
@@ -17803,6 +17806,16 @@ async function loadChatConfig() {
     if (notConfigured) {
       notConfigured.style.display = !data.provider ? 'flex' : 'none';
     }
+    try {
+      const sr = await fetch('/api/chat/starters');
+      if (sr.ok) {
+        const sj = await sr.json();
+        if (Array.isArray(sj.questions) && sj.questions.length) {
+          window.__vaiKbChatStarters = sj.questions;
+        }
+      }
+    } catch { /* offline / stale */ }
+    updateKbBannerVisibility();
   } catch {
     window.__vaiChatKbUiModeInitial = false;
     window.__vaiKbDefaults = null;

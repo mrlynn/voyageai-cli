@@ -22,7 +22,7 @@ _vai_completions() {
   prev="\${COMP_WORDS[COMP_CWORD-1]}"
 
   # Top-level commands
-  commands="embed rerank store search index models ping config demo explain similarity ingest estimate init chunk query pipeline eval kb app completions help"
+  commands="embed rerank store search index models ping config demo explain similarity ingest estimate init chunk query pipeline chat eval kb app completions help"
 
   # Subcommands
   local index_subs="create list delete"
@@ -124,6 +124,10 @@ _vai_completions() {
       ;;
     pipeline)
       COMPREPLY=( \$(compgen -W "--db --collection --field --index --model --dimensions --strategy --chunk-size --overlap --batch-size --text-field --extensions --ignore --create-index --dry-run --json --quiet --help" -- "\$cur") )
+      return 0
+      ;;
+    chat)
+      COMPREPLY=( \$(compgen -W "--db --collection --session --llm-provider --llm-model --llm-api-key --llm-base-url --mode --max-context-docs --max-turns --no-history --no-rerank --local --embedding-model --no-stream --system-prompt --text-field --filter --memory-strategy --estimate --replay --list --all --json --quiet --no-kb-fallback --help" -- "\$cur") )
       return 0
       ;;
     kb)
@@ -233,6 +237,7 @@ _vai() {
     'chunk:Chunk documents for embedding'
     'query:Search + rerank in one shot'
     'pipeline:Chunk, embed, and store documents'
+    'chat:RAG chat with your knowledge base or bundled KB'
     'kb:Bundled documentation KB (seed, status, search in Atlas)'
     'eval:Evaluate retrieval & reranking quality (MRR, NDCG, recall)'
     'app:Launch the desktop app (Electron)'
@@ -586,6 +591,35 @@ _vai() {
             '--dry-run[Preview without executing]' \\
             '--json[JSON output]' \\
             '(-q --quiet)'{-q,--quiet}'[Suppress non-essential output]'
+          ;;
+        chat)
+          _arguments \\
+            '--db[MongoDB database]:database:' \\
+            '--collection[Embedded documents collection]:collection:' \\
+            '--session[Resume chat session id]:id:' \\
+            '--llm-provider[LLM provider]:provider:(anthropic openai ollama)' \\
+            '--llm-model[LLM model]:model:' \\
+            '--llm-api-key[LLM API key]:key:' \\
+            '--llm-base-url[Ollama base URL]:url:' \\
+            '--mode[Chat mode]:mode:(pipeline agent)' \\
+            '--max-context-docs[Max retrieved docs]:n:' \\
+            '--max-turns[Max conversation turns]:n:' \\
+            '--no-history[In-memory only]' \\
+            '--no-rerank[Skip reranking]' \\
+            '--local[Use voyage-4-nano local embeddings]' \\
+            '--embedding-model[Embedding model]:model:(voyage-4-nano voyage-4-lite voyage-4 voyage-4-large)' \\
+            '--no-stream[Wait for full response]' \\
+            '--system-prompt[Extra system instructions]:text:' \\
+            '--text-field[Document text field]:field:' \\
+            '--filter[Vector pre-filter JSON]:json:' \\
+            '--memory-strategy[History strategy]:strategy:(sliding_window summarization hierarchical)' \\
+            '--estimate[Show cost estimate and exit]' \\
+            '--replay[Replay session id]:id:' \\
+            '--list[List recent sessions]' \\
+            '--all[Include archived sessions with --list]' \\
+            '--no-kb-fallback[Do not use bundled KB when db/collection unset]' \\
+            '--json[JSON output per turn]' \\
+            '(-q --quiet)'{-q,--quiet}'[Suppress decorative output]'
           ;;
         eval)
           _arguments \\
