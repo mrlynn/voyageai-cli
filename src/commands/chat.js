@@ -7,8 +7,14 @@ const { chatTurn, agentChatTurn } = require('../lib/chat');
 const { TurnOrchestrator } = require('../lib/turn-orchestrator');
 const { loadProject } = require('../lib/project');
 const { getMongoCollection } = require('../lib/mongo');
-const { setConfigValue, loadConfig } = require('../lib/config');
-const { KB_COLLECTION } = require('../kb/seeder');
+const { setConfigValue, getConfigValue } = require('../lib/config');
+const {
+  resolveKbChatTarget,
+  mergeKbVectorFilter,
+  countKbTaggedDocuments,
+  getStarterQuestionsForSession,
+  KB_MODE_SYSTEM_PROMPT,
+} = require('../lib/kb/chat-resolve');
 const { runWizard } = require('../lib/wizard');
 const { createCLIRenderer } = require('../lib/wizard-cli');
 const { chatSetupSteps } = require('../lib/wizard-steps-chat');
@@ -20,25 +26,6 @@ const fs = require('fs');
 const { moments } = require('../lib/robot-moments');
 const { ChatSessionStats } = require('../lib/chat-session-stats');
 const { LABELS } = require('../lib/turn-state');
-
-const KB_SYSTEM_PROMPT = `You are vai, the Voyage AI CLI assistant. You answer questions using vai's built-in knowledge base about Voyage AI embeddings, vector search, and the vai CLI.
-
-Your knowledge covers:
-- Voyage AI embedding models (voyage-4-large, voyage-4, voyage-4-lite, voyage-4-nano)
-- Vector search with MongoDB Atlas Vector Search
-- The vai CLI: commands, configuration, workflows
-- RAG (Retrieval-Augmented Generation) patterns
-- Reranking with Voyage AI models
-- Code search and semantic similarity
-
-Be concise and practical. Include relevant vai CLI commands when helpful. Reference specific models and their tradeoffs. If the retrieved context does not cover the question, say so. Answer directly without preamble such as "Using the context of our conversation," "According to the documents retrieved," or similar. Jump straight to the answer.`;
-
-const KB_STARTER_QUESTIONS = [
-  'What embedding models does Voyage AI offer?',
-  'How do I set up vector search with vai?',
-  'What is the difference between voyage-4 and voyage-4-large?',
-  'How does reranking improve search results?',
-];
 
 /**
  * Register the chat command.
@@ -63,6 +50,7 @@ function registerChat(program) {
     .option('--local', 'Use local nano embeddings instead of Voyage API')
     .option('--embedding-model <name>', 'Embedding model: voyage-4-nano, voyage-4-lite, voyage-4, voyage-4-large')
     .option('--no-stream', 'Wait for complete response instead of streaming')
+    .option('--no-kb-fallback', 'Do not use bundled KB from ~/.vai/config when db/collection are unset')
     .option('--system-prompt <text>', 'Override the system prompt')
     .option('--text-field <name>', 'Document text field name', 'text')
     .option('--filter <json>', 'MongoDB pre-filter for vector search')
@@ -92,10 +80,22 @@ async function runChat(opts) {
   const { config: proj } = loadProject();
   const chatConf = proj.chat || {};
 
-  const globalConf = loadConfig();
-  const kbConf = globalConf.kb || {};
-  let db = opts.db || kbConf.db || (kbConf.collection ? 'vai' : null) || proj.db;
-  let collection = opts.collection || kbConf.collection || proj.collection;
+  const mode = opts.mode || chatConf.mode || 'pipeline';
+  const isAgent = mode === 'agent';
+
+  let db = opts.db || proj.db || getConfigValue('defaultDb');
+  let collection = opts.collection || proj.collection || getConfigValue('defaultCollection');
+
+  let kbMode = false;
+  let kbTarget = null;
+  if (!isAgent && opts.kbFallback !== false && !db && !collection) {
+    kbTarget = resolveKbChatTarget();
+    if (kbTarget.db && kbTarget.collection) {
+      db = kbTarget.db;
+      collection = kbTarget.collection;
+      kbMode = true;
+    }
+  }
 
   // --list: show recent sessions and exit
   if (opts.list) {
@@ -153,10 +153,12 @@ async function runChat(opts) {
   const textField = opts.textField || 'text';
   let embeddingModel = opts.embeddingModel || chatConf.embeddingModel || null;
   if (opts.local && !opts.embeddingModel) embeddingModel = 'voyage-4-nano';
-  if (!embeddingModel && kbConf.embeddingModel === 'voyage-4-nano') embeddingModel = 'voyage-4-nano';
-  let isLocalEmbed = embeddingModel === 'voyage-4-nano';
-  let isLocal = isLocalEmbed || opts.local || false;
-  let doRerank = isLocalEmbed ? false : (opts.rerank !== false);
+  if (kbMode && kbTarget?.embeddingModel && !opts.embeddingModel && !chatConf.embeddingModel) {
+    embeddingModel = kbTarget.embeddingModel;
+  }
+  const isLocalEmbed = embeddingModel === 'voyage-4-nano';
+  const isLocal = isLocalEmbed || opts.local || false;
+  const doRerank = isLocalEmbed ? false : (opts.rerank !== false);
 
   // Validate embedding model name if explicitly provided
   const validEmbedModels = ['voyage-4-nano', 'voyage-4-lite', 'voyage-4', 'voyage-4-large'];
@@ -170,37 +172,34 @@ async function runChat(opts) {
   const doStream = opts.stream !== false;
   let systemPrompt = opts.systemPrompt || chatConf.systemPrompt;
 
-  // Resolve mode
-  const mode = opts.mode || chatConf.mode || 'pipeline';
-  const isAgent = mode === 'agent';
-
   // Validate DB + collection (required for pipeline, recommended for agent)
-  let isKbMode = false;
   if (!isAgent && (!db || !collection)) {
-    const globalConfig = loadConfig();
-    if (globalConfig.kb && globalConfig.kb.version) {
-      db = globalConfig.defaultDb || 'vai';
-      collection = KB_COLLECTION;
-      isKbMode = true;
-      if (!systemPrompt) {
-        systemPrompt = KB_SYSTEM_PROMPT;
+    if (startupAnim) startupAnim.stop();
+    console.error(ui.error('Database and collection required for pipeline mode.'));
+    console.error('');
+    console.error('  Use --db and --collection, configure .vai.json, or set default-db / default-collection');
+    console.error('  in ~/.vai/config.json. The bundled KB is used when both are unset.');
+    console.error('');
+    console.error('  Or run ' + pc.cyan('vai kb setup') + ' to seed the built-in knowledge base.');
+    console.error('  Or use --mode agent to let the LLM discover collections.');
+    console.error('');
+    process.exit(1);
+  }
+
+  if (!isAgent && kbMode) {
+    try {
+      const n = await countKbTaggedDocuments(db, collection);
+      if (n === 0) {
+        if (startupAnim) startupAnim.stop();
+        console.error(ui.error('Bundled knowledge base has no seeded documents.'));
+        console.error('');
+        console.error(`  Run ${pc.cyan('vai kb setup')} to embed the bundled corpus.`);
+        console.error('');
+        process.exit(1);
       }
-      if (globalConfig.kb.embeddingModel === 'voyage-4-nano' && !embeddingModel) {
-        embeddingModel = 'voyage-4-nano';
-        isLocalEmbed = true;
-        isLocal = true;
-        doRerank = false;
-      }
-    } else {
+    } catch (err) {
       if (startupAnim) startupAnim.stop();
-      console.error(ui.error('Database and collection required for pipeline mode.'));
-      console.error('');
-      console.error('  Use --db and --collection, or configure .vai.json:');
-      console.error('    vai init');
-      console.error('');
-      console.error('  Or run ' + pc.cyan('vai kb setup') + ' to seed the built-in knowledge base.');
-      console.error('  Or use --mode agent to let the LLM discover collections.');
-      console.error('');
+      console.error(ui.error(`MongoDB check failed: ${err.message}`));
       process.exit(1);
     }
   }
@@ -296,9 +295,10 @@ async function runChat(opts) {
   if (!isAgent && !opts.json) {
     const { runPreflight, formatPreflight, waitForIndex } = require('../lib/preflight');
 
+    const preflightField = kbMode && kbTarget ? kbTarget.field : (proj.field || 'embedding');
     const { checks, ready } = await runPreflight({
       db, collection,
-      field: proj.field || 'embedding',
+      field: preflightField,
       llmConfig,
       textField,
       local: isLocal,
@@ -467,27 +467,17 @@ async function runChat(opts) {
       version: getVersion(),
       provider: llmConfig.provider,
       model: llmConfig.model,
-      mode: isAgent ? 'agent' : (isKbMode ? 'kb' : 'pipeline'),
+      mode: isAgent ? 'agent' : (kbMode ? 'kb' : 'pipeline'),
       db,
       collection,
       sessionId: history.sessionId,
       interactive: moments.isInteractive({ json: opts.json, plain: opts.quiet }),
       embeddingModel: embeddingModel || null,
       isLocalEmbed,
+      kbMode,
     }));
-
-    if (isKbMode) {
-      console.log('');
-      console.log(pc.bold('  Built-in Knowledge Base Mode'));
-      console.log(pc.dim('  Answering from vai\'s bundled docs about Voyage AI, vector search, and more.'));
-      console.log('');
-      console.log('  Try asking:');
-      for (const q of KB_STARTER_QUESTIONS) {
-        console.log('    ' + pc.cyan(q));
-      }
-      console.log('');
-      console.log(pc.dim('  To chat with your own data, run: vai init'));
-      console.log('');
+    if (kbMode) {
+      console.log(chatUI.renderKbStarterChips(getStarterQuestionsForSession(history.sessionId)));
     }
   }
 
@@ -537,6 +527,8 @@ async function runChat(opts) {
           maxDocs, doRerank, doStream, systemPrompt, textField, chatConf,
           isLocal, embeddingModel, isLocalEmbed, sessionStats, orchestrator,
           memoryManager,
+          kbMode,
+          kbTarget,
         });
       }
     } catch (err) {
@@ -590,7 +582,21 @@ async function runChat(opts) {
  * Handle a single pipeline mode turn.
  */
 async function handlePipelineTurn(input, ctx) {
-  const { db, collection, llm, history, opts, maxDocs, doRerank, doStream, systemPrompt, textField, chatConf, isLocal, embeddingModel, isLocalEmbed, sessionStats, orchestrator, memoryManager } = ctx;
+  const {
+    db, collection, llm, history, opts, maxDocs, doRerank, doStream, systemPrompt, textField, chatConf,
+    isLocal, embeddingModel, isLocalEmbed, sessionStats, orchestrator, memoryManager,
+    kbMode = false,
+    kbTarget = null,
+  } = ctx;
+
+  const effectiveSystemPrompt = kbMode && kbTarget
+    ? [systemPrompt, KB_MODE_SYSTEM_PROMPT].filter(Boolean).join('\n\n')
+    : systemPrompt;
+  const vectorFilter = kbMode && kbTarget
+    ? mergeKbVectorFilter(opts.filter)
+    : opts.filter;
+  const retrieveIndex = kbMode && kbTarget ? kbTarget.indexName : undefined;
+  const retrieveField = kbMode && kbTarget ? kbTarget.field : undefined;
 
   // Build embedding options based on model selection
   let localOpts = {};
@@ -621,7 +627,22 @@ async function handlePipelineTurn(input, ctx) {
     });
 
     for await (const event of orchestrator.executePipelineTurn({
-      generatorFn: (args) => chatTurn({ query: input, db, collection, llm, history, opts: { maxDocs, rerank: doRerank, stream: false, systemPrompt, textField, filter: opts.filter, ...localOpts, memoryManager, memoryStrategy } }),
+      generatorFn: (args) => chatTurn({
+        query: input, db, collection, llm, history,
+        opts: {
+          maxDocs,
+          rerank: doRerank,
+          stream: false,
+          systemPrompt: effectiveSystemPrompt,
+          textField,
+          filter: vectorFilter,
+          index: retrieveIndex,
+          field: retrieveField,
+          ...localOpts,
+          memoryManager,
+          memoryStrategy,
+        },
+      }),
     })) {
       if (event.type === 'chunk') fullResponse += event.data;
       if (event.type === 'done') {
@@ -680,7 +701,22 @@ async function handlePipelineTurn(input, ctx) {
 
     try {
       for await (const event of orchestrator.executePipelineTurn({
-        generatorFn: (args) => chatTurn({ query: input, db, collection, llm, history, opts: { maxDocs, rerank: doRerank, stream: doStream, systemPrompt, textField, filter: opts.filter, ...localOpts, memoryManager, memoryStrategy } }),
+        generatorFn: (args) => chatTurn({
+          query: input, db, collection, llm, history,
+          opts: {
+            maxDocs,
+            rerank: doRerank,
+            stream: doStream,
+            systemPrompt: effectiveSystemPrompt,
+            textField,
+            filter: vectorFilter,
+            index: retrieveIndex,
+            field: retrieveField,
+            ...localOpts,
+            memoryManager,
+            memoryStrategy,
+          },
+        }),
       })) {
         if (event.type === 'interrupted') {
           if (activeSpinner) { activeSpinner.stop(); activeSpinner = null; }
@@ -746,7 +782,8 @@ async function handlePipelineTurn(input, ctx) {
           // Show sources as box-drawn cards
           const { sources } = event.data;
           if (sources.length > 0 && chatConf.showSources !== false) {
-            console.log(chatUI.renderSources(sources));
+            const sourcesTitle = kbMode ? 'How this answer was found' : 'Sources';
+            console.log(chatUI.renderSources(sources, { title: sourcesTitle }));
           }
 
           // Brief success pose after successful response with sources

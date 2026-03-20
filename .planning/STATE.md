@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-10)
 
 **Core value:** Zero-API-key path from install to working vector search, with seamless upgrade to Voyage API
-**Current focus:** v1.7 Bundled Knowledge Base -- Phase 32 `vai kb` shipped; Phase 33 (self-demo chat) next
+**Current focus:** v1.7 Bundled Knowledge Base -- Phase 33 self-demonstrating chat (CLI + playground RAG API) shipped
 
 ## Current Position
 
-Phase: 32 of 33 (KB CLI) -- complete
-Plan: `vai kb setup|status|reset|update|search` + bash/zsh completions
-Status: Executing
-Last activity: 2026-03-20 -- Phase 32: KB CLI wired to Phase 31 libs; incremental update + `kbSearchQuery`
+Phase: 33 (self-demo chat) -- complete (core)
+Plan: KB fallback in `vai chat` + playground `/api/chat/*`; `--no-kb-fallback`; `src/lib/kb/chat-resolve.js`
+Status: Executing (milestone wrap-up)
+Last activity: 2026-03-20 -- Phase 33: bundled KB chat path, filter/index wiring, starter chips, attribution title
 
-Progress: [██░░░░░░░░] 25%
+Progress: [██████████] 100% (v1.7 phases 30-33)
 
 ## Performance Metrics
 

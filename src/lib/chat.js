@@ -223,6 +223,8 @@ async function retrieve({ query, db, collection, opts = {} }) {
  * @param {boolean} [params.opts.stream] - Whether to stream (default true)
  * @param {string} [params.opts.textField] - Document text field
  * @param {string} [params.opts.filter] - Vector search pre-filter
+ * @param {string} [params.opts.index] - Vector Search index name (e.g. bundled KB index)
+ * @param {string} [params.opts.field] - Vector field path (defaults from project)
  * @returns {AsyncGenerator<{type: string, data: any}>}
  *   Yields: { type: 'retrieval', data: { docs, timeMs, tokens } }
  *           { type: 'chunk', data: string }
@@ -242,6 +244,9 @@ async function* chatTurn({ query, db, collection, llm, history, opts = {} }) {
       embedFn: opts.embedFn,
       model: opts.model,
       dimensions: opts.dimensions,
+      index: opts.index,
+      field: opts.field,
+      rerankModel: opts.rerankModel,
     },
   });
 
