@@ -22,10 +22,10 @@ See: .planning/PROJECT.md (updated 2026-03-10)
 
 ## Current Position
 
-Phase: 31 of 33 (KB Seeding Pipeline) -- in progress
-Plan: 31-01 complete (implementation), 31-02 pending
+Phase: 31 of 33 (KB Seeding Pipeline) -- complete (library)
+Plan: 31-01 + 31-02 implemented; Phase 32 CLI next
 Status: Executing
-Last activity: 2026-03-20 -- Phase 31-01: `resolveKbManifest`, `buildKbChunkPlan`, `confirmKbSeedEmbeddingCost` in `src/lib/kb/`
+Last activity: 2026-03-20 -- Phase 31-02: `runKbSeed`, `persistKbSeedingState`, tagged `vai_kb` docs, vector index, `config.kb`
 
 Progress: [██░░░░░░░░] 25%
 
