@@ -174,6 +174,15 @@ describe('readers', () => {
     });
   });
 
+  describe('readFile — pdf', () => {
+    it('extracts text from a PDF (pdf-parse v2 class API)', async () => {
+      const fixture = path.join(__dirname, '..', 'fixtures', 'hello.pdf');
+      const content = await readFile(fixture);
+      assert.equal(typeof content, 'string');
+      assert.match(content, /Hello PDF/);
+    });
+  });
+
   describe('readFile — unsupported', () => {
     it('throws for unsupported extension', async () => {
       await assert.rejects(() => readFile('file.xyz'), /Unsupported file type/);

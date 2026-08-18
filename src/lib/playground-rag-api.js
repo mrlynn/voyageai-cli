@@ -7,19 +7,9 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const crypto = require('crypto');
-const pdfParse = require('pdf-parse');
 const { getMongoCollection } = require('./mongo');
 const { getConfigValue, loadConfig } = require('./config');
-
-/**
- * Extract text content from a PDF buffer
- * @param {Buffer} buffer - Raw PDF file data
- * @returns {Promise<string>} Extracted text
- */
-async function extractTextFromPDF(buffer) {
-  const data = await pdfParse(buffer);
-  return data.text;
-}
+const { extractPdfText } = require('./readers');
 
 // MongoDB database for RAG
 const RAG_DB = 'vai_rag';
@@ -554,7 +544,7 @@ async function handleRAGRequest(req, res, context) {
             let content;
             if (isPDF) {
               const buffer = fs.readFileSync(file.path);
-              content = await extractTextFromPDF(buffer);
+              content = await extractPdfText(buffer);
             } else {
               content = fs.readFileSync(file.path, 'utf8');
             }

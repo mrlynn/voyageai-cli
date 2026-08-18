@@ -3,6 +3,13 @@
 const fs = require('fs');
 const path = require('path');
 
+let pdfParseModule = null;
+try {
+  pdfParseModule = require('pdf-parse');
+} catch {
+  pdfParseModule = null;
+}
+
 /**
  * Supported file extensions and their reader types.
  */
@@ -167,24 +174,53 @@ async function readJsonlFile(filePath, textField = 'text') {
 }
 
 /**
- * Read a PDF file. Requires optional `pdf-parse` dependency.
- * @param {string} filePath
+ * Extract text from a PDF buffer.
+ * Supports pdf-parse v1 (`module(buffer)`) and v2 (`{ PDFParse }`).
+ * @param {Buffer|Uint8Array} buffer
  * @returns {Promise<string>}
  */
-async function readPdfFile(filePath) {
-  let pdfParse;
-  try {
-    pdfParse = require('pdf-parse');
-  } catch {
+async function extractPdfText(buffer) {
+  if (!pdfParseModule) {
     throw new Error(
       'PDF support requires the "pdf-parse" package.\n' +
       'Install it: npm install pdf-parse\n' +
       'Then retry your command.'
     );
   }
+
+  if (typeof pdfParseModule === 'function') {
+    const data = await pdfParseModule(buffer);
+    return data && data.text ? data.text : '';
+  }
+
+  const PDFParse = pdfParseModule.PDFParse
+    || (pdfParseModule.default && pdfParseModule.default.PDFParse);
+  if (typeof PDFParse !== 'function') {
+    throw new Error(
+      'pdf-parse is installed but does not export a parser. ' +
+      'This CLI needs pdf-parse v1 (function) or v2 (PDFParse class).'
+    );
+  }
+
+  const parser = new PDFParse({ data: buffer });
+  try {
+    const data = await parser.getText();
+    return data && data.text ? data.text : '';
+  } finally {
+    if (typeof parser.destroy === 'function') {
+      await parser.destroy();
+    }
+  }
+}
+
+/**
+ * Read a PDF file. Requires the `pdf-parse` dependency.
+ * @param {string} filePath
+ * @returns {Promise<string>}
+ */
+async function readPdfFile(filePath) {
   const buffer = fs.readFileSync(filePath);
-  const data = await pdfParse(buffer);
-  return data.text;
+  return extractPdfText(buffer);
 }
 
 /**
@@ -266,4 +302,5 @@ module.exports = {
   readFile,
   scanDirectory,
   stripHtml,
+  extractPdfText,
 };

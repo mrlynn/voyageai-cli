@@ -323,7 +323,16 @@ async function checkMongoDB() {
 
 async function checkPdfParse() {
   try {
-    require.resolve('pdf-parse');
+    const pdfParse = require('pdf-parse');
+    const compatible = typeof pdfParse === 'function'
+      || typeof pdfParse.PDFParse === 'function';
+    if (!compatible) {
+      return {
+        ok: null,
+        message: 'Installed but incompatible API (need v1 function or v2 PDFParse)',
+        hint: 'Reinstall: npm install pdf-parse@2',
+      };
+    }
     return {
       ok: true,
       message: 'Installed',
