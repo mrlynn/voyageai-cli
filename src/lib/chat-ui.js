@@ -625,6 +625,7 @@ function scoreBar(score, barWidth = 12) {
  * @param {object} [options]
  * @param {number} [options.width] - Terminal width
  * @param {boolean} [options.showPreview] - Show text preview (default false)
+ * @param {string} [options.title] - Box title (default "Sources"; use "How this answer was found" for KB mode)
  * @param {number} [options.previewChars] - Preview length (default 120)
  * @returns {string}
  */
@@ -634,13 +635,15 @@ function renderSources(sources, options = {}) {
   const width = options.width || termWidth();
   const showPreview = options.showPreview || false;
   const previewChars = options.previewChars || 120;
+  const boxTitle = options.title || 'Sources';
   const boxWidth = Math.min(width - 2, 76);
   const innerWidth = boxWidth - 4; // "│ " + " │"
 
   const out = [];
   out.push('');
   out.push(pc.dim(`  ┌${'─'.repeat(boxWidth - 2)}┐`));
-  out.push(pc.dim('  │') + ' ' + pc.bold('Sources') + ' '.repeat(Math.max(0, innerWidth - 7)) + pc.dim(' │'));
+  const titlePad = Math.max(0, innerWidth - stripAnsi(boxTitle).length);
+  out.push(pc.dim('  │') + ' ' + pc.bold(boxTitle) + ' '.repeat(titlePad) + pc.dim(' │'));
   out.push(pc.dim(`  ├${'─'.repeat(boxWidth - 2)}┤`));
 
   for (let i = 0; i < sources.length; i++) {
@@ -671,6 +674,29 @@ function renderSources(sources, options = {}) {
 
   out.push(pc.dim(`  └${'─'.repeat(boxWidth - 2)}┘`));
   return out.join('\n');
+}
+
+/**
+ * Suggested first questions + config hint when using bundled KB (Phase 33).
+ * @param {string[]} questions
+ * @returns {string}
+ */
+function renderKbStarterChips(questions) {
+  if (!questions || questions.length === 0) return '';
+  const lines = ['', dim('  Try asking:'), ''];
+  const w = termWidth();
+  for (let i = 0; i < questions.length; i++) {
+    const wrapped = wordWrap(questions[i], w - 4, '     ');
+    const parts = wrapped.split('\n');
+    lines.push(dim(`  ${i + 1}. `) + parts[0]);
+    for (let j = 1; j < parts.length; j++) lines.push('     ' + parts[j]);
+  }
+  lines.push('');
+  lines.push(
+    dim('  Own data: ') + cyan('vai config set default-db <db>') + dim(' · ') + cyan('vai config set default-collection <coll>'),
+  );
+  lines.push('');
+  return lines.join('\n');
 }
 
 /**
@@ -801,6 +827,7 @@ function createTimedSpinner(baseText) {
  * @param {string} info.mode - 'pipeline' or 'agent'
  * @param {string} [info.db]
  * @param {string} [info.collection]
+ * @param {boolean} [info.kbMode] - Using bundled KB fallback
  * @param {string} info.sessionId
  * @returns {string}
  */
@@ -810,7 +837,9 @@ function renderHeader(info) {
     const modeLabel = info.mode === 'agent' ? 'agent (tool-calling)' : 'pipeline (fixed RAG)';
     const knowledgeLine = info.mode === 'agent'
       ? `${dim('Database:')}  ${info.db || 'auto'}`
-      : `${dim('Knowledge:')} ${info.db}.${info.collection}`;
+      : (info.kbMode
+        ? `${dim('Knowledge:')} ${info.db}.${info.collection} ${dim('(bundled KB)')}`
+        : `${dim('Knowledge:')} ${info.db}.${info.collection}`);
 
     // Embedding model badge
     const embedName = info.embeddingModel || 'default';
@@ -855,7 +884,10 @@ function renderHeader(info) {
     if (info.collection) lines.push(`  ${pc.dim('Collection:')} ${info.collection}`);
   } else {
     lines.push(`  ${pc.dim('Mode:')}      pipeline (fixed RAG)`);
-    lines.push(`  ${pc.dim('Knowledge:')} ${info.db}.${info.collection}`);
+    const kKnow = info.kbMode
+      ? `${info.db}.${info.collection} (bundled KB)`
+      : `${info.db}.${info.collection}`;
+    lines.push(`  ${pc.dim('Knowledge:')} ${kKnow}`);
   }
   lines.push(`  ${pc.dim('Session:')}   ${pc.dim(info.sessionId)}`);
   lines.push(pc.dim('Type /help for commands, /quit to exit.'));
@@ -921,6 +953,7 @@ module.exports = {
   renderInline,
   renderCodeBlock,
   renderSources,
+  renderKbStarterChips,
   renderHeader,
   renderToolCall,
   renderLatencyLine,

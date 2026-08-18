@@ -3247,6 +3247,71 @@ select:focus { outline: none; border-color: var(--accent); }
 .chat-not-configured .btn:hover {
   filter: brightness(1.1);
 }
+/* Bundled KB demo banner + starter chips (Phase 33) */
+.chat-kb-banner {
+  display: none;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 14px;
+  margin: 0 16px;
+  margin-top: 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 212, 170, 0.28);
+  background: rgba(0, 212, 170, 0.06);
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-dim);
+}
+.chat-kb-banner strong {
+  color: var(--accent);
+  font-size: 13px;
+}
+.chat-kb-banner code {
+  font-size: 11px;
+  background: rgba(0, 212, 170, 0.12);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+.chat-kb-banner a {
+  color: var(--accent);
+  font-weight: 600;
+}
+.chat-kb-chips-wrap {
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 16px 8px;
+}
+.chat-kb-chips-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.chat-kb-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.chat-kb-chip {
+  font-family: var(--font);
+  font-size: 12px;
+  line-height: 1.35;
+  text-align: left;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
+  color: var(--text);
+  cursor: pointer;
+  max-width: 100%;
+  transition: border-color 0.15s, background 0.15s;
+}
+.chat-kb-chip:hover {
+  border-color: var(--accent);
+  background: rgba(0, 212, 170, 0.08);
+}
 /* Responsive: collapse settings nav on small screens */
 @media (max-width: 768px) {
   .settings-layout {
@@ -3382,6 +3447,20 @@ select:focus { outline: none; border-color: var(--accent); }
   margin: 8px 0;
   overflow-x: auto;
   white-space: pre;
+}
+.chat-message.assistant .chat-message-content.rendered .chat-mermaid-host {
+  margin: 12px 0;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-input);
+  overflow-x: auto;
+  max-width: 100%;
+}
+.chat-message.assistant .chat-message-content.rendered .chat-mermaid-host svg {
+  max-width: 100%;
+  height: auto;
+  display: block;
 }
 .chat-message.assistant .chat-message-content.rendered pre code {
   background: none;
@@ -9970,6 +10049,19 @@ Reranking models rescore initial search results to improve relevance ordering.</
       <div class="chat-not-configured-icon">💬</div>
       <p>Chat requires an LLM provider and database to be configured.</p>
       <button class="btn" onclick="openChatSettings()">Open Chat Settings</button>
+    </div>
+    <div class="chat-kb-banner" id="chatKbModeBanner" style="display:none;">
+      <div>
+        <strong>Bundled demo knowledge base</strong>
+      </div>
+      <div>
+        Chatting against the seeded <code>vai_kb</code> documentation in MongoDB Atlas (same as <code>vai kb setup</code>).
+        Use your own data by setting Database / Collection in Configure, or <code>vai config set default-db</code> / <code>default-collection</code>.
+      </div>
+    </div>
+    <div class="chat-kb-chips-wrap" id="chatKbChipsWrap" style="display:none;">
+      <div class="chat-kb-chips-label">Try asking</div>
+      <div class="chat-kb-chips" id="chatKbChips"></div>
     </div>
     <div class="chat-messages" id="chatMessages">
       <div class="chat-message system-msg">Chat with your knowledge base. Click <strong>Configure</strong> above to adjust your LLM provider and database.</div>
@@ -17423,10 +17515,10 @@ function saveChatSettings() {
     body: JSON.stringify(settings),
   }).catch(() => {});
   updateChatStatus();
-  // Update not-configured banner
+  // Update not-configured banner (LLM provider is required; db can come from bundled KB defaults)
   const notConfigured = document.getElementById('chatNotConfigured');
   if (notConfigured) {
-    notConfigured.style.display = (!settings.provider || !settings.db) ? 'flex' : 'none';
+    notConfigured.style.display = !settings.provider ? 'flex' : 'none';
   }
   // Refresh origin badges after save
   loadSettingsOrigins();
@@ -17450,6 +17542,77 @@ function toggleRerank() {
 
 // ── Chat Tab ──
 let chatSessionId = null;
+
+/** Fallback starters if GET /api/chat/starters fails (keep in sync with chat-resolve STARTER_QUESTIONS). */
+const KB_STARTER_QUESTIONS = [
+  'How do I run local embeddings with voyage-4-nano without a Voyage API key?',
+  'How does the vai chat harness and turn state machine work?',
+  'What are MRL dimensions and quantization options for Voyage embeddings?',
+  'When should I use reranking after vector search?',
+  'How do I set up MongoDB Atlas Vector Search for vai?',
+];
+
+function isChatUsingBundledKb() {
+  const kb = window.__vaiKbDefaults;
+  if (!kb || !kb.db || !kb.collection) return false;
+  const dbEl = document.getElementById('chatDb');
+  const collEl = document.getElementById('chatCollection');
+  if (!dbEl || !collEl) return false;
+  return dbEl.value.trim() === kb.db && collEl.value.trim() === kb.collection;
+}
+
+function updateKbBannerVisibility() {
+  const banner = document.getElementById('chatKbModeBanner');
+  const show = !!(window.__vaiChatKbUiModeInitial && isChatUsingBundledKb());
+  if (banner) banner.style.display = show ? 'flex' : 'none';
+  renderChatKbChips();
+  const input = document.getElementById('chatInput');
+  if (input) {
+    input.placeholder = show
+      ? 'Ask about vai, embeddings, Atlas Vector Search…'
+      : 'Ask a question about your documents...';
+  }
+}
+
+function renderChatKbChips() {
+  const wrap = document.getElementById('chatKbChipsWrap');
+  const row = document.getElementById('chatKbChips');
+  if (!wrap || !row) return;
+  if (!window.__vaiChatKbUiModeInitial || !isChatUsingBundledKb()) {
+    wrap.style.display = 'none';
+    row.innerHTML = '';
+    return;
+  }
+  const list = (window.__vaiKbChatStarters && window.__vaiKbChatStarters.length)
+    ? window.__vaiKbChatStarters
+    : KB_STARTER_QUESTIONS;
+  wrap.style.display = 'flex';
+  if (sessionStorage.getItem('vai_kb_chip_offset') == null) {
+    sessionStorage.setItem('vai_kb_chip_offset', String(Math.floor(Math.random() * list.length)));
+  }
+  const start = parseInt(sessionStorage.getItem('vai_kb_chip_offset') || '0', 10) % list.length;
+  row.innerHTML = '';
+  for (let i = 0; i < 3; i++) {
+    const q = list[(start + i) % list.length];
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'chat-kb-chip';
+    btn.textContent = q;
+    btn.addEventListener('click', () => {
+      const input = document.getElementById('chatInput');
+      if (input) {
+        input.value = q;
+        input.style.height = 'auto';
+        sendChatMessage();
+      }
+    });
+    row.appendChild(btn);
+  }
+}
+
+function chatSourcesSummaryLabel() {
+  return isChatUsingBundledKb() ? 'How this answer was found' : 'Sources';
+}
 
 function updateHealthDots(config) {
   var dots = [
@@ -17648,18 +17811,33 @@ async function loadChatConfig() {
     // Initialize embedding dropdown (availability, badges, auto-default)
     await initEmbeddingDropdown();
     updateHealthDots(data);
+    window.__vaiChatKbUiModeInitial = !!data.kbUiMode;
+    window.__vaiKbDefaults = data.kbDefaults || null;
     updateChatStatus();
     showOnboardingBanner(data);
     // Show not-configured banner if incomplete
     const notConfigured = document.getElementById('chatNotConfigured');
     if (notConfigured) {
-      notConfigured.style.display = (!data.provider || !data.db) ? 'flex' : 'none';
+      notConfigured.style.display = !data.provider ? 'flex' : 'none';
     }
+    try {
+      const sr = await fetch('/api/chat/starters');
+      if (sr.ok) {
+        const sj = await sr.json();
+        if (Array.isArray(sj.questions) && sj.questions.length) {
+          window.__vaiKbChatStarters = sj.questions;
+        }
+      }
+    } catch { /* offline / stale */ }
+    updateKbBannerVisibility();
   } catch {
+    window.__vaiChatKbUiModeInitial = false;
+    window.__vaiKbDefaults = null;
     // No config — show not-configured banner and onboarding
     const notConfigured = document.getElementById('chatNotConfigured');
     if (notConfigured) notConfigured.style.display = 'flex';
     showOnboardingBanner({});
+    updateKbBannerVisibility();
   }
 }
 
@@ -17776,8 +17954,13 @@ function updateChatStatus() {
     : 'No provider';
   const modeLabel = mode === 'agent' ? 'Agent' : 'Pipeline';
   document.getElementById('chatStatusProvider').textContent = `${providerLabel} (${modeLabel})`;
+  const kb = window.__vaiKbDefaults;
+  const bundled = kb && db === kb.db && collection === kb.collection;
   document.getElementById('chatStatusDb').textContent =
-    (db && collection) ? `${db}.${collection}` : (mode === 'agent' ? 'Agent discovers' : 'No database');
+    (db && collection)
+      ? (bundled ? `${db}.${collection} (bundled KB)` : `${db}.${collection}`)
+      : (mode === 'agent' ? 'Agent discovers' : 'No database');
+  updateKbBannerVisibility();
 }
 
 async function chatProviderChanged() {
@@ -17873,9 +18056,8 @@ function chatInputKeydown(e) {
 
 /**
  * Lightweight markdown-to-HTML renderer for assistant chat messages.
- * Handles: fenced code blocks, inline code, headings, bold, italic,
- * links, images, unordered/ordered lists, blockquotes, tables, and <hr>.
- * No external dependencies.
+ * Handles: fenced code blocks (including ```mermaid → placeholder for runChatMermaidCharts),
+ * inline code, headings, bold, italic, links, images, lists, blockquotes, tables, and <hr>.
  */
 function renderMarkdown(md) {
   // Escape HTML to prevent XSS, then selectively render markdown
@@ -17883,11 +18065,17 @@ function renderMarkdown(md) {
     return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
-  // Extract fenced code blocks first (preserve content as-is)
+  // Extract fenced code blocks first (mermaid → host for async SVG render; else <pre><code>)
   const codeBlocks = [];
-  let text = md.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => {
+  let text = md.replace(/```(\w*)\r?\n([\s\S]*?)```/g, (_, lang, code) => {
     const idx = codeBlocks.length;
-    codeBlocks.push(`<pre><code${lang ? ' data-lang="' + esc(lang) + '"' : ''}>${esc(code.replace(/\n$/, ''))}</code></pre>`);
+    const trimmed = code.replace(/\n$/, '');
+    if (String(lang).toLowerCase() === 'mermaid') {
+      const enc = encodeURIComponent(trimmed);
+      codeBlocks.push(`<div class="chat-mermaid-host" data-chat-mermaid="${enc}"></div>`);
+    } else {
+      codeBlocks.push(`<pre><code${lang ? ' data-lang="' + esc(lang) + '"' : ''}>${esc(trimmed)}</code></pre>`);
+    }
     return '\x00CB' + idx + '\x00';
   });
 
@@ -17960,7 +18148,7 @@ function renderMarkdown(md) {
   });
 
   // Paragraphs: wrap remaining text lines that aren't already wrapped in block elements
-  const blockTags = ['<h1', '<h2', '<h3', '<h4', '<hr', '<pre', '<ul', '<ol', '<table', '<blockquote'];
+  const blockTags = ['<h1', '<h2', '<h3', '<h4', '<hr', '<pre', '<ul', '<ol', '<table', '<blockquote', '<div'];
   const lines = text.split('\n');
   const result = [];
   let paraLines = [];
@@ -17987,6 +18175,64 @@ function renderMarkdown(md) {
   flushPara();
 
   return result.join('\n');
+}
+
+/**
+ * After assistant markdown is injected, render ```mermaid``` blocks as SVG (uses /vendor/mermaid.min.js).
+ */
+async function runChatMermaidCharts(root) {
+  if (!root || !root.querySelector || !root.querySelector('.chat-mermaid-host[data-chat-mermaid]')) return;
+  try {
+    await loadMermaidLib();
+    const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: isLight ? 'default' : 'dark',
+      securityLevel: 'strict',
+      themeVariables: { primaryColor: '#00D4AA', primaryTextColor: isLight ? '#001E2B' : '#E8EDEB' },
+    });
+    const hosts = root.querySelectorAll('.chat-mermaid-host[data-chat-mermaid]');
+    const nodes = [];
+    hosts.forEach((host) => {
+      const raw = host.getAttribute('data-chat-mermaid');
+      if (!raw) return;
+      let code;
+      try {
+        code = decodeURIComponent(raw);
+      } catch {
+        return;
+      }
+      const el = document.createElement('pre');
+      el.className = 'mermaid';
+      el.textContent = code;
+      host.innerHTML = '';
+      host.appendChild(el);
+      nodes.push(el);
+    });
+    if (nodes.length) {
+      if (typeof mermaid.run === 'function') {
+        await mermaid.run({ nodes });
+      } else {
+        for (let i = 0; i < nodes.length; i++) {
+          const el = nodes[i];
+          const id = 'chat-mmd-' + Date.now() + '-' + i;
+          const { svg } = await mermaid.render(id, el.textContent);
+          const wrap = document.createElement('div');
+          wrap.className = 'mermaid-svg-out';
+          wrap.innerHTML = svg;
+          el.replaceWith(wrap);
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('Chat Mermaid render failed', e);
+    root.querySelectorAll('.chat-mermaid-host[data-chat-mermaid]').forEach((host) => {
+      try {
+        const code = decodeURIComponent(host.getAttribute('data-chat-mermaid') || '');
+        host.innerHTML = '<pre class="chat-mermaid-fallback"><code>' + code.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</code></pre>';
+      } catch { /* ignore */ }
+    });
+  }
 }
 
 /**
@@ -18168,13 +18414,15 @@ function addChatMessage(role, content, sources) {
   if (sources && sources.length > 0) {
     const details = document.createElement('details');
     details.className = 'chat-sources';
+    details.open = !!isChatUsingBundledKb();
     const summary = document.createElement('summary');
-    summary.textContent = `${sources.length} source${sources.length > 1 ? 's' : ''}`;
+    summary.textContent = chatSourcesSummaryLabel();
     details.appendChild(summary);
     const ul = document.createElement('ul');
     sources.forEach(s => {
       const li = document.createElement('li');
-      li.textContent = `${s.source} (${s.score?.toFixed(2) || 'N/A'})`;
+      const chunkNote = s.chunks > 1 ? ` — ${s.chunks} chunks` : '';
+      li.textContent = `${s.source} (${s.score?.toFixed(2) || 'N/A'})${chunkNote}`;
       ul.appendChild(li);
     });
     details.appendChild(ul);
@@ -18206,10 +18454,7 @@ async function sendChatMessage() {
     addChatMessage('system-msg', 'Please select an LLM provider in <a href="#" onclick="openChatSettings();return false;">Chat Settings</a>.');
     return;
   }
-  if (!isAgent && (!db || !collection)) {
-    addChatMessage('system-msg', 'Please configure a database and collection in <a href="#" onclick="openChatSettings();return false;">Chat Settings</a>.');
-    return;
-  }
+  // Pipeline mode: empty db/collection is OK — server resolves bundled KB (same as vai chat).
 
   // Show user message
   addChatMessage('user', query);
@@ -18240,7 +18485,15 @@ async function sendChatMessage() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        query, db, collection, provider, model, maxDocs, rerank, systemPrompt, mode,
+        query,
+        db: db || undefined,
+        collection: collection || undefined,
+        provider,
+        model,
+        maxDocs,
+        rerank,
+        systemPrompt,
+        mode,
         textField: (window.kbUI && window.kbUI._overrideTextField) || 'content',
         index: (window.kbUI && window.kbUI._overrideIndex) || undefined,
         embeddingModel: document.getElementById('chatEmbeddingModel').value,
@@ -18370,18 +18623,21 @@ async function sendChatMessage() {
               const contentEl = assistantDiv.querySelector('.chat-message-content');
               contentEl.innerHTML = renderMarkdown(fullText);
               contentEl.classList.add('rendered');
+              runChatMermaidCharts(contentEl);
             }
             sources = data.sources || [];
             if (sources.length > 0 && assistantDiv) {
               const details = document.createElement('details');
               details.className = 'chat-sources';
+              details.open = !!isChatUsingBundledKb();
               const summary = document.createElement('summary');
-              summary.textContent = `${sources.length} source${sources.length > 1 ? 's' : ''}`;
+              summary.textContent = chatSourcesSummaryLabel();
               details.appendChild(summary);
               const ul = document.createElement('ul');
               sources.forEach(s => {
                 const li = document.createElement('li');
-                li.textContent = `${s.source} (${s.score?.toFixed(2) || 'N/A'})`;
+                const chunkNote = s.chunks > 1 ? ` — ${s.chunks} chunks` : '';
+                li.textContent = `${s.source} (${s.score?.toFixed(2) || 'N/A'})${chunkNote}`;
                 ul.appendChild(li);
               });
               details.appendChild(ul);
@@ -23574,15 +23830,30 @@ function loadMermaidLib() {
   return new Promise((resolve, reject) => {
     if (typeof mermaid !== 'undefined') { resolve(); return; }
     const timeout = setTimeout(() => reject(new Error('Mermaid load timed out')), 15000);
-    const script = document.createElement('script');
-    script.src = '/vendor/mermaid.min.js';
-    script.onload = () => {
-      clearTimeout(timeout);
-      mermaid.initialize({ startOnLoad: false, theme: 'dark', themeVariables: { primaryColor: '#00D4AA' } });
-      resolve();
+    const initMermaid = () => {
+      if (typeof mermaid !== 'undefined') {
+        mermaid.initialize({ startOnLoad: false, theme: 'dark', themeVariables: { primaryColor: '#00D4AA' } });
+      }
     };
-    script.onerror = () => { clearTimeout(timeout); reject(new Error('Failed to load mermaid.js')); };
-    document.head.appendChild(script);
+    function tryLoad(src, isFallback) {
+      const script = document.createElement('script');
+      script.src = src;
+      script.onload = () => {
+        clearTimeout(timeout);
+        initMermaid();
+        resolve();
+      };
+      script.onerror = () => {
+        if (!isFallback) {
+          tryLoad('https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js', true);
+        } else {
+          clearTimeout(timeout);
+          reject(new Error('Failed to load mermaid.js'));
+        }
+      };
+      document.head.appendChild(script);
+    }
+    tryLoad('/vendor/mermaid.min.js', false);
   });
 }
 

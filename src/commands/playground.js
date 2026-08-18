@@ -701,20 +701,37 @@ function createPlaygroundServer() {
           ollamaAvailable = ollamaModels && ollamaModels.length > 0;
         } catch { /* ollama not reachable */ }
 
+        const { resolveKbChatTarget } = require('../lib/kb/chat-resolve');
+        const kbDefaults = resolveKbChatTarget();
+        const defaultDb = getConfigValue('defaultDb');
+        const defaultCollection = getConfigValue('defaultCollection');
+        const db = proj.db || defaultDb || kbDefaults.db || null;
+        const collection = proj.collection || defaultCollection || kbDefaults.collection || null;
+        const kbUiMode = !proj.db && !proj.collection && !defaultDb && !defaultCollection;
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({
           provider: llmConfig.provider || null,
           model: llmConfig.model || null,
           hasLLMKey: !!llmConfig.apiKey || llmConfig.provider === 'ollama',
-          db: proj.db || null,
-          collection: proj.collection || null,
+          db,
+          collection,
           chat: proj.chat || {},
           mode: proj.chat?.mode || 'pipeline',
-          embeddingModel: proj.chat?.embeddingModel || null,
+          embeddingModel: proj.chat?.embeddingModel || kbDefaults.embeddingModel || null,
+          kbDefaults,
+          kbUiMode,
           nanoAvailable,
           hasApiKey,
           ollamaAvailable,
         }));
+        return;
+      }
+
+      // API: Curated KB starter questions (same list as src/lib/kb/chat-resolve.js)
+      if (req.method === 'GET' && req.url === '/api/chat/starters') {
+        const { STARTER_QUESTIONS } = require('../lib/kb/chat-resolve');
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ questions: STARTER_QUESTIONS }));
         return;
       }
 
@@ -1627,7 +1644,10 @@ function createPlaygroundServer() {
 
         // API: Chat message (streaming SSE)
         if (req.url === '/api/chat/message') {
-          const { query, db, collection, provider, model, maxDocs, rerank, systemPrompt, mode, textField, embeddingModel, memoryStrategy, index } = parsed;
+          const {
+            query, db, collection, provider, model, maxDocs, rerank, systemPrompt, mode, textField,
+            embeddingModel, memoryStrategy, filter: pipelineFilter, index,
+          } = parsed;
           const isAgent = mode === 'agent';
           const isLocalEmbed = embeddingModel === 'voyage-4-nano';
 
@@ -1636,8 +1656,23 @@ function createPlaygroundServer() {
             res.end(JSON.stringify({ error: 'query is required' }));
             return;
           }
+
+          const {
+            resolveKbChatTarget,
+            mergeKbVectorFilter,
+            KB_MODE_SYSTEM_PROMPT,
+          } = require('../lib/kb/chat-resolve');
+          const kbDefaults = resolveKbChatTarget();
+          let effDb = db;
+          let effCollection = collection;
+          let kbPipeline = false;
+          if (!isAgent && !effDb && !effCollection) {
+            effDb = kbDefaults.db;
+            effCollection = kbDefaults.collection;
+            kbPipeline = true;
+          }
           // Pipeline mode requires db + collection; agent mode they're optional
-          if (!isAgent && (!db || !collection)) {
+          if (!isAgent && (!effDb || !effCollection)) {
             res.writeHead(400, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ error: 'db and collection are required for pipeline mode' }));
             return;
@@ -1710,6 +1745,16 @@ function createPlaygroundServer() {
             embedOpts.dimensions = 1024;
           } else if (embeddingModel) {
             embedOpts.model = embeddingModel;
+          } else if (kbPipeline && kbDefaults.embeddingModel) {
+            embedOpts.model = kbDefaults.embeddingModel;
+          }
+
+          const effTextField = kbPipeline ? 'text' : (textField || 'content');
+          let effSystemPrompt = systemPrompt;
+          let effFilter = pipelineFilter;
+          if (kbPipeline) {
+            effSystemPrompt = [systemPrompt, KB_MODE_SYSTEM_PROMPT].filter(Boolean).join('\n\n');
+            effFilter = mergeKbVectorFilter(pipelineFilter);
           }
 
           // Create orchestrator for state tracking
@@ -1733,14 +1778,16 @@ function createPlaygroundServer() {
           const runPipeline = async () => {
             for await (const event of orchestrator.executePipelineTurn({
               generatorFn: () => chatTurn({
-                query, db, collection, llm, history,
+                query, db: effDb, collection: effCollection, llm, history,
                 opts: {
                   maxDocs: maxDocs || 5,
                   rerank: isLocalEmbed ? false : (rerank !== false),
                   stream: true,
-                  systemPrompt,
-                  textField: textField || 'content',
-                  index: index || undefined,
+                  systemPrompt: effSystemPrompt,
+                  textField: effTextField,
+                  filter: effFilter,
+                  index: kbPipeline ? kbDefaults.indexName : (index || undefined),
+                  field: kbPipeline ? kbDefaults.field : undefined,
                   ...embedOpts,
                   memoryManager: _playgroundMemoryManager,
                   memoryStrategy: memoryStrategy || undefined,

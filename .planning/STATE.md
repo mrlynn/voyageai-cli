@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.7
 milestone_name: Bundled Knowledge Base
 status: executing
-last_updated: "2026-03-10"
+last_updated: "2026-03-20"
 progress:
   total_phases: 4
   completed_phases: 1
@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-10)
 
 **Core value:** Zero-API-key path from install to working vector search, with seamless upgrade to Voyage API
-**Current focus:** v1.7 Bundled Knowledge Base -- Phase 30 complete, ready to plan Phase 31
+**Current focus:** v1.7 Bundled Knowledge Base -- Phase 33 self-demonstrating chat (CLI + playground RAG API) shipped
 
 ## Current Position
 
-Phase: 31 of 33 (KB Seeding Pipeline) -- not started
-Plan: --
-Status: Ready to plan
-Last activity: 2026-03-10 -- Completed Phase 30 (KB Corpus & Manifest) -- 4 plans, 36 corpus docs, manifest verified
+Phase: 33 (self-demo chat) -- complete (core)
+Plan: KB fallback in `vai chat` + playground `/api/chat/*`; `--no-kb-fallback`; `src/lib/kb/chat-resolve.js`
+Status: Executing (milestone wrap-up)
+Last activity: 2026-03-20 -- Phase 33: bundled KB chat path, filter/index wiring, starter chips, attribution title
 
-Progress: [██░░░░░░░░] 25%
+Progress: [██████████] 100% (v1.7 phases 30-33)
 
 ## Performance Metrics
 

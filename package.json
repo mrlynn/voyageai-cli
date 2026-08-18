@@ -43,6 +43,8 @@
     "demos:run:all": "node scripts/run-demos.js all",
     "version": "node scripts/sync-nano-version.js && git add src/nano/nano-bridge.py",
     "release": "./scripts/release.sh",
+    "kb:generate": "node scripts/generate-kb-manifest.js",
+    "kb:verify": "node scripts/verify-kb-manifest.js",
     "app:install": "cd electron && npm install",
     "app:start": "cd electron && npm start",
     "app:dev": "cd electron && npm run dev",
@@ -66,6 +68,7 @@
     "pdf-parse": "^2.4.5",
     "picocolors": "^1.1.1",
     "update-notifier": "^7.3.1",
+    "voyageai-cli": "^1.33.6",
     "zod": "^4.3.6"
   },
   "devDependencies": {
