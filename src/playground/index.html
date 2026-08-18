@@ -9169,8 +9169,7 @@ Semantic search understands meaning beyond keyword matching</textarea>
     <div class="option-group">
       <span class="option-label">Model</span>
       <select id="mmModel">
-        <option value="voyage-multimodal-3.5">voyage-multimodal-3.5</option>
-        <option value="voyage-multimodal-3">voyage-multimodal-3</option>
+        <!-- Populated from MODEL_CATALOG -->
       </select>
     </div>
     <div class="option-group">
@@ -9485,7 +9484,7 @@ Reranking models rescore initial search results to improve relevance ordering.</
           <div style="font-size:20px;margin-bottom:8px;">🏢</div>
           <div style="font-weight:600;margin-bottom:4px;">Domain-Specific Models</div>
           <div style="font-size:13px;color:var(--text-dim);">
-            Specialized models for code (<code>voyage-code-3</code>), finance, law, and multilingual content 
+            Specialized models for code (<code>voyage-code-4</code>), contextualized chunks (<code>voyage-context-4</code>), finance, law, and multilingual content 
             that outperform general-purpose alternatives.
           </div>
         </div>
@@ -9949,10 +9948,7 @@ Reranking models rescore initial search results to improve relevance ordering.</
               <label class="kb-config-label">Embedding</label>
               <div style="display:flex;align-items:center;gap:4px;flex:1;">
                 <select class="settings-select" id="chatEmbeddingModel" style="flex:1;">
-                  <option value="voyage-4-nano" data-local="true" data-price="Free">voyage-4-nano (Free)</option>
-                  <option value="voyage-4-lite" data-price="$0.02/1M">voyage-4-lite ($0.02/1M)</option>
-                  <option value="voyage-4" data-price="$0.06/1M">voyage-4 ($0.06/1M)</option>
-                  <option value="voyage-4-large" data-price="$0.12/1M">voyage-4-large ($0.12/1M)</option>
+                  <!-- Populated from MODEL_CATALOG via /api/models/catalog -->
                 </select>
                 <span class="embed-badge embed-badge-local" id="chatEmbedBadge">LOCAL</span>
                 <span class="health-dot" id="healthDotNano" title="Nano bridge status"></span>
@@ -10300,7 +10296,7 @@ Reranking models rescore initial search results to improve relevance ordering.</
       <div class="about-section">
         <div class="about-section-title">Supported Models</div>
         <div class="about-text" style="font-size:13px;">
-          <strong style="color:var(--accent);">Text Embeddings</strong> — voyage-4-large, voyage-4, voyage-4-lite, voyage-code-3, voyage-finance-2, voyage-law-2<br>
+          <strong style="color:var(--accent);">Text Embeddings</strong> — voyage-4-large, voyage-4, voyage-4-lite, voyage-code-4, voyage-context-4, voyage-finance-2, voyage-law-2<br>
           <strong style="color:var(--accent);">Multimodal</strong> — voyage-multimodal-3.5 (text + images + video in one vector space)<br>
           <strong style="color:var(--accent);">Reranking</strong> — rerank-2.5, rerank-2.5-lite<br><br>
           All models are accessible via the <a href="https://docs.voyageai.com/" target="_blank" style="color:var(--blue);">Voyage AI API</a>
@@ -10413,10 +10409,7 @@ Reranking models rescore initial search results to improve relevance ordering.</
           <label>
             <span style="display:block;margin-bottom:4px;font-weight:500;">Model</span>
             <select id="genModel" style="width:100%;">
-              <option value="voyage-4-large">voyage-4-large</option>
-              <option value="voyage-4">voyage-4</option>
-              <option value="voyage-4-lite">voyage-4-lite</option>
-              <option value="voyage-code-3">voyage-code-3</option>
+              <!-- Populated from MODEL_CATALOG -->
             </select>
           </label>
           <label>
@@ -10478,9 +10471,7 @@ Reranking models rescore initial search results to improve relevance ordering.</
           <label>
             <span style="display:block;margin-bottom:4px;font-weight:500;">Model</span>
             <select id="scaffoldModel" style="width:100%;">
-              <option value="voyage-4-large">voyage-4-large</option>
-              <option value="voyage-4">voyage-4</option>
-              <option value="voyage-4-lite">voyage-4-lite</option>
+              <!-- Populated from MODEL_CATALOG -->
             </select>
           </label>
           <label>
@@ -13097,51 +13088,110 @@ async function loadConfig() {
   }
 }
 
-// ── Models ──
+// ── Models (single source: MODEL_CATALOG via /api/models/catalog) ──
 async function loadModels() {
   try {
-    const res = await fetch('/api/models');
+    const res = await fetch('/api/models/catalog');
     const data = await res.json();
     allModels = data.models || [];
-    embedModels = allModels.filter(m => m.type === 'embedding');
-    rerankModels = allModels.filter(m => m.type === 'reranking');
+    embedModels = allModels.filter(m =>
+      m.type === 'embedding' && !m.legacy && !m.unreleased && !m.local
+    );
+    rerankModels = allModels.filter(m =>
+      m.type === 'reranking' && !m.legacy && !m.unreleased
+    );
+    if (data.prices && typeof CostTracker !== 'undefined' && CostTracker.setPricing) {
+      CostTracker.setPricing(data.prices);
+    }
   } catch {
     console.error('Failed to load models');
+  }
+}
+
+function fillSelectFromModels(sel, models, opts) {
+  if (!sel) return;
+  opts = opts || {};
+  const saved = opts.saved;
+  const format = opts.format || function(m) {
+    return m.name + (m.shortFor ? ' — ' + m.shortFor : '');
+  };
+  const prev = sel.value;
+  sel.innerHTML = '';
+  models.forEach(function(m) {
+    const opt = document.createElement('option');
+    opt.value = m.name;
+    opt.textContent = format(m);
+    if (m.local) opt.dataset.local = 'true';
+    if (m.price) opt.dataset.price = m.price;
+    sel.appendChild(opt);
+  });
+  if (saved && Array.from(sel.options).some(function(o) { return o.value === saved; })) {
+    sel.value = saved;
+  } else if (prev && Array.from(sel.options).some(function(o) { return o.value === prev; })) {
+    sel.value = prev;
+  } else if (opts.defaultValue && Array.from(sel.options).some(function(o) { return o.value === opts.defaultValue; })) {
+    sel.value = opts.defaultValue;
   }
 }
 
 function populateModelSelects() {
   const saved = localStorage.getItem('vai-playground-model');
   const embedSelects = ['globalModel', 'embedModel', 'compareModel', 'searchEmbedModel'];
-  embedSelects.forEach(id => {
-    const sel = document.getElementById(id);
-    sel.innerHTML = '';
-    embedModels.forEach(m => {
-      const opt = document.createElement('option');
-      opt.value = m.name;
-      opt.textContent = m.name + ' — ' + m.shortFor;
-      sel.appendChild(opt);
-    });
-    if (saved) sel.value = saved;
-  });
-
-  const rerankSel = document.getElementById('searchRerankModel');
-  rerankSel.innerHTML = '';
-  rerankModels.forEach(m => {
-    const opt = document.createElement('option');
-    opt.value = m.name;
-    opt.textContent = m.name + ' — ' + m.shortFor;
-    rerankSel.appendChild(opt);
-  });
-
-  // Sync global model to others
-  document.getElementById('globalModel').addEventListener('change', function() {
-    const v = this.value;
-    localStorage.setItem('vai-playground-model', v);
-    ['embedModel', 'compareModel', 'searchEmbedModel'].forEach(id => {
-      document.getElementById(id).value = v;
+  embedSelects.forEach(function(id) {
+    fillSelectFromModels(document.getElementById(id), embedModels, {
+      saved: saved,
+      defaultValue: 'voyage-4-large',
     });
   });
+
+  fillSelectFromModels(document.getElementById('searchRerankModel'), rerankModels, {
+    defaultValue: 'rerank-2.5',
+  });
+
+  // Generate + scaffold: same current embedding list
+  fillSelectFromModels(document.getElementById('genModel'), embedModels, {
+    defaultValue: 'voyage-4-large',
+  });
+  fillSelectFromModels(document.getElementById('scaffoldModel'), embedModels, {
+    defaultValue: 'voyage-4-large',
+  });
+
+  // Multimodal tab
+  const mmModels = allModels.filter(function(m) {
+    return m.multimodal && !m.legacy && !m.unreleased;
+  });
+  fillSelectFromModels(document.getElementById('mmModel'), mmModels, {
+    defaultValue: 'voyage-multimodal-3.5',
+    format: function(m) { return m.name; },
+  });
+
+  // Chat embedding: include local nano
+  const chatEmbedModels = allModels.filter(function(m) {
+    return m.type === 'embedding' && !m.legacy && !m.unreleased;
+  });
+  fillSelectFromModels(document.getElementById('chatEmbeddingModel'), chatEmbedModels, {
+    defaultValue: 'voyage-4-nano',
+    format: function(m) {
+      if (m.local) return m.name + ' (Free)';
+      const price = m.price || '';
+      return price ? m.name + ' (' + price.replace('/1M tokens', '/1M') + ')' : m.name;
+    },
+  });
+  if (typeof updateEmbedBadge === 'function') updateEmbedBadge();
+
+  // Sync global model to others (once)
+  const globalSel = document.getElementById('globalModel');
+  if (globalSel && !globalSel.dataset.syncBound) {
+    globalSel.dataset.syncBound = 'true';
+    globalSel.addEventListener('change', function() {
+      const v = this.value;
+      localStorage.setItem('vai-playground-model', v);
+      ['embedModel', 'compareModel', 'searchEmbedModel'].forEach(function(id) {
+        const el = document.getElementById(id);
+        if (el) el.value = v;
+      });
+    });
+  }
 }
 
 // ── API Helpers ──
@@ -14342,7 +14392,7 @@ function renderModelPickerList() {
 
   var models;
   if (context === 'multimodal') {
-    models = allModels.filter(function(m) { return m.multimodal; });
+    models = allModels.filter(function(m) { return m.multimodal && !m.legacy && !m.unreleased; });
   } else if (type === 'reranking') {
     models = rerankModels;
   } else {
@@ -19048,7 +19098,7 @@ const WF_NODE_META = {
   chunk:       { icon: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M9 15h6M9 11h6M9 19h4', label: 'Chunk', color: '#00D4AA', category: 'processing' },
   aggregate:   { icon: 'M22 3H2l8 9.46V19l4 2v-8.54L22 3z', label: 'Aggregate', color: '#00D4AA', category: 'processing' },
   http:        { icon: 'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zM2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z', label: 'HTTP Request', color: '#F5A623', category: 'integration' },
-  // Code search tools (voyage-code-3)
+  // Code search tools (voyage-code-4)
   code_index:        { icon: 'M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2zM12 11v6M9 14h6', label: 'Code Index', color: '#06B6D4', category: 'code' },
   code_search:       { icon: 'M10 20l4-16M18 8l4 4-4 4M6 16l-4-4 4-4', label: 'Code Search', color: '#06B6D4', category: 'code' },
   code_query:        { icon: 'M10 20l4-16M21 21l-4.3-4.3M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16z', label: 'Code Query', color: '#06B6D4', category: 'code' },
@@ -22566,7 +22616,7 @@ const WF_STORE_FALLBACK = [
   { name:'incremental-sync', packageName:'@vaicli/vai-workflow-incremental-sync', description:'Smart ingestion with deduplication. Checks similarity before storing.', category:'ingestion', tags:['dedup','sync','conditional'], tools:['search','similarity','ingest','filter','generate'], steps:5, tier:'official', downloads:2103, installed:false, gradient:'linear-gradient(135deg, #15803D, #4ADE80)' },
   { name:'rag-ab-test', packageName:'@vaicli/vai-workflow-rag-ab-test', description:'Run the same query through two RAG configurations side-by-side.', category:'integration', tags:['ab-test','comparison','evaluation'], tools:['query','generate'], steps:5, tier:'official', downloads:1678, installed:false, gradient:'linear-gradient(135deg, #BE185D, #F472B6)' },
   { name:'hybrid-precision-search', packageName:'@vaicli/vai-workflow-hybrid-precision-search', description:'Three retrieval strategies in parallel — lite, large, and filtered — merged and reranked.', category:'retrieval', tags:['hybrid','parallel','precision'], tools:['query','search','merge','rerank'], steps:5, tier:'official', downloads:1890, installed:false, gradient:'linear-gradient(135deg, #0891B2, #22D3EE)' },
-  { name:'code-migration-helper', packageName:'@vaicli/vai-workflow-code-migration-helper', description:'Find similar code patterns across your codebase using voyage-code-3.', category:'domain-specific', tags:['code','migration','voyage-code-3'], tools:['query','rerank','generate'], steps:3, tier:'official', downloads:932, installed:false, gradient:'linear-gradient(135deg, #475569, #94A3B8)' },
+  { name:'code-migration-helper', packageName:'@vaicli/vai-workflow-code-migration-helper', description:'Find similar code patterns across your codebase using voyage-code-4.', category:'domain-specific', tags:['code','migration','voyage-code-4'], tools:['query','rerank','generate'], steps:3, tier:'official', downloads:932, installed:false, gradient:'linear-gradient(135deg, #475569, #94A3B8)' },
   { name:'meeting-action-items', packageName:'@vaicli/vai-workflow-meeting-action-items', description:'Ingest meeting notes and extract structured action items with owners, deadlines, and context.', category:'domain-specific', tags:['meetings','action-items','productivity'], tools:['ingest','query','generate'], steps:3, tier:'official', downloads:2567, installed:false, gradient:'linear-gradient(135deg, #7C2D12, #EA580C)' },
   { name:'collection-overlap-audit', packageName:'@vaicli/vai-workflow-collection-overlap-audit', description:'Detect duplicate content across two collections.', category:'analysis', tags:['dedup','overlap','audit'], tools:['search','similarity','merge','filter','generate'], steps:5, tier:'official', downloads:678, installed:false, gradient:'linear-gradient(135deg, #6D28D9, #A78BFA)' },
   { name:'query-quality-scorer', packageName:'@vaicli/vai-workflow-query-quality-scorer', description:'Evaluate retrieval quality without ground truth labels.', category:'analysis', tags:['evaluation','quality','scoring'], tools:['query','similarity','transform','generate'], steps:4, tier:'official', downloads:823, installed:false, gradient:'linear-gradient(135deg, #9333EA, #C084FC)' },
@@ -23306,11 +23356,12 @@ let wfInitialized = false;
 
 <script>
 (function() {
-  const PRICING = {
+  let PRICING = {
     'voyage-4-large': 0.12, 'voyage-4': 0.06, 'voyage-4-lite': 0.02,
+    'voyage-code-4': 0.12, 'voyage-context-4': 0.12,
     'voyage-code-3': 0.18, 'voyage-finance-2': 0.12, 'voyage-law-2': 0.12,
     'rerank-2.5': 0.05, 'rerank-2.5-lite': 0.02,
-    'voyage-multimodal-3': 0.12,
+    'voyage-multimodal-3.5': 0.12, 'voyage-multimodal-3': 0.12,
   };
   const LARGE_PRICE = 0.12;
   const OPENAI_PRICE = 0.13;
@@ -23370,6 +23421,11 @@ let wfInitialized = false;
   };
 
   window.CostTracker = {
+    setPricing(prices) {
+      if (prices && typeof prices === 'object') {
+        PRICING = Object.assign({}, PRICING, prices);
+      }
+    },
     addOperation(op, model, tokens) {
       if (!tokens || tokens <= 0) return;
       const price = getPrice(model);

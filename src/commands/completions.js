@@ -2,8 +2,10 @@
 
 const pc = require('picocolors');
 const { listConcepts } = require('../lib/explanations');
+const { getCompletionModelNames } = require('../lib/catalog');
 
 const EXPLAIN_TOPICS = listConcepts().join(' ');
+const COMPLETION_MODELS = getCompletionModelNames().join(' ');
 
 /**
  * Generate bash completion script for vai CLI.
@@ -177,7 +179,7 @@ _vai_completions() {
   # Model name completions
   case "\$prev" in
     --model|-m)
-      COMPREPLY=( \$(compgen -W "voyage-4-large voyage-4 voyage-4-lite voyage-code-4 voyage-context-4 voyage-finance-2 voyage-law-2 voyage-multimodal-3.5 rerank-2.5 rerank-2.5-lite" -- "\$cur") )
+      COMPREPLY=( \$(compgen -W "${COMPLETION_MODELS}" -- "\$cur") )
       return 0
       ;;
     --input-type)
@@ -246,7 +248,7 @@ _vai() {
   )
 
   local -a models
-  models=(voyage-4-large voyage-4 voyage-4-lite voyage-code-4 voyage-context-4 voyage-finance-2 voyage-law-2 voyage-multimodal-3.5 rerank-2.5 rerank-2.5-lite)
+  models=(${COMPLETION_MODELS})
 
   local -a explain_topics
   explain_topics=(${EXPLAIN_TOPICS})

@@ -177,4 +177,38 @@ describe('catalog', () => {
     assert.ok(names.includes('voyage-4-lite'));
     assert.ok(names.includes('voyage-4-nano'));
   });
+
+  it('listEmbeddingModelsForUi excludes legacy, local, and multimodal', () => {
+    const { listEmbeddingModelsForUi } = require('../../src/lib/catalog');
+    const names = listEmbeddingModelsForUi().map(m => m.name);
+    assert.ok(names.includes('voyage-code-4'));
+    assert.ok(names.includes('voyage-context-4'));
+    assert.ok(!names.includes('voyage-code-3'));
+    assert.ok(!names.includes('voyage-4-nano'));
+    assert.ok(!names.includes('voyage-multimodal-3.5'));
+  });
+
+  it('listChatEmbeddingModels includes local nano', () => {
+    const { listChatEmbeddingModels } = require('../../src/lib/catalog');
+    const names = listChatEmbeddingModels().map(m => m.name);
+    assert.ok(names.includes('voyage-4-nano'));
+    assert.ok(names.includes('voyage-4-large'));
+    assert.ok(!names.includes('voyage-code-3'));
+  });
+
+  it('getCompletionModelNames includes current code and context models', () => {
+    const { getCompletionModelNames } = require('../../src/lib/catalog');
+    const names = getCompletionModelNames();
+    assert.ok(names.includes('voyage-code-4'));
+    assert.ok(names.includes('voyage-context-4'));
+    assert.ok(names.includes('rerank-2.5'));
+    assert.ok(!names.includes('voyage-code-3'));
+  });
+
+  it('getPricePerMTokenMap has catalog prices', () => {
+    const { getPricePerMTokenMap } = require('../../src/lib/catalog');
+    const prices = getPricePerMTokenMap();
+    assert.equal(prices['voyage-code-4'], 0.12);
+    assert.equal(prices['voyage-4-lite'], 0.02);
+  });
 });

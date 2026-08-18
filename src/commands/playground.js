@@ -495,18 +495,24 @@ function createPlaygroundServer() {
         return;
       }
 
-      // API: Models
+      // API: Models (current catalog for dropdowns — excludes legacy/local/unreleased)
       if (req.method === 'GET' && req.url === '/api/models') {
-        const models = MODEL_CATALOG.filter(m => !m.legacy && !m.local && !m.unreleased);
+        const { listModels, getPricePerMTokenMap } = require('../lib/catalog');
+        const models = listModels({});
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ models }));
+        res.end(JSON.stringify({ models, prices: getPricePerMTokenMap() }));
         return;
       }
 
-      // API: Full Model Catalog (for Models tab)
+      // API: Full Model Catalog (for Models tab — includes legacy/local)
       if (req.method === 'GET' && req.url === '/api/models/catalog') {
+        const { getPricePerMTokenMap } = require('../lib/catalog');
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ models: MODEL_CATALOG, benchmarks: BENCHMARK_SCORES }));
+        res.end(JSON.stringify({
+          models: MODEL_CATALOG,
+          benchmarks: BENCHMARK_SCORES,
+          prices: getPricePerMTokenMap(),
+        }));
         return;
       }
 

@@ -73,6 +73,103 @@ function getSharedSpaceModels(space) {
   return MODEL_CATALOG.filter(m => m.sharedSpace === space);
 }
 
+/**
+ * Filter catalog entries for UI dropdowns / completions.
+ * @param {object} [opts]
+ * @param {string|string[]} [opts.type] - embedding | reranking | embedding-multimodal
+ * @param {boolean} [opts.includeLocal=false]
+ * @param {boolean} [opts.includeLegacy=false]
+ * @param {boolean} [opts.includeUnreleased=false]
+ * @param {boolean} [opts.includeMultimodal=false] - when type is embedding, also include multimodal
+ * @returns {typeof MODEL_CATALOG}
+ */
+function listModels(opts = {}) {
+  const {
+    type,
+    includeLocal = false,
+    includeLegacy = false,
+    includeUnreleased = false,
+    includeMultimodal = false,
+  } = opts;
+
+  const types = type == null
+    ? null
+    : Array.isArray(type)
+      ? type
+      : [type];
+
+  return MODEL_CATALOG.filter((m) => {
+    if (!includeLegacy && m.legacy) return false;
+    if (!includeUnreleased && m.unreleased) return false;
+    if (!includeLocal && m.local) return false;
+    if (!types) return true;
+    if (types.includes(m.type)) return true;
+    if (includeMultimodal && types.includes('embedding') && m.type === 'embedding-multimodal') {
+      return true;
+    }
+    return false;
+  });
+}
+
+/**
+ * Current text embedding models for playground Embed/Compare/Search/Generate selects.
+ * Excludes local, legacy, unreleased, and multimodal.
+ * @returns {typeof MODEL_CATALOG}
+ */
+function listEmbeddingModelsForUi() {
+  return listModels({ type: 'embedding' });
+}
+
+/**
+ * Embedding models for chat (includes local nano).
+ * @returns {typeof MODEL_CATALOG}
+ */
+function listChatEmbeddingModels() {
+  return listModels({ type: 'embedding', includeLocal: true });
+}
+
+/**
+ * Current reranking models for UI.
+ * @returns {typeof MODEL_CATALOG}
+ */
+function listRerankModelsForUi() {
+  return listModels({ type: 'reranking' });
+}
+
+/**
+ * Label for a <select> option: "voyage-4-large — Best quality"
+ * @param {object} m
+ * @returns {string}
+ */
+function formatModelOptionLabel(m) {
+  const hint = m.shortFor || m.bestFor || '';
+  return hint ? `${m.name} — ${hint}` : m.name;
+}
+
+/**
+ * Names for shell completion (current, non-local models).
+ * @returns {string[]}
+ */
+function getCompletionModelNames() {
+  return listModels({
+    type: ['embedding', 'embedding-multimodal', 'reranking'],
+  }).map((m) => m.name);
+}
+
+/**
+ * pricePerMToken map for cost UI (all priced catalog entries).
+ * @returns {Record<string, number>}
+ */
+function getPricePerMTokenMap() {
+  const map = {};
+  for (const m of MODEL_CATALOG) {
+    if (typeof m.pricePerMToken === 'number') {
+      map[m.name] = m.pricePerMToken;
+    }
+  }
+  return map;
+}
+
 module.exports = {
   DEFAULT_EMBED_MODEL,
   DEFAULT_RERANK_MODEL,
@@ -82,4 +179,11 @@ module.exports = {
   MODEL_CATALOG,
   BENCHMARK_SCORES,
   getSharedSpaceModels,
+  listModels,
+  listEmbeddingModelsForUi,
+  listChatEmbeddingModels,
+  listRerankModelsForUi,
+  formatModelOptionLabel,
+  getCompletionModelNames,
+  getPricePerMTokenMap,
 };
