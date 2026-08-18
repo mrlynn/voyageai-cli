@@ -20,7 +20,7 @@ function registerIndexWorkspace(program) {
     .option('--db <name>', 'MongoDB database name')
     .option('--collection <name>', 'Collection to store indexed documents')
     .option('--content-type <type>', 'Content type: code, docs, config, or all', 'code')
-    .option('--model <name>', 'Embedding model', 'voyage-code-3')
+    .option('--model <name>', 'Embedding model', 'voyage-code-4')
     .option('--max-files <n>', 'Maximum files to index', (v) => parseInt(v, 10), 1000)
     .option('--max-file-size <bytes>', 'Maximum file size in bytes', (v) => parseInt(v, 10), 100000)
     .option('--chunk-size <n>', 'Target chunk size in characters', (v) => parseInt(v, 10), 512)

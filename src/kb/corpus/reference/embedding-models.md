@@ -16,7 +16,7 @@ Voyage AI offers a family of embedding models optimized for different use cases,
 | voyage-4-large | 32K tokens | 1024 (default), 256, 512, 2048 | $0.12/1M tokens | Best quality, multilingual, MoE architecture |
 | voyage-4 | 32K tokens | 1024 (default), 256, 512, 2048 | $0.06/1M tokens | Balanced quality and performance |
 | voyage-4-lite | 32K tokens | 1024 (default), 256, 512, 2048 | $0.02/1M tokens | Lowest cost for budget-sensitive workloads |
-| voyage-4-nano | 32K tokens | 512 (default), 128, 256, 1024, 2048 | Free (open-weight) | Local inference, edge deployment |
+| voyage-4-nano | 32K tokens | 1024 (default), 256, 512, 2048 | Free (open-weight) | Local inference, edge deployment |
 
 All four models produce vectors in the same shared embedding space. You can embed documents with `voyage-4-lite` to save money and search with `voyage-4-large` for best retrieval quality. Dimensions are set via Matryoshka representation learning -- you can truncate to smaller sizes without retraining.
 
@@ -24,7 +24,8 @@ All four models produce vectors in the same shared embedding space. You can embe
 
 | Model | Context | Dimensions | Price | Best For |
 |-------|---------|------------|-------|----------|
-| voyage-code-3 | 32K tokens | 1024 (default), 256, 512, 2048 | $0.18/1M tokens | Code retrieval and search |
+| voyage-code-4 | 32K tokens | 1024 (default), 256, 512, 2048 | $0.12/1M tokens | Code retrieval and coding agents |
+| voyage-context-4 | 32K tokens (120K total) | 1024 (default), 256, 512, 2048 | $0.12/1M tokens | Contextualized chunk embeddings |
 | voyage-finance-2 | 32K tokens | 1024 | $0.12/1M tokens | Financial document search |
 | voyage-law-2 | 16K tokens | 1024 | $0.12/1M tokens | Legal document search |
 | voyage-multimodal-3.5 | 32K tokens | 1024 (default), 256, 512, 2048 | $0.12/M + $0.60/B px | Text, images, and video |

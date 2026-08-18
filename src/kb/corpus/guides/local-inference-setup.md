@@ -43,7 +43,7 @@ vai detects that voyage-4-nano is a local model and routes the embedding through
 vai embed "What is vector search?" --model voyage-4-nano --dimensions 256
 ```
 
-voyage-4-nano supports dimensions of 128, 256, 512, 1024, and 2048. Smaller dimensions are faster and use less storage.
+voyage-4-nano supports dimensions of 256, 512, 1024, and 2048 (default 1024). Smaller dimensions are faster and use less storage.
 
 ## Step 3: Ingest Documents Locally
 

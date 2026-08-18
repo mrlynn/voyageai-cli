@@ -160,7 +160,8 @@ describe('generateZshCompletions', () => {
   it('includes model names', () => {
     const script = generateZshCompletions();
     assert.ok(script.includes('voyage-4-large'), 'should include voyage-4-large model');
-    assert.ok(script.includes('voyage-code-3'), 'should include voyage-code-3 model');
+    assert.ok(script.includes('voyage-code-4'), 'should include voyage-code-4 model');
+    assert.ok(script.includes('voyage-context-4'), 'should include voyage-context-4 model');
   });
 
   it('includes explain topics', () => {

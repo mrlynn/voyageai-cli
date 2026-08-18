@@ -119,20 +119,37 @@ describe('api', () => {
   });
 
   describe('getModelBatchTokenLimit', () => {
+    it('returns a reduced limit for voyage-code-4', () => {
+      delete require.cache[require.resolve('../../src/lib/api')];
+      const { getModelBatchTokenLimit } = require('../../src/lib/api');
+
+      const limit = getModelBatchTokenLimit('voyage-code-4');
+      // Code models use 0.50 safety: 120000 * 0.50 = 60000
+      assert.equal(limit, 60000);
+    });
+
     it('returns a reduced limit for voyage-code-3', () => {
       delete require.cache[require.resolve('../../src/lib/api')];
       const { getModelBatchTokenLimit } = require('../../src/lib/api');
 
       const limit = getModelBatchTokenLimit('voyage-code-3');
-      // Code models use 0.50 safety: 120000 * 0.50 = 60000
       assert.equal(limit, 60000);
+    });
+
+    it('returns the 120K-model limit for voyage-4-large', () => {
+      delete require.cache[require.resolve('../../src/lib/api')];
+      const { getModelBatchTokenLimit } = require('../../src/lib/api');
+
+      const limit = getModelBatchTokenLimit('voyage-4-large');
+      // Text models use 0.85 safety: 120000 * 0.85 = 102000
+      assert.equal(limit, 102000);
     });
 
     it('returns a higher default for general models', () => {
       delete require.cache[require.resolve('../../src/lib/api')];
       const { getModelBatchTokenLimit } = require('../../src/lib/api');
 
-      const limit = getModelBatchTokenLimit('voyage-4-large');
+      const limit = getModelBatchTokenLimit('voyage-4');
       assert.equal(limit, Math.floor(320000 * 0.85));
     });
   });

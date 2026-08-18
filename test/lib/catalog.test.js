@@ -22,6 +22,8 @@ describe('catalog', () => {
     assert.ok(names.includes('voyage-4-large'));
     assert.ok(names.includes('voyage-4'));
     assert.ok(names.includes('voyage-4-lite'));
+    assert.ok(names.includes('voyage-code-4'));
+    assert.ok(names.includes('voyage-context-4'));
     assert.ok(names.includes('rerank-2.5'));
   });
 
@@ -82,6 +84,8 @@ describe('catalog', () => {
     assert.ok(legacyNames.includes('voyage-3-large'), 'Should have voyage-3-large');
     assert.ok(legacyNames.includes('voyage-3.5'), 'Should have voyage-3.5');
     assert.ok(legacyNames.includes('voyage-3.5-lite'), 'Should have voyage-3.5-lite');
+    assert.ok(legacyNames.includes('voyage-code-3'), 'Should have voyage-code-3');
+    assert.ok(legacyNames.includes('voyage-context-3'), 'Should have voyage-context-3');
     assert.ok(legacyNames.includes('voyage-code-2'), 'Should have voyage-code-2');
     assert.ok(legacyNames.includes('voyage-multimodal-3'), 'Should have voyage-multimodal-3');
     assert.ok(legacyNames.includes('rerank-2'), 'Should have rerank-2');
@@ -128,6 +132,26 @@ describe('catalog', () => {
       assert.ok(model.pricePerMToken !== undefined, `${model.name} missing pricePerMToken`);
       assert.equal(typeof model.pricePerMToken, 'number', `${model.name} pricePerMToken should be a number`);
     }
+  });
+
+  it('voyage-4-nano defaults to 1024 dimensions', () => {
+    const nano = MODEL_CATALOG.find(m => m.name === 'voyage-4-nano');
+    assert.ok(nano.dimensions.startsWith('1024 (default)'), 'voyage-4-nano should default to 1024');
+  });
+
+  it('voyage-code-4 is current and voyage-code-3 is legacy', () => {
+    const code4 = MODEL_CATALOG.find(m => m.name === 'voyage-code-4');
+    const code3 = MODEL_CATALOG.find(m => m.name === 'voyage-code-3');
+    assert.ok(code4 && !code4.legacy, 'voyage-code-4 should be current');
+    assert.ok(code3 && code3.legacy, 'voyage-code-3 should be legacy');
+    assert.equal(code4.pricePerMToken, 0.12);
+  });
+
+  it('voyage-context-4 is current and voyage-context-3 is legacy', () => {
+    const ctx4 = MODEL_CATALOG.find(m => m.name === 'voyage-context-4');
+    const ctx3 = MODEL_CATALOG.find(m => m.name === 'voyage-context-3');
+    assert.ok(ctx4 && !ctx4.legacy && !ctx4.unreleased, 'voyage-context-4 should be current');
+    assert.ok(ctx3 && ctx3.legacy, 'voyage-context-3 should be legacy');
   });
 
   it('BENCHMARK_SCORES contains Voyage and competitor models', () => {

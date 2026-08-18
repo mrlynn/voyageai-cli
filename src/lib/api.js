@@ -9,8 +9,12 @@ const MAX_RETRIES = 3;
  * Voyage AI enforces these server-side; exceeding them returns 400.
  */
 const MODEL_BATCH_TOKEN_LIMITS = {
+  'voyage-code-4': 120000,
   'voyage-code-3': 120000,
   'voyage-code-2': 120000,
+  'voyage-4-large': 120000,
+  'voyage-finance-2': 120000,
+  'voyage-law-2': 120000,
 };
 const DEFAULT_BATCH_TOKEN_LIMIT = 320000;
 

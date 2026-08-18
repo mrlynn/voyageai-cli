@@ -104,9 +104,9 @@ describe('code-search shared lib', () => {
   });
 
   describe('selectCodeModel', () => {
-    it('returns voyage-code-3 for mostly code files', () => {
+    it('returns voyage-code-4 for mostly code files', () => {
       const files = ['a.js', 'b.ts', 'c.py', 'd.go', 'e.rs', 'f.java', 'g.rb', 'h.php', 'i.swift', 'j.kt'];
-      assert.strictEqual(selectCodeModel(files, {}), 'voyage-code-3');
+      assert.strictEqual(selectCodeModel(files, {}), 'voyage-code-4');
     });
 
     it('returns voyage-4-large for mostly doc files', () => {
@@ -114,9 +114,9 @@ describe('code-search shared lib', () => {
       assert.strictEqual(selectCodeModel(files, {}), 'voyage-4-large');
     });
 
-    it('returns voyage-code-3 for mixed files', () => {
+    it('returns voyage-code-4 for mixed files', () => {
       const files = ['a.js', 'b.md', 'c.py', 'd.txt'];
-      assert.strictEqual(selectCodeModel(files, {}), 'voyage-code-3');
+      assert.strictEqual(selectCodeModel(files, {}), 'voyage-code-4');
     });
 
     it('uses project config override', () => {
@@ -125,7 +125,7 @@ describe('code-search shared lib', () => {
     });
 
     it('returns default for empty file list', () => {
-      assert.strictEqual(selectCodeModel([], {}), 'voyage-code-3');
+      assert.strictEqual(selectCodeModel([], {}), 'voyage-code-4');
     });
   });
 

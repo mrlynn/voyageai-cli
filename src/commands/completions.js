@@ -177,7 +177,7 @@ _vai_completions() {
   # Model name completions
   case "\$prev" in
     --model|-m)
-      COMPREPLY=( \$(compgen -W "voyage-4-large voyage-4 voyage-4-lite voyage-code-3 voyage-finance-2 voyage-law-2 voyage-multimodal-3.5 rerank-2.5 rerank-2.5-lite" -- "\$cur") )
+      COMPREPLY=( \$(compgen -W "voyage-4-large voyage-4 voyage-4-lite voyage-code-4 voyage-context-4 voyage-finance-2 voyage-law-2 voyage-multimodal-3.5 rerank-2.5 rerank-2.5-lite" -- "\$cur") )
       return 0
       ;;
     --input-type)
@@ -246,7 +246,7 @@ _vai() {
   )
 
   local -a models
-  models=(voyage-4-large voyage-4 voyage-4-lite voyage-code-3 voyage-finance-2 voyage-law-2 voyage-multimodal-3.5 rerank-2.5 rerank-2.5-lite)
+  models=(voyage-4-large voyage-4 voyage-4-lite voyage-code-4 voyage-context-4 voyage-finance-2 voyage-law-2 voyage-multimodal-3.5 rerank-2.5 rerank-2.5-lite)
 
   local -a explain_topics
   explain_topics=(${EXPLAIN_TOPICS})

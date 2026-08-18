@@ -4,7 +4,7 @@ const path = require('path');
 const fs = require('fs');
 const { loadProject } = require('./project');
 
-const DEFAULT_CODE_MODEL = 'voyage-code-3';
+const DEFAULT_CODE_MODEL = 'voyage-code-4';
 const DEFAULT_DB = 'vai_code_search';
 
 const CODE_EXTENSIONS = [
@@ -291,9 +291,9 @@ function selectCodeModel(files, projectConfig) {
   const codeRatio = codeFiles.length / total;
   const docRatio = docFiles.length / total;
 
-  if (codeRatio >= 0.7) return 'voyage-code-3';
+  if (codeRatio >= 0.7) return DEFAULT_CODE_MODEL;
   if (docRatio >= 0.7) return 'voyage-4-large';
-  return 'voyage-code-3';
+  return DEFAULT_CODE_MODEL;
 }
 
 module.exports = {

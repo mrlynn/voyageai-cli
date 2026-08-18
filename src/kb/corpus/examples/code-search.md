@@ -24,10 +24,10 @@ vai code-search --dir ./src --query "email validation function"
 For a more persistent setup, embed your code files and store them in MongoDB:
 
 ```bash
-vai ingest --dir ./src --db codebase --collection source --model voyage-code-3
+vai ingest --dir ./src --db codebase --collection source --model voyage-code-4
 ```
 
-The `voyage-code-3` model is specifically trained for code retrieval and understands programming concepts across languages. Create the search index:
+The `voyage-code-4` model is specifically trained for code retrieval and coding agents and understands programming concepts across languages. Create the search index:
 
 ```bash
 vai index create --db codebase --collection source --field embedding --dimensions 1024
@@ -52,4 +52,4 @@ The authentication middleware file should appear in the top results for the firs
 
 ## Variations
 
-Use `vai embed --file src/auth.js --model voyage-code-3` to embed a single file. Combine code search with `vai rerank` for higher precision on large codebases. Try `voyage-4-large` instead of `voyage-code-3` for mixed code-and-documentation repositories where you need both code and prose results.
+Use `vai embed --file src/auth.js --model voyage-code-4` to embed a single file. Combine code search with `vai rerank` for higher precision on large codebases. Try `voyage-4-large` instead of `voyage-code-4` for mixed code-and-documentation repositories where you need both code and prose results.

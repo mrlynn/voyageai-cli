@@ -1,6 +1,6 @@
 {
   "version": "1.33.6",
-  "generatedAt": "2026-03-14T20:55:42.401Z",
+  "generatedAt": "2026-08-18T18:39:57.264Z",
   "chunkStrategy": "recursive",
   "chunkSize": 512,
   "chunkOverlap": 50,
@@ -15,7 +15,7 @@
       "section": "search",
       "difficulty": "intermediate",
       "estimatedChunks": 1,
-      "checksum": "9e1568886ca5fe845dc784b1886e708748f37a44b339ec3db50c61e2d799337d"
+      "checksum": "c00a162154668f7a39c8904b3f1b30c4aa6cdfe61918ade187612da7f0701437"
     },
     {
       "id": "document-qa",
@@ -180,7 +180,7 @@
       "section": "models",
       "difficulty": "beginner",
       "estimatedChunks": 1,
-      "checksum": "895641a90ffb2ea4fa20eae4a8fd2914e255d7be6720bf1677c873684e239215"
+      "checksum": "081c2b17e4ae34138e19147a7920f6e5703ce86df0a802bb1c65425798887fcc"
     },
     {
       "id": "multimodal-embeddings",
@@ -235,7 +235,7 @@
       "section": "models",
       "difficulty": "advanced",
       "estimatedChunks": 1,
-      "checksum": "4ebadf5c8361c8e5b8362710711a41f6895956c3e3dbf6c324cebb2a0ab4af8a"
+      "checksum": "a8b419005b385651db1c1e1ae884f27df10c75d3e25f442b2a8c21ba75249ed7"
     },
     {
       "id": "two-stage-retrieval",
@@ -312,7 +312,7 @@
       "section": "getting-started",
       "difficulty": "beginner",
       "estimatedChunks": 2,
-      "checksum": "cdc9385a49c1e8027f33dd1e3fcd5823800a5f860e72dd53d016c0072b57f245"
+      "checksum": "d18829dec4a73f60cf2e984dedbe4d0aeac93314164aaabe933204f5bb487c29"
     },
     {
       "id": "mcp-server-setup",
@@ -378,7 +378,7 @@
       "section": "models",
       "difficulty": "beginner",
       "estimatedChunks": 2,
-      "checksum": "1cc046c621cd5a892bfa4c9781d5ac3b97ac30afd3b30b4c9b7d598d89295102"
+      "checksum": "d091704a9634321cd1ca0fdfb5e83d74a188cf97e24af1124a2e411264ee6020"
     },
     {
       "id": "environment-variables",

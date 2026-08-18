@@ -427,7 +427,7 @@ vai models --benchmarks
 | Cohere Embed v4 | 65.75 |
 | OpenAI v3 Large | 62.57 |
 
-Also available: `voyage-code-3` (code), `voyage-finance-2` (finance), `voyage-law-2` (legal), `rerank-2.5` / `rerank-2.5-lite`.
+Also available: `voyage-code-4` (code), `voyage-context-4` (contextualized chunks), `voyage-finance-2` (finance), `voyage-law-2` (legal), `rerank-2.5` / `rerank-2.5-lite`.
 
 ### Local Inference
 

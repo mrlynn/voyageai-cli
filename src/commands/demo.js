@@ -397,14 +397,14 @@ async function runCodeSearchDemo(opts) {
   console.log('');
 
   theory(verbose,
-    'Semantic code search uses voyage-code-3, an embedding model trained',
+    'Semantic code search uses voyage-code-4, an embedding model trained',
     'specifically on source code. Unlike text search (grep, ripgrep), it',
     'understands intent — "error handling" finds try/catch blocks, retry',
     'logic, and error formatting even if those words don\'t appear literally.',
     '',
     'The process:',
     '  1. Scan files → smart-chunk by function/class boundaries',
-    '  2. Embed each chunk with voyage-code-3 (1024 dims)',
+    '  2. Embed each chunk with voyage-code-4 (1024 dims)',
     '  3. Store in MongoDB Atlas with vector search index',
     '  4. Query: embed question → cosine search → rerank',
   );
@@ -463,10 +463,10 @@ async function runCodeSearchDemo(opts) {
     );
 
     // Step 2: Embed and store
-    console.log(pc.bold('  Step 2: Embedding with voyage-code-3...'));
+    console.log(pc.bold('  Step 2: Embedding with voyage-code-4...'));
     console.log('');
 
-    step(verbose, 'voyage-code-3 is specifically trained on source code');
+    step(verbose, 'voyage-code-4 is specifically trained on source code');
     step(verbose, 'It understands syntax, patterns, and programming concepts');
 
     const batchSize = 10; // Small batches for resilience
@@ -487,7 +487,7 @@ async function runCodeSearchDemo(opts) {
       for (let attempt = 0; attempt < 3; attempt++) {
         try {
           embedResult = await generateEmbeddings(texts, {
-            model: 'voyage-code-3',
+            model: 'voyage-code-4',
             inputType: 'document',
           });
           break;
@@ -558,7 +558,7 @@ async function runCodeSearchDemo(opts) {
     ];
 
     theory(verbose,
-      'Each query is embedded with voyage-code-3 as a "query" input type.',
+      'Each query is embedded with voyage-code-4 as a "query" input type.',
       'The query vector is compared against all code chunk vectors using',
       'cosine similarity via MongoDB Atlas $vectorSearch.',
       'Top candidates are then reranked with Voyage AI\'s reranker for',
@@ -571,7 +571,7 @@ async function runCodeSearchDemo(opts) {
      */
     async function executeCodeSearch(query) {
       const embedResult = await generateEmbeddings([query], {
-        model: 'voyage-code-3',
+        model: 'voyage-code-4',
         inputType: 'query',
       });
       const queryVector = embedResult.data[0].embedding;

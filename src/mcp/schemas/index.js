@@ -134,7 +134,7 @@ const codeIndexSchema = {
     'Collection name. Auto-derived from project name if omitted.'
   ),
   model: z.string().optional().describe(
-    'Embedding model. Default: auto-detected (voyage-code-3 for code, voyage-4-large for docs)'
+    'Embedding model. Default: auto-detected (voyage-code-4 for code, voyage-4-large for docs)'
   ),
   branch: z.string().default('main').describe('Git branch for remote repos'),
   maxFiles: z.number().int().min(1).max(10000).default(5000)
@@ -171,7 +171,7 @@ const codeSearchSchema = {
   rerankModel: z.enum(['rerank-2.5', 'rerank-2.5-lite']).default('rerank-2.5')
     .describe('Reranking model'),
   model: z.string().optional()
-    .describe('Embedding model for query. Default: voyage-code-3'),
+    .describe('Embedding model for query. Default: voyage-code-4'),
   filter: z.record(z.string(), z.unknown()).optional()
     .describe('Additional MongoDB filter on metadata fields'),
 };
@@ -188,7 +188,7 @@ const codeQuerySchema = {
   language: z.string().optional()
     .describe('Filter by programming language'),
   model: z.string().optional()
-    .describe('Embedding model. Default: voyage-code-3'),
+    .describe('Embedding model. Default: voyage-code-4'),
   filter: z.record(z.string(), z.unknown()).optional()
     .describe('Additional MongoDB filter'),
 };
@@ -205,7 +205,7 @@ const codeFindSimilarSchema = {
   language: z.string().optional()
     .describe('Filter by programming language'),
   model: z.string().optional()
-    .describe('Embedding model. Default: voyage-code-3'),
+    .describe('Embedding model. Default: voyage-code-4'),
   threshold: z.number().min(0).max(1).default(0.5)
     .describe('Minimum similarity score (0-1)'),
   filter: z.record(z.string(), z.unknown()).optional()

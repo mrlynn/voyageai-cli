@@ -581,14 +581,14 @@ async function handleCodeStatus(input) {
 function registerCodeSearchTools(server, schemas) {
   server.tool(
     'vai_code_index',
-    'Index a codebase for semantic code search. Accepts a local directory path or a GitHub repository URL. Uses voyage-code-3 by default for code-optimized embeddings. Supports incremental refresh — only re-embeds files that changed since last indexing. Creates a MongoDB Atlas vector search index automatically.',
+    'Index a codebase for semantic code search. Accepts a local directory path or a GitHub repository URL. Uses voyage-code-4 by default for code-optimized embeddings. Supports incremental refresh — only re-embeds files that changed since last indexing. Creates a MongoDB Atlas vector search index automatically.',
     schemas.codeIndexSchema,
     handleCodeIndex
   );
 
   server.tool(
     'vai_code_search',
-    'Semantic code search across an indexed codebase. Finds functions, classes, modules, and documentation semantically related to your natural language query. Uses voyage-code-3 by default. Supports filtering by programming language and content category. Results include file paths, line numbers, symbols, and relevance scores.',
+    'Semantic code search across an indexed codebase. Finds functions, classes, modules, and documentation semantically related to your natural language query. Uses voyage-code-4 by default. Supports filtering by programming language and content category. Results include file paths, line numbers, symbols, and relevance scores.',
     schemas.codeSearchSchema,
     handleCodeSearch
   );
@@ -602,7 +602,7 @@ function registerCodeSearchTools(server, schemas) {
 
   server.tool(
     'vai_code_find_similar',
-    'Find code semantically similar to a given snippet. Paste in a function, class, or code block and find related implementations across indexed codebases. Useful for finding duplicates, alternative implementations, or understanding patterns. Uses voyage-code-3 which understands both code structure and intent.',
+    'Find code semantically similar to a given snippet. Paste in a function, class, or code block and find related implementations across indexed codebases. Useful for finding duplicates, alternative implementations, or understanding patterns. Uses voyage-code-4 which understands both code structure and intent.',
     schemas.codeFindSimilarSchema,
     handleCodeFindSimilar
   );

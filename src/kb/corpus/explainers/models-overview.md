@@ -11,7 +11,7 @@ Voyage AI offers several model families through MongoDB Atlas, each optimized fo
 
 ## Specialized and Multimodal Models
 
-Beyond general-purpose text, Voyage AI offers domain-specific models: `voyage-code-3` for code search and understanding, `voyage-finance-2` for financial text like reports and filings, and `voyage-law-2` for legal documents such as contracts and case law. For multimodal use cases, `voyage-multimodal-3.5` embeds both text and images into the same vector space. On the reranking side, `rerank-2.5` provides best-in-class reranking quality with instruction-following support, and `rerank-2.5-lite` offers faster, lower-cost reranking.
+Beyond general-purpose text, Voyage AI offers domain-specific models: `voyage-code-4` for code search and coding agents, `voyage-context-4` for contextualized chunk embeddings, `voyage-finance-2` for financial text like reports and filings, and `voyage-law-2` for legal documents such as contracts and case law. For multimodal use cases, `voyage-multimodal-3.5` embeds both text and images into the same vector space. On the reranking side, `rerank-2.5` provides best-in-class reranking quality with instruction-following support, and `rerank-2.5-lite` offers faster, lower-cost reranking.
 
 ## How to Choose
 
@@ -26,4 +26,4 @@ vai benchmark embed --models voyage-4-large,voyage-4,voyage-4-lite
 
 ## Tips and Gotchas
 
-All Voyage 4 text embedding models support flexible dimensions (256, 512, 1024, 2048) via Matryoshka representation learning. You can embed once at full dimension and truncate later. Domain-specific models do not share the Voyage 4 embedding space -- do not mix `voyage-code-3` embeddings with `voyage-4` embeddings in the same index. When unsure, use `vai benchmark similarity` with your actual data to compare models head-to-head before committing to one.
+All Voyage 4 text embedding models support flexible dimensions (256, 512, 1024, 2048) via Matryoshka representation learning. You can embed once at full dimension and truncate later. Domain-specific models do not share the Voyage 4 embedding space -- do not mix `voyage-code-4` embeddings with `voyage-4` embeddings in the same index. When unsure, use `vai benchmark similarity` with your actual data to compare models head-to-head before committing to one.

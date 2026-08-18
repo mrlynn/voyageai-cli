@@ -474,15 +474,15 @@ module.exports = {
 
   code_index: {
     description:
-      'Index a local directory or GitHub repository for semantic code search. Uses voyage-code-3 by default for code-optimized embeddings.',
+      'Index a local directory or GitHub repository for semantic code search. Uses voyage-code-4 by default for code-optimized embeddings.',
     howItWorks:
-      'Scans the target codebase for source files, splits them into chunks using language-aware boundary detection (function/class boundaries), generates embeddings with voyage-code-3, and stores the chunks in MongoDB Atlas with a vector search index.',
+      'Scans the target codebase for source files, splits them into chunks using language-aware boundary detection (function/class boundaries), generates embeddings with voyage-code-4, and stores the chunks in MongoDB Atlas with a vector search index.',
     inputs: [
       { key: 'source', type: 'string', required: true, desc: 'Local directory path or GitHub repo URL (e.g., "/path/to/project" or "https://github.com/org/repo").' },
       { key: 'db', type: 'string', required: false, desc: 'MongoDB database name. Default: "vai_code_search".' },
       { key: 'collection', type: 'string', required: false, desc: 'Collection name. Auto-derived from project name if omitted.' },
       { key: 'refresh', type: 'boolean', required: false, desc: 'If true, only re-index changed files (incremental). Default: false.' },
-      { key: 'model', type: 'string', required: false, desc: 'Embedding model. Default: voyage-code-3 for code, voyage-4-large for docs.' },
+      { key: 'model', type: 'string', required: false, desc: 'Embedding model. Default: voyage-code-4 for code, voyage-4-large for docs.' },
       { key: 'branch', type: 'string', required: false, desc: 'Git branch for remote repos. Default: "main".' },
       { key: 'maxFiles', type: 'number', required: false, desc: 'Maximum files to index. Default: 5000.' },
       { key: 'chunkSize', type: 'number', required: false, desc: 'Target chunk size in characters. Default: 512.' },
@@ -497,7 +497,7 @@ module.exports = {
     tips: [
       'Use refresh: true for incremental indexing after the first full index.',
       'GitHub repos require a GITHUB_TOKEN for private repositories.',
-      'voyage-code-3 understands code structure, function signatures, and programming idioms.',
+      'voyage-code-4 understands code structure, function signatures, and programming idioms.',
     ],
   },
 
@@ -505,7 +505,7 @@ module.exports = {
     description:
       'Semantic search across an indexed codebase. Finds functions, classes, and modules related to a natural language query.',
     howItWorks:
-      'Embeds your query with voyage-code-3, runs vector search against the code index in MongoDB Atlas, then reranks results with rerank-2.5 for best relevance. Returns file paths, line numbers, and matched code snippets.',
+      'Embeds your query with voyage-code-4, runs vector search against the code index in MongoDB Atlas, then reranks results with rerank-2.5 for best relevance. Returns file paths, line numbers, and matched code snippets.',
     inputs: [
       { key: 'query', type: 'string', required: true, desc: 'Natural language search query (e.g., "where do we handle auth timeouts").' },
       { key: 'db', type: 'string', required: false, desc: 'MongoDB database name.' },
@@ -552,7 +552,7 @@ module.exports = {
     description:
       'Find code semantically similar to a given snippet. Paste a function, class, or code block and find related implementations.',
     howItWorks:
-      'Embeds the provided code snippet with voyage-code-3 and searches the indexed codebase for chunks with high vector similarity. Results are filtered by a threshold score.',
+      'Embeds the provided code snippet with voyage-code-4 and searches the indexed codebase for chunks with high vector similarity. Results are filtered by a threshold score.',
     inputs: [
       { key: 'code', type: 'string', required: true, desc: 'Code snippet to find similar implementations for.' },
       { key: 'db', type: 'string', required: false, desc: 'MongoDB database name.' },
@@ -568,7 +568,7 @@ module.exports = {
     tips: [
       'Useful for finding duplicate logic, alternative implementations, or code that follows similar patterns.',
       'Lower the threshold (e.g., 0.3) to find more distant but still related code.',
-      'voyage-code-3 understands both code structure and intent, so it can match functionally similar code even with different syntax.',
+      'voyage-code-4 understands both code structure and intent, so it can match functionally similar code even with different syntax.',
     ],
   },
 
